@@ -1,4 +1,21 @@
 window.onload = function() {
+  // --- Firebase Configuración e Inicialización ---
+  const firebaseConfig = {
+    apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
+    authDomain: "senda-6d5c9.firebaseapp.com",
+    projectId: "senda-6d5c9",
+    storageBucket: "senda-6d5c9.firebasestorage.app",
+    messagingSenderId: "1090028669785",
+    appId: "1:1090028669785:web:d4e1c1b9945fc2fddc1a48",
+    measurementId: "G-82DCLW5R2W"
+  };
+  if (typeof firebase !== "undefined") {
+    firebase.initializeApp(firebaseConfig);
+    // Puedes acceder a firestore con: firebase.firestore()
+    // Y a auth con: firebase.auth()
+  }
+
+  // --- MODALES ---
   // Modal Inscribirse
   document.getElementById('abrir-modal').onclick = function() {
     document.getElementById('modal-bg').style.display = 'flex';
