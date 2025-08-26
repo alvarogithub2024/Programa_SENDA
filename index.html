@@ -9,9 +9,6 @@
       margin: 0;
       min-height: 100vh;
       background: linear-gradient(135deg, #232526 0%, #414345 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
       font-family: 'Segoe UI', Arial, sans-serif;
     }
     .container {
@@ -21,6 +18,7 @@
       padding: 36px 32px;
       max-width: 500px;
       text-align: center;
+      margin: 60px auto 0 auto;
     }
     h1 {
       color: #2e8b57;
@@ -35,7 +33,7 @@
       margin-bottom: 18px;
       line-height: 1.6;
     }
-    .boton-inscribirme, .boton-profesional {
+    .boton-inscribirme {
       background: linear-gradient(90deg, #2e8b57 40%, #3b5998 100%);
       color: #fff;
       padding: 14px 30px;
@@ -44,8 +42,7 @@
       cursor: pointer;
       font-size: 1.13rem;
       font-weight: 600;
-      margin-top: 18px;
-      margin-bottom: 8px;
+      margin-top: 28px;
       box-shadow: 0 4px 16px rgba(44,62,80,0.1);
       transition: background 0.3s, transform 0.2s;
       display: block;
@@ -53,10 +50,33 @@
       margin-left: auto;
       margin-right: auto;
     }
-    .boton-inscribirme:hover, .boton-profesional:hover {
+    .boton-inscribirme:hover {
       background: linear-gradient(90deg, #226644 60%, #2e8b57 100%);
       transform: scale(1.05);
     }
+
+    /* Botón profesional en top-right */
+    .boton-profesional {
+      position: fixed;
+      top: 16px;
+      right: 18px;
+      background: linear-gradient(90deg, #2e8b57 40%, #3b5998 100%);
+      color: #fff;
+      padding: 12px 26px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.08rem;
+      font-weight: 600;
+      box-shadow: 0 4px 16px rgba(44,62,80,0.1);
+      transition: background 0.3s, transform 0.2s;
+      z-index: 99;
+    }
+    .boton-profesional:hover {
+      background: linear-gradient(90deg, #226644 60%, #2e8b57 100%);
+      transform: scale(1.04);
+    }
+
     .modal-bg {
       position: fixed;
       top: 0; left: 0;
@@ -66,7 +86,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 20;
+      z-index: 100;
       display: none;
     }
     .modal {
@@ -114,22 +134,22 @@
       border: 1.5px solid #2e8b57;
       outline: none;
     }
-    .boton-ingresar, .boton-ver-solicitudes {
+    .boton-login, .boton-ver-solicitudes {
       display: block;
       width: 100%;
       background: linear-gradient(90deg,#2e8b57 30%, #3b5998 100%);
       color: #fff;
-      font-size: 1.1rem;
+      font-size: 1.08rem;
       font-weight: 600;
       border: none;
       border-radius: 7px;
       padding: 12px 0;
-      margin-top: 16px;
+      margin-top: 12px;
       cursor: pointer;
       transition: background 0.2s, transform 0.15s;
       box-shadow: 0 2px 10px rgba(44,62,80,0.08);
     }
-    .boton-ingresar:hover, .boton-ver-solicitudes:hover {
+    .boton-login:hover, .boton-ver-solicitudes:hover {
       background: linear-gradient(90deg,#226644 60%, #2e8b57 100%);
       transform: scale(1.04);
     }
@@ -147,61 +167,13 @@
     .close-modal:hover {
       color: #2e8b57;
     }
-    .solicitudes-list {
-      margin-top: 18px;
-      max-height: 350px;
-      overflow-y: auto;
-      border-top: 1px solid #eee;
-      padding-top: 10px;
-    }
-    .solicitud-item {
-      background: #f6f6f6;
-      margin-bottom: 10px;
-      padding: 12px;
-      border-radius: 8px;
+    .error-msg {
+      color: #e53935;
       font-size: 0.98rem;
-      box-shadow: 0 1px 4px rgba(44,62,80,0.08);
-      position: relative;
-    }
-    .solicitud-item strong {
-      color: #2e8b57;
-    }
-    .derivar-select {
-      margin-top: 8px;
-      margin-bottom: 6px;
-      width: 100%;
-      padding: 7px;
-      border-radius: 6px;
-      border: 1px solid #bdbdbd;
-      font-size: 1rem;
-      background: #fff;
-      color: #444;
-    }
-    .boton-derivar {
-      background: linear-gradient(90deg, #3b5998 40%, #2e8b57 100%);
-      color: #fff;
-      padding: 7px 16px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 1rem;
-      font-weight: 600;
-      margin-top: 6px;
+      text-align: center;
+      margin-top: 10px;
       margin-bottom: 2px;
-      box-shadow: 0 2px 8px rgba(44,62,80,0.08);
-      transition: background 0.2s, transform 0.15s;
-      display: block;
-    }
-    .boton-derivar:hover {
-      background: linear-gradient(90deg,#226644 60%, #3b5998 100%);
-      transform: scale(1.04);
-    }
-    .derivacion-label {
-      font-size: 0.97rem;
-      color: #666;
-      margin-top: 5px;
-      margin-bottom: 2px;
-      display: block;
+      display: none;
     }
     @media (max-width: 600px) {
       .container {
@@ -214,6 +186,12 @@
         padding: 16px 6px;
         max-width: 98vw;
       }
+      .boton-profesional {
+        padding: 10px 12px;
+        font-size: 0.98rem;
+        top: 10px;
+        right: 8px;
+      }
     }
   </style>
   <!-- Firebase App (core) -->
@@ -222,6 +200,9 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
+  <button class="boton-profesional" id="abrir-modal-profesional">
+    Ingresar como profesional
+  </button>
   <div class="container" id="main-panel">
     <h1>Programa SENDA</h1>
     <p>
@@ -233,17 +214,15 @@
     <button class="boton-inscribirme" id="abrir-modal">
       Inscribirme
     </button>
-    <button class="boton-profesional" id="abrir-modal-profesional">
-      Ingresar como profesional
-    </button>
   </div>
   
-  <!-- Modal Solicitud -->
+  <!-- Modal Solicitud (igual que antes, puedes pegar aquí el formulario de solicitud) -->
   <div class="modal-bg" id="modal-bg">
     <div class="modal">
       <button class="close-modal" id="cerrar-modal" title="Cerrar">&times;</button>
       <h2>SOLICITUD</h2>
       <form id="form-postulacion">
+        <!-- ...campos igual que el ejemplo anterior... -->
         <div class="form-group">
           <label for="nombre">Nombre:</label>
           <input type="text" id="nombre" name="nombre" required>
@@ -277,44 +256,88 @@
     </div>
   </div>
 
-  <!-- Modal Profesional -->
-  <div class="modal-bg" id="modal-bg-profesional">
+  <!-- Modal Login Profesional -->
+  <div class="modal-bg" id="modal-bg-login-profesional">
     <div class="modal">
-      <button class="close-modal" id="cerrar-modal-profesional" title="Cerrar">&times;</button>
-      <h2>Ingreso Profesional</h2>
-      <form id="form-profesional">
+      <button class="close-modal" id="cerrar-modal-login-profesional" title="Cerrar">&times;</button>
+      <h2>Acceso profesional</h2>
+      <form id="form-login-profesional">
         <div class="form-group">
-          <label for="tipo-profesional">Seleccione su perfil:</label>
-          <select id="tipo-profesional" name="tipo-profesional" required>
-            <option value="">Seleccione...</option>
-            <option value="asistente_social">Asistente Social</option>
-            <option value="psicologo">Psicólogo</option>
-            <option value="medico">Médico</option>
-          </select>
+          <label for="correo-profesional">Correo electrónico:</label>
+          <input type="email" id="correo-profesional" name="correo-profesional" required>
         </div>
-        <button type="submit" class="boton-ver-solicitudes">Ver solicitudes</button>
+        <div id="error-login-profesional" class="error-msg"></div>
+        <button type="submit" class="boton-login">Ingresar</button>
       </form>
-      <div id="solicitudes-profesional" style="display:none;">
+    </div>
+  </div>
+
+  <!-- Modal Panel Profesional (igual que antes, puedes pegar aquí el panel con derivación) -->
+  <div class="modal-bg" id="modal-bg-profesional-panel">
+    <div class="modal">
+      <button class="close-modal" id="cerrar-modal-profesional-panel" title="Cerrar">&times;</button>
+      <h2>Panel profesional</h2>
+      <div id="solicitudes-profesional" style="margin-top:14px;">
         <h3 style="text-align:center;color:#2e8b57;">Solicitudes recibidas</h3>
         <div class="solicitudes-list" id="solicitudes-list"></div>
       </div>
     </div>
   </div>
+
   <script>
     // Inicializa Firebase
     const firebaseConfig = {
-       apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
-  authDomain: "senda-6d5c9.firebaseapp.com",
-  projectId: "senda-6d5c9",
-  storageBucket: "senda-6d5c9.firebasestorage.app",
-  messagingSenderId: "1090028669785",
-  appId: "1:1090028669785:web:d4e1c1b9945fc2fddc1a48",
-  measurementId: "G-82DCLW5R2W"
+      apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
+      authDomain: "senda-6d5c9.firebaseapp.com",
+      projectId: "senda-6d5c9",
+      storageBucket: "senda-6d5c9.appspot.com",
+      messagingSenderId: "1090028669785",
+      appId: "1:1090028669785:web:d4e1c1b9945fc2fddc1a48",
+      measurementId: "G-82DCLW5R2W"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Abrir modal solicitud
+    // Botón profesional arriba a la derecha
+    document.getElementById('abrir-modal-profesional').onclick = function() {
+      document.getElementById('modal-bg-login-profesional').style.display = 'flex';
+      document.getElementById('error-login-profesional').style.display = 'none';
+      document.getElementById('form-login-profesional').reset();
+    };
+    document.getElementById('cerrar-modal-login-profesional').onclick = function() {
+      document.getElementById('modal-bg-login-profesional').style.display = 'none';
+    };
+    document.getElementById('modal-bg-login-profesional').onclick = function(e) {
+      if(e.target === this) this.style.display = 'none';
+    };
+
+    // Panel profesional modal
+    document.getElementById('cerrar-modal-profesional-panel').onclick = function() {
+      document.getElementById('modal-bg-profesional-panel').style.display = 'none';
+    };
+    document.getElementById('modal-bg-profesional-panel').onclick = function(e) {
+      if(e.target === this) this.style.display = 'none';
+    };
+
+    // LOGIN PROFESIONAL: revisa dominio permitido
+    const dominioPermitido = '@senda.cl'; // Cambia aquí el dominio permitido
+
+    document.getElementById('form-login-profesional').onsubmit = function(e) {
+      e.preventDefault();
+      const correo = document.getElementById('correo-profesional').value.trim();
+      const errorDiv = document.getElementById('error-login-profesional');
+      if (!correo.endsWith(dominioPermitido)) {
+        errorDiv.style.display = 'block';
+        errorDiv.innerText = 'Solo se permite acceso con correo institucional (' + dominioPermitido + ')';
+        return;
+      }
+      errorDiv.style.display = 'none';
+      document.getElementById('modal-bg-login-profesional').style.display = 'none';
+      document.getElementById('modal-bg-profesional-panel').style.display = 'flex';
+      cargarSolicitudesProfesional();
+    };
+
+    // Modal solicitud
     document.getElementById('abrir-modal').onclick = function() {
       document.getElementById('modal-bg').style.display = 'flex';
     };
@@ -325,7 +348,7 @@
       if(e.target === this) this.style.display = 'none';
     };
 
-    // Guardar la solicitud en Firestore, con 'derivacion' pendiente
+    // Guardar la solicitud en Firestore
     document.getElementById('form-postulacion').onsubmit = function(e) {
       e.preventDefault();
       const datos = {
@@ -341,34 +364,18 @@
       };
       db.collection("solicitudes").add(datos)
         .then(() => {
-          alert('¡Solicitud enviada!\nLa información será revisada por el Asistente Social.');
           document.getElementById('modal-bg').style.display = 'none';
           document.getElementById('form-postulacion').reset();
+          // Aquí puedes mostrar un modal de éxito si lo deseas
+          alert('Solicitud ingresada con éxito.');
         })
         .catch((error) => {
           alert('Error al enviar la solicitud: ' + error.message);
         });
     };
 
-    // Abrir modal profesional
-    document.getElementById('abrir-modal-profesional').onclick = function() {
-      document.getElementById('modal-bg-profesional').style.display = 'flex';
-      document.getElementById('solicitudes-profesional').style.display = 'none';
-    };
-    document.getElementById('cerrar-modal-profesional').onclick = function() {
-      document.getElementById('modal-bg-profesional').style.display = 'none';
-    };
-    document.getElementById('modal-bg-profesional').onclick = function(e) {
-      if(e.target === this) this.style.display = 'none';
-    };
-
-    // Manejo del formulario profesional con derivación
-    document.getElementById('form-profesional').onsubmit = function(e) {
-      e.preventDefault();
-      const tipo = document.getElementById('tipo-profesional').value;
-      if(!tipo) { alert("Seleccione su perfil profesional."); return; }
-      document.getElementById('solicitudes-profesional').style.display = 'block';
-
+    // Cargar solicitudes para el profesional (igual que el panel anterior)
+    function cargarSolicitudesProfesional() {
       let lista = document.getElementById('solicitudes-list');
       lista.innerHTML = '<p>Cargando solicitudes...</p>';
       db.collection("solicitudes").orderBy("fecha", "desc").get()
@@ -382,7 +389,7 @@
             const solicitud = doc.data();
             const id = doc.id;
             let derivarHTML = '';
-            if(tipo === "asistente_social" && solicitud.derivacion === "pendiente") {
+            if(solicitud.derivacion === "pendiente") {
               derivarHTML = `
                 <label class="derivacion-label">Derivar a:</label>
                 <select class="derivar-select" id="derivar-${id}">
@@ -411,9 +418,9 @@
         .catch((error) => {
           lista.innerHTML = '<p>Error al cargar las solicitudes: ' + error.message + '</p>';
         });
-    };
+    }
 
-    // Derivación de solicitudes por Asistente Social
+    // Derivación de solicitudes
     window.derivarSolicitud = function(id) {
       const select = document.getElementById('derivar-' + id);
       const value = select.value;
@@ -421,14 +428,12 @@
       db.collection("solicitudes").doc(id).update({ derivacion: value })
         .then(() => {
           alert('Solicitud derivada con éxito.');
-          document.getElementById('form-profesional').onsubmit(); // refresca la lista
+          cargarSolicitudesProfesional();
         })
         .catch((error) => {
           alert('Error al derivar: ' + error.message);
         });
     };
   </script>
-</body>
-</html>
 </body>
 </html>
