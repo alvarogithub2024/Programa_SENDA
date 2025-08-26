@@ -1,88 +1,111 @@
 /* MODAL más grande */
+.modal-bg {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(60, 40, 100, 0.25);
+  z-index: 999;
+  justify-content: center;
+  align-items: center;
+}
+
 .modal {
-  min-width: 700px;
-  max-width: 1100px;
-  min-height: 500px;
-  padding: 40px 48px 35px 48px;
-  font-size: 1.15rem;
+  background: #fff;
+  border-radius: 12px;
+  padding: 36px 32px 32px 32px;
+  min-width: 420px;
+  max-width: 720px;
+  min-height: 350px;
+  max-height: 92vh;
+  box-shadow: 0 8px 40px rgba(80,40,120,0.18);
+  position: relative;
+  overflow-y: auto;
 }
 
-@media (max-width: 900px) {
-  .modal { min-width: 96vw; max-width: 99vw; padding: 18px 2vw; }
+@media (max-width: 750px) {
+  .modal { min-width: 90vw; max-width: 98vw; padding: 20px 5vw; }
 }
 
-/* PESTAÑAS más grandes y separadas pero mismos colores */
+/* PESTAÑAS grandes y vistosas */
 .tabs {
   display: flex;
   border-bottom: 2px solid #b39ddb;
-  margin-bottom: 28px;
-  margin-top: 12px;
-  gap: 10px;
+  margin-bottom: 22px;
+  margin-top: 8px;
 }
 .tab-btn {
   flex: 1;
   background: none;
   border: none;
-  padding: 18px 0 13px 0;
+  padding: 18px 0;
   font-size: 1.25rem;
-  color: inherit;
+  color: #6b21a8;
   font-weight: bold;
   cursor: pointer;
   border-bottom: 4px solid transparent;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
   border-radius: 10px 10px 0 0;
-  margin-right: 4px;
+  margin-right: 6px;
+  letter-spacing: 0.5px;
 }
+.tab-btn:last-child { margin-right: 0; }
 .tab-btn.active {
+  color: #fff;
   border-bottom: 4px solid #4b299e;
-  background: #eee;
+  background: #8b5cf6;
+  box-shadow: 0 4px 8px rgba(139,92,246,0.07);
 }
 
-.tab-content {
-  display: none;
-  padding: 36px 12px 20px 12px;
-  min-height: 260px;
-}
+.tab-content { display: none; }
 .tab-content.active { display: block; }
 
-/* Más espacio entre los bloques de solicitudes, derivaciones, fichas */
+.obs-derivar, textarea {
+  width: 100%;
+  min-height: 48px;
+  margin: 10px 0 7px 0;
+  border-radius: 7px;
+  border: 1px solid #b39ddb;
+  padding: 9px;
+  font-size: 1.05rem;
+  resize: vertical;
+}
+
 .solicitud-item, .derivacion-item, .ficha-paciente {
-  margin-bottom: 32px;
-  padding: 16px 12px 14px 12px;
+  margin-bottom: 20px;
+  padding: 13px 10px 10px 10px;
   border-radius: 8px;
   background: #f6f2ff;
   border: 1px solid #e0d7f3;
 }
 
-#tab-mis-datos h3 {
-  font-size: 1.55rem;
-  margin-bottom: 13px;
-}
-#tab-mis-datos p {
-  font-size: 1.09rem;
-  margin-bottom: 12px;
-}
-
-.obs-derivar, textarea {
-  width: 100%;
-  min-height: 58px;
-  margin: 10px 0 7px 0;
-  border-radius: 7px;
-  border: 1px solid #b39ddb;
-  padding: 11px;
-  font-size: 1.07rem;
-  resize: vertical;
-}
-
 .boton-login, .boton-ingresar, .boton-inscribirme, .boton-profesional {
+  background: #8b5cf6;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
   padding: 13px 26px;
   font-size: 1.13rem;
-  margin-top: 8px;
-  margin-bottom: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 7px;
+  margin-bottom: 7px;
+  transition: background 0.18s;
+}
+.boton-login:hover, .boton-ingresar:hover, .boton-inscribirme:hover, .boton-profesional:hover {
+  background: #6d28d9;
 }
 
-@media (max-width: 700px) {
-  .modal { min-width: 99vw; max-width: 100vw; padding: 8px 1vw; }
-  .tab-btn { font-size: 1.07rem; padding: 11px 0 7px 0; }
-  .tab-content { padding: 13px 3px 8px 3px; }
+.close-modal {
+  position: absolute;
+  top: 12px; right: 18px;
+  background: none;
+  border: none;
+  font-size: 2.1rem;
+  color: #aaa;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.form-group {
+  margin-bottom: 14px;
 }
