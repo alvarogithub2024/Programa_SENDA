@@ -111,7 +111,7 @@
       border: 1.5px solid #2e8b57;
       outline: none;
     }
-    .boton-postular {
+    .boton-ingresar {
       display: block;
       width: 100%;
       background: linear-gradient(90deg,#2e8b57 30%, #3b5998 100%);
@@ -126,7 +126,7 @@
       transition: background 0.2s, transform 0.15s;
       box-shadow: 0 2px 10px rgba(44,62,80,0.08);
     }
-    .boton-postular:hover {
+    .boton-ingresar:hover {
       background: linear-gradient(90deg,#226644 60%, #2e8b57 100%);
       transform: scale(1.04);
     }
@@ -176,7 +176,7 @@
   <div class="modal-bg" id="modal-bg">
     <div class="modal">
       <button class="close-modal" id="cerrar-modal" title="Cerrar">&times;</button>
-      <h2>Formulario de Postulación</h2>
+      <h2>Solicitud</h2>
       <form id="form-postulacion">
         <div class="form-group">
           <label for="nombre">Nombre:</label>
@@ -206,7 +206,7 @@
           <label for="direccion">Dirección:</label>
           <input type="text" id="direccion" name="direccion" required>
         </div>
-        <button type="submit" class="boton-postular">Postular</button>
+        <button type="submit" class="boton-ingresar">Ingresar</button>
       </form>
     </div>
   </div>
@@ -226,7 +226,7 @@
     // Manejo del formulario
     document.getElementById('form-postulacion').onsubmit = function(e) {
       e.preventDefault();
-      alert('¡Postulación enviada!\nGracias por inscribirte en el Programa SENDA.');
+      alert('¡Solicitud enviada!\nGracias por inscribirte en el Programa SENDA.');
       document.getElementById('modal-bg').style.display = 'none';
       this.reset();
     };
