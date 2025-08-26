@@ -35,7 +35,7 @@
       margin-bottom: 18px;
       line-height: 1.6;
     }
-    .boton-inscribirme {
+    .boton-inscribirme, .boton-profesional {
       background: linear-gradient(90deg, #2e8b57 40%, #3b5998 100%);
       color: #fff;
       padding: 14px 30px;
@@ -44,15 +44,19 @@
       cursor: pointer;
       font-size: 1.13rem;
       font-weight: 600;
-      margin-top: 28px;
+      margin-top: 18px;
+      margin-bottom: 8px;
       box-shadow: 0 4px 16px rgba(44,62,80,0.1);
       transition: background 0.3s, transform 0.2s;
+      display: block;
+      width: 80%;
+      margin-left: auto;
+      margin-right: auto;
     }
-    .boton-inscribirme:hover {
+    .boton-inscribirme:hover, .boton-profesional:hover {
       background: linear-gradient(90deg, #226644 60%, #2e8b57 100%);
       transform: scale(1.05);
     }
-
     /* Modal styles */
     .modal-bg {
       position: fixed;
@@ -98,7 +102,7 @@
       color: #333;
       font-weight: 500;
     }
-    .form-group input {
+    .form-group input, .form-group select {
       width: 100%;
       padding: 8px 10px;
       border-radius: 6px;
@@ -107,11 +111,11 @@
       background: #f9f9f9;
       transition: border 0.2s;
     }
-    .form-group input:focus {
+    .form-group input:focus, .form-group select:focus {
       border: 1.5px solid #2e8b57;
       outline: none;
     }
-    .boton-ingresar {
+    .boton-ingresar, .boton-ver-solicitudes {
       display: block;
       width: 100%;
       background: linear-gradient(90deg,#2e8b57 30%, #3b5998 100%);
@@ -126,7 +130,7 @@
       transition: background 0.2s, transform 0.15s;
       box-shadow: 0 2px 10px rgba(44,62,80,0.08);
     }
-    .boton-ingresar:hover {
+    .boton-ingresar:hover, .boton-ver-solicitudes:hover {
       background: linear-gradient(90deg,#226644 60%, #2e8b57 100%);
       transform: scale(1.04);
     }
@@ -144,6 +148,24 @@
     .close-modal:hover {
       color: #2e8b57;
     }
+    .solicitudes-list {
+      margin-top: 18px;
+      max-height: 350px;
+      overflow-y: auto;
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+    }
+    .solicitud-item {
+      background: #f6f6f6;
+      margin-bottom: 10px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.98rem;
+      box-shadow: 0 1px 4px rgba(44,62,80,0.08);
+    }
+    .solicitud-item strong {
+      color: #2e8b57;
+    }
     @media (max-width: 600px) {
       .container {
         padding: 18px 8px;
@@ -159,7 +181,7 @@
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="container" id="main-panel">
     <h1>Programa SENDA</h1>
     <p>
       SENDA busca mitigar el impacto social y sanitario de los consumos de alcohol y otras drogas en niños, niñas, adolescentes, hombres, mujeres y colectivos de las diversidades sexo/genéricas, para mejorar el bienestar y la calidad de vida en las personas y comunidades.
@@ -170,9 +192,12 @@
     <button class="boton-inscribirme" id="abrir-modal">
       Inscribirme
     </button>
+    <button class="boton-profesional" id="abrir-modal-profesional">
+      Ingresar como profesional
+    </button>
   </div>
   
-  <!-- Modal Formulario -->
+  <!-- Modal Solicitud -->
   <div class="modal-bg" id="modal-bg">
     <div class="modal">
       <button class="close-modal" id="cerrar-modal" title="Cerrar">&times;</button>
@@ -210,12 +235,36 @@
       </form>
     </div>
   </div>
+
+  <!-- Modal Profesional -->
+  <div class="modal-bg" id="modal-bg-profesional">
+    <div class="modal">
+      <button class="close-modal" id="cerrar-modal-profesional" title="Cerrar">&times;</button>
+      <h2>Ingreso Profesional</h2>
+      <form id="form-profesional">
+        <div class="form-group">
+          <label for="tipo-profesional">Seleccione su perfil:</label>
+          <select id="tipo-profesional" name="tipo-profesional" required>
+            <option value="">Seleccione...</option>
+            <option value="asistente_social">Asistente Social</option>
+            <option value="psicologo">Psicólogo</option>
+            <option value="medico">Médico</option>
+          </select>
+        </div>
+        <button type="submit" class="boton-ver-solicitudes">Ver solicitudes</button>
+      </form>
+      <div id="solicitudes-profesional" style="display:none;">
+        <h3 style="text-align:center;color:#2e8b57;">Solicitudes recibidas</h3>
+        <div class="solicitudes-list" id="solicitudes-list"></div>
+      </div>
+    </div>
+  </div>
   <script>
-    // Abrir modal
+    // Abrir modal solicitud
     document.getElementById('abrir-modal').onclick = function() {
       document.getElementById('modal-bg').style.display = 'flex';
     };
-    // Cerrar modal
+    // Cerrar modal solicitud
     document.getElementById('cerrar-modal').onclick = function() {
       document.getElementById('modal-bg').style.display = 'none';
     };
@@ -223,12 +272,68 @@
     document.getElementById('modal-bg').onclick = function(e) {
       if(e.target === this) this.style.display = 'none';
     };
-    // Manejo del formulario
+    // Manejo del formulario de solicitud
     document.getElementById('form-postulacion').onsubmit = function(e) {
       e.preventDefault();
-      alert('¡Solicitud enviada!\nGracias por inscribirte en el Programa SENDA.');
+      // Obtener datos
+      const datos = {
+        nombre: document.getElementById('nombre').value,
+        apellido: document.getElementById('apellido').value,
+        rut: document.getElementById('rut').value,
+        telefono: document.getElementById('telefono').value,
+        correo: document.getElementById('correo').value,
+        comuna: document.getElementById('comuna').value,
+        direccion: document.getElementById('direccion').value,
+        fecha: new Date().toLocaleString()
+      };
+      // Guardar en localStorage
+      let solicitudes = JSON.parse(localStorage.getItem('solicitudes')) || [];
+      solicitudes.push(datos);
+      localStorage.setItem('solicitudes', JSON.stringify(solicitudes));
+      alert('¡Solicitud enviada!\nLa información será revisada por el Asistente Social.');
       document.getElementById('modal-bg').style.display = 'none';
       this.reset();
+    };
+
+    // Abrir modal profesional
+    document.getElementById('abrir-modal-profesional').onclick = function() {
+      document.getElementById('modal-bg-profesional').style.display = 'flex';
+      document.getElementById('solicitudes-profesional').style.display = 'none';
+    };
+    // Cerrar modal profesional
+    document.getElementById('cerrar-modal-profesional').onclick = function() {
+      document.getElementById('modal-bg-profesional').style.display = 'none';
+    };
+    // Cerrar modal profesional al hacer click fuera
+    document.getElementById('modal-bg-profesional').onclick = function(e) {
+      if(e.target === this) this.style.display = 'none';
+    };
+    // Manejo del formulario profesional
+    document.getElementById('form-profesional').onsubmit = function(e) {
+      e.preventDefault();
+      const tipo = document.getElementById('tipo-profesional').value;
+      if(!tipo) { alert("Seleccione su perfil profesional."); return; }
+      document.getElementById('solicitudes-profesional').style.display = 'block';
+      // Mostrar solicitudes
+      let solicitudes = JSON.parse(localStorage.getItem('solicitudes')) || [];
+      let lista = document.getElementById('solicitudes-list');
+      lista.innerHTML = '';
+      if(solicitudes.length === 0) {
+        lista.innerHTML = '<p>No hay solicitudes recibidas aún.</p>';
+        return;
+      }
+      solicitudes.forEach(function(solicitud, idx){
+        lista.innerHTML += `
+          <div class="solicitud-item">
+            <strong>Nombre:</strong> ${solicitud.nombre} ${solicitud.apellido}<br>
+            <strong>RUT:</strong> ${solicitud.rut}<br>
+            <strong>Teléfono:</strong> ${solicitud.telefono}<br>
+            <strong>Correo:</strong> ${solicitud.correo}<br>
+            <strong>Comuna:</strong> ${solicitud.comuna}<br>
+            <strong>Dirección:</strong> ${solicitud.direccion}<br>
+            <strong>Fecha:</strong> ${solicitud.fecha}
+          </div>`;
+      });
     };
   </script>
 </body>
