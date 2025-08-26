@@ -4,7 +4,12 @@
   <meta charset="UTF-8">
   <title>PROGRAMA SENDA</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Enlaza tu CSS -->
   <link rel="stylesheet" href="styles.css">
+  <!-- Scripts de Firebase deben ir antes de tu JS principal -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <button class="boton-profesional" id="abrir-modal-profesional">
@@ -22,22 +27,148 @@
       Inscribirme
     </button>
   </div>
-  <!-- Modal Inscribirse -->
+  
+  <!-- Modal Solicitud paciente -->
   <div class="modal-bg" id="modal-bg">
     <div class="modal">
       <button class="close-modal" id="cerrar-modal" title="Cerrar">&times;</button>
-      <h2>Formulario Inscripción</h2>
-      <p>Contenido de inscripción aquí.</p>
+      <h2>SOLICITUD</h2>
+      <form id="form-postulacion">
+        <div class="form-group">
+          <label for="nombre">Nombre:</label>
+          <input type="text" id="nombre" name="nombre" required>
+        </div>
+        <div class="form-group">
+          <label for="apellido">Apellido:</label>
+          <input type="text" id="apellido" name="apellido" required>
+        </div>
+        <div class="form-group">
+          <label for="rut">RUT:</label>
+          <input type="text" id="rut" name="rut" required>
+        </div>
+        <div class="form-group">
+          <label for="telefono">Teléfono:</label>
+          <input type="tel" id="telefono" name="telefono" required>
+        </div>
+        <div class="form-group">
+          <label for="correo">Correo electrónico:</label>
+          <input type="email" id="correo" name="correo" required>
+        </div>
+        <div class="form-group">
+          <label for="comuna">Comuna:</label>
+          <input type="text" id="comuna" name="comuna" required>
+        </div>
+        <div class="form-group">
+          <label for="direccion">Dirección:</label>
+          <input type="text" id="direccion" name="direccion" required>
+        </div>
+        <button type="submit" class="boton-ingresar">INGRESAR</button>
+      </form>
     </div>
   </div>
-  <!-- Modal Profesional -->
+
+  <!-- Modal de Éxito paciente -->
+  <div class="modal-bg" id="modal-bg-success">
+    <div class="modal modal-success">
+      <h2>¡Solicitud ingresada!</h2>
+      <p>Tu solicitud fue enviada correctamente y será revisada por el Asistente Social.</p>
+      <button class="boton-cerrar-success" id="cerrar-modal-success">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- Modal Profesional: solo botones -->
   <div class="modal-bg" id="modal-bg-login-profesional">
     <div class="modal">
       <button class="close-modal" id="cerrar-modal-login-profesional" title="Cerrar">&times;</button>
       <h2>Acceso profesional</h2>
-      <p>Contenido de acceso profesional aquí.</p>
+      <button class="boton-login" id="abrir-form-ingresar">Ingresar</button>
+      <button class="boton-login" id="abrir-form-registrar">Registrarse</button>
     </div>
   </div>
+
+  <!-- Modal Ingresar -->
+  <div class="modal-bg" id="modal-bg-ingresar">
+    <div class="modal">
+      <button class="close-modal" id="cerrar-modal-ingresar" title="Cerrar">&times;</button>
+      <h2>Ingresar</h2>
+      <form id="form-login-profesional">
+        <div class="form-group">
+          <label for="correo-login">Correo institucional:</label>
+          <input type="email" id="correo-login" name="correo-login" required>
+        </div>
+        <div class="form-group">
+          <label for="clave-login">Contraseña:</label>
+          <input type="password" id="clave-login" name="clave-login" required>
+        </div>
+        <div id="error-login-profesional" class="error-msg"></div>
+        <button type="submit" class="boton-login">Ingresar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Registrar -->
+  <div class="modal-bg" id="modal-bg-registrar">
+    <div class="modal">
+      <button class="close-modal" id="cerrar-modal-registrar" title="Cerrar">&times;</button>
+      <h2>Registrarse</h2>
+      <form id="form-registrar-profesional">
+        <div class="form-group">
+          <label for="nombre-completo">Nombre completo:</label>
+          <input type="text" id="nombre-completo" name="nombre-completo" required>
+        </div>
+        <div class="form-group">
+          <label for="correo-registrar">Correo institucional:</label>
+          <input type="email" id="correo-registrar" name="correo-registrar" required>
+        </div>
+        <div class="form-group">
+          <label for="clave-registrar">Contraseña:</label>
+          <input type="password" id="clave-registrar" name="clave-registrar" required>
+        </div>
+        <div class="form-group">
+          <label for="profesion-registrar">Profesión:</label>
+          <select id="profesion-registrar" name="profesion-registrar" required>
+            <option value="">Seleccione...</option>
+            <option value="asistente_social">Asistente social</option>
+            <option value="medico">Médico</option>
+          </select>
+        </div>
+        <div id="error-registrar-profesional" class="error-msg"></div>
+        <button type="submit" class="boton-login">Registrarse</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Panel Profesional -->
+  <div class="modal-bg" id="modal-bg-profesional-panel">
+    <div class="modal">
+      <button class="close-modal" id="cerrar-modal-profesional-panel" title="Cerrar">&times;</button>
+      <h2 id="panel-profesional-titulo"></h2>
+      <button class="boton-logout" id="logout-profesional">Cerrar sesión</button>
+      <div id="solicitudes-profesional" style="margin-top:14px;">
+        <h3 style="text-align:center;color:#2e8b57;">Solicitudes recibidas</h3>
+        <div class="solicitudes-list" id="solicitudes-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ficha Usuario -->
+  <div class="modal-bg" id="modal-bg-ficha">
+    <div class="modal" style="max-width:650px;">
+      <button class="close-modal" id="cerrar-modal-ficha" title="Cerrar">&times;</button>
+      <h2>Ficha de usuario</h2>
+      <div id="ficha-usuario-info"></div>
+      <div id="ficha-usuario-notas"></div>
+      <form id="form-nota-ficha">
+        <div class="form-group">
+          <label for="nota-ficha">Agregar nota de atención:</label>
+          <textarea id="nota-ficha" name="nota-ficha" rows="2" required></textarea>
+        </div>
+        <button type="submit" class="boton-ingresar boton-small">Guardar nota</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Enlaza tu JS principal al final del body -->
   <script src="app.js"></script>
 </body>
 </html>
