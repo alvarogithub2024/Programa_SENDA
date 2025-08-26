@@ -9,14 +9,11 @@ window.onload = function() {
     appId: "1:1090028669785:web:d4e1c1b9945fc2fddc1a48",
     measurementId: "G-82DCLW5R2W"
   };
-  if (typeof firebase !== "undefined") {
-    firebase.initializeApp(firebaseConfig);
-    // Puedes acceder a firestore con: firebase.firestore()
-    // Y a auth con: firebase.auth()
-  }
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
 
-  // --- MODALES ---
-  // Modal Inscribirse
+  // --- MODALES (igual que antes) ---
   document.getElementById('abrir-modal').onclick = function() {
     document.getElementById('modal-bg').style.display = 'flex';
   };
@@ -27,7 +24,6 @@ window.onload = function() {
     if (e.target === this) this.style.display = 'none';
   };
 
-  // Modal Profesional - menú
   document.getElementById('abrir-modal-profesional').onclick = function() {
     document.getElementById('modal-bg-login-profesional').style.display = 'flex';
   };
@@ -38,7 +34,6 @@ window.onload = function() {
     if (e.target === this) this.style.display = 'none';
   };
 
-  // Abrir modal de formulario ingresar profesional
   document.getElementById('abrir-form-ingresar').onclick = function() {
     document.getElementById('modal-bg-login-profesional').style.display = 'none';
     document.getElementById('modal-bg-ingresar').style.display = 'flex';
@@ -50,7 +45,6 @@ window.onload = function() {
     if (e.target === this) this.style.display = 'none';
   };
 
-  // Abrir modal de formulario registrar profesional
   document.getElementById('abrir-form-registrar').onclick = function() {
     document.getElementById('modal-bg-login-profesional').style.display = 'none';
     document.getElementById('modal-bg-registrar').style.display = 'flex';
@@ -62,7 +56,48 @@ window.onload = function() {
     if (e.target === this) this.style.display = 'none';
   };
 
-  // Prevent default for forms (solo demo)
+  // --- REGISTRO PROFESIONAL EN FIREBASE ---
+  document.getElementById('form-registrar-profesional').onsubmit = function(e) {
+    e.preventDefault();
+
+    const nombre = document.getElementById('nombre-completo').value.trim();
+    const correo = document.getElementById('correo-registrar').value.trim();
+    const clave = document.getElementById('clave-registrar').value;
+    const profesion = document.getElementById('profesion-registrar').value;
+
+    // Validación simple
+    if (nombre === "" || correo === "" || clave === "" || profesion === "") {
+      alert("Completa todos los campos.");
+      return;
+    }
+
+    // Crear usuario en Firebase Auth
+    auth.createUserWithEmailAndPassword(correo, clave)
+      .then(userCredential => {
+        const user = userCredential.user;
+        // Guardar datos en Firestore
+        return db.collection("profesionales").doc(user.uid).set({
+          nombre: nombre,
+          correo: correo,
+          profesion: profesion,
+          creado: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      })
+      .then(() => {
+        alert("¡Registro exitoso! Ahora puedes ingresar.");
+        document.getElementById('modal-bg-registrar').style.display = 'none';
+        document.getElementById('form-registrar-profesional').reset();
+      })
+      .catch(error => {
+        if (error.code === "auth/email-already-in-use") {
+          alert("El correo ya está registrado.");
+        } else {
+          alert("Error al registrar: " + error.message);
+        }
+      });
+  };
+
+  // --- PREVENIR SUBMIT EN LOS DEMÁS FORMULARIOS (puedes implementar lógica real aquí) ---
   document.getElementById('form-inscripcion').onsubmit = function(e) {
     e.preventDefault();
     alert("¡Inscripción enviada!");
@@ -74,11 +109,5 @@ window.onload = function() {
     alert("¡Ingreso profesional enviado!");
     document.getElementById('modal-bg-ingresar').style.display = 'none';
     document.getElementById('form-login-profesional').reset();
-  };
-  document.getElementById('form-registrar-profesional').onsubmit = function(e) {
-    e.preventDefault();
-    alert("¡Registro profesional enviado!");
-    document.getElementById('modal-bg-registrar').style.display = 'none';
-    document.getElementById('form-registrar-profesional').reset();
   };
 };
