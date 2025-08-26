@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>PROGRAMA SENDA</title>
+  <title>Programa SENDA</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body {
@@ -52,12 +52,108 @@
       background: linear-gradient(90deg, #226644 60%, #2e8b57 100%);
       transform: scale(1.05);
     }
+
+    /* Modal styles */
+    .modal-bg {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(34, 34, 34, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      display: none;
+    }
+    .modal {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(44,62,80,0.18);
+      padding: 30px 24px 24px 24px;
+      max-width: 400px;
+      width: 100%;
+      text-align: left;
+      position: relative;
+      animation: fadeIn 0.4s;
+    }
+    @keyframes fadeIn {
+      from { transform: scale(0.85); opacity: 0;}
+      to { transform: scale(1); opacity: 1;}
+    }
+    .modal h2 {
+      text-align: center;
+      color: #2e8b57;
+      margin-bottom: 18px;
+      font-size: 1.35rem;
+      font-weight: 700;
+    }
+    .form-group {
+      margin-bottom: 13px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 1rem;
+      margin-bottom: 4px;
+      color: #333;
+      font-weight: 500;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #bdbdbd;
+      font-size: 1rem;
+      background: #f9f9f9;
+      transition: border 0.2s;
+    }
+    .form-group input:focus {
+      border: 1.5px solid #2e8b57;
+      outline: none;
+    }
+    .boton-postular {
+      display: block;
+      width: 100%;
+      background: linear-gradient(90deg,#2e8b57 30%, #3b5998 100%);
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 7px;
+      padding: 12px 0;
+      margin-top: 16px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+      box-shadow: 0 2px 10px rgba(44,62,80,0.08);
+    }
+    .boton-postular:hover {
+      background: linear-gradient(90deg,#226644 60%, #2e8b57 100%);
+      transform: scale(1.04);
+    }
+    .close-modal {
+      position: absolute;
+      right: 14px;
+      top: 14px;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: #888;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .close-modal:hover {
+      color: #2e8b57;
+    }
     @media (max-width: 600px) {
       .container {
         padding: 18px 8px;
       }
       h1 {
         font-size: 1.3rem;
+      }
+      .modal {
+        padding: 16px 6px;
+        max-width: 98vw;
       }
     }
   </style>
@@ -71,9 +167,69 @@
     <p>
       Para lograrlo, diseña, implementa, entrega de información, orienta, articula y coordina de acciones efectivas, oportunas y de calidad, considerando las particularidades del territorio.
     </p>
-    <button class="boton-inscribirme" onclick="window.location.href='https://tusitio.com/inscripcion'">
+    <button class="boton-inscribirme" id="abrir-modal">
       Inscribirme
     </button>
   </div>
+  
+  <!-- Modal Formulario -->
+  <div class="modal-bg" id="modal-bg">
+    <div class="modal">
+      <button class="close-modal" id="cerrar-modal" title="Cerrar">&times;</button>
+      <h2>Formulario de Postulación</h2>
+      <form id="form-postulacion">
+        <div class="form-group">
+          <label for="nombre">Nombre:</label>
+          <input type="text" id="nombre" name="nombre" required>
+        </div>
+        <div class="form-group">
+          <label for="apellido">Apellido:</label>
+          <input type="text" id="apellido" name="apellido" required>
+        </div>
+        <div class="form-group">
+          <label for="rut">RUT:</label>
+          <input type="text" id="rut" name="rut" required>
+        </div>
+        <div class="form-group">
+          <label for="telefono">Teléfono:</label>
+          <input type="tel" id="telefono" name="telefono" required>
+        </div>
+        <div class="form-group">
+          <label for="correo">Correo electrónico:</label>
+          <input type="email" id="correo" name="correo" required>
+        </div>
+        <div class="form-group">
+          <label for="comuna">Comuna:</label>
+          <input type="text" id="comuna" name="comuna" required>
+        </div>
+        <div class="form-group">
+          <label for="direccion">Dirección:</label>
+          <input type="text" id="direccion" name="direccion" required>
+        </div>
+        <button type="submit" class="boton-postular">Postular</button>
+      </form>
+    </div>
+  </div>
+  <script>
+    // Abrir modal
+    document.getElementById('abrir-modal').onclick = function() {
+      document.getElementById('modal-bg').style.display = 'flex';
+    };
+    // Cerrar modal
+    document.getElementById('cerrar-modal').onclick = function() {
+      document.getElementById('modal-bg').style.display = 'none';
+    };
+    // Cerrar modal al hacer click fuera del formulario
+    document.getElementById('modal-bg').onclick = function(e) {
+      if(e.target === this) this.style.display = 'none';
+    };
+    // Manejo del formulario
+    document.getElementById('form-postulacion').onsubmit = function(e) {
+      e.preventDefault();
+      alert('¡Postulación enviada!\nGracias por inscribirte en el Programa SENDA.');
+      document.getElementById('modal-bg').style.display = 'none';
+      this.reset();
+    };
+  </script>
 </body>
 </html>
