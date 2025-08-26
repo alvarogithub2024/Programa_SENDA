@@ -111,3 +111,75 @@ window.onload = function() {
     document.getElementById('form-login-profesional').reset();
   };
 };
+
+// ... después del login profesional exitoso ...
+
+function mostrarPanelProfesional(usuario) {
+  // usuario: objeto {uid, nombre, correo, profesion}
+  document.getElementById('modal-bg-profesional-panel').style.display = 'flex';
+
+  // Mostrar datos en "Mis datos"
+  document.getElementById('tab-mis-datos').innerHTML = `
+    <h3>${usuario.nombre}</h3>
+    <p><b>Correo:</b> ${usuario.correo}</p>
+    <p><b>Profesión:</b> ${usuario.profesion === "asistente_social" ? "Asistente Social" : "Médico"}</p>
+  `;
+
+  // Tabs handler
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.onclick = function() {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      this.classList.add('active');
+      document.getElementById('tab-' + this.dataset.tab).classList.add('active');
+    };
+  });
+
+  // Solo asistentes sociales ven y pueden derivar solicitudes
+  if (usuario.profesion === "asistente_social") {
+    cargarSolicitudesAsistente(usuario);
+  } else {
+    document.getElementById('tab-solicitudes').innerHTML = "<p>Solo los asistentes sociales pueden ver solicitudes para derivar.</p>";
+  }
+}
+
+// Ejemplo función para cargar solicitudes y derivar con observación
+function cargarSolicitudesAsistente(usuario) {
+  db.collection("solicitudes").where("derivacion", "==", "pendiente").get().then(snap => {
+    let html = "";
+    snap.forEach(doc => {
+      const sol = doc.data();
+      html += `
+        <div class="solicitud-item">
+          <p><b>${sol.nombre} ${sol.apellido}</b> - ${sol.rut}</p>
+          <p><b>Comuna:</b> ${sol.comuna} <b>Tel:</b> ${sol.telefono}</p>
+          <textarea placeholder="Observación para derivar" id="obs-${doc.id}" class="obs-derivar"></textarea>
+          <button onclick="derivarSolicitud('${doc.id}', '${usuario.nombre}')">Derivar al médico</button>
+        </div>
+      `;
+    });
+    document.getElementById('tab-solicitudes').innerHTML = html || "<p>No hay solicitudes pendientes.</p>";
+  });
+}
+
+// Esta función debe ser global (window.)
+window.derivarSolicitud = function(idSolicitud, nombreProfesional) {
+  const obs = document.getElementById('obs-' + idSolicitud).value.trim();
+  if (!obs) { alert("Debes ingresar una observación."); return; }
+  db.collection("solicitudes").doc(idSolicitud).update({
+    derivacion: "medico",
+    observacion_derivacion: obs,
+    derivado_por: nombreProfesional
+  })
+  .then(() => {
+    alert("Solicitud derivada con observación.");
+    // Recargar solicitudes
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) {
+        db.collection("profesionales").doc(user.uid).get().then(doc => {
+          if (doc.exists) mostrarPanelProfesional({uid: user.uid, ...doc.data()});
+        });
+      }
+    });
+  });
+}
