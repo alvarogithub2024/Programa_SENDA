@@ -1,296 +1,284 @@
-// Inicializa Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
-  authDomain: "senda-6d5c9.firebaseapp.com",
-  projectId: "senda-6d5c9",
-  storageBucket: "senda-6d5c9.appspot.com",
-  messagingSenderId: "1090028669785",
-  appId: "1:1090028669785:web:d4e1c1b9945fc2fddc1a48",
-  measurementId: "G-82DCLW5R2W"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const auth = firebase.auth();
-
-const dominioPermitido = '@senda.cl';
-
-let profesionActual = "";
-let usuarioUid = "";
-
-// Abrir login profesional
-document.getElementById('abrir-modal-profesional').onclick = function() {
-  document.getElementById('modal-bg-login-profesional').style.display = 'flex';
-  document.getElementById('error-login-profesional').style.display = 'none';
-  document.getElementById('form-login-profesional').reset();
-  document.getElementById('grupo-profesion-profesional').style.display = 'block';
-};
-document.getElementById('cerrar-modal-login-profesional').onclick = function() {
-  document.getElementById('modal-bg-login-profesional').style.display = 'none';
-};
-document.getElementById('modal-bg-login-profesional').onclick = function(e) {
-  if(e.target === this) this.style.display = 'none';
-};
-
-// Login profesional con Firebase Auth
-document.getElementById('form-login-profesional').onsubmit = async function(e) {
-  e.preventDefault();
-  const correo = document.getElementById('correo-profesional').value.trim();
-  const clave = document.getElementById('clave-profesional').value;
-  const profesion = document.getElementById('profesion-profesional').value;
-  const errorDiv = document.getElementById('error-login-profesional');
-
-  if (!correo.endsWith(dominioPermitido)) {
-    errorDiv.style.display = 'block';
-    errorDiv.innerText = 'Solo se permite acceso con correo institucional (' + dominioPermitido + ')';
-    return;
-  }
-  auth.signInWithEmailAndPassword(correo, clave)
-    .then(async (userCredential) => {
-      usuarioUid = userCredential.user.uid;
-      // Consultar si ya tiene profesión guardada
-      const docProf = await db.collection("usuarios").doc(usuarioUid).get();
-      if(docProf.exists && docProf.data().profesion) {
-        profesionActual = docProf.data().profesion;
-        document.getElementById('grupo-profesion-profesional').style.display = 'none';
-      } else {
-        // Si no existe, pedir profesión sólo una vez
-        if (!profesion) {
-          errorDiv.style.display = 'block';
-          errorDiv.innerText = 'Seleccione su profesión.';
-          return;
-        }
-        profesionActual = profesion;
-        await db.collection("usuarios").doc(usuarioUid).set({ profesion: profesionActual });
-      }
-      errorDiv.style.display = 'none';
-      document.getElementById('modal-bg-login-profesional').style.display = 'none';
-      document.getElementById('panel-profesional-titulo').innerText =
-        profesionActual === "asistente_social" ? "Asistente Social" : "Médico";
-      document.getElementById('modal-bg-profesional-panel').style.display = 'flex';
-      cargarSolicitudesProfesional();
-    })
-    .catch((error) => {
-      errorDiv.style.display = 'block';
-      errorDiv.innerText = 'Error: ' + error.message;
-    });
-};
-
-// Registro profesional
-document.getElementById('registrar-profesional').onclick = async function() {
-  const correo = document.getElementById('correo-profesional').value.trim();
-  const clave = document.getElementById('clave-profesional').value;
-  const profesion = document.getElementById('profesion-profesional').value;
-  const errorDiv = document.getElementById('error-login-profesional');
-  if (!correo.endsWith(dominioPermitido)) {
-    errorDiv.style.display = 'block';
-    errorDiv.innerText = 'Solo se permite registro con correo institucional (' + dominioPermitido + ')';
-    return;
-  }
-  if (!profesion) {
-    errorDiv.style.display = 'block';
-    errorDiv.innerText = 'Seleccione su profesión.';
-    return;
-  }
-  auth.createUserWithEmailAndPassword(correo, clave)
-    .then(async (userCredential) => {
-      usuarioUid = userCredential.user.uid;
-      profesionActual = profesion;
-      await db.collection("usuarios").doc(usuarioUid).set({ profesion: profesionActual });
-      errorDiv.style.display = 'none';
-      alert('Registro exitoso, ahora puede ingresar.');
-    })
-    .catch((error) => {
-      errorDiv.style.display = 'block';
-      errorDiv.innerText = 'Error: ' + error.message;
-    });
-};
-
-// Logout profesional
-document.getElementById('logout-profesional').onclick = function() {
-  auth.signOut().then(() => {
-    document.getElementById('modal-bg-profesional-panel').style.display = 'none';
-    profesionActual = "";
-    usuarioUid = "";
-  });
-};
-document.getElementById('cerrar-modal-profesional-panel').onclick = function() {
-  document.getElementById('modal-bg-profesional-panel').style.display = 'none';
-};
-document.getElementById('modal-bg-profesional-panel').onclick = function(e) {
-  if(e.target === this) this.style.display = 'none';
-};
-
-// Modal solicitud paciente
-document.getElementById('abrir-modal').onclick = function() {
-  document.getElementById('modal-bg').style.display = 'flex';
-};
-document.getElementById('cerrar-modal').onclick = function() {
-  document.getElementById('modal-bg').style.display = 'none';
-};
-document.getElementById('modal-bg').onclick = function(e) {
-  if(e.target === this) this.style.display = 'none';
-};
-
-// Modal de éxito paciente
-function mostrarModalExito() {
-  document.getElementById('modal-bg-success').style.display = 'flex';
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #232526 0%, #414345 100%);
+  font-family: 'Segoe UI', Arial, sans-serif;
+  color: #222;
 }
-document.getElementById('cerrar-modal-success').onclick = function() {
-  document.getElementById('modal-bg-success').style.display = 'none';
-};
-document.getElementById('modal-bg-success').onclick = function(e) {
-  if(e.target === this) this.style.display = 'none';
-};
-
-// Guardar la solicitud en Firestore y mostrar modal de éxito
-document.getElementById('form-postulacion').onsubmit = function(e) {
-  e.preventDefault();
-  const datos = {
-    nombre: document.getElementById('nombre').value,
-    apellido: document.getElementById('apellido').value,
-    rut: document.getElementById('rut').value,
-    telefono: document.getElementById('telefono').value,
-    correo: document.getElementById('correo').value,
-    comuna: document.getElementById('comuna').value,
-    direccion: document.getElementById('direccion').value,
-    fecha: new Date().toLocaleString(),
-    derivacion: "pendiente"
-  };
-  db.collection("solicitudes").add(datos)
-    .then(() => {
-      document.getElementById('modal-bg').style.display = 'none';
-      document.getElementById('form-postulacion').reset();
-      mostrarModalExito();
-    })
-    .catch((error) => {
-      alert('Error al enviar la solicitud: ' + error.message);
-    });
-};
-
-// Mostrar solicitudes SOLO si está logueado
-function cargarSolicitudesProfesional() {
-  let lista = document.getElementById('solicitudes-list');
-  lista.innerHTML = '<p>Cargando solicitudes...</p>';
-  db.collection("solicitudes").orderBy("fecha", "desc").get()
-    .then((querySnapshot) => {
-      lista.innerHTML = '';
-      if (querySnapshot.empty) {
-        lista.innerHTML = '<p>No hay solicitudes recibidas aún.</p>';
-        return;
-      }
-      querySnapshot.forEach((doc) => {
-        const solicitud = doc.data();
-        const id = doc.id;
-        let derivarHTML = '';
-        if(profesionActual === "asistente_social" && solicitud.derivacion === "pendiente") {
-          derivarHTML = `
-            <label class="derivacion-label">Derivar a médico:</label>
-            <select class="derivar-select" id="derivar-${id}">
-              <option value="">Seleccione...</option>
-              <option value="medico">Médico</option>
-            </select>
-            <button class="boton-derivar" onclick="derivarSolicitud('${id}')">Derivar</button>
-          `;
-        } else if (solicitud.derivacion !== "pendiente") {
-          derivarHTML = `<span class="derivacion-label">Derivado a: <strong>${solicitud.derivacion.charAt(0).toUpperCase() + solicitud.derivacion.slice(1)}</strong></span>`;
-        }
-        lista.innerHTML += `
-          <div class="solicitud-item" id="item-${id}">
-            <strong>Nombre:</strong> ${solicitud.nombre} ${solicitud.apellido}<br>
-            <strong>RUT:</strong> ${solicitud.rut}<br>
-            <strong>Teléfono:</strong> ${solicitud.telefono}<br>
-            <strong>Correo:</strong> ${solicitud.correo}<br>
-            <strong>Comuna:</strong> ${solicitud.comuna}<br>
-            <strong>Dirección:</strong> ${solicitud.direccion}<br>
-            <strong>Fecha:</strong> ${solicitud.fecha}
-            ${derivarHTML}
-            <button class="boton-verficha" onclick="verFichaUsuario('${id}')">Ver ficha</button>
-          </div>`;
-      });
-    })
-    .catch((error) => {
-      lista.innerHTML = '<p>Error al cargar las solicitudes: ' + error.message + '</p>';
-    });
+.container {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(44, 62, 80, 0.15);
+  padding: 36px 32px;
+  max-width: 500px;
+  margin: 60px auto;
+  text-align: center;
 }
-
-// Derivar solicitud SOLO a médico
-window.derivarSolicitud = function(id) {
-  const select = document.getElementById('derivar-' + id);
-  const value = select.value;
-  if(!value) { alert('Seleccione a quién derivar la solicitud.'); return; }
-  db.collection("solicitudes").doc(id).update({ derivacion: value })
-    .then(() => {
-      alert('Solicitud derivada con éxito.');
-      cargarSolicitudesProfesional();
-    })
-    .catch((error) => {
-      alert('Error al derivar: ' + error.message);
-    });
-};
-
-// Ficha usuario: ver toda la info y notas
-let fichaUsuarioId = null;
-window.verFichaUsuario = function(id) {
-  fichaUsuarioId = id;
-  document.getElementById('modal-bg-ficha').style.display = 'flex';
-  mostrarFichaUsuario(id);
-};
-document.getElementById('cerrar-modal-ficha').onclick = function() {
-  document.getElementById('modal-bg-ficha').style.display = 'none';
-};
-document.getElementById('modal-bg-ficha').onclick = function(e) {
-  if(e.target === this) this.style.display = 'none';
-};
-
-function mostrarFichaUsuario(id) {
-  db.collection("solicitudes").doc(id).get()
-    .then((doc) => {
-      if (!doc.exists) return;
-      const u = doc.data();
-      let html = `
-        <div class="ficha-label">Nombre:</div> ${u.nombre} ${u.apellido}<br>
-        <div class="ficha-label">RUT:</div> ${u.rut}<br>
-        <div class="ficha-label">Teléfono:</div> ${u.telefono}<br>
-        <div class="ficha-label">Correo:</div> ${u.correo}<br>
-        <div class="ficha-label">Comuna:</div> ${u.comuna}<br>
-        <div class="ficha-label">Dirección:</div> ${u.direccion}<br>
-        <div class="ficha-label">Fecha de solicitud:</div> ${u.fecha}<br>
-        <div class="ficha-label">Derivación:</div> ${u.derivacion ? u.derivacion : "sin derivar"}
-      `;
-      document.getElementById('ficha-usuario-info').innerHTML = html;
-      cargarNotasFicha(id);
-    });
+h1, h2, h3 {
+  color: #2e8b57;
+  margin-bottom: 20px;
+  font-weight: 700;
+  letter-spacing: 1px;
 }
-
-// Guardar nota en la ficha
-document.getElementById('form-nota-ficha').onsubmit = function(e) {
-  e.preventDefault();
-  const texto = document.getElementById('nota-ficha').value.trim();
-  if(!texto) return;
-  db.collection("solicitudes").doc(fichaUsuarioId).collection("notas").add({
-    texto, fecha: new Date().toLocaleString()
-  }).then(() => {
-    document.getElementById('nota-ficha').value = '';
-    cargarNotasFicha(fichaUsuarioId);
-  });
-};
-
-// Mostrar notas de la ficha
-function cargarNotasFicha(id) {
-  let notasDiv = document.getElementById('ficha-usuario-notas');
-  db.collection("solicitudes").doc(id).collection("notas").orderBy("fecha").get()
-    .then((querySnapshot) => {
-      let html = '<div class="ficha-label" style="margin-bottom:8px;">Notas de atención:</div>';
-      if (querySnapshot.empty) {
-        html += '<div class="ficha-notas">No hay notas registradas aún.</div>';
-      } else {
-        html += '<div class="ficha-notas">';
-        querySnapshot.forEach((doc) => {
-          let nota = doc.data();
-          html += `<div class="ficha-nota-item"><strong>${nota.fecha}:</strong><br>${nota.texto}</div>`;
-        });
-        html += '</div>';
-      }
-      notasDiv.innerHTML = html;
-    });
+p {
+  color: #444;
+  font-size: 1.1rem;
+  margin-bottom: 18px;
+  line-height: 1.6;
+}
+button, .boton-inscribirme, .boton-profesional, .boton-ingresar, .boton-login, .boton-ver-solicitudes, .boton-logout, .boton-cerrar-success {
+  background: linear-gradient(90deg, #2e8b57 40%, #3b5998 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.13rem;
+  font-weight: 600;
+  padding: 14px 30px;
+  margin-top: 16px;
+  box-shadow: 0 4px 16px rgba(44,62,80,0.1);
+  transition: background 0.3s, transform 0.2s;
+  display: block;
+  width: 80%;
+  margin-left: auto;
+  margin-right: auto;
+}
+button.small, .boton-small {
+  padding: 8px 16px;
+  font-size: 1rem;
+  width: auto;
+  margin-top: 10px;
+  margin-bottom: 5px;
+  display: inline-block;
+}
+button:hover,
+.boton-inscribirme:hover,
+.boton-profesional:hover,
+.boton-ingresar:hover,
+.boton-login:hover,
+.boton-ver-solicitudes:hover,
+.boton-logout:hover,
+.boton-cerrar-success:hover {
+  background: linear-gradient(90deg, #226644 60%, #2e8b57 100%);
+  transform: scale(1.05);
+}
+.boton-profesional {
+  position: fixed;
+  top: 16px;
+  right: 18px;
+  width: auto;
+  margin: 0;
+  padding: 12px 26px;
+  z-index: 99;
+}
+.boton-logout {
+  background: linear-gradient(90deg, #e53935 60%, #2e8b57 100%);
+}
+.boton-logout:hover {
+  background: linear-gradient(90deg, #b71c1c 60%, #e53935 100%);
+}
+form { margin-top: 10px; }
+.form-group {
+  margin-bottom: 13px;
+  text-align: left;
+}
+.form-group label {
+  font-size: 1rem;
+  margin-bottom: 4px;
+  color: #333;
+  font-weight: 500;
+  display: block;
+}
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #bdbdbd;
+  font-size: 1rem;
+  background: #f9f9f9;
+  transition: border 0.2s;
+  resize: vertical;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  border: 1.5px solid #2e8b57;
+  outline: none;
+}
+.modal-bg {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(34, 34, 34, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  display: none;
+}
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(44,62,80,0.18);
+  padding: 30px 24px 24px 24px;
+  max-width: 650px;
+  width: 98vw;
+  text-align: left;
+  position: relative;
+  animation: fadeIn 0.4s;
+}
+@keyframes fadeIn {
+  from { transform: scale(0.85); opacity: 0;}
+  to { transform: scale(1); opacity: 1;}
+}
+.close-modal {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: #888;
+  cursor: pointer;
+  transition: color 0.2s;
+  font-weight: bold;
+  padding: 0;
+  line-height: 1;
+  width: 22px;
+  height: 22px;
+  text-align: center;
+}
+.close-modal:hover {
+  color: #2e8b57;
+  font-size: 1.2rem;
+}
+.solicitudes-list {
+  margin-top: 18px;
+  max-height: 510px;
+  overflow-y: auto;
+  border-top: 1px solid #eee;
+  padding-top: 10px;
+}
+.solicitud-item {
+  background: #f6f6f6;
+  margin-bottom: 10px;
+  padding: 16px;
+  border-radius: 8px;
+  font-size: 1.08rem;
+  box-shadow: 0 1px 4px rgba(44,62,80,0.08);
+  position: relative;
+}
+.solicitud-item strong {
+  color: #2e8b57;
+}
+.derivar-select {
+  margin-top: 8px;
+  margin-bottom: 6px;
+  width: 100%;
+  padding: 7px;
+  border-radius: 6px;
+  border: 1px solid #bdbdbd;
+  font-size: 1rem;
+  background: #fff;
+  color: #444;
+}
+.boton-derivar {
+  background: linear-gradient(90deg, #3b5998 40%, #2e8b57 100%);
+  color: #fff;
+  padding: 7px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 6px;
+  margin-bottom: 2px;
+  box-shadow: 0 2px 8px rgba(44,62,80,0.08);
+  transition: background 0.2s, transform 0.15s;
+  display: block;
+}
+.boton-derivar:hover {
+  background: linear-gradient(90deg,#226644 60%, #3b5998 100%);
+  transform: scale(1.04);
+}
+.derivacion-label {
+  font-size: 1.07rem;
+  color: #666;
+  margin-top: 5px;
+  margin-bottom: 2px;
+  display: block;
+}
+.boton-verficha {
+  background: linear-gradient(90deg, #2e8b57 60%, #3b5998 100%);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 7px;
+  padding: 7px 16px;
+  cursor: pointer;
+  width: auto;
+  margin-top: 7px;
+  margin-bottom: 2px;
+  transition: background 0.2s, transform 0.15s;
+  box-shadow: 0 2px 6px rgba(44,62,80,0.08);
+  display: inline-block;
+}
+.boton-verficha:hover {
+  background: linear-gradient(90deg, #226644 60%, #3b5998 100%);
+  transform: scale(1.07);
+}
+.error-msg {
+  color: #e53935;
+  font-size: 0.98rem;
+  text-align: center;
+  margin-top: 10px;
+  margin-bottom: 2px;
+  display: none;
+}
+@media (max-width: 600px) {
+  .container {
+    padding: 18px 8px;
+    max-width: 98vw;
+  }
+  h1 {
+    font-size: 1.3rem;
+  }
+  .modal {
+    padding: 12px 2px;
+    max-width: 99vw;
+  }
+  .solicitud-item {
+    padding: 7px;
+    font-size: 0.98rem;
+  }
+  .boton-profesional {
+    padding: 10px 12px;
+    font-size: 0.98rem;
+    top: 10px;
+    right: 8px;
+  }
+}
+/* Ficha usuario */
+.ficha-label {
+  font-weight: bold;
+  color: #2e8b57;
+  margin-top: 8px;
+}
+.ficha-notas {
+  background: #f7f7f7;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  padding: 12px;
+  margin-bottom: 8px;
+  font-size: 0.97rem;
+}
+.ficha-nota-item {
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+}
+.ficha-nota-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
 }
