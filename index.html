@@ -5,11 +5,10 @@
   <title>PROGRAMA SENDA</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="styles.css">
-  <!-- Solo si usas Firebase descomenta estos scripts:
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  -->
+  <!-- Solo si usas Firebase descomenta estos scripts: -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <button class="boton-profesional" id="abrir-modal-profesional">
@@ -126,26 +125,34 @@
       </form>
     </div>
   </div>
+
+  <!-- Modal Panel Profesional con pestañas -->
+  <div class="modal-bg" id="modal-bg-profesional-panel">
+    <div class="modal" id="panel-profesional">
+      <button class="close-modal" id="cerrar-modal-prof-panel" title="Cerrar">&times;</button>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="mis-datos">Mis datos</button>
+        <button class="tab-btn" data-tab="solicitudes">Solicitudes</button>
+        <button class="tab-btn" data-tab="buscar-ficha">Buscar ficha</button>
+      </div>
+      <div class="tab-content active" id="tab-mis-datos">
+        <!-- Info del profesional logueado aquí -->
+      </div>
+      <div class="tab-content" id="tab-solicitudes">
+        <!-- Solicitudes aquí si asistente_social -->
+      </div>
+      <div class="tab-content" id="tab-buscar-ficha">
+        <!-- Formulario para buscar ficha por RUT o nombre -->
+        <form id="form-buscar-ficha" style="margin-bottom:20px;">
+          <label for="buscar-rut">RUT o Nombre:</label>
+          <input type="text" id="buscar-rut" name="buscar-rut" placeholder="Ej: 12.345.678-9 o Nombre">
+          <button type="submit" class="boton-login" style="margin-top:8px;width:auto;">Buscar</button>
+        </form>
+        <div id="resultados-busqueda"></div>
+      </div>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>
-
-<div class="modal-bg" id="modal-bg-profesional-panel">
-  <div class="modal" id="panel-profesional">
-    <button class="close-modal" id="cerrar-modal-prof-panel" title="Cerrar">&times;</button>
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="mis-datos">Mis datos</button>
-      <button class="tab-btn" data-tab="solicitudes">Solicitudes</button>
-      <button class="tab-btn" data-tab="buscar-ficha">Buscar ficha</button>
-    </div>
-    <div class="tab-content active" id="tab-mis-datos">
-      <!-- Info del profesional logueado aquí -->
-    </div>
-    <div class="tab-content" id="tab-solicitudes">
-      <!-- Solicitudes aquí si asistente_social -->
-    </div>
-    <div class="tab-content" id="tab-buscar-ficha">
-      <!-- Formulario para buscar ficha por RUT o nombre -->
-    </div>
-  </div>
-</div>
