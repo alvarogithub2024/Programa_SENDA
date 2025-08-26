@@ -179,6 +179,10 @@
       }
     }
   </style>
+  <!-- Firebase App (core) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <!-- Firebase Firestore -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <div class="container" id="main-panel">
@@ -260,6 +264,19 @@
     </div>
   </div>
   <script>
+    // Inicializa Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
+      authDomain: "senda-6d5c9.firebaseapp.com",
+      projectId: "senda-6d5c9",
+      storageBucket: "senda-6d5c9.firebasestorage.app",
+      messagingSenderId: "1090028669785",
+      appId: "1:1090028669785:web:d4e1c1b9945fc2fddc1a48",
+      measurementId: "G-82DCLW5R2W"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
     // Abrir modal solicitud
     document.getElementById('abrir-modal').onclick = function() {
       document.getElementById('modal-bg').style.display = 'flex';
@@ -272,7 +289,7 @@
     document.getElementById('modal-bg').onclick = function(e) {
       if(e.target === this) this.style.display = 'none';
     };
-    // Manejo del formulario de solicitud
+    // Manejo del formulario de solicitud con Firestore
     document.getElementById('form-postulacion').onsubmit = function(e) {
       e.preventDefault();
       // Obtener datos
@@ -286,13 +303,16 @@
         direccion: document.getElementById('direccion').value,
         fecha: new Date().toLocaleString()
       };
-      // Guardar en localStorage
-      let solicitudes = JSON.parse(localStorage.getItem('solicitudes')) || [];
-      solicitudes.push(datos);
-      localStorage.setItem('solicitudes', JSON.stringify(solicitudes));
-      alert('¡Solicitud enviada!\nLa información será revisada por el Asistente Social.');
-      document.getElementById('modal-bg').style.display = 'none';
-      this.reset();
+      // Guardar en Firestore
+      db.collection("solicitudes").add(datos)
+        .then(() => {
+          alert('¡Solicitud enviada!\nLa información será revisada por el Asistente Social.');
+          document.getElementById('modal-bg').style.display = 'none';
+          document.getElementById('form-postulacion').reset();
+        })
+        .catch((error) => {
+          alert('Error al enviar la solicitud: ' + error.message);
+        });
     };
 
     // Abrir modal profesional
@@ -308,32 +328,39 @@
     document.getElementById('modal-bg-profesional').onclick = function(e) {
       if(e.target === this) this.style.display = 'none';
     };
-    // Manejo del formulario profesional
+    // Manejo del formulario profesional con Firestore
     document.getElementById('form-profesional').onsubmit = function(e) {
       e.preventDefault();
       const tipo = document.getElementById('tipo-profesional').value;
       if(!tipo) { alert("Seleccione su perfil profesional."); return; }
       document.getElementById('solicitudes-profesional').style.display = 'block';
-      // Mostrar solicitudes
-      let solicitudes = JSON.parse(localStorage.getItem('solicitudes')) || [];
+      // Mostrar solicitudes usando Firestore
       let lista = document.getElementById('solicitudes-list');
-      lista.innerHTML = '';
-      if(solicitudes.length === 0) {
-        lista.innerHTML = '<p>No hay solicitudes recibidas aún.</p>';
-        return;
-      }
-      solicitudes.forEach(function(solicitud, idx){
-        lista.innerHTML += `
-          <div class="solicitud-item">
-            <strong>Nombre:</strong> ${solicitud.nombre} ${solicitud.apellido}<br>
-            <strong>RUT:</strong> ${solicitud.rut}<br>
-            <strong>Teléfono:</strong> ${solicitud.telefono}<br>
-            <strong>Correo:</strong> ${solicitud.correo}<br>
-            <strong>Comuna:</strong> ${solicitud.comuna}<br>
-            <strong>Dirección:</strong> ${solicitud.direccion}<br>
-            <strong>Fecha:</strong> ${solicitud.fecha}
-          </div>`;
-      });
+      lista.innerHTML = '<p>Cargando solicitudes...</p>';
+      db.collection("solicitudes").orderBy("fecha", "desc").get()
+        .then((querySnapshot) => {
+          lista.innerHTML = '';
+          if (querySnapshot.empty) {
+            lista.innerHTML = '<p>No hay solicitudes recibidas aún.</p>';
+            return;
+          }
+          querySnapshot.forEach((doc) => {
+            const solicitud = doc.data();
+            lista.innerHTML += `
+              <div class="solicitud-item">
+                <strong>Nombre:</strong> ${solicitud.nombre} ${solicitud.apellido}<br>
+                <strong>RUT:</strong> ${solicitud.rut}<br>
+                <strong>Teléfono:</strong> ${solicitud.telefono}<br>
+                <strong>Correo:</strong> ${solicitud.correo}<br>
+                <strong>Comuna:</strong> ${solicitud.comuna}<br>
+                <strong>Dirección:</strong> ${solicitud.direccion}<br>
+                <strong>Fecha:</strong> ${solicitud.fecha}
+              </div>`;
+          });
+        })
+        .catch((error) => {
+          lista.innerHTML = '<p>Error al cargar las solicitudes: ' + error.message + '</p>';
+        });
     };
   </script>
 </body>
