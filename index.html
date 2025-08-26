@@ -127,8 +127,8 @@
       border-radius: 12px;
       box-shadow: 0 6px 20px rgba(44,62,80,0.18);
       padding: 30px 24px 24px 24px;
-      max-width: 400px;
-      width: 100%;
+      max-width: 650px;
+      width: 98vw;
       text-align: left;
       position: relative;
       animation: fadeIn 0.4s;
@@ -139,17 +139,20 @@
     }
     .close-modal {
       position: absolute;
-      right: 10px;
-      top: 10px;
+      right: 8px;
+      top: 8px;
       background: none;
       border: none;
-      font-size: 1.05rem;
+      font-size: 1.1rem;
       color: #888;
       cursor: pointer;
       transition: color 0.2s;
       font-weight: bold;
       padding: 0;
       line-height: 1;
+      width: 22px;
+      height: 22px;
+      text-align: center;
     }
     .close-modal:hover {
       color: #2e8b57;
@@ -157,7 +160,7 @@
     }
     .solicitudes-list {
       margin-top: 18px;
-      max-height: 350px;
+      max-height: 510px;
       overflow-y: auto;
       border-top: 1px solid #eee;
       padding-top: 10px;
@@ -165,9 +168,9 @@
     .solicitud-item {
       background: #f6f6f6;
       margin-bottom: 10px;
-      padding: 12px;
+      padding: 16px;
       border-radius: 8px;
-      font-size: 0.98rem;
+      font-size: 1.08rem;
       box-shadow: 0 1px 4px rgba(44,62,80,0.08);
       position: relative;
     }
@@ -205,7 +208,7 @@
       transform: scale(1.04);
     }
     .derivacion-label {
-      font-size: 0.97rem;
+      font-size: 1.07rem;
       color: #666;
       margin-top: 5px;
       margin-bottom: 2px;
@@ -248,8 +251,12 @@
         font-size: 1.3rem;
       }
       .modal {
-        padding: 16px 6px;
-        max-width: 98vw;
+        padding: 12px 2px;
+        max-width: 99vw;
+      }
+      .solicitud-item {
+        padding: 7px;
+        font-size: 0.98rem;
       }
       .boton-profesional {
         padding: 10px 12px;
@@ -285,9 +292,7 @@
   </style>
   <!-- Firebase App (core) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <!-- Firebase Auth -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <!-- Firebase Firestore -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
@@ -369,7 +374,7 @@
           <label for="clave-profesional">Contraseña:</label>
           <input type="password" id="clave-profesional" name="clave-profesional" required>
         </div>
-        <div class="form-group">
+        <div class="form-group" id="grupo-profesion-profesional">
           <label for="profesion-profesional">Profesión:</label>
           <select id="profesion-profesional" name="profesion-profesional" required>
             <option value="">Seleccione...</option>
@@ -399,7 +404,7 @@
 
   <!-- Modal Ficha Usuario -->
   <div class="modal-bg" id="modal-bg-ficha">
-    <div class="modal" style="max-width:500px;">
+    <div class="modal" style="max-width:650px;">
       <button class="close-modal" id="cerrar-modal-ficha" title="Cerrar">&times;</button>
       <h2>Ficha de usuario</h2>
       <div id="ficha-usuario-info"></div>
@@ -432,12 +437,14 @@
     const dominioPermitido = '@senda.cl';
 
     let profesionActual = "";
+    let usuarioUid = "";
 
     // Abrir login profesional
     document.getElementById('abrir-modal-profesional').onclick = function() {
       document.getElementById('modal-bg-login-profesional').style.display = 'flex';
       document.getElementById('error-login-profesional').style.display = 'none';
       document.getElementById('form-login-profesional').reset();
+      document.getElementById('grupo-profesion-profesional').style.display = 'block';
     };
     document.getElementById('cerrar-modal-login-profesional').onclick = function() {
       document.getElementById('modal-bg-login-profesional').style.display = 'none';
@@ -447,7 +454,7 @@
     };
 
     // Login profesional con Firebase Auth
-    document.getElementById('form-login-profesional').onsubmit = function(e) {
+    document.getElementById('form-login-profesional').onsubmit = async function(e) {
       e.preventDefault();
       const correo = document.getElementById('correo-profesional').value.trim();
       const clave = document.getElementById('clave-profesional').value;
@@ -459,14 +466,24 @@
         errorDiv.innerText = 'Solo se permite acceso con correo institucional (' + dominioPermitido + ')';
         return;
       }
-      if (!profesion) {
-        errorDiv.style.display = 'block';
-        errorDiv.innerText = 'Seleccione su profesión.';
-        return;
-      }
       auth.signInWithEmailAndPassword(correo, clave)
-        .then(() => {
-          profesionActual = profesion;
+        .then(async (userCredential) => {
+          usuarioUid = userCredential.user.uid;
+          // Consultar si ya tiene profesión guardada
+          const docProf = await db.collection("usuarios").doc(usuarioUid).get();
+          if(docProf.exists && docProf.data().profesion) {
+            profesionActual = docProf.data().profesion;
+            document.getElementById('grupo-profesion-profesional').style.display = 'none';
+          } else {
+            // Si no existe, pedir profesión sólo una vez
+            if (!profesion) {
+              errorDiv.style.display = 'block';
+              errorDiv.innerText = 'Seleccione su profesión.';
+              return;
+            }
+            profesionActual = profesion;
+            await db.collection("usuarios").doc(usuarioUid).set({ profesion: profesionActual });
+          }
           errorDiv.style.display = 'none';
           document.getElementById('modal-bg-login-profesional').style.display = 'none';
           document.getElementById('panel-profesional-titulo').innerText =
@@ -481,7 +498,7 @@
     };
 
     // Registro profesional
-    document.getElementById('registrar-profesional').onclick = function() {
+    document.getElementById('registrar-profesional').onclick = async function() {
       const correo = document.getElementById('correo-profesional').value.trim();
       const clave = document.getElementById('clave-profesional').value;
       const profesion = document.getElementById('profesion-profesional').value;
@@ -497,7 +514,10 @@
         return;
       }
       auth.createUserWithEmailAndPassword(correo, clave)
-        .then(() => {
+        .then(async (userCredential) => {
+          usuarioUid = userCredential.user.uid;
+          profesionActual = profesion;
+          await db.collection("usuarios").doc(usuarioUid).set({ profesion: profesionActual });
           errorDiv.style.display = 'none';
           alert('Registro exitoso, ahora puede ingresar.');
         })
@@ -511,6 +531,8 @@
     document.getElementById('logout-profesional').onclick = function() {
       auth.signOut().then(() => {
         document.getElementById('modal-bg-profesional-panel').style.display = 'none';
+        profesionActual = "";
+        usuarioUid = "";
       });
     };
     document.getElementById('cerrar-modal-profesional-panel').onclick = function() {
@@ -667,7 +689,6 @@
       e.preventDefault();
       const texto = document.getElementById('nota-ficha').value.trim();
       if(!texto) return;
-      // Las notas se guardan en subcolección 'notas'
       db.collection("solicitudes").doc(fichaUsuarioId).collection("notas").add({
         texto, fecha: new Date().toLocaleString()
       }).then(() => {
@@ -696,7 +717,5 @@
         });
     }
   </script>
-</body>
-</html>
 </body>
 </html>
