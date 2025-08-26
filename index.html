@@ -57,7 +57,6 @@
       background: linear-gradient(90deg, #226644 60%, #2e8b57 100%);
       transform: scale(1.05);
     }
-    /* Modal styles */
     .modal-bg {
       position: fixed;
       top: 0; left: 0;
@@ -162,9 +161,47 @@
       border-radius: 8px;
       font-size: 0.98rem;
       box-shadow: 0 1px 4px rgba(44,62,80,0.08);
+      position: relative;
     }
     .solicitud-item strong {
       color: #2e8b57;
+    }
+    .derivar-select {
+      margin-top: 8px;
+      margin-bottom: 6px;
+      width: 100%;
+      padding: 7px;
+      border-radius: 6px;
+      border: 1px solid #bdbdbd;
+      font-size: 1rem;
+      background: #fff;
+      color: #444;
+    }
+    .boton-derivar {
+      background: linear-gradient(90deg, #3b5998 40%, #2e8b57 100%);
+      color: #fff;
+      padding: 7px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      margin-top: 6px;
+      margin-bottom: 2px;
+      box-shadow: 0 2px 8px rgba(44,62,80,0.08);
+      transition: background 0.2s, transform 0.15s;
+      display: block;
+    }
+    .boton-derivar:hover {
+      background: linear-gradient(90deg,#226644 60%, #3b5998 100%);
+      transform: scale(1.04);
+    }
+    .derivacion-label {
+      font-size: 0.97rem;
+      color: #666;
+      margin-top: 5px;
+      margin-bottom: 2px;
+      display: block;
     }
     @media (max-width: 600px) {
       .container {
@@ -269,7 +306,7 @@
       apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
       authDomain: "senda-6d5c9.firebaseapp.com",
       projectId: "senda-6d5c9",
-      storageBucket: "senda-6d5c9.firebasestorage.app",
+      storageBucket: "senda-6d5c9.appspot.com",
       messagingSenderId: "1090028669785",
       appId: "1:1090028669785:web:d4e1c1b9945fc2fddc1a48",
       measurementId: "G-82DCLW5R2W"
@@ -281,18 +318,16 @@
     document.getElementById('abrir-modal').onclick = function() {
       document.getElementById('modal-bg').style.display = 'flex';
     };
-    // Cerrar modal solicitud
     document.getElementById('cerrar-modal').onclick = function() {
       document.getElementById('modal-bg').style.display = 'none';
     };
-    // Cerrar modal al hacer click fuera del formulario
     document.getElementById('modal-bg').onclick = function(e) {
       if(e.target === this) this.style.display = 'none';
     };
-    // Manejo del formulario de solicitud con Firestore
+
+    // Guardar la solicitud en Firestore, con 'derivacion' pendiente
     document.getElementById('form-postulacion').onsubmit = function(e) {
       e.preventDefault();
-      // Obtener datos
       const datos = {
         nombre: document.getElementById('nombre').value,
         apellido: document.getElementById('apellido').value,
@@ -301,9 +336,9 @@
         correo: document.getElementById('correo').value,
         comuna: document.getElementById('comuna').value,
         direccion: document.getElementById('direccion').value,
-        fecha: new Date().toLocaleString()
+        fecha: new Date().toLocaleString(),
+        derivacion: "pendiente" // por defecto
       };
-      // Guardar en Firestore
       db.collection("solicitudes").add(datos)
         .then(() => {
           alert('¡Solicitud enviada!\nLa información será revisada por el Asistente Social.');
@@ -320,21 +355,20 @@
       document.getElementById('modal-bg-profesional').style.display = 'flex';
       document.getElementById('solicitudes-profesional').style.display = 'none';
     };
-    // Cerrar modal profesional
     document.getElementById('cerrar-modal-profesional').onclick = function() {
       document.getElementById('modal-bg-profesional').style.display = 'none';
     };
-    // Cerrar modal profesional al hacer click fuera
     document.getElementById('modal-bg-profesional').onclick = function(e) {
       if(e.target === this) this.style.display = 'none';
     };
-    // Manejo del formulario profesional con Firestore
+
+    // Manejo del formulario profesional con derivación
     document.getElementById('form-profesional').onsubmit = function(e) {
       e.preventDefault();
       const tipo = document.getElementById('tipo-profesional').value;
       if(!tipo) { alert("Seleccione su perfil profesional."); return; }
       document.getElementById('solicitudes-profesional').style.display = 'block';
-      // Mostrar solicitudes usando Firestore
+
       let lista = document.getElementById('solicitudes-list');
       lista.innerHTML = '<p>Cargando solicitudes...</p>';
       db.collection("solicitudes").orderBy("fecha", "desc").get()
@@ -346,8 +380,23 @@
           }
           querySnapshot.forEach((doc) => {
             const solicitud = doc.data();
+            const id = doc.id;
+            let derivarHTML = '';
+            if(tipo === "asistente_social" && solicitud.derivacion === "pendiente") {
+              derivarHTML = `
+                <label class="derivacion-label">Derivar a:</label>
+                <select class="derivar-select" id="derivar-${id}">
+                  <option value="">Seleccione...</option>
+                  <option value="psicologo">Psicólogo</option>
+                  <option value="medico">Médico</option>
+                </select>
+                <button class="boton-derivar" onclick="derivarSolicitud('${id}')">Derivar</button>
+              `;
+            } else if (solicitud.derivacion !== "pendiente") {
+              derivarHTML = `<span class="derivacion-label">Derivado a: <strong>${solicitud.derivacion.charAt(0).toUpperCase() + solicitud.derivacion.slice(1)}</strong></span>`;
+            }
             lista.innerHTML += `
-              <div class="solicitud-item">
+              <div class="solicitud-item" id="item-${id}">
                 <strong>Nombre:</strong> ${solicitud.nombre} ${solicitud.apellido}<br>
                 <strong>RUT:</strong> ${solicitud.rut}<br>
                 <strong>Teléfono:</strong> ${solicitud.telefono}<br>
@@ -355,11 +404,27 @@
                 <strong>Comuna:</strong> ${solicitud.comuna}<br>
                 <strong>Dirección:</strong> ${solicitud.direccion}<br>
                 <strong>Fecha:</strong> ${solicitud.fecha}
+                ${derivarHTML}
               </div>`;
           });
         })
         .catch((error) => {
           lista.innerHTML = '<p>Error al cargar las solicitudes: ' + error.message + '</p>';
+        });
+    };
+
+    // Derivación de solicitudes por Asistente Social
+    window.derivarSolicitud = function(id) {
+      const select = document.getElementById('derivar-' + id);
+      const value = select.value;
+      if(!value) { alert('Seleccione a quién derivar la solicitud.'); return; }
+      db.collection("solicitudes").doc(id).update({ derivacion: value })
+        .then(() => {
+          alert('Solicitud derivada con éxito.');
+          document.getElementById('form-profesional').onsubmit(); // refresca la lista
+        })
+        .catch((error) => {
+          alert('Error al derivar: ' + error.message);
         });
     };
   </script>
