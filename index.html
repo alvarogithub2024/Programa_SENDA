@@ -5,7 +5,6 @@
   <title>PROGRAMA SENDA</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    /* Reset básico */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       min-height: 100vh;
@@ -51,6 +50,14 @@
       margin-left: auto;
       margin-right: auto;
     }
+    button.small, .boton-small {
+      padding: 8px 16px;
+      font-size: 1rem;
+      width: auto;
+      margin-top: 10px;
+      margin-bottom: 5px;
+      display: inline-block;
+    }
     button:hover,
     .boton-inscribirme:hover,
     .boton-profesional:hover,
@@ -89,7 +96,7 @@
       font-weight: 500;
       display: block;
     }
-    .form-group input, .form-group select {
+    .form-group input, .form-group select, .form-group textarea {
       width: 100%;
       padding: 8px 10px;
       border-radius: 6px;
@@ -97,8 +104,9 @@
       font-size: 1rem;
       background: #f9f9f9;
       transition: border 0.2s;
+      resize: vertical;
     }
-    .form-group input:focus, .form-group select:focus {
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
       border: 1.5px solid #2e8b57;
       outline: none;
     }
@@ -131,17 +139,21 @@
     }
     .close-modal {
       position: absolute;
-      right: 14px;
-      top: 14px;
+      right: 10px;
+      top: 10px;
       background: none;
       border: none;
-      font-size: 1.5rem;
+      font-size: 1.05rem;
       color: #888;
       cursor: pointer;
       transition: color 0.2s;
+      font-weight: bold;
+      padding: 0;
+      line-height: 1;
     }
     .close-modal:hover {
       color: #2e8b57;
+      font-size: 1.2rem;
     }
     .solicitudes-list {
       margin-top: 18px;
@@ -199,6 +211,26 @@
       margin-bottom: 2px;
       display: block;
     }
+    .boton-verficha {
+      background: linear-gradient(90deg, #2e8b57 60%, #3b5998 100%);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 7px;
+      padding: 7px 16px;
+      cursor: pointer;
+      width: auto;
+      margin-top: 7px;
+      margin-bottom: 2px;
+      transition: background 0.2s, transform 0.15s;
+      box-shadow: 0 2px 6px rgba(44,62,80,0.08);
+      display: inline-block;
+    }
+    .boton-verficha:hover {
+      background: linear-gradient(90deg, #226644 60%, #3b5998 100%);
+      transform: scale(1.07);
+    }
     .error-msg {
       color: #e53935;
       font-size: 0.98rem;
@@ -226,6 +258,30 @@
         right: 8px;
       }
     }
+    /* Ficha usuario */
+    .ficha-label {
+      font-weight: bold;
+      color: #2e8b57;
+      margin-top: 8px;
+    }
+    .ficha-notas {
+      background: #f7f7f7;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+      padding: 12px;
+      margin-bottom: 8px;
+      font-size: 0.97rem;
+    }
+    .ficha-nota-item {
+      border-bottom: 1px solid #e0e0e0;
+      margin-bottom: 6px;
+      padding-bottom: 6px;
+    }
+    .ficha-nota-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
   </style>
   <!-- Firebase App (core) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -235,12 +291,9 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
-  <!-- Botón profesional arriba a la derecha -->
   <button class="boton-profesional" id="abrir-modal-profesional">
     Ingresar como profesional
   </button>
-
-  <!-- Panel principal -->
   <div class="container" id="main-panel">
     <h1>Programa SENDA</h1>
     <p>
@@ -316,6 +369,14 @@
           <label for="clave-profesional">Contraseña:</label>
           <input type="password" id="clave-profesional" name="clave-profesional" required>
         </div>
+        <div class="form-group">
+          <label for="profesion-profesional">Profesión:</label>
+          <select id="profesion-profesional" name="profesion-profesional" required>
+            <option value="">Seleccione...</option>
+            <option value="asistente_social">Asistente social</option>
+            <option value="medico">Médico</option>
+          </select>
+        </div>
         <div id="error-login-profesional" class="error-msg"></div>
         <button type="submit" class="boton-login">Ingresar</button>
         <button type="button" class="boton-login" id="registrar-profesional">Registrarse</button>
@@ -327,12 +388,29 @@
   <div class="modal-bg" id="modal-bg-profesional-panel">
     <div class="modal">
       <button class="close-modal" id="cerrar-modal-profesional-panel" title="Cerrar">&times;</button>
-      <h2>Panel profesional</h2>
+      <h2 id="panel-profesional-titulo"></h2>
       <button class="boton-logout" id="logout-profesional">Cerrar sesión</button>
       <div id="solicitudes-profesional" style="margin-top:14px;">
         <h3 style="text-align:center;color:#2e8b57;">Solicitudes recibidas</h3>
         <div class="solicitudes-list" id="solicitudes-list"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal Ficha Usuario -->
+  <div class="modal-bg" id="modal-bg-ficha">
+    <div class="modal" style="max-width:500px;">
+      <button class="close-modal" id="cerrar-modal-ficha" title="Cerrar">&times;</button>
+      <h2>Ficha de usuario</h2>
+      <div id="ficha-usuario-info"></div>
+      <div id="ficha-usuario-notas"></div>
+      <form id="form-nota-ficha">
+        <div class="form-group">
+          <label for="nota-ficha">Agregar nota de atención:</label>
+          <textarea id="nota-ficha" name="nota-ficha" rows="2" required></textarea>
+        </div>
+        <button type="submit" class="boton-ingresar boton-small">Guardar nota</button>
+      </form>
     </div>
   </div>
 
@@ -353,6 +431,8 @@
 
     const dominioPermitido = '@senda.cl';
 
+    let profesionActual = "";
+
     // Abrir login profesional
     document.getElementById('abrir-modal-profesional').onclick = function() {
       document.getElementById('modal-bg-login-profesional').style.display = 'flex';
@@ -371,6 +451,7 @@
       e.preventDefault();
       const correo = document.getElementById('correo-profesional').value.trim();
       const clave = document.getElementById('clave-profesional').value;
+      const profesion = document.getElementById('profesion-profesional').value;
       const errorDiv = document.getElementById('error-login-profesional');
 
       if (!correo.endsWith(dominioPermitido)) {
@@ -378,10 +459,18 @@
         errorDiv.innerText = 'Solo se permite acceso con correo institucional (' + dominioPermitido + ')';
         return;
       }
+      if (!profesion) {
+        errorDiv.style.display = 'block';
+        errorDiv.innerText = 'Seleccione su profesión.';
+        return;
+      }
       auth.signInWithEmailAndPassword(correo, clave)
         .then(() => {
+          profesionActual = profesion;
           errorDiv.style.display = 'none';
           document.getElementById('modal-bg-login-profesional').style.display = 'none';
+          document.getElementById('panel-profesional-titulo').innerText =
+            profesionActual === "asistente_social" ? "Asistente Social" : "Médico";
           document.getElementById('modal-bg-profesional-panel').style.display = 'flex';
           cargarSolicitudesProfesional();
         })
@@ -395,10 +484,16 @@
     document.getElementById('registrar-profesional').onclick = function() {
       const correo = document.getElementById('correo-profesional').value.trim();
       const clave = document.getElementById('clave-profesional').value;
+      const profesion = document.getElementById('profesion-profesional').value;
       const errorDiv = document.getElementById('error-login-profesional');
       if (!correo.endsWith(dominioPermitido)) {
         errorDiv.style.display = 'block';
         errorDiv.innerText = 'Solo se permite registro con correo institucional (' + dominioPermitido + ')';
+        return;
+      }
+      if (!profesion) {
+        errorDiv.style.display = 'block';
+        errorDiv.innerText = 'Seleccione su profesión.';
         return;
       }
       auth.createUserWithEmailAndPassword(correo, clave)
@@ -472,7 +567,7 @@
         });
     };
 
-    // Mostrar solicitudes solo si está logueado
+    // Mostrar solicitudes SOLO si está logueado
     function cargarSolicitudesProfesional() {
       let lista = document.getElementById('solicitudes-list');
       lista.innerHTML = '<p>Cargando solicitudes...</p>';
@@ -487,12 +582,11 @@
             const solicitud = doc.data();
             const id = doc.id;
             let derivarHTML = '';
-            if(solicitud.derivacion === "pendiente") {
+            if(profesionActual === "asistente_social" && solicitud.derivacion === "pendiente") {
               derivarHTML = `
-                <label class="derivacion-label">Derivar a:</label>
+                <label class="derivacion-label">Derivar a médico:</label>
                 <select class="derivar-select" id="derivar-${id}">
                   <option value="">Seleccione...</option>
-                  <option value="psicologo">Psicólogo</option>
                   <option value="medico">Médico</option>
                 </select>
                 <button class="boton-derivar" onclick="derivarSolicitud('${id}')">Derivar</button>
@@ -510,6 +604,7 @@
                 <strong>Dirección:</strong> ${solicitud.direccion}<br>
                 <strong>Fecha:</strong> ${solicitud.fecha}
                 ${derivarHTML}
+                <button class="boton-verficha" onclick="verFichaUsuario('${id}')">Ver ficha</button>
               </div>`;
           });
         })
@@ -518,7 +613,7 @@
         });
     }
 
-    // Derivar solicitud
+    // Derivar solicitud SOLO a médico
     window.derivarSolicitud = function(id) {
       const select = document.getElementById('derivar-' + id);
       const value = select.value;
@@ -532,6 +627,74 @@
           alert('Error al derivar: ' + error.message);
         });
     };
+
+    // Ficha usuario: ver toda la info y notas
+    let fichaUsuarioId = null;
+    window.verFichaUsuario = function(id) {
+      fichaUsuarioId = id;
+      document.getElementById('modal-bg-ficha').style.display = 'flex';
+      mostrarFichaUsuario(id);
+    };
+    document.getElementById('cerrar-modal-ficha').onclick = function() {
+      document.getElementById('modal-bg-ficha').style.display = 'none';
+    };
+    document.getElementById('modal-bg-ficha').onclick = function(e) {
+      if(e.target === this) this.style.display = 'none';
+    };
+
+    function mostrarFichaUsuario(id) {
+      db.collection("solicitudes").doc(id).get()
+        .then((doc) => {
+          if (!doc.exists) return;
+          const u = doc.data();
+          let html = `
+            <div class="ficha-label">Nombre:</div> ${u.nombre} ${u.apellido}<br>
+            <div class="ficha-label">RUT:</div> ${u.rut}<br>
+            <div class="ficha-label">Teléfono:</div> ${u.telefono}<br>
+            <div class="ficha-label">Correo:</div> ${u.correo}<br>
+            <div class="ficha-label">Comuna:</div> ${u.comuna}<br>
+            <div class="ficha-label">Dirección:</div> ${u.direccion}<br>
+            <div class="ficha-label">Fecha de solicitud:</div> ${u.fecha}<br>
+            <div class="ficha-label">Derivación:</div> ${u.derivacion ? u.derivacion : "sin derivar"}
+          `;
+          document.getElementById('ficha-usuario-info').innerHTML = html;
+          cargarNotasFicha(id);
+        });
+    }
+
+    // Guardar nota en la ficha
+    document.getElementById('form-nota-ficha').onsubmit = function(e) {
+      e.preventDefault();
+      const texto = document.getElementById('nota-ficha').value.trim();
+      if(!texto) return;
+      // Las notas se guardan en subcolección 'notas'
+      db.collection("solicitudes").doc(fichaUsuarioId).collection("notas").add({
+        texto, fecha: new Date().toLocaleString()
+      }).then(() => {
+        document.getElementById('nota-ficha').value = '';
+        cargarNotasFicha(fichaUsuarioId);
+      });
+    };
+
+    // Mostrar notas de la ficha
+    function cargarNotasFicha(id) {
+      let notasDiv = document.getElementById('ficha-usuario-notas');
+      db.collection("solicitudes").doc(id).collection("notas").orderBy("fecha").get()
+        .then((querySnapshot) => {
+          let html = '<div class="ficha-label" style="margin-bottom:8px;">Notas de atención:</div>';
+          if (querySnapshot.empty) {
+            html += '<div class="ficha-notas">No hay notas registradas aún.</div>';
+          } else {
+            html += '<div class="ficha-notas">';
+            querySnapshot.forEach((doc) => {
+              let nota = doc.data();
+              html += `<div class="ficha-nota-item"><strong>${nota.fecha}:</strong><br>${nota.texto}</div>`;
+            });
+            html += '</div>';
+          }
+          notasDiv.innerHTML = html;
+        });
+    }
   </script>
 </body>
 </html>
