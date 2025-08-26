@@ -1,0 +1,60 @@
+body {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #8fd3f4 0%, #2e8b57 100%);
+  font-family: 'Segoe UI', Arial, sans-serif;
+  color: #222;
+}
+.container {
+  background: linear-gradient(120deg, #fff 70%, #e0f7fa 100%);
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(44, 62, 80, 0.18);
+  padding: 38px 34px;
+  max-width: 540px;
+  margin: 60px auto;
+  text-align: center;
+}
+h1, h2, h3 {
+  color: #2980b9;
+  margin-bottom: 22px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-shadow: 0 2px 8px #c8e6c9;
+}
+p {
+  color: #333;
+  font-size: 1.14rem;
+  margin-bottom: 20px;
+  line-height: 1.7;
+}
+button,
+.boton-inscribirme, .boton-profesional, .boton-ingresar, .boton-login,
+.boton-ver-solicitudes, .boton-logout, .boton-cerrar-success {
+  background: linear-gradient(90deg, #2e8b57 40%, #6a82fb 100%);
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 1.15rem;
+  font-weight: 700;
+  padding: 15px 32px;
+  margin-top: 18px;
+  box-shadow: 0 4px 16px rgba(44,62,80,0.13);
+  transition: background 0.3s, transform 0.2s;
+  display: block;
+  width: 80%;
+  margin-left: auto;
+  margin-right: auto;
+}
+button:hover,
+.boton-inscribirme:hover,
+.boton-profesional:hover,
+.boton-ingresar:hover,
+.boton-login:hover,
+.boton-ver-solicitudes:hover,
+.boton-logout:hover,
+.boton-cerrar-success:hover {
+  background: linear-gradient(90deg, #43cea2 60%, #6a82fb 100%);
+  transform: scale(1.06);
+}
+/* ... Mantén el resto de tu CSS, pero cambia los colores de fondo, borde y hover 
+   en modales, tarjetas, inputs y sombras a colores más claros y agradables. */
