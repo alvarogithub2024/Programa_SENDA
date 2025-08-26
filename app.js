@@ -165,8 +165,16 @@ window.onload = function() {
     // Solicitudes (solo asistente social)
     if (usuario.profesion === "asistente_social") {
       cargarSolicitudesAsistente(usuario);
+      document.getElementById("btn-derivaciones").style.display = "none";
     } else {
       document.getElementById('tab-solicitudes').innerHTML = "<p>Solo los asistentes sociales pueden ver solicitudes para derivar.</p>";
+      // Si es médico, mostrar pestaña de derivaciones
+      if (usuario.profesion === "medico") {
+        document.getElementById("btn-derivaciones").style.display = "inline-block";
+        cargarDerivacionesMedico(usuario);
+      } else {
+        document.getElementById("btn-derivaciones").style.display = "none";
+      }
     }
     // Buscar ficha
     document.getElementById('form-buscar-ficha').onsubmit = function(e) {
@@ -216,6 +224,53 @@ window.onload = function() {
     });
   };
 
+  // --- CARGAR DERIVACIONES (solo médico) ---
+  window.cargarDerivacionesMedico = function(usuario) {
+    const tabDiv = document.getElementById('tab-derivaciones');
+    tabDiv.innerHTML = "Cargando derivaciones...";
+    db.collection("solicitudes").where("derivacion", "==", "medico").get().then(snap => {
+      let html = "";
+      snap.forEach(doc => {
+        const sol = doc.data();
+        html += `
+          <div class="derivacion-item" style="margin-bottom:18px;padding-bottom:8px;border-bottom:1px solid #eee;">
+            <b>${sol.nombre} ${sol.apellido}</b> - ${sol.rut}<br>
+            <b>Comuna:</b> ${sol.comuna}<br>
+            <b>Observación de derivación:</b> ${sol.observacion_derivacion || ''}<br>
+            <b>Derivado por:</b> ${sol.derivado_por || ''}<br>
+            <textarea placeholder="Información de la atención" id="atencion-${doc.id}" style="width:100%;margin:7px 0;"></textarea>
+            <button onclick="registrarAtencion('${doc.id}', '${usuario.nombre}')">Registrar atención</button>
+            <div id="info-atencion-${doc.id}">
+              ${sol.atencion_medica ? `<b>Atendido por:</b> ${sol.atendido_por}<br><b>Información:</b> ${sol.atencion_medica}` : ''}
+            </div>
+          </div>
+        `;
+      });
+      tabDiv.innerHTML = html || "<p>No hay derivaciones pendientes.</p>";
+    });
+  };
+
+  // --- REGISTRAR ATENCIÓN (médico) ---
+  window.registrarAtencion = function(idSolicitud, nombreProfesional) {
+    const info = document.getElementById('atencion-' + idSolicitud).value.trim();
+    if (!info) { alert("Debes ingresar la información de la atención."); return; }
+    db.collection("solicitudes").doc(idSolicitud).update({
+      atencion_medica: info,
+      atendido_por: nombreProfesional,
+      atencion_fecha: new Date().toLocaleString()
+    })
+    .then(() => {
+      alert("Atención registrada.");
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          db.collection("profesionales").doc(user.uid).get().then(doc => {
+            if (doc.exists) mostrarPanelProfesional({uid: user.uid, ...doc.data()});
+          });
+        }
+      });
+    });
+  };
+
   // --- BUSCAR FICHA (por rut exacto, puedes mejorar búsqueda si quieres) ---
   window.buscarFichaPaciente = function(query) {
     const resultadosDiv = document.getElementById('resultados-busqueda');
@@ -235,6 +290,7 @@ window.onload = function() {
             <b>Dirección:</b> ${sol.direccion}<br>
             <b>Teléfono:</b> ${sol.telefono}<br>
             <b>Correo:</b> ${sol.correo}<br>
+            ${sol.atencion_medica ? `<b>Última atención médica:</b> ${sol.atencion_medica} <br><b>Por:</b> ${sol.atendido_por || ''}<br>` : ""}
           </div>`;
         });
         resultadosDiv.innerHTML = html || "<p>No se encontró ficha.</p>";
