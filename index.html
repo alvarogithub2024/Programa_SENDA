@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <title>PROGRAMA SENDA</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Enlaza tu CSS -->
   <link rel="stylesheet" href="styles.css">
-  <!-- Scripts de Firebase deben ir antes de tu JS principal -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -75,71 +73,68 @@
       <button class="boton-cerrar-success" id="cerrar-modal-success">Cerrar</button>
     </div>
   </div>
-<!-- ... (resto de tu HTML arriba igual) ... -->
 
-<!-- Modal Profesional: solo botones -->
-<div class="modal-bg" id="modal-bg-login-profesional">
-  <div class="modal">
-    <button class="close-modal" id="cerrar-modal-login-profesional" title="Cerrar">&times;</button>
-    <h2>Acceso profesional</h2>
-    <button class="boton-login" id="abrir-form-ingresar">Ingresar</button>
-    <button class="boton-login" id="abrir-form-registrar">Registrarse</button>
+  <!-- Modal Profesional: solo botones -->
+  <div class="modal-bg" id="modal-bg-login-profesional">
+    <div class="modal">
+      <button class="close-modal" id="cerrar-modal-login-profesional" title="Cerrar">&times;</button>
+      <h2>Acceso profesional</h2>
+      <button class="boton-login" id="abrir-form-ingresar">Ingresar</button>
+      <button class="boton-login" id="abrir-form-registrar">Registrarse</button>
+    </div>
   </div>
-</div>
 
-<!-- Modal Ingresar -->
-<div class="modal-bg" id="modal-bg-ingresar">
-  <div class="modal">
-    <button class="close-modal" id="cerrar-modal-ingresar" title="Cerrar">&times;</button>
-    <h2>Ingresar</h2>
-    <form id="form-login-profesional">
-      <div class="form-group">
-        <label for="correo-login">Correo institucional:</label>
-        <input type="email" id="correo-login" name="correo-login" required>
-      </div>
-      <div class="form-group">
-        <label for="clave-login">Contraseña:</label>
-        <input type="password" id="clave-login" name="clave-login" required>
-      </div>
-      <div id="error-login-profesional" class="error-msg"></div>
-      <button type="submit" class="boton-login">Ingresar</button>
-    </form>
+  <!-- Modal Ingresar -->
+  <div class="modal-bg" id="modal-bg-ingresar">
+    <div class="modal">
+      <button class="close-modal" id="cerrar-modal-ingresar" title="Cerrar">&times;</button>
+      <h2>Ingresar</h2>
+      <form id="form-login-profesional">
+        <div class="form-group">
+          <label for="correo-login">Correo institucional:</label>
+          <input type="email" id="correo-login" name="correo-login" required>
+        </div>
+        <div class="form-group">
+          <label for="clave-login">Contraseña:</label>
+          <input type="password" id="clave-login" name="clave-login" required>
+        </div>
+        <div id="error-login-profesional" class="error-msg"></div>
+        <button type="submit" class="boton-login">Ingresar</button>
+      </form>
+    </div>
   </div>
-</div>
 
-<!-- Modal Registrar -->
-<div class="modal-bg" id="modal-bg-registrar">
-  <div class="modal">
-    <button class="close-modal" id="cerrar-modal-registrar" title="Cerrar">&times;</button>
-    <h2>Registrarse</h2>
-    <form id="form-registrar-profesional">
-      <div class="form-group">
-        <label for="nombre-completo">Nombre completo:</label>
-        <input type="text" id="nombre-completo" name="nombre-completo" required>
-      </div>
-      <div class="form-group">
-        <label for="correo-registrar">Correo institucional:</label>
-        <input type="email" id="correo-registrar" name="correo-registrar" required>
-      </div>
-      <div class="form-group">
-        <label for="clave-registrar">Contraseña:</label>
-        <input type="password" id="clave-registrar" name="clave-registrar" required>
-      </div>
-      <div class="form-group">
-        <label for="profesion-registrar">Profesión:</label>
-        <select id="profesion-registrar" name="profesion-registrar" required>
-          <option value="">Seleccione...</option>
-          <option value="asistente_social">Asistente social</option>
-          <option value="medico">Médico</option>
-        </select>
-      </div>
-      <div id="error-registrar-profesional" class="error-msg"></div>
-      <button type="submit" class="boton-login">Registrarse</button>
-    </form>
+  <!-- Modal Registrar -->
+  <div class="modal-bg" id="modal-bg-registrar">
+    <div class="modal">
+      <button class="close-modal" id="cerrar-modal-registrar" title="Cerrar">&times;</button>
+      <h2>Registrarse</h2>
+      <form id="form-registrar-profesional">
+        <div class="form-group">
+          <label for="nombre-completo">Nombre completo:</label>
+          <input type="text" id="nombre-completo" name="nombre-completo" required>
+        </div>
+        <div class="form-group">
+          <label for="correo-registrar">Correo institucional:</label>
+          <input type="email" id="correo-registrar" name="correo-registrar" required>
+        </div>
+        <div class="form-group">
+          <label for="clave-registrar">Contraseña:</label>
+          <input type="password" id="clave-registrar" name="clave-registrar" required>
+        </div>
+        <div class="form-group">
+          <label for="profesion-registrar">Profesión:</label>
+          <select id="profesion-registrar" name="profesion-registrar" required>
+            <option value="">Seleccione...</option>
+            <option value="asistente_social">Asistente social</option>
+            <option value="medico">Médico</option>
+          </select>
+        </div>
+        <div id="error-registrar-profesional" class="error-msg"></div>
+        <button type="submit" class="boton-login">Registrarse</button>
+      </form>
+    </div>
   </div>
-</div>
-
-<!-- ... (resto de tu HTML abajo igual) ... -->
 
   <!-- Modal Panel Profesional -->
   <div class="modal-bg" id="modal-bg-profesional-panel">
@@ -171,7 +166,6 @@
     </div>
   </div>
 
-  <!-- Enlaza tu JS principal al final del body -->
   <script src="app.js"></script>
 </body>
 </html>
