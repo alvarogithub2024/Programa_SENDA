@@ -53,7 +53,8 @@
       margin-top: 14px;
       box-shadow: 0 4px 16px rgba(44,62,80,0.1);
       transition: background 0.3s, transform 0.2s;
-      display: inline-block;
+      display: block;
+      width: 100%;
     }
     button.small, .btn-small {
       padding: 7px 16px;
@@ -65,121 +66,20 @@
       background: linear-gradient(90deg, #226644 60%, #2e8b57 100%);
       transform: scale(1.05);
     }
-    .tabs {
+    .top-right-buttons {
+      position: fixed;
+      top: 16px;
+      right: 18px;
+      z-index: 99;
       display: flex;
-      margin-bottom: 24px;
-      justify-content: center;
-      border-bottom: 1px solid #eee;
-      gap: 0;
-    }
-    .tab {
-      flex: 1;
-      padding: 11px 0 8px 0;
-      background: none;
-      color: #2e8b57;
-      border: none;
-      border-bottom: 2px solid transparent;
-      font-size: 1.08rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s, color 0.15s;
-    }
-    .tab.active {
-      border-bottom: 2.5px solid #3b5998;
-      color: #222;
-      background: #f5f5f5;
-    }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-
-    .solicitudes-list {
-      margin-top: 8px;
-      max-height: 420px;
-      overflow-y: auto;
-      border-top: 1px solid #eee;
-      padding-top: 10px;
-    }
-    .solicitud-item {
-      background: #f6f6f6;
-      margin-bottom: 10px;
-      padding: 16px;
-      border-radius: 8px;
-      font-size: 1.08rem;
-      box-shadow: 0 1px 4px rgba(44,62,80,0.08);
-      position: relative;
-    }
-    .solicitud-item strong {
-      color: #2e8b57;
-    }
-    .derivar-select, .derivar-input {
-      margin-top: 8px;
-      margin-bottom: 6px;
-      width: 100%;
-      padding: 7px;
-      border-radius: 6px;
-      border: 1px solid #bdbdbd;
-      font-size: 1rem;
-      background: #fff;
-      color: #444;
-    }
-    .derivacion-label {
-      font-size: 1.07rem;
-      color: #666;
-      margin-top: 5px;
-      margin-bottom: 2px;
-      display: block;
-    }
-    .error-msg {
-      color: #e53935;
-      font-size: 0.98rem;
-      text-align: center;
-      margin-top: 10px;
-      margin-bottom: 2px;
-      display: none;
-    }
-    .ficha-buscar {
-      margin-bottom: 14px;
-      display: flex;
+      flex-direction: column;
       gap: 8px;
-      align-items: center;
-      flex-wrap: wrap;
+      width: 180px;
     }
-    .ficha-buscar input {
-      border-radius: 7px;
-      border: 1px solid #ccc;
-      padding: 7px;
-      font-size: 1.05rem;
-    }
-    .ficha-label {
-      font-weight: bold;
-      color: #2e8b57;
-      margin-top: 8px;
-    }
-    .ficha-notas {
-      background: #f7f7f7;
-      border-radius: 8px;
-      border: 1px solid #e0e0e0;
-      padding: 12px;
-      margin-bottom: 8px;
-      font-size: 0.97rem;
-    }
-    .ficha-nota-item {
-      border-bottom: 1px solid #e0e0e0;
-      margin-bottom: 6px;
-      padding-bottom: 6px;
-    }
-    .ficha-nota-item:last-child {
-      border-bottom: none;
-      margin-bottom: 0;
-      padding-bottom: 0;
-    }
-    .atencion-profesional {
-      font-size: 0.97rem;
-      margin-bottom: 6px;
-      background: #eaf7ee;
-      padding: 8px;
-      border-radius: 6px;
-      border: 1px solid #d4e7db;
+    @media (max-width: 700px) {
+      .container, .modal { max-width: 99vw; padding: 12px 2px; }
+      .top-right-buttons { width: 98vw; right: 0; top: 0; padding: 8px 8px 0 8px; }
+      button, .btn { font-size: 1rem; padding: 9px 12px; }
     }
     .close-modal {
       position: absolute;
@@ -229,11 +129,6 @@
       from { transform: scale(0.85); opacity: 0;}
       to { transform: scale(1); opacity: 1;}
     }
-    @media (max-width: 700px) {
-      .container, .modal { max-width: 99vw; padding: 12px 2px; }
-      .solicitud-item { padding: 8px; font-size: 0.97rem; }
-      .tabs { font-size: 0.97rem; }
-    }
   </style>
   <!-- Firebase App (core) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -241,16 +136,18 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
+  <div class="top-right-buttons">
+    <button class="btn" id="abrir-modal-ingresar">Ingresar</button>
+    <button class="btn" id="abrir-modal-registrar">Registrar</button>
+  </div>
   <div class="container" id="main-panel">
     <h1>Programa SENDA</h1>
-    <a class="senda-link" href="https://www.senda.gob.cl/" target="_blank">Visita la página oficial de SENDA</a>
     <p>
       SENDA busca mitigar el impacto social y sanitario de los consumos de alcohol y otras drogas en niños, niñas, adolescentes, hombres, mujeres y colectivos de las diversidades sexo/genéricas, para mejorar el bienestar y la calidad de vida en las personas y comunidades.
     </p>
-    <div>
-      <button class="btn" id="abrir-modal-ingresar">Ingresar</button>
-      <button class="btn" id="abrir-modal-registrar">Registrar</button>
-    </div>
+  </div>
+  <div style="text-align:center; margin-bottom:20px;">
+    <a class="senda-link" href="https://www.senda.gob.cl/" target="_blank">Página oficial de SENDA</a>
   </div>
 
   <!-- MODAL INGRESO -->
@@ -305,52 +202,6 @@
     </div>
   </div>
 
-  <!-- PANEL PROFESIONAL -->
-  <div class="container" id="panel-profesional" style="display:none;">
-    <h2>Panel profesional</h2>
-    <div class="tabs">
-      <button class="tab active" data-tab="mis-datos">Mis datos</button>
-      <button class="tab" data-tab="solicitudes">Solicitudes</button>
-      <button class="tab" data-tab="fichas">Fichas</button>
-      <button class="btn btn-small" id="logout-btn" style="margin-left: auto;">Cerrar sesión</button>
-    </div>
-    <div class="tab-content active" id="tab-mis-datos"></div>
-    <div class="tab-content" id="tab-solicitudes"></div>
-    <div class="tab-content" id="tab-fichas"></div>
-  </div>
-
-  <!-- MODAL FICHA USUARIO -->
-  <div class="modal-bg" id="modal-bg-ficha">
-    <div class="modal" style="max-width:600px;">
-      <button class="close-modal" id="cerrar-modal-ficha" title="Cerrar">&times;</button>
-      <h2>Ficha de usuario</h2>
-      <div id="ficha-usuario-info"></div>
-      <div id="ficha-usuario-notas"></div>
-      <form id="form-nota-ficha">
-        <div class="form-group">
-          <label for="nota-ficha">Registrar atención:</label>
-          <textarea id="nota-ficha" name="nota-ficha" rows="2" required></textarea>
-        </div>
-        <button type="submit" class="btn btn-small">Guardar atención</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- MODAL DERIVACION -->
-  <div class="modal-bg" id="modal-bg-derivar">
-    <div class="modal" style="max-width:500px;">
-      <button class="close-modal" id="cerrar-modal-derivar" title="Cerrar">&times;</button>
-      <h2>Derivar a médico</h2>
-      <form id="form-derivar">
-        <div class="form-group">
-          <label for="observacion-derivar">Motivo de derivación:</label>
-          <textarea id="observacion-derivar" rows="2" required></textarea>
-        </div>
-        <button type="submit" class="btn btn-small">Derivar</button>
-      </form>
-    </div>
-  </div>
-
   <script>
     // Firebase inicialización
     const firebaseConfig = {
@@ -367,8 +218,6 @@
     const auth = firebase.auth();
 
     const dominioPermitido = '@senda.cl';
-    let usuario = null; // {uid, nombre, correo, profesion}
-    let solicitudesDerivarId = null;
 
     // MODALES
     function showModal(id) { document.getElementById(id).style.display = 'flex'; }
@@ -377,12 +226,8 @@
     document.getElementById('abrir-modal-registrar').onclick = () => showModal('modal-bg-registrar');
     document.getElementById('cerrar-modal-ingresar').onclick = () => hideModal('modal-bg-ingresar');
     document.getElementById('cerrar-modal-registrar').onclick = () => hideModal('modal-bg-registrar');
-    document.getElementById('cerrar-modal-ficha').onclick = () => hideModal('modal-bg-ficha');
-    document.getElementById('cerrar-modal-derivar').onclick = () => hideModal('modal-bg-derivar');
     document.getElementById('modal-bg-ingresar').onclick = e => {if(e.target===e.currentTarget)hideModal('modal-bg-ingresar');};
     document.getElementById('modal-bg-registrar').onclick = e => {if(e.target===e.currentTarget)hideModal('modal-bg-registrar');};
-    document.getElementById('modal-bg-ficha').onclick = e => {if(e.target===e.currentTarget)hideModal('modal-bg-ficha');};
-    document.getElementById('modal-bg-derivar').onclick = e => {if(e.target===e.currentTarget)hideModal('modal-bg-derivar');};
 
     // Registro profesional
     document.getElementById('form-registrar').onsubmit = async function(e){
@@ -435,206 +280,14 @@
           errorDiv.innerText = 'Usuario sin datos registrados.';
           errorDiv.style.display = 'block'; return;
         }
-        usuario = {uid, ...doc.data()};
+        alert("Bienvenido " + doc.data().nombre + " (" + (doc.data().profesion==='asistente_social'?'Asistente social':'Médico') + ")");
         hideModal('modal-bg-ingresar');
         document.getElementById('form-ingresar').reset();
-        mostrarPanelProfesional();
       }catch(err){
         errorDiv.innerText = err.message;
         errorDiv.style.display = 'block';
       }
     };
-
-    // Logout
-    document.getElementById('logout-btn').onclick = async function(){
-      await auth.signOut();
-      usuario = null;
-      document.getElementById('panel-profesional').style.display = 'none';
-      document.getElementById('main-panel').style.display = 'block';
-    };
-
-    // PANEL CON TABS
-    function mostrarPanelProfesional(){
-      document.getElementById('main-panel').style.display = 'none';
-      document.getElementById('panel-profesional').style.display = 'block';
-      activarTab('mis-datos');
-      cargarMisDatos();
-      cargarSolicitudes();
-      cargarBuscadorFichas();
-    }
-
-    // Tabs
-    document.querySelectorAll('.tab').forEach(tab=>{
-      tab.onclick = function(){
-        document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-        tab.classList.add('active');
-        activarTab(tab.dataset.tab);
-      };
-    });
-    function activarTab(tab){
-      document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-      document.getElementById('tab-'+tab).classList.add('active');
-    }
-
-    // Tab Mis Datos
-    function cargarMisDatos(){
-      document.getElementById('tab-mis-datos').innerHTML = `
-        <div style="text-align:left;max-width:350px;margin:auto;padding:15px;">
-          <div><b>Nombre completo:</b> ${usuario.nombre}</div>
-          <div><b>Profesión:</b> ${usuario.profesion==='asistente_social'?'Asistente social':'Médico'}</div>
-          <div><b>Correo:</b> ${usuario.correo}</div>
-        </div>
-      `;
-    }
-
-    // Tab Solicitudes
-    async function cargarSolicitudes(){
-      let lista = document.getElementById('tab-solicitudes');
-      lista.innerHTML = '<div class="solicitudes-list"><p>Cargando solicitudes...</p></div>';
-      let query;
-      if(usuario.profesion==='asistente_social'){
-        query = db.collection("solicitudes").orderBy("fecha", "desc");
-      }else{
-        query = db.collection("solicitudes").where("derivacion","==","medico").orderBy("fecha", "desc");
-      }
-      let snap = await query.get();
-      let html = '<div class="solicitudes-list">';
-      if(snap.empty){
-        html += '<p>No hay solicitudes.</p>';
-      }else{
-        snap.forEach(doc=>{
-          let s = doc.data(); let id = doc.id;
-          html += `<div class="solicitud-item">
-              <strong>Nombre:</strong> ${s.nombre} ${s.apellido}<br>
-              <strong>RUT:</strong> ${s.rut}<br>
-              <strong>Teléfono:</strong> ${s.telefono}<br>
-              <strong>Correo:</strong> ${s.correo}<br>
-              <strong>Comuna:</strong> ${s.comuna}<br>
-              <strong>Dirección:</strong> ${s.direccion}<br>
-              <strong>Fecha:</strong> ${s.fecha}<br>
-              <strong>Derivación:</strong> ${s.derivacion==='medico'?'<span style="color:#3b5998;">Médico</span>':'Pendiente'}
-              ${usuario.profesion==='asistente_social'&&s.derivacion!=='medico'?`
-                <button class="btn btn-small" onclick="abrirDerivar('${id}')">Derivar a médico</button>
-              `:""}
-              ${usuario.profesion==='medico'&&s.derivacion==='medico'?`
-                <button class="btn btn-small" onclick="verFichaUsuario('${id}')">Ver ficha</button>
-              `:usuario.profesion==='asistente_social'?`
-                <button class="btn btn-small" onclick="verFichaUsuario('${id}')">Ver ficha</button>
-              `:""}
-            </div>`;
-        });
-      }
-      html += "</div>";
-      lista.innerHTML = html;
-    }
-    window.abrirDerivar = function(id){
-      solicitudesDerivarId = id;
-      document.getElementById('observacion-derivar').value="";
-      showModal('modal-bg-derivar');
-    };
-    document.getElementById('form-derivar').onsubmit = async function(e){
-      e.preventDefault();
-      let observacion = document.getElementById('observacion-derivar').value.trim();
-      if(!observacion){alert("Debes escribir la observación.");return;}
-      await db.collection("solicitudes").doc(solicitudesDerivarId).update({
-        derivacion: "medico",
-        observacion_derivacion: observacion,
-        nombre_deriva: usuario.nombre,
-        fecha_derivacion: new Date().toLocaleString()
-      });
-      hideModal('modal-bg-derivar');
-      cargarSolicitudes();
-    };
-
-    // Tab Fichas
-    function cargarBuscadorFichas(){
-      document.getElementById('tab-fichas').innerHTML = `
-        <div class="ficha-buscar">
-          <input type="text" id="buscador-rut" placeholder="Buscar por RUT">
-          <button class="btn btn-small" id="buscar-ficha-btn">Buscar ficha</button>
-        </div>
-        <div id="ficha-buscar-resultado"></div>
-      `;
-      document.getElementById('buscar-ficha-btn').onclick = buscarFichaPorRut;
-    }
-    async function buscarFichaPorRut(){
-      let rut = document.getElementById('buscador-rut').value.trim();
-      if(!rut){alert("Escribe el RUT a buscar.");return;}
-      let snap = await db.collection("solicitudes").where("rut","==",rut).get();
-      let div = document.getElementById('ficha-buscar-resultado');
-      if(snap.empty){
-        div.innerHTML = '<p>No se encontró la ficha.</p>';
-      }else{
-        snap.forEach(doc=>{
-          div.innerHTML = `<button class="btn btn-small" onclick="verFichaUsuario('${doc.id}')">Ver ficha de ${rut}</button>`;
-        });
-      }
-    }
-
-    // Ficha usuario (modal)
-    let fichaUsuarioId = null;
-    window.verFichaUsuario = function(id){
-      fichaUsuarioId = id;
-      showModal('modal-bg-ficha');
-      mostrarFichaUsuario(id);
-    };
-    async function mostrarFichaUsuario(id){
-      let doc = await db.collection("solicitudes").doc(id).get();
-      if(!doc.exists)return;
-      let u = doc.data();
-      let html = `
-        <div class="ficha-label">Nombre:</div> ${u.nombre} ${u.apellido}<br>
-        <div class="ficha-label">RUT:</div> ${u.rut}<br>
-        <div class="ficha-label">Teléfono:</div> ${u.telefono}<br>
-        <div class="ficha-label">Correo:</div> ${u.correo}<br>
-        <div class="ficha-label">Comuna:</div> ${u.comuna}<br>
-        <div class="ficha-label">Dirección:</div> ${u.direccion}<br>
-        <div class="ficha-label">Fecha de solicitud:</div> ${u.fecha}<br>
-        <div class="ficha-label">Derivación:</div> ${u.derivacion ? u.derivacion : "sin derivar"}
-        ${u.observacion_derivacion?`
-          <div class="ficha-label" style="margin-top:10px;">Motivo de derivación:</div>
-          <div class="atencion-profesional">${u.observacion_derivacion}<br>
-          <small>Por: ${u.nombre_deriva||''} el ${u.fecha_derivacion||''}</small></div>
-        `:""}
-      `;
-      document.getElementById('ficha-usuario-info').innerHTML = html;
-      cargarNotasFicha(id);
-      document.getElementById('form-nota-ficha').style.display = (
-        usuario.profesion==='medico' && u.derivacion==='medico'
-      ) ? "block" : (usuario.profesion==='asistente_social' ? "block" : "none");
-    }
-    document.getElementById('form-nota-ficha').onsubmit = async function(e){
-      e.preventDefault();
-      const texto = document.getElementById('nota-ficha').value.trim();
-      if(!texto)return;
-      await db.collection("solicitudes").doc(fichaUsuarioId).collection("notas").add({
-        texto,
-        fecha: new Date().toLocaleString(),
-        profesional: usuario.nombre,
-        profesion: usuario.profesion
-      });
-      document.getElementById('nota-ficha').value = '';
-      cargarNotasFicha(fichaUsuarioId);
-    };
-    async function cargarNotasFicha(id){
-      let notasDiv = document.getElementById('ficha-usuario-notas');
-      let snap = await db.collection("solicitudes").doc(id).collection("notas").orderBy("fecha").get();
-      let html = '<div class="ficha-label" style="margin-bottom:8px;">Atenciones registradas:</div>';
-      if(snap.empty){
-        html += '<div class="ficha-notas">No hay atenciones registradas aún.</div>';
-      }else{
-        html += '<div class="ficha-notas">';
-        snap.forEach(doc=>{
-          let nota = doc.data();
-          html += `<div class="ficha-nota-item"><strong>${nota.fecha}:</strong><br>
-            ${nota.texto}<br>
-            <small>Atendido por: ${nota.profesional} (${nota.profesion==='medico'?'Médico':'Asistente social'})</small>
-          </div>`;
-        });
-        html += '</div>';
-      }
-      notasDiv.innerHTML = html;
-    }
   </script>
 </body>
 </html>
