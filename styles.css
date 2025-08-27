@@ -69,14 +69,14 @@ p {
 
 /* --------- FOOTER SENDA - COMPLETAMENTE AL FONDO --------- */
 .footer-senda {
-  background: rgba(13, 71, 161, 0.1);
-  color: #0d47a1;
+  background: linear-gradient(135deg, #263238 0%, #37474f 100%);
+  color: #ffffff;
   padding: 20px 20px 15px 20px;
   text-align: center;
-  border-top: 2px solid rgba(66, 165, 245, 0.3);
-  backdrop-filter: blur(10px);
+  border-top: 3px solid #4caf50;
   flex-shrink: 0;
   width: 100%;
+  box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .footer-content {
@@ -87,13 +87,13 @@ p {
 .footer-content p {
   margin: 6px 0;
   font-size: 0.9rem;
-  color: #1565c0;
+  color: #e8eaf6;
   font-weight: 500;
 }
 
 .enlace-oficial {
   display: inline-block;
-  background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);
+  background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
   color: white;
   text-decoration: none;
   padding: 10px 20px;
@@ -102,21 +102,21 @@ p {
   font-size: 0.85rem;
   margin: 10px 0;
   transition: all 0.3s ease;
-  box-shadow: 0 3px 12px rgba(25, 118, 210, 0.3);
+  box-shadow: 0 3px 12px rgba(76, 175, 80, 0.4);
   letter-spacing: 0.3px;
 }
 
 .enlace-oficial:hover {
-  background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);
+  background: linear-gradient(135deg, #388e3c 0%, #4caf50 100%);
   transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(25, 118, 210, 0.4);
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.5);
   text-decoration: none;
   color: white;
 }
 
 .footer-disclaimer {
   font-size: 0.75rem !important;
-  color: #90a4ae !important;
+  color: #b0bec5 !important;
   font-style: italic;
   margin-top: 10px !important;
 }
