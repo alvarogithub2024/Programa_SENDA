@@ -151,6 +151,7 @@ form { margin-top: 7px; }
   text-align: left;
   position: relative;
   animation: fadeIn 0.28s;
+  display: block;
 }
 @keyframes fadeIn {
   from { transform: scale(0.93); opacity: 0;}
@@ -184,6 +185,61 @@ form { margin-top: 7px; }
   margin-top: 0;
   font-weight: 800;
   letter-spacing: 0.3px;
+}
+
+/* --- INGRESO (LOGIN) MODAL HORIZONTAL --- */
+#modal-bg-ingresar .modal {
+  max-width: 700px;
+  min-width: 500px;
+  width: 96vw;
+  padding: 38px 38px 36px 38px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+#modal-bg-ingresar .modal h2 {
+  flex: 1.1;
+  text-align: left;
+  margin-bottom: 0;
+  margin-right: 32px;
+  font-size: 2.1rem;
+  color: #3949ab;
+  letter-spacing: 0.3px;
+}
+#modal-bg-ingresar .modal form {
+  flex: 2.2;
+  margin-top: 0;
+}
+#modal-bg-ingresar .modal .form-group label {
+  font-size: 1.09rem;
+}
+#modal-bg-ingresar .modal .form-group input {
+  font-size: 1.11rem;
+}
+#modal-bg-ingresar .modal .boton-login {
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+  margin-top: 18px;
+}
+
+/* Responsive para el login horizontal */
+@media (max-width: 800px) {
+  #modal-bg-ingresar .modal {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 22px 5vw 20px 5vw;
+    min-width: 0;
+    max-width: 98vw;
+  }
+  #modal-bg-ingresar .modal h2 {
+    text-align: center;
+    margin-right: 0;
+    margin-bottom: 14px;
+    font-size: 1.5rem;
+  }
+  #modal-bg-ingresar .modal form { margin-bottom: 0; }
 }
 
 /* --- FORM BUTTONS --- */
