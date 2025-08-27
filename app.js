@@ -271,7 +271,7 @@ window.onload = function() {
     });
   };
 
-  // --- BUSCAR FICHA (por rut exacto, puedes mejorar búsqueda si quieres) ---
+  // --- BUSCAR FICHA CON RESULTADO CLICKEABLE ---
   window.buscarFichaPaciente = function(query) {
     const resultadosDiv = document.getElementById('resultados-busqueda');
     if (!query) {
@@ -284,17 +284,117 @@ window.onload = function() {
         let html = "";
         snap.forEach(doc => {
           const sol = doc.data();
-          html += `<div class="ficha-paciente" style="margin-bottom:16px;">
-            <b>${sol.nombre} ${sol.apellido}</b> - ${sol.rut}<br>
-            <b>Comuna:</b> ${sol.comuna}<br>
-            <b>Dirección:</b> ${sol.direccion}<br>
-            <b>Teléfono:</b> ${sol.telefono}<br>
-            <b>Correo:</b> ${sol.correo}<br>
-            ${sol.atencion_medica ? `<b>Última atención médica:</b> ${sol.atencion_medica} <br><b>Por:</b> ${sol.atendido_por || ''}<br>` : ""}
-          </div>`;
+          html += `
+            <div class="ficha-paciente ficha-clickeable" onclick="mostrarFichaCompleta('${doc.id}')" style="margin-bottom:16px;">
+              <b>${sol.nombre} ${sol.apellido}</b> - ${sol.rut}<br>
+              <b>Comuna:</b> ${sol.comuna}<br>
+              <b>Dirección:</b> ${sol.direccion}<br>
+              <b>Teléfono:</b> ${sol.telefono}<br>
+              <b>Correo:</b> ${sol.correo}<br>
+              ${sol.atencion_medica ? `<b>Última atención médica:</b> ${sol.atencion_medica} <br><b>Por:</b> ${sol.atendido_por || ''}<br>` : ""}
+              <p style="margin-top: 10px; color: #1976d2; font-weight: 600;">→ Hacer clic para ver ficha completa</p>
+            </div>
+          `;
         });
         resultadosDiv.innerHTML = html || "<p>No se encontró ficha.</p>";
       });
+  };
+
+  // --- MOSTRAR FICHA COMPLETA DEL PACIENTE ---
+  window.mostrarFichaCompleta = function(idPaciente) {
+    db.collection("solicitudes").doc(idPaciente).get().then(doc => {
+      if (doc.exists) {
+        const paciente = doc.data();
+        
+        // Cambiar a la pestaña de ficha del paciente
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelector('[data-tab="ficha-paciente"]').classList.add('active');
+        document.getElementById('tab-ficha-paciente').classList.add('active');
+
+        // Mostrar la información completa
+        const contenidoFicha = document.getElementById('contenido-ficha-paciente');
+        contenidoFicha.innerHTML = `
+          <div class="ficha-completa">
+            <h4>📋 Ficha del Paciente</h4>
+            
+            <div class="info-personal">
+              <h5>👤 Información Personal</h5>
+              <div class="info-row">
+                <strong>Nombre:</strong>
+                <span>${paciente.nombre} ${paciente.apellido}</span>
+              </div>
+              <div class="info-row">
+                <strong>RUT:</strong>
+                <span>${paciente.rut}</span>
+              </div>
+              <div class="info-row">
+                <strong>Fecha inscripción:</strong>
+                <span>${paciente.fecha}</span>
+              </div>
+            </div>
+
+            <div class="info-contacto">
+              <h5>📞 Información de Contacto</h5>
+              <div class="info-row">
+                <strong>Teléfono:</strong>
+                <span>${paciente.telefono}</span>
+              </div>
+              <div class="info-row">
+                <strong>Correo:</strong>
+                <span>${paciente.correo}</span>
+              </div>
+              <div class="info-row">
+                <strong>Comuna:</strong>
+                <span>${paciente.comuna}</span>
+              </div>
+              <div class="info-row">
+                <strong>Dirección:</strong>
+                <span>${paciente.direccion}</span>
+              </div>
+            </div>
+
+            <div class="info-medica">
+              <h5>🏥 Información Médica</h5>
+              <div class="info-row">
+                <strong>Estado derivación:</strong>
+                <span>${paciente.derivacion === 'pendiente' ? '⏳ Pendiente' : 
+                       paciente.derivacion === 'medico' ? '👨‍⚕️ Derivado al médico' : 
+                       '✅ Atendido'}</span>
+              </div>
+              ${paciente.observacion_derivacion ? `
+              <div class="info-row">
+                <strong>Observación derivación:</strong>
+                <span>${paciente.observacion_derivacion}</span>
+              </div>
+              <div class="info-row">
+                <strong>Derivado por:</strong>
+                <span>${paciente.derivado_por || 'N/A'}</span>
+              </div>
+              ` : ''}
+              ${paciente.atencion_medica ? `
+              <div class="info-row">
+                <strong>Atención médica:</strong>
+                <span>${paciente.atencion_medica}</span>
+              </div>
+              <div class="info-row">
+                <strong>Atendido por:</strong>
+                <span>${paciente.atendido_por || 'N/A'}</span>
+              </div>
+              <div class="info-row">
+                <strong>Fecha atención:</strong>
+                <span>${paciente.atencion_fecha || 'N/A'}</span>
+              </div>
+              ` : '<p>No hay registro de atención médica.</p>'}
+            </div>
+          </div>
+        `;
+      } else {
+        alert("No se pudo cargar la información del paciente.");
+      }
+    }).catch(error => {
+      alert("Error al cargar ficha: " + error.message);
+    });
   };
 
   // --- Cerrar panel profesional ---
