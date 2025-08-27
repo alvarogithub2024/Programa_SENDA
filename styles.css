@@ -5,30 +5,31 @@
 body {
   min-height: 100vh;
   font-family: 'Nunito', 'Segoe UI', Arial, sans-serif;
-  background: linear-gradient(120deg, #f8bbd0 0%, #90caf9 100%);
-  color: #22223b;
+  background: linear-gradient(135deg, #0d47a1 0%, #1976d2 25%, #42a5f5 50%, #4caf50 75%, #81c784 100%);
+  color: #1a237e;
 }
 h1, h2, h3 {
   font-weight: 900;
   letter-spacing: 1px;
 }
 h1 {
-  color: #5e35b1;
+  color: #0d47a1;
   font-size: 2.1rem;
   margin-bottom: 14px;
+  text-shadow: 0 2px 4px rgba(13, 71, 161, 0.1);
 }
 h2 {
-  color: #3949ab;
+  color: #1565c0;
   font-size: 1.33rem;
   margin-bottom: 18px;
 }
 h3 {
-  color: #5e35b1;
+  color: #0d47a1;
   font-size: 1.18rem;
   margin-bottom: 8px;
 }
 p {
-  color: #4c4c70;
+  color: #263238;
   font-size: 1.11rem;
   margin-bottom: 18px;
   line-height: 1.6;
@@ -36,49 +37,55 @@ p {
 
 /* --------- MAIN CONTAINER --------- */
 .container {
-  background: rgba(255,255,255,0.98);
+  background: rgba(255,255,255,0.95);
   border-radius: 24px;
-  box-shadow: 0 8px 32px 0 rgba(94,53,177,0.12);
+  box-shadow: 0 12px 40px 0 rgba(13, 71, 161, 0.15);
   padding: 38px 38px 28px 38px;
   max-width: 500px;
   margin: 80px auto 48px auto;
   text-align: center;
-  transition: box-shadow 0.2s;
-  backdrop-filter: blur(1px);
-  border: 1.5px solid #e3e3f7;
+  transition: box-shadow 0.3s, transform 0.2s;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(66, 165, 245, 0.2);
 }
 .container:hover {
-  box-shadow: 0 12px 44px 0 rgba(94,53,177,0.19);
+  box-shadow: 0 16px 50px 0 rgba(13, 71, 161, 0.25);
+  transform: translateY(-2px);
 }
 
 /* --------- BUTTONS --------- */
 button,
 .boton-inscribirme, .boton-profesional, .boton-ingresar, .boton-login {
-  background: linear-gradient(90deg, #42a5f5 8%, #7e57c2 69%, #ec407a 100%);
+  background: linear-gradient(135deg, #1976d2 0%, #42a5f5 50%, #4caf50 100%);
   color: #fff;
   border: none;
-  border-radius: 11px;
+  border-radius: 12px;
   cursor: pointer;
   font-size: 1.1rem;
   font-weight: 800;
-  padding: 12px 32px;
+  padding: 14px 32px;
   margin: 16px 0 0 0;
-  box-shadow: 0 4px 18px 0 rgba(44,62,80,0.09);
-  transition: background 0.21s, transform 0.16s, box-shadow 0.16s;
+  box-shadow: 0 6px 20px 0 rgba(25, 118, 210, 0.3);
+  transition: all 0.3s ease;
   display: block;
   width: 82%;
   margin-left: auto;
   margin-right: auto;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size: 0.95rem;
 }
 button:hover,
 .boton-inscribirme:hover,
 .boton-profesional:hover,
 .boton-ingresar:hover,
 .boton-login:hover {
-  background: linear-gradient(90deg, #1976d2 10%, #5e35b1 60%, #ad1457 100%);
-  transform: translateY(-2px) scale(1.035);
-  box-shadow: 0 8px 28px 0 rgba(94,53,177,0.18);
+  background: linear-gradient(135deg, #0d47a1 0%, #1976d2 50%, #388e3c 100%);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 10px 30px 0 rgba(25, 118, 210, 0.4);
+}
+button:active {
+  transform: translateY(-1px) scale(0.98);
 }
 .boton-profesional {
   position: fixed;
@@ -86,13 +93,14 @@ button:hover,
   right: 40px;
   width: auto;
   margin: 0;
-  padding: 13px 36px;
+  padding: 14px 28px;
   z-index: 99;
-  background: linear-gradient(90deg, #ec407a 16%, #42a5f5 90%);
-  font-size: 1.08rem;
+  background: linear-gradient(135deg, #4caf50 0%, #81c784 100%);
+  font-size: 1rem;
+  box-shadow: 0 6px 20px 0 rgba(76, 175, 80, 0.3);
 }
 .boton-profesional:hover {
-  background: linear-gradient(90deg, #1976d2 10%, #ab47bc 90%);
+  background: linear-gradient(135deg, #388e3c 0%, #66bb6a 100%);
 }
 
 /* --------- FORMS --------- */
@@ -104,28 +112,30 @@ form { margin-top: 7px; }
 .form-group label {
   font-size: 1.02rem;
   margin-bottom: 5px;
-  color: #7e57c2;
+  color: #0d47a1;
   font-weight: 700;
   display: block;
-  letter-spacing: 0.15px;
+  letter-spacing: 0.3px;
 }
 .form-group input,
 .form-group select {
   width: 100%;
-  padding: 11px 13px;
-  border-radius: 8px;
-  border: 1.5px solid #bbdefb;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 2px solid #e3f2fd;
   font-size: 1.07rem;
-  background: #f3e5f5;
-  transition: border 0.22s, background 0.2s;
-  margin-top: 3px;
-  color: #2d3142;
+  background: #f8faff;
+  transition: all 0.3s ease;
+  margin-top: 6px;
+  color: #1a237e;
 }
 .form-group input:focus,
 .form-group select:focus {
   border: 2px solid #42a5f5;
   outline: none;
   background: #fff;
+  box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.1);
+  transform: translateY(-1px);
 }
 
 /* --------- MODAL --------- */
@@ -133,62 +143,68 @@ form { margin-top: 7px; }
   position: fixed;
   top: 0; left: 0;
   width: 100vw; height: 100vh;
-  background: rgba(94, 53, 177, 0.13);
-  display: none; /* Cambia a flex para pruebas */
+  background: rgba(13, 71, 161, 0.2);
+  backdrop-filter: blur(8px);
+  display: none;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  animation: fadeModalBg 0.24s;
+  animation: fadeModalBg 0.3s;
 }
 @keyframes fadeModalBg {
-  from {background: rgba(94, 53, 177, 0);}
-  to {background: rgba(94, 53, 177, 0.13);}
+  from {background: rgba(13, 71, 161, 0); backdrop-filter: blur(0px);}
+  to {background: rgba(13, 71, 161, 0.2); backdrop-filter: blur(8px);}
 }
 .modal {
-  background: linear-gradient(135deg, #fff 80%, #bbdefb 100%);
-  border-radius: 18px;
-  box-shadow: 0 8px 32px rgba(126,87,194,0.19);
-  padding: 36px 24px 30px 24px;
-  min-width: 280px;
-  max-width: 420px;
-  width: 96vw;
+  background: linear-gradient(145deg, #fff 0%, #f8faff 100%);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(13, 71, 161, 0.25);
+  padding: 36px 28px 32px 28px;
+  min-width: 300px;
+  max-width: 450px;
+  width: 92vw;
   text-align: left;
   position: relative;
-  animation: fadeIn 0.28s;
-  display: block;
+  animation: fadeIn 0.4s ease-out;
+  border: 2px solid rgba(66, 165, 245, 0.1);
 }
 @keyframes fadeIn {
-  from { transform: scale(0.93); opacity: 0;}
-  to { transform: scale(1); opacity: 1;}
+  from { transform: scale(0.9) translateY(20px); opacity: 0;}
+  to { transform: scale(1) translateY(0); opacity: 1;}
 }
 .close-modal {
   position: absolute;
   right: 18px;
   top: 18px;
-  background: none;
+  background: linear-gradient(135deg, #f44336 0%, #e57373 100%);
   border: none;
-  font-size: 1.28rem;
-  color: #ba68c8;
+  font-size: 1.1rem;
+  color: #fff;
   cursor: pointer;
   font-weight: bold;
-  padding: 0;
+  padding: 8px;
   line-height: 1;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   text-align: center;
-  transition: color 0.18s, font-size 0.18s;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
 }
 .close-modal:hover {
-  color: #3949ab;
-  font-size: 1.36rem;
+  background: linear-gradient(135deg, #d32f2f 0%, #f44336 100%);
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(244, 67, 54, 0.4);
 }
 .modal h2 {
   text-align: center;
-  color: #3949ab;
-  margin-bottom: 16px;
-  margin-top: 0;
+  color: #0d47a1;
+  margin-bottom: 20px;
+  margin-top: 8px;
   font-weight: 800;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size: 1.2rem;
 }
 
 /* --------- PANEL PROFESIONAL: HORIZONTAL CON PESTAÑAS VERTICALES --------- */
@@ -196,14 +212,16 @@ form { margin-top: 7px; }
   max-width: 1200px !important;
   min-width: 900px !important;
   width: 90vw !important;
-  min-height: 600px !important;
+  min-height: 650px !important;
   padding: 0 !important;
   display: flex !important;
   align-items: stretch !important;
   overflow: visible !important;
-  background: #fff !important;
-  border-radius: 18px !important;
+  background: linear-gradient(145deg, #fff 0%, #f8faff 100%) !important;
+  border-radius: 20px !important;
   text-align: left !important;
+  box-shadow: 0 20px 60px rgba(13, 71, 161, 0.2) !important;
+  border: 2px solid rgba(66, 165, 245, 0.15) !important;
 }
 
 .panel-horizontal-wrapper {
@@ -211,72 +229,78 @@ form { margin-top: 7px; }
   flex-direction: row !important;
   width: 100% !important;
   height: 100% !important;
-  min-height: 600px !important;
+  min-height: 650px !important;
 }
 
 .tabs-vertical {
   display: flex !important;
   flex-direction: column !important;
-  background: linear-gradient(135deg, #ede7f6 0%, #e1bee7 100%) !important;
-  border-radius: 18px 0 0 18px !important;
-  padding: 20px 0 !important;
-  min-width: 220px !important;
-  max-width: 220px !important;
-  box-shadow: 2px 0 18px 0 rgba(94,53,177,0.08) !important;
+  background: linear-gradient(180deg, #1565c0 0%, #1976d2 50%, #42a5f5 100%) !important;
+  border-radius: 20px 0 0 20px !important;
+  padding: 30px 0 !important;
+  min-width: 240px !important;
+  max-width: 240px !important;
+  box-shadow: 4px 0 20px rgba(13, 71, 161, 0.15) !important;
   align-items: stretch !important;
-  gap: 0 !important;
+  gap: 8px !important;
   flex-shrink: 0 !important;
 }
 
 .tabs-vertical .tab-btn {
   background: none !important;
   border: none !important;
-  padding: 16px 20px !important;
-  font-size: 1.1rem !important;
-  color: #5e35b1 !important;
-  font-weight: 700 !important;
+  padding: 18px 24px !important;
+  font-size: 1.05rem !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-weight: 600 !important;
   text-align: left !important;
   border-radius: 0 !important;
-  margin: 0 !important;
+  margin: 0 16px !important;
   cursor: pointer !important;
   border-left: 4px solid transparent !important;
   transition: all 0.3s ease !important;
-  width: 100% !important;
+  width: calc(100% - 32px) !important;
   display: block !important;
-  letter-spacing: 0.3px !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+  font-size: 0.9rem !important;
 }
 
 .tabs-vertical .tab-btn:hover {
-  background: rgba(255,255,255,0.5) !important;
-  color: #3949ab !important;
-  transform: none !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #fff !important;
+  transform: translateX(4px) !important;
+  border-left: 4px solid rgba(255, 255, 255, 0.5) !important;
   box-shadow: none !important;
+  border-radius: 8px !important;
 }
 
 .tabs-vertical .tab-btn.active {
-  background: #fff !important;
-  color: #1976d2 !important;
-  border-left: 4px solid #3949ab !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
-  transform: none !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: #0d47a1 !important;
+  border-left: 4px solid #4caf50 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+  transform: translateX(8px) !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
 }
 
 .tabs-content-horizontal {
   flex: 1 !important;
   min-width: 0 !important;
-  background: #fff !important;
-  border-radius: 0 18px 18px 0 !important;
-  padding: 30px 40px !important;
+  background: linear-gradient(145deg, #fff 0%, #f8faff 100%) !important;
+  border-radius: 0 20px 20px 0 !important;
+  padding: 40px 45px !important;
   display: flex !important;
   flex-direction: column !important;
   overflow-y: auto !important;
-  max-height: 600px !important;
+  max-height: 650px !important;
 }
 
 .tab-content {
   display: none !important;
   width: 100% !important;
-  min-height: 370px !important;
+  min-height: 400px !important;
 }
 
 .tab-content.active {
@@ -285,27 +309,51 @@ form { margin-top: 7px; }
 
 /* Bloques amplios de solicitudes, derivaciones, fichas */
 .solicitud-item, .derivacion-item, .ficha-paciente {
-  margin-bottom: 32px;
-  padding: 20px 16px 18px 16px;
-  border-radius: 8px;
-  background: #f6f2ff;
-  border: 1px solid #e0d7f3;
+  margin-bottom: 28px;
+  padding: 24px 20px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fff 0%, #f3f8ff 100%);
+  border: 2px solid #e3f2fd;
+  box-shadow: 0 6px 20px rgba(66, 165, 245, 0.1);
+  transition: all 0.3s ease;
+}
+
+.solicitud-item:hover, .derivacion-item:hover, .ficha-paciente:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(66, 165, 245, 0.15);
+  border-color: #42a5f5;
+}
+
+.solicitud-item strong, .derivacion-item strong, .ficha-paciente strong {
+  color: #0d47a1;
+  font-size: 1.1rem;
 }
 
 /* Textarea y campos grandes */
-.obs-derivar, #resultados-busqueda textarea {
+.obs-derivar, #resultados-busqueda textarea, textarea {
   width: 100%;
-  min-height: 58px;
-  margin: 10px 0 7px 0;
-  border-radius: 7px;
-  border: 1px solid #b39ddb;
-  padding: 11px;
-  font-size: 1.07rem;
+  min-height: 70px;
+  margin: 12px 0 10px 0;
+  border-radius: 10px;
+  border: 2px solid #e3f2fd;
+  padding: 14px 16px;
+  font-size: 1rem;
   resize: vertical;
+  background: #f8faff;
+  color: #1a237e;
+  transition: all 0.3s ease;
+  font-family: 'Nunito', sans-serif;
+}
+
+.obs-derivar:focus, textarea:focus {
+  border: 2px solid #42a5f5;
+  outline: none;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.1);
 }
 
 #resultados-busqueda {
-  margin-top: 20px;
+  margin-top: 24px;
 }
 
 /* --------- RESPONSIVE PARA PANEL PROFESIONAL --------- */
@@ -316,15 +364,15 @@ form { margin-top: 7px; }
     width: 95vw !important;
   }
   .tabs-content-horizontal { 
-    padding: 20px 25px !important; 
+    padding: 25px 30px !important; 
   }
   .tabs-vertical { 
-    min-width: 180px !important; 
-    max-width: 180px !important; 
+    min-width: 200px !important; 
+    max-width: 200px !important; 
   }
   .tabs-vertical .tab-btn {
-    font-size: 1rem !important;
-    padding: 14px 16px !important;
+    font-size: 0.85rem !important;
+    padding: 16px 20px !important;
   }
 }
 
@@ -342,85 +390,105 @@ form { margin-top: 7px; }
   
   .tabs-vertical {
     flex-direction: row !important;
-    border-radius: 18px 18px 0 0 !important;
+    border-radius: 20px 20px 0 0 !important;
     min-width: 0 !important; 
     max-width: 100% !important;
-    padding: 10px 0 !important;
+    padding: 15px 10px !important;
     box-shadow: none !important;
     gap: 0 !important;
     overflow-x: auto !important;
   }
   
   .tabs-vertical .tab-btn {
-    border-radius: 8px 8px 0 0 !important;
-    font-size: 0.95rem !important;
+    border-radius: 10px 10px 0 0 !important;
+    font-size: 0.8rem !important;
     border-left: none !important;
     border-top: 4px solid transparent !important;
     border-bottom: none !important;
-    margin: 0 2px !important;
-    padding: 12px 16px !important;
+    margin: 0 4px !important;
+    padding: 14px 16px !important;
     text-align: center !important;
-    min-width: 120px !important;
+    min-width: 130px !important;
     flex-shrink: 0 !important;
+    transform: none !important;
   }
   
   .tabs-vertical .tab-btn.active {
-    border-top: 4px solid #3949ab !important;
+    border-top: 4px solid #4caf50 !important;
     border-left: none !important;
-    background: #fff !important;
-    color: #1976d2 !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #0d47a1 !important;
+    transform: none !important;
   }
   
   .tabs-content-horizontal {
-    border-radius: 0 0 18px 18px !important;
-    padding: 15px 20px !important;
+    border-radius: 0 0 20px 20px !important;
+    padding: 20px 25px !important;
     max-height: none !important;
   }
 }
 
-/* --- FORM BUTTONS --- */
+/* --- FORM BUTTONS ESPECÍFICOS --- */
 .boton-ingresar, .boton-login {
-  margin-top: 18px;
-  background: linear-gradient(90deg, #42a5f5 20%, #ec407a 85%);
+  margin-top: 20px;
+  background: linear-gradient(135deg, #42a5f5 0%, #4caf50 100%);
 }
 .boton-ingresar:hover, .boton-login:hover {
-  background: linear-gradient(90deg, #1976d2 20%, #7e57c2 90%);
+  background: linear-gradient(135deg, #1976d2 0%, #388e3c 100%);
 }
 
 /* --- PLACEHOLDER COLOR --- */
 ::placeholder {
-  color: #b39ddb;
+  color: #90a4ae;
   opacity: 1;
 }
-::-webkit-input-placeholder { color: #b39ddb; }
-::-moz-placeholder { color: #b39ddb; }
-:-ms-input-placeholder { color: #b39ddb; }
+::-webkit-input-placeholder { color: #90a4ae; }
+::-moz-placeholder { color: #90a4ae; }
+:-ms-input-placeholder { color: #90a4ae; }
 
 /* --- SCROLLBAR --- */
 ::-webkit-scrollbar {
-  width: 10px;
-  background: #f3e5f5;
-  border-radius: 7px;
+  width: 12px;
+  background: #f8faff;
+  border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #ce93d8;
-  border-radius: 7px;
+  background: linear-gradient(135deg, #42a5f5 0%, #4caf50 100%);
+  border-radius: 10px;
+  border: 2px solid #f8faff;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #1976d2 0%, #388e3c 100%);
 }
 
 @media (max-width: 600px) {
   .container {
-    padding: 10px 2vw;
-    max-width: 99vw;
-    margin: 24px 2vw;
+    padding: 20px 4vw;
+    max-width: 92vw;
+    margin: 40px 4vw;
   }
   .modal {
-    padding: 13px 2vw 12px 2vw;
-    max-width: 99vw;
+    padding: 20px 4vw 18px 4vw;
+    max-width: 92vw;
   }
   .boton-profesional {
-    padding: 9px 10px;
-    font-size: 0.97rem;
-    top: 10px;
-    right: 4px;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    top: 15px;
+    right: 15px;
+  }
+  
+  .horizontal-panel {
+    width: 98vw !important;
+  }
+  
+  .tabs-content-horizontal {
+    padding: 15px 20px !important;
+  }
+  
+  .tabs-vertical .tab-btn {
+    font-size: 0.75rem !important;
+    padding: 12px 14px !important;
+    min-width: 110px !important;
   }
 }
