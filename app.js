@@ -271,7 +271,7 @@ window.onload = function() {
     });
   };
 
-  // --- BUSCAR FICHA CON RESULTADO CLICKEABLE ---
+  // --- BUSCAR FICHA CON RESULTADO SIMPLIFICADO ---
   window.buscarFichaPaciente = function(query) {
     const resultadosDiv = document.getElementById('resultados-busqueda');
     if (!query) {
@@ -286,13 +286,9 @@ window.onload = function() {
           const sol = doc.data();
           html += `
             <div class="ficha-paciente ficha-clickeable" onclick="mostrarFichaCompleta('${doc.id}')" style="margin-bottom:16px;">
-              <b>${sol.nombre} ${sol.apellido}</b> - ${sol.rut}<br>
-              <b>Comuna:</b> ${sol.comuna}<br>
-              <b>Dirección:</b> ${sol.direccion}<br>
-              <b>Teléfono:</b> ${sol.telefono}<br>
-              <b>Correo:</b> ${sol.correo}<br>
-              ${sol.atencion_medica ? `<b>Última atención médica:</b> ${sol.atencion_medica} <br><b>Por:</b> ${sol.atendido_por || ''}<br>` : ""}
-              <p style="margin-top: 10px; color: #1976d2; font-weight: 600;">→ Hacer clic para ver ficha completa</p>
+              <b>${sol.nombre} ${sol.apellido}</b><br>
+              <span style="color: #1565c0; font-weight: 600;">${sol.rut}</span><br>
+              <p style="margin-top: 10px; color: #1976d2; font-weight: 600; font-size: 0.9rem;">→ Hacer clic para ver ficha completa</p>
             </div>
           `;
         });
