@@ -525,15 +525,7 @@ window.onload = function() {
     });
   };
 
-  // --- Cerrar panel profesional ---
-  document.getElementById('cerrar-modal-prof-panel').onclick = function() {
-    document.getElementById('modal-bg-profesional-panel').style.display = 'none';
-  };
-  document.getElementById('modal-bg-profesional-panel').onclick = function(e) {
-    if (e.target === this) this.style.display = 'none';
-  };
-
-  // --- CERRAR SESIÓN ---
+  // --- CERRAR SESIÓN (ahora también cierra el modal) ---
   document.getElementById('cerrar-sesion-btn').onclick = function() {
     if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
       auth.signOut().then(() => {
@@ -546,6 +538,21 @@ window.onload = function() {
       }).catch((error) => {
         alert('❌ Error al cerrar sesión: ' + error.message);
       });
+    }
+  };
+
+  // --- Cerrar panel profesional al hacer clic fuera del modal ---
+  document.getElementById('modal-bg-profesional-panel').onclick = function(e) {
+    if (e.target === this) {
+      if (confirm('¿Deseas cerrar sesión?')) {
+        auth.signOut().then(() => {
+          limpiarPanelProfesional();
+          this.style.display = 'none';
+          alert('✅ Sesión cerrada correctamente');
+        }).catch((error) => {
+          alert('❌ Error al cerrar sesión: ' + error.message);
+        });
+      }
     }
   };
 
