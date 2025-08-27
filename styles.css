@@ -359,6 +359,73 @@ form { margin-top: 7px; }
   font-weight: 800;
 }
 
+/* Pestañas horizontales dentro de la ficha del paciente */
+.ficha-tabs-horizontal {
+  display: flex;
+  border-bottom: 3px solid #e3f2fd;
+  margin-bottom: 25px;
+  gap: 0;
+}
+
+.ficha-tab-btn {
+  background: none !important;
+  border: none !important;
+  padding: 15px 25px !important;
+  font-size: 1rem !important;
+  color: #1565c0 !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  border-bottom: 3px solid transparent !important;
+  transition: all 0.3s ease !important;
+  flex: 1 !important;
+  text-align: center !important;
+  margin: 0 !important;
+  width: auto !important;
+  display: block !important;
+  border-radius: 8px 8px 0 0 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  font-size: 0.9rem !important;
+}
+
+.ficha-tab-btn:hover {
+  background: rgba(66, 165, 245, 0.1) !important;
+  color: #0d47a1 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(66, 165, 245, 0.15) !important;
+}
+
+.ficha-tab-btn.active {
+  background: linear-gradient(135deg, #42a5f5 0%, #1976d2 100%) !important;
+  color: #fff !important;
+  border-bottom: 3px solid #4caf50 !important;
+  box-shadow: 0 6px 20px rgba(66, 165, 245, 0.3) !important;
+  transform: translateY(-2px) !important;
+  font-weight: 700 !important;
+}
+
+.ficha-tab-content {
+  display: none;
+  padding: 20px;
+  background: rgba(66, 165, 245, 0.05);
+  border-radius: 12px;
+  margin-bottom: 25px;
+}
+
+.ficha-tab-content.active {
+  display: block;
+}
+
+.ficha-tab-content h5 {
+  color: #1565c0;
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .info-personal, .info-contacto, .info-medica {
   margin-bottom: 25px;
   padding: 20px;
@@ -390,6 +457,115 @@ form { margin-top: 7px; }
   color: #263238;
   flex: 1;
   text-align: right;
+}
+
+/* Sección de nueva atención */
+.nueva-atencion {
+  background: linear-gradient(135deg, #fff 0%, #f3f8ff 100%);
+  border: 2px solid #e3f2fd;
+  border-radius: 16px;
+  padding: 25px;
+  margin-top: 30px;
+  box-shadow: 0 6px 20px rgba(66, 165, 245, 0.1);
+}
+
+.nueva-atencion h5 {
+  color: #0d47a1;
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nueva-atencion textarea {
+  width: 100%;
+  min-height: 120px;
+  margin-bottom: 15px;
+  border-radius: 12px;
+  border: 2px solid #e3f2fd;
+  padding: 16px;
+  font-size: 1rem;
+  resize: vertical;
+  background: #f8faff;
+  color: #1a237e;
+  transition: all 0.3s ease;
+  font-family: 'Nunito', sans-serif;
+  line-height: 1.5;
+}
+
+.nueva-atencion textarea:focus {
+  border: 2px solid #42a5f5;
+  outline: none;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.1);
+  transform: translateY(-1px);
+}
+
+.nueva-atencion button {
+  background: linear-gradient(135deg, #4caf50 0%, #81c784 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 30px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.nueva-atencion button:hover {
+  background: linear-gradient(135deg, #388e3c 0%, #66bb6a 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+}
+
+/* Historial de atenciones */
+.historial-atenciones {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-left: 4px solid #42a5f5;
+  box-shadow: 0 4px 15px rgba(66, 165, 245, 0.1);
+}
+
+.atencion-item {
+  border-bottom: 1px solid #e3f2fd;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+}
+
+.atencion-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.atencion-fecha {
+  color: #1565c0;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.atencion-profesional {
+  color: #4caf50;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+
+.atencion-texto {
+  color: #263238;
+  line-height: 1.6;
+  padding: 12px;
+  background: rgba(66, 165, 245, 0.05);
+  border-radius: 8px;
 }
 
 /* Textarea y campos grandes */
