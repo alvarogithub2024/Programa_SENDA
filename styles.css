@@ -7,6 +7,17 @@ body {
   font-family: 'Nunito', 'Segoe UI', Arial, sans-serif;
   background: linear-gradient(135deg, #0d47a1 0%, #1976d2 25%, #42a5f5 50%, #4caf50 75%, #81c784 100%);
   color: #1a237e;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Contenido principal que toma el espacio disponible */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-bottom: 20px;
 }
 h1, h2, h3 {
   font-weight: 900;
@@ -42,7 +53,7 @@ p {
   box-shadow: 0 12px 40px 0 rgba(13, 71, 161, 0.15);
   padding: 38px 38px 28px 38px;
   max-width: 600px;
-  margin: 80px auto 30px auto;
+  margin: 0 auto;
   text-align: center;
   transition: box-shadow 0.3s, transform 0.2s;
   backdrop-filter: blur(10px);
@@ -53,15 +64,16 @@ p {
   transform: translateY(-2px);
 }
 
-/* --------- FOOTER SENDA MEJORADO --------- */
+/* --------- FOOTER SENDA - FIJO AL FINAL --------- */
 .footer-senda {
   background: rgba(13, 71, 161, 0.1);
   color: #0d47a1;
   padding: 20px;
   text-align: center;
-  margin-top: 30px;
   border-top: 2px solid rgba(66, 165, 245, 0.3);
   backdrop-filter: blur(10px);
+  margin-top: auto;
+  flex-shrink: 0;
 }
 
 .footer-content {
