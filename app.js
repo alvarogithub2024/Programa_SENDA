@@ -300,7 +300,7 @@ window.onload = function() {
       });
   };
 
-  // --- MOSTRAR FICHA COMPLETA DEL PACIENTE ---
+  // --- MOSTRAR FICHA COMPLETA DEL PACIENTE CON PESTAÑAS ---
   window.mostrarFichaCompleta = function(idPaciente) {
     db.collection("solicitudes").doc(idPaciente).get().then(doc => {
       if (doc.exists) {
@@ -312,13 +312,21 @@ window.onload = function() {
         document.querySelector('[data-tab="ficha-paciente"]').classList.add('active');
         document.getElementById('tab-ficha-paciente').classList.add('active');
 
-        // Mostrar la información completa
+        // Mostrar la información completa con pestañas horizontales
         const contenidoFicha = document.getElementById('contenido-ficha-paciente');
         contenidoFicha.innerHTML = `
           <div class="ficha-completa">
             <h4>📋 Ficha del Paciente</h4>
             
-            <div class="info-personal">
+            <!-- Pestañas horizontales -->
+            <div class="ficha-tabs-horizontal">
+              <button class="ficha-tab-btn active" data-ficha-tab="personal">👤 Personal</button>
+              <button class="ficha-tab-btn" data-ficha-tab="contacto">📞 Contacto</button>
+              <button class="ficha-tab-btn" data-ficha-tab="medica">🏥 Médica</button>
+            </div>
+
+            <!-- Contenido de las pestañas -->
+            <div class="ficha-tab-content active" id="ficha-tab-personal">
               <h5>👤 Información Personal</h5>
               <div class="info-row">
                 <strong>Nombre:</strong>
@@ -334,7 +342,7 @@ window.onload = function() {
               </div>
             </div>
 
-            <div class="info-contacto">
+            <div class="ficha-tab-content" id="ficha-tab-contacto">
               <h5>📞 Información de Contacto</h5>
               <div class="info-row">
                 <strong>Teléfono:</strong>
@@ -354,7 +362,7 @@ window.onload = function() {
               </div>
             </div>
 
-            <div class="info-medica">
+            <div class="ficha-tab-content" id="ficha-tab-medica">
               <h5>🏥 Información Médica</h5>
               <div class="info-row">
                 <strong>Estado derivación:</strong>
@@ -372,28 +380,115 @@ window.onload = function() {
                 <span>${paciente.derivado_por || 'N/A'}</span>
               </div>
               ` : ''}
-              ${paciente.atencion_medica ? `
-              <div class="info-row">
-                <strong>Atención médica:</strong>
-                <span>${paciente.atencion_medica}</span>
+              
+              <!-- Historial de atenciones -->
+              <div id="historial-atenciones-${idPaciente}">
+                <h6 style="color: #0d47a1; margin: 20px 0 15px 0; font-weight: 700;">📝 Historial de Atenciones:</h6>
               </div>
-              <div class="info-row">
-                <strong>Atendido por:</strong>
-                <span>${paciente.atendido_por || 'N/A'}</span>
-              </div>
-              <div class="info-row">
-                <strong>Fecha atención:</strong>
-                <span>${paciente.atencion_fecha || 'N/A'}</span>
-              </div>
-              ` : '<p>No hay registro de atención médica.</p>'}
+            </div>
+
+            <!-- Sección para nueva atención -->
+            <div class="nueva-atencion">
+              <h5>✍️ Registrar Nueva Atención</h5>
+              <textarea id="nueva-atencion-${idPaciente}" placeholder="Describe la atención realizada al paciente..."></textarea>
+              <button onclick="guardarAtencion('${idPaciente}')">💾 Guardar Atención</button>
             </div>
           </div>
         `;
+
+        // Configurar pestañas horizontales
+        document.querySelectorAll('.ficha-tab-btn').forEach(btn => {
+          btn.onclick = function() {
+            document.querySelectorAll('.ficha-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.ficha-tab-content').forEach(tab => tab.classList.remove('active'));
+            this.classList.add('active');
+            document.getElementById('ficha-tab-' + this.dataset.fichaTab).classList.add('active');
+          };
+        });
+
+        // Cargar historial de atenciones
+        cargarHistorialAtenciones(idPaciente);
+
       } else {
         alert("No se pudo cargar la información del paciente.");
       }
     }).catch(error => {
       alert("Error al cargar ficha: " + error.message);
+    });
+  };
+
+  // --- CARGAR HISTORIAL DE ATENCIONES ---
+  window.cargarHistorialAtenciones = function(idPaciente) {
+    db.collection("atenciones")
+      .where("pacienteId", "==", idPaciente)
+      .orderBy("fecha", "desc")
+      .get()
+      .then(snap => {
+        let html = "";
+        if (snap.empty) {
+          html = "<p style='color: #90a4ae; font-style: italic;'>No hay atenciones registradas aún.</p>";
+        } else {
+          snap.forEach(doc => {
+            const atencion = doc.data();
+            html += `
+              <div class="atencion-item">
+                <div class="atencion-fecha">📅 ${atencion.fecha}</div>
+                <div class="atencion-profesional">👨‍⚕️ Atendido por: ${atencion.profesional}</div>
+                <div class="atencion-texto">${atencion.descripcion}</div>
+              </div>
+            `;
+          });
+        }
+        document.getElementById(`historial-atenciones-${idPaciente}`).innerHTML += 
+          `<div class="historial-atenciones">${html}</div>`;
+      })
+      .catch(error => {
+        console.error("Error al cargar historial:", error);
+        document.getElementById(`historial-atenciones-${idPaciente}`).innerHTML += 
+          "<p style='color: #f44336;'>Error al cargar el historial de atenciones.</p>";
+      });
+  };
+
+  // --- GUARDAR NUEVA ATENCIÓN ---
+  window.guardarAtencion = function(idPaciente) {
+    const descripcion = document.getElementById(`nueva-atencion-${idPaciente}`).value.trim();
+    
+    if (!descripcion) {
+      alert("Debes escribir una descripción de la atención.");
+      return;
+    }
+
+    // Obtener información del profesional actual
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        db.collection("profesionales").doc(user.uid).get().then(doc => {
+          if (doc.exists) {
+            const profesional = doc.data();
+            
+            // Guardar la atención en la colección "atenciones"
+            db.collection("atenciones").add({
+              pacienteId: idPaciente,
+              descripcion: descripcion,
+              profesional: profesional.nombre,
+              profesionalId: user.uid,
+              fecha: new Date().toLocaleString(),
+              timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            })
+            .then(() => {
+              alert("✅ Atención guardada correctamente.");
+              // Limpiar el textarea
+              document.getElementById(`nueva-atencion-${idPaciente}`).value = "";
+              // Recargar historial
+              cargarHistorialAtenciones(idPaciente);
+            })
+            .catch(error => {
+              alert("❌ Error al guardar la atención: " + error.message);
+            });
+          }
+        });
+      } else {
+        alert("❌ Error: No se pudo identificar al profesional.");
+      }
     });
   };
 
