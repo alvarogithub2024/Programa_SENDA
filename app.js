@@ -421,15 +421,29 @@ window.onload = function() {
   window.cargarHistorialAtenciones = function(idPaciente) {
     db.collection("atenciones")
       .where("pacienteId", "==", idPaciente)
-      .orderBy("fecha", "desc")
       .get()
       .then(snap => {
         let html = "";
         if (snap.empty) {
           html = "<p style='color: #90a4ae; font-style: italic;'>No hay atenciones registradas aún.</p>";
         } else {
+          // Convertir a array y ordenar manualmente
+          const atenciones = [];
           snap.forEach(doc => {
-            const atencion = doc.data();
+            const data = doc.data();
+            // Convertir fecha string a Date para ordenar correctamente
+            const fechaDate = new Date(data.fecha);
+            atenciones.push({
+              ...data,
+              fechaDate: fechaDate
+            });
+          });
+          
+          // Ordenar por fecha descendente (más recientes primero)
+          atenciones.sort((a, b) => b.fechaDate - a.fechaDate);
+          
+          // Generar HTML
+          atenciones.forEach(atencion => {
             html += `
               <div class="atencion-item">
                 <div class="atencion-fecha">📅 ${atencion.fecha}</div>
@@ -439,13 +453,20 @@ window.onload = function() {
             `;
           });
         }
-        document.getElementById(`historial-atenciones-${idPaciente}`).innerHTML += 
-          `<div class="historial-atenciones">${html}</div>`;
+        
+        // Asegurar que el elemento existe antes de actualizar
+        const historialElement = document.getElementById(`historial-atenciones-${idPaciente}`);
+        if (historialElement) {
+          historialElement.innerHTML += `<div class="historial-atenciones">${html}</div>`;
+        }
       })
       .catch(error => {
         console.error("Error al cargar historial:", error);
-        document.getElementById(`historial-atenciones-${idPaciente}`).innerHTML += 
-          "<p style='color: #f44336;'>Error al cargar el historial de atenciones.</p>";
+        const historialElement = document.getElementById(`historial-atenciones-${idPaciente}`);
+        if (historialElement) {
+          historialElement.innerHTML += 
+            "<p style='color: #f44336;'>Error al cargar el historial de atenciones: " + error.message + "</p>";
+        }
       });
   };
 
@@ -464,6 +485,7 @@ window.onload = function() {
         db.collection("profesionales").doc(user.uid).get().then(doc => {
           if (doc.exists) {
             const profesional = doc.data();
+            const ahora = new Date();
             
             // Guardar la atención en la colección "atenciones"
             db.collection("atenciones").add({
@@ -471,17 +493,28 @@ window.onload = function() {
               descripcion: descripcion,
               profesional: profesional.nombre,
               profesionalId: user.uid,
-              fecha: new Date().toLocaleString(),
-              timestamp: firebase.firestore.FieldValue.serverTimestamp()
+              fecha: ahora.toLocaleString("es-CL", {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+              }),
+              timestamp: firebase.firestore.Timestamp.fromDate(ahora)
             })
             .then(() => {
               alert("✅ Atención guardada correctamente.");
               // Limpiar el textarea
               document.getElementById(`nueva-atencion-${idPaciente}`).value = "";
-              // Recargar historial
-              cargarHistorialAtenciones(idPaciente);
+              // Limpiar historial anterior y recargar
+              const historialElement = document.getElementById(`historial-atenciones-${idPaciente}`);
+              if (historialElement) {
+                historialElement.innerHTML = '<h6 style="color: #0d47a1; margin: 20px 0 15px 0; font-weight: 700;">📝 Historial de Atenciones:</h6>';
+                cargarHistorialAtenciones(idPaciente);
+              }
             })
             .catch(error => {
+              console.error("Error completo:", error);
               alert("❌ Error al guardar la atención: " + error.message);
             });
           }
@@ -498,5 +531,40 @@ window.onload = function() {
   };
   document.getElementById('modal-bg-profesional-panel').onclick = function(e) {
     if (e.target === this) this.style.display = 'none';
+  };
+
+  // --- CERRAR SESIÓN ---
+  document.getElementById('cerrar-sesion-btn').onclick = function() {
+    if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
+      auth.signOut().then(() => {
+        // Limpiar datos del panel
+        limpiarPanelProfesional();
+        // Cerrar modal
+        document.getElementById('modal-bg-profesional-panel').style.display = 'none';
+        // Mostrar mensaje
+        alert('✅ Sesión cerrada correctamente');
+      }).catch((error) => {
+        alert('❌ Error al cerrar sesión: ' + error.message);
+      });
+    }
+  };
+
+  // --- LIMPIAR PANEL PROFESIONAL ---
+  window.limpiarPanelProfesional = function() {
+    // Limpiar contenido de todas las pestañas
+    document.getElementById('tab-mis-datos').innerHTML = '<h3>Información del Profesional</h3><p>Cargando datos...</p>';
+    document.getElementById('tab-solicitudes').innerHTML = '<h3>Solicitudes Pendientes</h3><p>Cargando solicitudes...</p>';
+    document.getElementById('tab-derivaciones').innerHTML = '<h3>Derivaciones Médicas</h3><p>Cargando derivaciones...</p>';
+    document.getElementById('tab-ficha-paciente').innerHTML = '<h3>Ficha del Paciente</h3><div id="contenido-ficha-paciente"><p>Busca un paciente para ver su ficha completa.</p></div>';
+    
+    // Limpiar formulario de búsqueda
+    document.getElementById('buscar-rut').value = '';
+    document.getElementById('resultados-busqueda').innerHTML = '';
+    
+    // Volver a la primera pestaña
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelector('[data-tab="mis-datos"]').classList.add('active');
+    document.getElementById('tab-mis-datos').classList.add('active');
   };
 };
