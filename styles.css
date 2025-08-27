@@ -355,6 +355,27 @@ form { margin-top: 7px; }
   font-size: 1.1rem;
 }
 
+/* Texto más pequeño en solicitudes */
+.solicitud-item p, .solicitud-item b {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.solicitud-item strong {
+  font-size: 1rem !important;
+}
+
+/* Texto más pequeño en derivaciones */
+.derivacion-item {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.derivacion-item b {
+  font-size: 0.9rem;
+}
+
 /* Ficha clickeable */
 .ficha-clickeable {
   cursor: pointer;
