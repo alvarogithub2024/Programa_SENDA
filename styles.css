@@ -196,6 +196,31 @@ form { margin-top: 7px; }
   transform: scale(1.1);
   box-shadow: 0 6px 16px rgba(244, 67, 54, 0.4);
 }
+
+/* Botón de cerrar sesión */
+.logout-btn {
+  position: absolute;
+  right: 60px;
+  top: 18px;
+  background: linear-gradient(135deg, #ff9800 0%, #ffb74d 100%);
+  border: none;
+  font-size: 0.9rem;
+  color: #fff;
+  cursor: pointer;
+  font-weight: bold;
+  padding: 8px 16px;
+  border-radius: 20px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.8rem;
+}
+.logout-btn:hover {
+  background: linear-gradient(135deg, #f57c00 0%, #ff9800 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 152, 0, 0.4);
+}
 .modal h2 {
   text-align: center;
   color: #0d47a1;
