@@ -41,8 +41,8 @@ p {
   border-radius: 24px;
   box-shadow: 0 12px 40px 0 rgba(13, 71, 161, 0.15);
   padding: 38px 38px 28px 38px;
-  max-width: 500px;
-  margin: 80px auto 48px auto;
+  max-width: 600px;
+  margin: 80px auto 30px auto;
   text-align: center;
   transition: box-shadow 0.3s, transform 0.2s;
   backdrop-filter: blur(10px);
@@ -51,6 +51,58 @@ p {
 .container:hover {
   box-shadow: 0 16px 50px 0 rgba(13, 71, 161, 0.25);
   transform: translateY(-2px);
+}
+
+/* --------- FOOTER SENDA --------- */
+.footer-senda {
+  background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);
+  color: white;
+  padding: 25px 20px;
+  text-align: center;
+  margin-top: 40px;
+  border-top: 3px solid #4caf50;
+}
+
+.footer-content {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.footer-content p {
+  margin: 8px 0;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.enlace-oficial {
+  display: inline-block;
+  background: linear-gradient(135deg, #4caf50 0%, #81c784 100%);
+  color: white;
+  text-decoration: none;
+  padding: 12px 25px;
+  border-radius: 25px;
+  font-weight: 700;
+  font-size: 1rem;
+  margin: 15px 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.enlace-oficial:hover {
+  background: linear-gradient(135deg, #388e3c 0%, #66bb6a 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+  text-decoration: none;
+  color: white;
+}
+
+.footer-disclaimer {
+  font-size: 0.8rem !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  font-style: italic;
+  margin-top: 15px !important;
 }
 
 /* --------- BUTTONS --------- */
@@ -642,23 +694,252 @@ form { margin-top: 7px; }
   margin-top: 24px;
 }
 
-/* --------- RESPONSIVE PARA PANEL PROFESIONAL --------- */
-@media (max-width: 1200px) {
-  .horizontal-panel { 
-    max-width: 90vw !important; 
-    min-width: 0 !important;
-    width: 90vw !important;
+/* --------- RESPONSIVE MEJORADO --------- */
+
+/* Pantallas grandes (escritorio) */
+@media (min-width: 1400px) {
+  .container {
+    max-width: 700px;
+    padding: 45px;
   }
-  .tabs-content-horizontal { 
-    padding: 20px 25px !important; 
+  
+  #modal-bg-profesional-panel .modal.horizontal-panel {
+    max-width: 1000px !important;
+    width: 80vw !important;
   }
-  .tabs-vertical { 
-    min-width: 180px !important; 
-    max-width: 180px !important; 
+}
+
+/* Pantallas medianas (laptop, tablet horizontal) */
+@media (max-width: 1200px) and (min-width: 769px) {
+  .container {
+    max-width: 550px;
+    padding: 35px;
+    margin: 60px auto 30px auto;
   }
-  .tabs-vertical .tab-btn {
+  
+  .boton-profesional {
+    top: 25px;
+    right: 25px;
+    padding: 12px 24px;
+    font-size: 0.9rem;
+  }
+  
+  #modal-bg-profesional-panel .modal.horizontal-panel {
+    max-width: 900px !important;
+    width: 85vw !important;
+    height: 420px !important;
+  }
+  
+  #modal-bg-profesional-panel .tabs-content-horizontal {
+    padding: 20px 25px !important;
+  }
+  
+  #modal-bg-profesional-panel .tabs-vertical {
+    min-width: 150px !important;
+    max-width: 150px !important;
+  }
+  
+  #modal-bg-profesional-panel .tabs-vertical .tab-btn {
+    font-size: 0.7rem !important;
+    padding: 12px 14px !important;
+  }
+}
+
+/* Tablets verticales */
+@media (max-width: 768px) and (min-width: 481px) {
+  .container {
+    max-width: 90%;
+    padding: 30px 25px;
+    margin: 40px auto 30px auto;
+  }
+  
+  h1 {
+    font-size: 1.8rem;
+  }
+  
+  p {
+    font-size: 1rem;
+  }
+  
+  .boton-profesional {
+    top: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    font-size: 0.85rem;
+  }
+  
+  #modal-bg-profesional-panel .modal.horizontal-panel {
+    flex-direction: column !important;
+    width: 95vw !important;
+    height: auto !important;
+    max-height: 90vh !important;
+    min-height: auto !important;
+  }
+  
+  #modal-bg-profesional-panel .panel-horizontal-wrapper {
+    flex-direction: column !important;
+  }
+  
+  #modal-bg-profesional-panel .tabs-vertical {
+    flex-direction: row !important;
+    border-radius: 16px 16px 0 0 !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 15px 10px !important;
+    gap: 5px !important;
+    justify-content: flex-start !important;
+    overflow-x: auto !important;
+  }
+  
+  #modal-bg-profesional-panel .tabs-vertical .tab-btn {
+    border-radius: 10px !important;
+    margin: 0 3px !important;
+    padding: 10px 12px !important;
+    font-size: 0.7rem !important;
+    text-align: center !important;
+    min-width: 85px !important;
+    flex-shrink: 0 !important;
+    border-left: none !important;
+    border-bottom: 3px solid transparent !important;
+  }
+  
+  #modal-bg-profesional-panel .tabs-vertical .tab-btn:hover {
+    transform: translateY(-2px) !important;
+    border-bottom: 3px solid rgba(255, 255, 255, 0.5) !important;
+  }
+  
+  #modal-bg-profesional-panel .tabs-vertical .tab-btn.active {
+    transform: translateY(-2px) !important;
+    border-left: none !important;
+    border-bottom: 3px solid #4caf50 !important;
+  }
+  
+  #modal-bg-profesional-panel .logout-tab-btn {
+    margin: 0 3px !important;
+    margin-left: auto !important;
+  }
+  
+  #modal-bg-profesional-panel .tabs-content-horizontal {
+    border-radius: 0 0 16px 16px !important;
+    padding: 20px !important;
+    height: auto !important;
+    max-height: 60vh !important;
+  }
+}
+
+/* Móviles */
+@media (max-width: 480px) {
+  body {
+    padding: 0 10px;
+  }
+  
+  .container {
+    max-width: 95%;
+    padding: 25px 20px;
+    margin: 30px auto 20px auto;
+    border-radius: 16px;
+  }
+  
+  h1 {
+    font-size: 1.6rem;
+    margin-bottom: 12px;
+  }
+  
+  p {
+    font-size: 0.95rem;
+    margin-bottom: 15px;
+  }
+  
+  .boton-profesional {
+    top: 15px;
+    right: 15px;
+    padding: 8px 15px;
+    font-size: 0.8rem;
+  }
+  
+  .modal {
+    padding: 20px 15px !important;
+    max-width: 95vw !important;
+    border-radius: 16px;
+  }
+  
+  .modal h2 {
+    font-size: 1.1rem;
+  }
+  
+  .form-group input,
+  .form-group select {
+    padding: 10px 14px;
+    font-size: 1rem;
+  }
+  
+  button,
+  .boton-inscribirme,
+  .boton-ingresar,
+  .boton-login {
+    padding: 12px 25px;
+    font-size: 0.9rem;
+  }
+  
+  #modal-bg-profesional-panel .modal.horizontal-panel {
+    width: 98vw !important;
+    height: auto !important;
+    max-height: 95vh !important;
+    border-radius: 12px !important;
+  }
+  
+  #modal-bg-profesional-panel .tabs-vertical .tab-btn {
+    font-size: 0.65rem !important;
+    padding: 8px 10px !important;
+    min-width: 75px !important;
+  }
+  
+  #modal-bg-profesional-panel .tabs-content-horizontal {
+    padding: 15px !important;
+  }
+  
+  #modal-bg-profesional-panel .logout-tab-btn {
+    font-size: 0.65rem !important;
+    padding: 8px 10px !important;
+  }
+  
+  /* Footer responsive */
+  .footer-senda {
+    padding: 20px 15px;
+  }
+  
+  .enlace-oficial {
+    display: block;
+    margin: 15px auto;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    max-width: 280px;
+  }
+  
+  .footer-content p {
+    font-size: 0.9rem;
+  }
+  
+  /* Fichas del paciente responsive */
+  .ficha-tabs-horizontal {
+    flex-wrap: wrap;
+  }
+  
+  .ficha-tab-btn {
+    flex: 1 !important;
+    min-width: 100px !important;
     font-size: 0.8rem !important;
-    padding: 14px 18px !important;
+    padding: 10px 15px !important;
+  }
+  
+  .info-row {
+    flex-direction: column;
+  }
+  
+  .info-row span {
+    text-align: left;
+    margin-top: 4px;
   }
 }
 
