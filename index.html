@@ -5,125 +5,22 @@
   <title>PROGRAMA SENDA</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="styles.css">
-  <!-- Firebase scripts necesarios -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <button class="boton-profesional" id="abrir-modal-profesional">Ingresar como profesional</button>
   <div class="container" id="main-panel">
     <h1>Programa SENDA</h1>
     <p>
-      SENDA busca mitigar el impacto social y sanitario de los consumos de alcohol y otras drogas en niños, niñas, adolescentes, hombres, mujeres y colectivos de las diversidades sexo/genéricas, para mejorar el bienestar y la calidad de vida en las personas y comunidades.
+      SENDA busca mitigar el impacto social y sanitario de los consumos de alcohol y otras drogas...
     </p>
     <p>
-      Para lograrlo, diseña, implementa, entrega de información, orienta, articula y coordina de acciones efectivas, oportunas y de calidad, considerando las particularidades del territorio.
+      Para lograrlo, diseña, implementa, entrega de información, orienta, articula y coordina de acciones efectivas...
     </p>
     <button class="boton-inscribirme" id="abrir-modal">Inscribirme</button>
   </div>
 
-  <!-- Modal Inscribirse -->
-  <div class="modal-bg" id="modal-bg">
-    <div class="modal">
-      <button class="close-modal" id="cerrar-modal" title="Cerrar">&times;</button>
-      <h2>Formulario de inscripción</h2>
-      <form id="form-inscripcion">
-        <div class="form-group">
-          <label for="nombre-insc">Nombre:</label>
-          <input type="text" id="nombre-insc" name="nombre-insc" required>
-        </div>
-        <div class="form-group">
-          <label for="apellido-insc">Apellido:</label>
-          <input type="text" id="apellido-insc" name="apellido-insc" required>
-        </div>
-        <div class="form-group">
-          <label for="rut-insc">RUT:</label>
-          <input type="text" id="rut-insc" name="rut-insc" required>
-        </div>
-        <div class="form-group">
-          <label for="telefono-insc">Teléfono:</label>
-          <input type="tel" id="telefono-insc" name="telefono-insc" required>
-        </div>
-        <div class="form-group">
-          <label for="correo-insc">Correo electrónico:</label>
-          <input type="email" id="correo-insc" name="correo-insc" required>
-        </div>
-        <div class="form-group">
-          <label for="comuna-insc">Comuna:</label>
-          <input type="text" id="comuna-insc" name="comuna-insc" required>
-        </div>
-        <div class="form-group">
-          <label for="direccion-insc">Dirección:</label>
-          <input type="text" id="direccion-insc" name="direccion-insc" required>
-        </div>
-        <button type="submit" class="boton-ingresar">Enviar inscripción</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modal Profesional: menú -->
-  <div class="modal-bg" id="modal-bg-login-profesional">
-    <div class="modal">
-      <button class="close-modal" id="cerrar-modal-login-profesional" title="Cerrar">&times;</button>
-      <h2>Acceso profesional</h2>
-      <button class="boton-login" id="abrir-form-ingresar">Ingresar</button>
-      <button class="boton-login" id="abrir-form-registrar">Registrarse</button>
-    </div>
-  </div>
-
-  <!-- Modal Ingresar Profesional -->
-  <div class="modal-bg" id="modal-bg-ingresar">
-    <div class="modal">
-      <button class="close-modal" id="cerrar-modal-ingresar" title="Cerrar">&times;</button>
-      <h2>Ingresar</h2>
-      <form id="form-login-profesional">
-        <div class="form-group">
-          <label for="correo-login">Correo institucional:</label>
-          <input type="email" id="correo-login" name="correo-login" required>
-        </div>
-        <div class="form-group">
-          <label for="clave-login">Contraseña:</label>
-          <input type="password" id="clave-login" name="clave-login" required>
-        </div>
-        <button type="submit" class="boton-login">Ingresar</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modal Registrar Profesional -->
-  <div class="modal-bg" id="modal-bg-registrar">
-    <div class="modal">
-      <button class="close-modal" id="cerrar-modal-registrar" title="Cerrar">&times;</button>
-      <h2>Registrarse</h2>
-      <form id="form-registrar-profesional">
-        <div class="form-group">
-          <label for="nombre-completo">Nombre completo:</label>
-          <input type="text" id="nombre-completo" name="nombre-completo" required>
-        </div>
-        <div class="form-group">
-          <label for="correo-registrar">Correo institucional:</label>
-          <input type="email" id="correo-registrar" name="correo-registrar" required>
-        </div>
-        <div class="form-group">
-          <label for="clave-registrar">Contraseña:</label>
-          <input type="password" id="clave-registrar" name="clave-registrar" required>
-        </div>
-        <div class="form-group">
-          <label for="profesion-registrar">Profesión:</label>
-          <select id="profesion-registrar" name="profesion-registrar" required>
-            <option value="">Seleccione...</option>
-            <option value="asistente_social">Asistente social</option>
-            <option value="medico">Médico</option>
-          </select>
-        </div>
-        <button type="submit" class="boton-login">Registrarse</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modal Panel Profesional con pestañas VERTICALES -->
-  <div class="modal-bg" id="modal-bg-profesional-panel">
+  <!-- Modal Panel Profesional con pestañas VERTICALES Y CONTENIDO HORIZONTAL -->
+  <div class="modal-bg" id="modal-bg-profesional-panel" style="display: flex;">
     <div class="modal horizontal-panel" id="panel-profesional">
       <button class="close-modal" id="cerrar-modal-prof-panel" title="Cerrar">&times;</button>
       <div class="panel-horizontal-wrapper">
@@ -131,13 +28,49 @@
           <button class="tab-btn active" data-tab="mis-datos">Mis datos</button>
           <button class="tab-btn" data-tab="solicitudes">Solicitudes</button>
           <button class="tab-btn" data-tab="buscar-ficha">Buscar ficha</button>
-          <button class="tab-btn" data-tab="derivaciones" id="btn-derivaciones" style="display:none;">Derivaciones</button>
+          <button class="tab-btn" data-tab="derivaciones">Derivaciones</button>
         </div>
         <div class="tabs-content-horizontal">
-          <div class="tab-content active" id="tab-mis-datos"></div>
-          <div class="tab-content" id="tab-solicitudes"></div>
-          <div class="tab-content" id="tab-buscar-ficha"></div>
-          <div class="tab-content" id="tab-derivaciones"></div>
+          <div class="tab-content active" id="tab-mis-datos">
+            <h3>Camila Morales</h3>
+            <p>Correo: camila@senda.cl</p>
+            <p>Profesión: Asistente Social</p>
+            <p>FERNANDA SILVA - 11000111-2</p>
+            <p>Comuna: SANTIAGO Tel: 952147033</p>
+          </div>
+          <div class="tab-content" id="tab-solicitudes">
+            <div class="solicitud-item">
+              <strong>CAMILA saez - 27.406.274-6</strong><br>
+              <span>Comuna: la reina</span><br>
+              <label>Observación de derivación:</label><br>
+              <textarea placeholder="Observación para derivar"></textarea><br>
+              <button class="boton-ingresar">Derivar al médico</button>
+            </div>
+            <!-- Más solicitudes aquí -->
+          </div>
+          <div class="tab-content" id="tab-buscar-ficha">
+            <form>
+              <div class="form-group">
+                <label for="buscar-rut">Buscar por RUT:</label>
+                <input type="text" id="buscar-rut" name="buscar-rut">
+              </div>
+              <button type="submit" class="boton-ingresar">Buscar</button>
+            </form>
+            <div class="ficha-paciente" style="margin-top:32px;">
+              <!-- Resultados de búsqueda aquí -->
+            </div>
+          </div>
+          <div class="tab-content" id="tab-derivaciones">
+            <div class="derivacion-item">
+              <strong>Sofia monares - 22111333-4</strong><br>
+              <span>Comuna: la florida</span><br>
+              <b>Observación de derivación:</b> problemas con las drogas<br>
+              <b>Derivado por:</b> camila morales<br>
+              <textarea placeholder="Información de la atención"></textarea><br>
+              <button class="boton-ingresar">Registrar atención</button>
+            </div>
+            <!-- Más derivaciones aquí -->
+          </div>
         </div>
       </div>
     </div>
