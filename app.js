@@ -1,4 +1,3 @@
-
 // Firebase Configuration
 const firebaseConfig = {
   apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
@@ -41,6 +40,9 @@ function showModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) {
     modal.style.display = 'flex';
+    console.log('Modal abierto:', modalId);
+  } else {
+    console.error('Modal no encontrado:', modalId);
   }
 }
 
@@ -97,97 +99,61 @@ function getProfessionName(profession) {
   return names[profession] || profession;
 }
 
-function formatDate(timestamp) {
-  if (!timestamp) return 'N/A';
-  
-  let date;
-  if (timestamp.toDate) {
-    date = timestamp.toDate();
-  } else if (timestamp instanceof Date) {
-    date = timestamp;
-  } else {
-    date = new Date(timestamp);
-  }
-  
-  return date.toLocaleDateString('es-CL', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-}
-
 // Wait for DOM to be fully loaded
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('DOM loaded, initializing app...');
+window.addEventListener('load', function() {
+  console.log('Página completamente cargada, inicializando...');
   initializeApp();
 });
 
 function initializeApp() {
+  console.log('Inicializando aplicación...');
+  
   try {
-    // Initialize all event listeners
-    initializeEventListeners();
-    setupFormValidation();
-    setupTabFunctionality();
-    setupModalControls();
+    // Verificar que los elementos existen
+    const registerBtn = document.getElementById('register-patient');
+    const loginBtn = document.getElementById('login-professional');
+    const aboutBtn = document.getElementById('about-program');
     
-    console.log('App initialized successfully');
-    showNotification('Sistema SENDA cargado correctamente', 'success');
+    console.log('Elementos encontrados:');
+    console.log('- Botón registrar:', registerBtn ? 'SÍ' : 'NO');
+    console.log('- Botón login:', loginBtn ? 'SÍ' : 'NO');
+    console.log('- Botón about:', aboutBtn ? 'SÍ' : 'NO');
+    
+    if (registerBtn) {
+      registerBtn.addEventListener('click', function() {
+        console.log('Click en registro de paciente');
+        showModal('patient-modal');
+      });
+    }
+    
+    if (loginBtn) {
+      loginBtn.addEventListener('click', function() {
+        console.log('Click en login profesional');
+        showModal('professional-modal');
+      });
+    }
+    
+    if (aboutBtn) {
+      aboutBtn.addEventListener('click', function() {
+        showNotification('Redirigiendo al sitio oficial de SENDA...', 'info');
+        setTimeout(() => {
+          window.open('https://www.senda.gob.cl', '_blank');
+        }, 1000);
+      });
+    }
+    
+    // Setup modal controls
+    setupModalControls();
+    setupTabFunctionality();
+    setupFormValidation();
+    setupFormSubmissions();
+    
+    console.log('Aplicación inicializada correctamente');
+    showNotification('Sistema SENDA cargado', 'success');
+    
   } catch (error) {
-    console.error('Error initializing app:', error);
+    console.error('Error inicializando aplicación:', error);
     showNotification('Error al cargar el sistema', 'error');
-  }
-}
-
-function initializeEventListeners() {
-  // Main action buttons
-  const registerBtn = document.getElementById('register-patient');
-  const loginBtn = document.getElementById('login-professional');
-  const aboutBtn = document.getElementById('about-program');
-
-  if (registerBtn) {
-    registerBtn.addEventListener('click', function() {
-      console.log('Register patient button clicked');
-      showModal('patient-modal');
-    });
-  } else {
-    console.error('Register patient button not found');
-  }
-
-  if (loginBtn) {
-    loginBtn.addEventListener('click', function() {
-      console.log('Login professional button clicked');
-      showModal('professional-modal');
-    });
-  } else {
-    console.error('Login professional button not found');
-  }
-
-  if (aboutBtn) {
-    aboutBtn.addEventListener('click', function() {
-      showNotification('Redirigiendo al sitio oficial de SENDA...', 'info');
-      setTimeout(() => {
-        window.open('https://www.senda.gob.cl', '_blank');
-      }, 1000);
-    });
-  }
-
-  // Form submissions
-  const patientForm = document.getElementById('patient-form');
-  const loginForm = document.getElementById('login-form');
-  const registerForm = document.getElementById('register-form');
-
-  if (patientForm) {
-    patientForm.addEventListener('submit', handlePatientRegistration);
-  }
-
-  if (loginForm) {
-    loginForm.addEventListener('submit', handleProfessionalLogin);
-  }
-
-  if (registerForm) {
-    registerForm.addEventListener('submit', handleProfessionalRegistration);
   }
 }
 
@@ -262,10 +228,30 @@ function setupFormValidation() {
   });
 }
 
+function setupFormSubmissions() {
+  // Patient form
+  const patientForm = document.getElementById('patient-form');
+  if (patientForm) {
+    patientForm.addEventListener('submit', handlePatientRegistration);
+  }
+
+  // Login form
+  const loginForm = document.getElementById('login-form');
+  if (loginForm) {
+    loginForm.addEventListener('submit', handleProfessionalLogin);
+  }
+
+  // Register form
+  const registerForm = document.getElementById('register-form');
+  if (registerForm) {
+    registerForm.addEventListener('submit', handleProfessionalRegistration);
+  }
+}
+
 // Patient Registration Handler
 async function handlePatientRegistration(e) {
   e.preventDefault();
-  console.log('Handling patient registration...');
+  console.log('Procesando registro de paciente...');
   
   const formData = {
     name: document.getElementById('patient-name').value.trim(),
@@ -311,11 +297,11 @@ async function handlePatientRegistration(e) {
     }
 
     await db.collection('solicitudes').add(formData);
-    showNotification('Inscripción enviada exitosamente. Recibirás una confirmación por correo.', 'success');
+    showNotification('Inscripción enviada exitosamente', 'success');
     closeModal('patient-modal');
     document.getElementById('patient-form').reset();
   } catch (error) {
-    console.error('Error submitting patient registration:', error);
+    console.error('Error enviando inscripción:', error);
     showNotification('Error al enviar la inscripción: ' + error.message, 'error');
   }
 }
@@ -323,7 +309,7 @@ async function handlePatientRegistration(e) {
 // Professional Login Handler
 async function handleProfessionalLogin(e) {
   e.preventDefault();
-  console.log('Handling professional login...');
+  console.log('Procesando login...');
   
   const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
@@ -348,14 +334,12 @@ async function handleProfessionalLogin(e) {
       showNotification('No se encontraron datos de usuario profesional', 'error');
     }
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Error de login:', error);
     let errorMessage = 'Error al iniciar sesión';
     if (error.code === 'auth/user-not-found') {
-      errorMessage = 'No existe un usuario con este correo electrónico';
+      errorMessage = 'Usuario no encontrado';
     } else if (error.code === 'auth/wrong-password') {
       errorMessage = 'Contraseña incorrecta';
-    } else if (error.code === 'auth/invalid-email') {
-      errorMessage = 'Correo electrónico inválido';
     }
     showNotification(errorMessage, 'error');
   }
@@ -364,7 +348,7 @@ async function handleProfessionalLogin(e) {
 // Professional Registration Handler
 async function handleProfessionalRegistration(e) {
   e.preventDefault();
-  console.log('Handling professional registration...');
+  console.log('Procesando registro de profesional...');
   
   const formData = {
     name: document.getElementById('register-name').value.trim(),
@@ -380,13 +364,6 @@ async function handleProfessionalRegistration(e) {
     return;
   }
 
-  // Validate email
-  if (!isValidEmail(formData.email)) {
-    showNotification('Por favor ingresa un correo electrónico válido', 'error');
-    return;
-  }
-
-  // Validate password strength
   if (formData.password.length < 6) {
     showNotification('La contraseña debe tener al menos 6 caracteres', 'error');
     return;
@@ -405,7 +382,7 @@ async function handleProfessionalRegistration(e) {
       activo: true
     });
 
-    showNotification('Registro exitoso. Ahora puedes iniciar sesión.', 'success');
+    showNotification('Registro exitoso', 'success');
     
     // Switch to login tab
     const loginTab = document.querySelector('[data-tab="login"]');
@@ -414,31 +391,22 @@ async function handleProfessionalRegistration(e) {
     }
     
     document.getElementById('register-form').reset();
+    document.getElementById('login-email').value = formData.email;
     
-    // Pre-fill login email
-    const loginEmail = document.getElementById('login-email');
-    if (loginEmail) {
-      loginEmail.value = formData.email;
-    }
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('Error de registro:', error);
     let errorMessage = 'Error al registrar';
     if (error.code === 'auth/email-already-in-use') {
       errorMessage = 'El correo ya está registrado';
-    } else if (error.code === 'auth/weak-password') {
-      errorMessage = 'La contraseña es muy débil';
-    } else if (error.code === 'auth/invalid-email') {
-      errorMessage = 'Correo electrónico inválido';
     }
     showNotification(errorMessage, 'error');
   }
 }
 
-// Professional Panel Functions
+// Professional Panel
 function showProfessionalPanel(userData) {
   showModal('panel-modal');
   
-  // Update user info
   const userName = document.getElementById('user-name');
   const userRole = document.getElementById('user-role');
   const userAvatar = document.getElementById('user-avatar');
@@ -447,20 +415,12 @@ function showProfessionalPanel(userData) {
   if (userRole) userRole.textContent = getProfessionName(userData.profesion);
   if (userAvatar) userAvatar.textContent = userData.nombre.substring(0, 2).toUpperCase();
 
-  // Setup navigation
   setupPanelNavigation(userData);
   
-  // Load initial panel
-  showPanel('dashboard', userData);
-
-  // Logout functionality
   const logoutBtn = document.getElementById('logout-btn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', handleLogout);
   }
-  
-  // Load requests badge
-  updateRequestsBadge();
 }
 
 function setupPanelNavigation(userData) {
@@ -468,139 +428,39 @@ function setupPanelNavigation(userData) {
     item.addEventListener('click', function() {
       const panel = item.dataset.panel;
       if (panel) {
-        showPanel(panel, userData);
-        
-        // Update active nav item
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         item.classList.add('active');
+        
+        document.querySelectorAll('.panel-content').forEach(p => {
+          p.classList.add('hidden');
+          p.classList.remove('active');
+        });
+        
+        const targetPanel = document.getElementById(panel + '-panel');
+        if (targetPanel) {
+          targetPanel.classList.remove('hidden');
+          targetPanel.classList.add('active');
+        }
       }
     });
   });
 }
 
-function showPanel(panelId, userData) {
-  // Hide all panels
-  document.querySelectorAll('.panel-content').forEach(panel => {
-    panel.classList.add('hidden');
-    panel.classList.remove('active');
-  });
-
-  // Show selected panel
-  const targetPanel = document.getElementById(panelId + '-panel');
-  if (targetPanel) {
-    targetPanel.classList.remove('hidden');
-    targetPanel.classList.add('active');
-
-    // Load panel-specific content
-    switch (panelId) {
-      case 'dashboard':
-        loadDashboard(userData);
-        break;
-      case 'requests':
-        loadRequests(userData);
-        break;
-      case 'patients':
-        setupPatientSearch(userData);
-        break;
-    }
-  }
-}
-
-async function loadDashboard(userData) {
-  console.log('Loading dashboard for:', userData.nombre);
-  // Dashboard loading logic here
-}
-
-async function loadRequests(userData) {
-  console.log('Loading requests for:', userData.nombre);
-  // Requests loading logic here
-}
-
-function setupPatientSearch(userData) {
-  console.log('Setting up patient search for:', userData.nombre);
-  // Patient search logic here
-}
-
-async function updateRequestsBadge() {
-  try {
-    const snapshot = await db.collection('solicitudes')
-      .where('derivacion', '==', 'pendiente')
-      .get();
-    
-    const badge = document.getElementById('requests-badge');
-    if (badge) {
-      const count = snapshot.size;
-      badge.textContent = count;
-      badge.style.display = count > 0 ? 'block' : 'none';
-    }
-  } catch (error) {
-    console.error('Error updating requests badge:', error);
-  }
-}
-
 async function handleLogout() {
-  if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
+  if (confirm('¿Cerrar sesión?')) {
     try {
       await auth.signOut();
-      currentUser = null;
-      currentUserData = null;
       closeModal('panel-modal');
-      showNotification('Sesión cerrada correctamente', 'success');
-      
-      // Clear forms
-      const loginForm = document.getElementById('login-form');
-      const registerForm = document.getElementById('register-form');
-      
-      if (loginForm) loginForm.reset();
-      if (registerForm) registerForm.reset();
-      
-      // Reset to login tab
-      const loginTab = document.querySelector('[data-tab="login"]');
-      if (loginTab) loginTab.click();
-      
+      showNotification('Sesión cerrada', 'success');
     } catch (error) {
-      console.error('Logout error:', error);
-      showNotification('Error al cerrar sesión: ' + error.message, 'error');
+      showNotification('Error al cerrar sesión', 'error');
     }
   }
 }
 
-// Authentication State Observer
+// Authentication Observer
 auth.onAuthStateChanged(user => {
   currentUser = user;
-  if (user) {
-    loadUserData(user.uid);
-  }
 });
 
-async function loadUserData(uid) {
-  try {
-    const doc = await db.collection('profesionales').doc(uid).get();
-    if (doc.exists) {
-      currentUserData = { uid, ...doc.data() };
-    }
-  } catch (error) {
-    console.error('Error loading user data:', error);
-  }
-}
-
-// Error handling
-window.addEventListener('error', function(e) {
-  console.error('JavaScript error:', e.error);
-});
-
-window.addEventListener('unhandledrejection', function(e) {
-  console.error('Unhandled promise rejection:', e.reason);
-});
-
-// Export functions for debugging
-window.sendaApp = {
-  showNotification,
-  showModal,
-  closeModal,
-  formatRUT,
-  validateRUT,
-  getProfessionName
-};
-
-console.log('SENDA App script loaded');
+console.log('Script SENDA cargado');
