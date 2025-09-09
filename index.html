@@ -2,188 +2,389 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>PROGRAMA SENDA</title>
+  <title>SENDA - Sistema de Gestión Integral</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="styles.css">
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
-  <div class="main-content">
-    <button class="boton-profesional" id="abrir-modal-profesional">Ingresar como profesional</button>
-    
-    <div class="container" id="main-panel">
-      <h1>Programa SENDA</h1>
-      <p>
-       SENDA busca mitigar el impacto social y sanitario de los consumos de alcohol y otras drogas en niños, niñas, adolescentes, hombres, mujeres y colectivos de las diversidades sexo/genéricas, para mejorar el bienestar y la calidad de vida en las personas y comunidades.
-      </p>
-      <p>
-        Para lograrlo, diseña, implementa, entrega de información, orienta, articula y coordina de acciones efectivas, oportunas y de calidad, considerando las particularidades del territorio.
-      </p>
-      <button class="boton-inscribirme" id="abrir-modal">Inscribirme</button>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <div class="logo">
+        <i class="fas fa-heartbeat"></i>
+        <span>SENDA</span>
+      </div>
+      <button class="btn btn-outline btn-professional" id="login-professional">
+        <i class="fas fa-user-md"></i>
+        Acceso Profesional
+      </button>
     </div>
-  </div>
+  </header>
 
-  <!-- Footer con enlace oficial SENDA -->
-  <footer class="footer-senda">
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="hero-card">
+      <h1>Programa SENDA</h1>
+      <p class="subtitle">Sistema de Gestión Integral para Profesionales de la Salud</p>
+      
+      <p class="description">
+        SENDA busca mitigar el impacto social y sanitario de los consumos de alcohol y otras drogas 
+        en niños, niñas, adolescentes, hombres, mujeres y colectivos de las diversidades sexo/genéricas, 
+        para mejorar el bienestar y la calidad de vida en las personas y comunidades.
+      </p>
+
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span class="stat-number">1,250+</span>
+          <span class="stat-label">Pacientes Atendidos</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">48</span>
+          <span class="stat-label">Profesionales Activos</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">95%</span>
+          <span class="stat-label">Satisfacción</span>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-primary" id="register-patient">
+          <i class="fas fa-user-plus"></i>
+          Inscribir Paciente
+        </button>
+        <button class="btn btn-secondary" id="about-program">
+          <i class="fas fa-info-circle"></i>
+          Sobre el Programa
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
     <div class="footer-content">
       <p>Para más información oficial sobre SENDA:</p>
-      <a href="https://www.senda.gob.cl" target="_blank" rel="noopener noreferrer" class="enlace-oficial">
-        🌐 www.senda.gob.cl - Sitio Oficial SENDA
+      <a href="https://www.senda.gob.cl" target="_blank" class="footer-link">
+        <i class="fas fa-globe"></i>
+        Sitio Oficial SENDA
       </a>
-      <p class="footer-disclaimer">Este es un sistema interno para profesionales del Programa SENDA</p>
+      <p style="margin-top: 16px; font-size: 14px; color: var(--gray-400);">
+        Sistema interno para profesionales del Programa SENDA
+      </p>
     </div>
   </footer>
 
-  <!-- Modal Inscripción Paciente -->
-  <div class="modal-bg" id="modal-bg">
+  <!-- Patient Registration Modal -->
+  <div class="modal-overlay" id="patient-modal">
     <div class="modal">
-      <button class="close-modal" id="cerrar-modal">&times;</button>
+      <button class="modal-close" data-close="patient-modal">
+        <i class="fas fa-times"></i>
+      </button>
       <h2>Inscripción de Paciente</h2>
-      <form id="form-inscripcion">
+      <form id="patient-form">
         <div class="form-group">
-          <label for="nombre-insc">Nombre:</label>
-          <input type="text" id="nombre-insc" required>
+          <label class="form-label">Nombre Completo</label>
+          <input type="text" class="form-input" id="patient-name" required>
         </div>
         <div class="form-group">
-          <label for="apellido-insc">Apellido:</label>
-          <input type="text" id="apellido-insc" required>
+          <label class="form-label">Apellidos</label>
+          <input type="text" class="form-input" id="patient-lastname" required>
         </div>
         <div class="form-group">
-          <label for="rut-insc">RUT:</label>
-          <input type="text" id="rut-insc" required>
+          <label class="form-label">RUT</label>
+          <input type="text" class="form-input" id="patient-rut" placeholder="12.345.678-9" required>
         </div>
         <div class="form-group">
-          <label for="telefono-insc">Teléfono:</label>
-          <input type="text" id="telefono-insc" required>
+          <label class="form-label">Teléfono</label>
+          <input type="tel" class="form-input" id="patient-phone" placeholder="+56 9 1234 5678" required>
         </div>
         <div class="form-group">
-          <label for="correo-insc">Correo:</label>
-          <input type="email" id="correo-insc" required>
+          <label class="form-label">Correo Electrónico</label>
+          <input type="email" class="form-input" id="patient-email" required>
         </div>
         <div class="form-group">
-          <label for="comuna-insc">Comuna:</label>
-          <input type="text" id="comuna-insc" required>
+          <label class="form-label">Comuna</label>
+          <input type="text" class="form-input" id="patient-comuna" required>
         </div>
         <div class="form-group">
-          <label for="direccion-insc">Dirección:</label>
-          <input type="text" id="direccion-insc" required>
+          <label class="form-label">Dirección</label>
+          <input type="text" class="form-input" id="patient-address" required>
         </div>
-        <button type="submit" class="boton-login">Enviar Inscripción</button>
+        <div class="form-group">
+          <label class="form-label">Motivo de Consulta</label>
+          <textarea class="form-textarea" id="patient-reason" placeholder="Describe brevemente el motivo de la consulta..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px;">
+          <i class="fas fa-paper-plane"></i>
+          Enviar Inscripción
+        </button>
       </form>
     </div>
   </div>
 
-  <!-- Modal Login/Registro Profesional -->
-  <div class="modal-bg" id="modal-bg-login-profesional">
+  <!-- Professional Login Modal -->
+  <div class="modal-overlay" id="professional-modal">
     <div class="modal">
-      <button class="close-modal" id="cerrar-modal-login-profesional">&times;</button>
+      <button class="modal-close" data-close="professional-modal">
+        <i class="fas fa-times"></i>
+      </button>
       <h2>Acceso Profesional</h2>
-      <button id="abrir-form-ingresar" class="boton-ingresar">Ingresar</button>
-      <button id="abrir-form-registrar" class="boton-login">Registrarse</button>
-    </div>
-  </div>
+      
+      <div class="tabs">
+        <div class="tab-list">
+          <button class="tab-button active" data-tab="login">Iniciar Sesión</button>
+          <button class="tab-button" data-tab="register">Registrarse</button>
+        </div>
+      </div>
 
-  <!-- Modal Ingresar -->
-  <div class="modal-bg" id="modal-bg-ingresar">
-    <div class="modal">
-      <button class="close-modal" id="cerrar-modal-ingresar">&times;</button>
-      <h2>Ingresar como Profesional</h2>
-      <form id="form-login-profesional">
-        <div class="form-group">
-          <label for="correo-login">Correo:</label>
-          <input type="email" id="correo-login" required>
-        </div>
-        <div class="form-group">
-          <label for="clave-login">Contraseña:</label>
-          <input type="password" id="clave-login" required>
-        </div>
-        <button type="submit" class="boton-login">Ingresar</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modal Registrar -->
-  <div class="modal-bg" id="modal-bg-registrar">
-    <div class="modal">
-      <button class="close-modal" id="cerrar-modal-registrar">&times;</button>
-      <h2>Registrar Profesional</h2>
-      <form id="form-registrar-profesional">
-        <div class="form-group">
-          <label for="nombre-completo">Nombre Completo:</label>
-          <input type="text" id="nombre-completo" required>
-        </div>
-        <div class="form-group">
-          <label for="correo-registrar">Correo:</label>
-          <input type="email" id="correo-registrar" required>
-        </div>
-        <div class="form-group">
-          <label for="clave-registrar">Contraseña:</label>
-          <input type="password" id="clave-registrar" required>
-        </div>
-        <div class="form-group">
-          <label for="profesion-registrar">Profesión:</label>
-          <select id="profesion-registrar" required>
-            <option value="">Seleccionar...</option>
-            <option value="asistente_social">Asistente Social</option>
-            <option value="medico">Médico</option>
-          </select>
-        </div>
-        <button type="submit" class="boton-login">Registrar</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modal Panel Profesional con pestañas VERTICALES Y CONTENIDO HORIZONTAL -->
-  <div class="modal-bg" id="modal-bg-profesional-panel">
-    <div class="modal horizontal-panel" id="panel-profesional">
-      <div class="panel-horizontal-wrapper">
-        <div class="tabs-vertical">
-          <button class="tab-btn active" data-tab="mis-datos">Mis datos</button>
-          <button class="tab-btn" data-tab="solicitudes">Solicitudes</button>
-          <button class="tab-btn" data-tab="buscar-ficha">Buscar ficha</button>
-          <button class="tab-btn" data-tab="ficha-paciente">Ficha del Paciente</button>
-          <button class="tab-btn" data-tab="derivaciones" id="btn-derivaciones">Derivaciones</button>
-          <button class="logout-tab-btn" id="cerrar-sesion-btn">Cerrar Sesión</button>
-        </div>
-        <div class="tabs-content-horizontal">
-          <div class="tab-content active" id="tab-mis-datos">
-            <h3>Información del Profesional</h3>
-            <p>Cargando datos...</p>
+      <!-- Login Tab -->
+      <div class="tab-content active" id="login-tab">
+        <form id="login-form">
+          <div class="form-group">
+            <label class="form-label">Correo Electrónico</label>
+            <input type="email" class="form-input" id="login-email" required>
           </div>
-          <div class="tab-content" id="tab-solicitudes">
-            <h3>Solicitudes Pendientes</h3>
-            <p>Cargando solicitudes...</p>
+          <div class="form-group">
+            <label class="form-label">Contraseña</label>
+            <input type="password" class="form-input" id="login-password" required>
           </div>
-          <div class="tab-content" id="tab-buscar-ficha">
-            <h3>Buscar Ficha de Paciente</h3>
-            <form id="form-buscar-ficha">
-              <div class="form-group">
-                <label for="buscar-rut">Buscar por RUT:</label>
-                <input type="text" id="buscar-rut" name="buscar-rut" placeholder="Ej: 12345678-9">
+          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px;">
+            <i class="fas fa-sign-in-alt"></i>
+            Iniciar Sesión
+          </button>
+        </form>
+      </div>
+
+      <!-- Register Tab -->
+      <div class="tab-content" id="register-tab">
+        <form id="register-form">
+          <div class="form-group">
+            <label class="form-label">Nombre Completo</label>
+            <input type="text" class="form-input" id="register-name" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Correo Electrónico</label>
+            <input type="email" class="form-input" id="register-email" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contraseña</label>
+            <input type="password" class="form-input" id="register-password" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Profesión</label>
+            <select class="form-select" id="register-profession" required>
+              <option value="">Seleccionar profesión...</option>
+              <option value="asistente_social">Asistente Social</option>
+              <option value="medico">Médico</option>
+              <option value="psicologo">Psicólogo</option>
+              <option value="terapeuta">Terapeuta Ocupacional</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Número de Colegiatura</label>
+            <input type="text" class="form-input" id="register-license" required>
+          </div>
+          <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 16px;">
+            <i class="fas fa-user-plus"></i>
+            Registrarse
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Professional Panel Modal -->
+  <div class="modal-overlay" id="panel-modal">
+    <div class="modal professional-panel">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <div class="user-info">
+            <div class="user-avatar" id="user-avatar">DR</div>
+            <div>
+              <div id="user-name" style="font-weight: 600;">Dr. Juan Pérez</div>
+              <div id="user-role" style="font-size: 14px; opacity: 0.8;">Médico</div>
+            </div>
+          </div>
+        </div>
+
+        <nav class="nav-menu">
+          <div class="nav-item active" data-panel="dashboard">
+            <i class="fas fa-chart-line"></i>
+            Dashboard
+          </div>
+          <div class="nav-item" data-panel="requests">
+            <i class="fas fa-inbox"></i>
+            Solicitudes
+            <span class="badge" id="requests-badge">3</span>
+          </div>
+          <div class="nav-item" data-panel="patients">
+            <i class="fas fa-users"></i>
+            Pacientes
+          </div>
+          <div class="nav-item" data-panel="calendar">
+            <i class="fas fa-calendar-alt"></i>
+            Agenda
+          </div>
+          <div class="nav-item" data-panel="reports">
+            <i class="fas fa-file-medical-alt"></i>
+            Reportes
+          </div>
+          <div class="nav-item" data-panel="settings">
+            <i class="fas fa-cog"></i>
+            Configuración
+          </div>
+        </nav>
+
+        <div class="sidebar-footer">
+          <button class="logout-btn" id="logout-btn">
+            <i class="fas fa-sign-out-alt"></i>
+            Cerrar Sesión
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Panel -->
+      <div class="main-panel">
+        <!-- Dashboard Panel -->
+        <div class="panel-content active" id="dashboard-panel">
+          <div class="panel-header">
+            <h1 class="panel-title">Dashboard</h1>
+            <p class="panel-subtitle">Resumen general de actividades</p>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 32px;">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Pacientes Activos</h3>
+                <i class="fas fa-users" style="color: var(--secondary-blue);"></i>
               </div>
-              <button type="submit" class="boton-ingresar">Buscar</button>
-            </form>
-            <div id="resultados-busqueda">
-              <!-- Resultados de búsqueda aquí -->
+              <div style="font-size: 32px; font-weight: 700; color: var(--primary-blue);">156</div>
+              <div style="color: var(--success-green); font-size: 14px; margin-top: 8px;">
+                <i class="fas fa-arrow-up"></i> +12% desde el mes pasado
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Citas Hoy</h3>
+                <i class="fas fa-calendar" style="color: var(--warning-orange);"></i>
+              </div>
+              <div style="font-size: 32px; font-weight: 700; color: var(--primary-blue);">8</div>
+              <div style="color: var(--gray-600); font-size: 14px; margin-top: 8px;">
+                Próxima cita: 14:30
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Solicitudes Pendientes</h3>
+                <i class="fas fa-clock" style="color: var(--danger-red);"></i>
+              </div>
+              <div style="font-size: 32px; font-weight: 700; color: var(--primary-blue);">23</div>
+              <div style="color: var(--danger-red); font-size: 14px; margin-top: 8px;">
+                Requieren atención inmediata
+              </div>
             </div>
           </div>
-          <div class="tab-content" id="tab-ficha-paciente">
-            <h3>Ficha del Paciente</h3>
-            <div id="contenido-ficha-paciente">
-              <p>Busca un paciente para ver su ficha completa.</p>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Actividad Reciente</h3>
+            </div>
+            <div id="recent-activity">
+              <div style="padding: 16px; border-left: 3px solid var(--secondary-blue); margin-bottom: 16px; background: var(--gray-50); border-radius: 8px;">
+                <div style="font-weight: 600; margin-bottom: 4px;">Nueva solicitud de derivación</div>
+                <div style="color: var(--gray-600); font-size: 14px;">María González - Hace 15 minutos</div>
+              </div>
+              <div style="padding: 16px; border-left: 3px solid var(--success-green); margin-bottom: 16px; background: var(--gray-50); border-radius: 8px;">
+                <div style="font-weight: 600; margin-bottom: 4px;">Atención médica completada</div>
+                <div style="color: var(--gray-600); font-size: 14px;">Carlos Ruiz - Hace 1 hora</div>
+              </div>
             </div>
           </div>
-          <div class="tab-content" id="tab-derivaciones">
-            <h3>Derivaciones Médicas</h3>
-            <p>Cargando derivaciones...</p>
+        </div>
+
+        <!-- Requests Panel -->
+        <div class="panel-content hidden" id="requests-panel">
+          <div class="panel-header">
+            <h1 class="panel-title">Solicitudes Pendientes</h1>
+            <p class="panel-subtitle">Gestiona las solicitudes de derivación</p>
+          </div>
+
+          <div class="search-container">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" class="search-input" placeholder="Buscar por nombre, RUT o comuna...">
+          </div>
+
+          <div id="requests-list">
+            <!-- Las solicitudes se cargarán aquí dinámicamente -->
+          </div>
+        </div>
+
+        <!-- Patients Panel -->
+        <div class="panel-content hidden" id="patients-panel">
+          <div class="panel-header">
+            <h1 class="panel-title">Gestión de Pacientes</h1>
+            <p class="panel-subtitle">Busca y gestiona información de pacientes</p>
+          </div>
+
+          <div class="search-container">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" class="search-input" id="patient-search" placeholder="Buscar por RUT, nombre o apellido...">
+          </div>
+
+          <div id="patients-list">
+            <!-- Los pacientes se cargarán aquí dinámicamente -->
+          </div>
+        </div>
+
+        <!-- Calendar Panel -->
+        <div class="panel-content hidden" id="calendar-panel">
+          <div class="panel-header">
+            <h1 class="panel-title">Agenda</h1>
+            <p class="panel-subtitle">Gestiona tus citas y horarios</p>
+          </div>
+          <div class="card">
+            <p>Funcionalidad de agenda en desarrollo...</p>
+          </div>
+        </div>
+
+        <!-- Reports Panel -->
+        <div class="panel-content hidden" id="reports-panel">
+          <div class="panel-header">
+            <h1 class="panel-title">Reportes</h1>
+            <p class="panel-subtitle">Estadísticas y reportes del sistema</p>
+          </div>
+          <div class="card">
+            <p>Funcionalidad de reportes en desarrollo...</p>
+          </div>
+        </div>
+
+        <!-- Settings Panel -->
+        <div class="panel-content hidden" id="settings-panel">
+          <div class="panel-header">
+            <h1 class="panel-title">Configuración</h1>
+            <p class="panel-subtitle">Ajustes de la cuenta y sistema</p>
+          </div>
+          <div class="card">
+            <p>Funcionalidad de configuración en desarrollo...</p>
           </div>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Notification Container -->
+  <div id="notifications"></div>
+
   <script src="app.js"></script>
+</body>
+</html>
 </body>
 </html>
