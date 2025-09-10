@@ -14,79 +14,11 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Chilean Regions and Communes Data
-const regionesChile = {
-  "arica": {
-    nombre: "Arica y Parinacota",
-    comunas: ["Arica", "Camarones", "Putre", "General Lagos"]
-  },
-  "tarapaca": {
-    nombre: "Tarapacá",
-    comunas: ["Iquique", "Alto Hospicio", "Pozo Almonte", "Camiña", "Colchane", "Huara", "Pica"]
-  },
-  "antofagasta": {
-    nombre: "Antofagasta",
-    comunas: ["Antofagasta", "Mejillones", "Sierra Gorda", "Taltal", "Calama", "Ollagüe", "San Pedro de Atacama", "Tocopilla", "María Elena"]
-  },
-  "atacama": {
-    nombre: "Atacama",
-    comunas: ["Copiapó", "Caldera", "Tierra Amarilla", "Chañaral", "Diego de Almagro", "Vallenar", "Alto del Carmen", "Freirina", "Huasco"]
-  },
-  "coquimbo": {
-    nombre: "Coquimbo",
-    comunas: ["La Serena", "Coquimbo", "Andacollo", "La Higuera", "Paiguano", "Vicuña", "Illapel", "Canela", "Los Vilos", "Salamanca", "Ovalle", "Combarbalá", "Monte Patria", "Punitaqui", "Río Hurtado"]
-  },
-  "valparaiso": {
-    nombre: "Valparaíso",
-    comunas: ["Valparaíso", "Casablanca", "Concón", "Juan Fernández", "Puchuncaví", "Quintero", "Viña del Mar", "Isla de Pascua", "Los Andes", "Calle Larga", "Rinconada", "San Esteban", "La Ligua", "Cabildo", "Papudo", "Petorca", "Zapallar", "Quillota", "Calera", "Hijuelas", "La Cruz", "Nogales", "San Antonio", "Algarrobo", "Cartagena", "El Quisco", "El Tabo", "Santo Domingo", "San Felipe", "Catemu", "Llaillay", "Panquehue", "Putaendo", "Santa María", "Quilpué", "Limache", "Olmué", "Villa Alemana"]
-  },
-  "metropolitana": {
-    nombre: "Metropolitana de Santiago",
-    comunas: ["Cerrillos", "Cerro Navia", "Conchalí", "El Bosque", "Estación Central", "Huechuraba", "Independencia", "La Cisterna", "La Florida", "La Granja", "La Pintana", "La Reina", "Las Condes", "Lo Barnechea", "Lo Espejo", "Lo Prado", "Macul", "Maipú", "Ñuñoa", "Pedro Aguirre Cerda", "Peñalolén", "Providencia", "Pudahuel", "Quilicura", "Quinta Normal", "Recoleta", "Renca", "Santiago", "San Joaquín", "San Miguel", "San Ramón", "Vitacura", "Puente Alto", "Pirque", "San José de Maipo", "Colina", "Lampa", "Tiltil", "San Bernardo", "Buin", "Calera de Tango", "Paine", "Melipilla", "Alhué", "Curacaví", "María Pinto", "San Pedro", "Talagante", "El Monte", "Isla de Maipo", "Padre Hurtado", "Peñaflor"]
-  },
-  "ohiggins": {
-    nombre: "Libertador General Bernardo O'Higgins",
-    comunas: ["Rancagua", "Codegua", "Coinco", "Coltauco", "Doñihue", "Graneros", "Las Cabras", "Machalí", "Malloa", "Mostazal", "Olivar", "Peumo", "Pichidegua", "Quinta de Tilcoco", "Rengo", "Requínoa", "San Vicente", "Pichilemu", "La Estrella", "Litueche", "Marchihue", "Navidad", "Paredones", "San Fernando", "Chépica", "Chimbarongo", "Lolol", "Nancagua", "Palmilla", "Peralillo", "Placilla", "Pumanque", "Santa Cruz"]
-  },
-  "maule": {
-    nombre: "Maule",
-    comunas: ["Talca", "Constitución", "Curepto", "Empedrado", "Maule", "Pelarco", "Pencahue", "Río Claro", "San Clemente", "San Rafael", "Cauquenes", "Chanco", "Pelluhue", "Curicó", "Hualañé", "Licantén", "Molina", "Rauco", "Romeral", "Sagrada Familia", "Teno", "Vichuquén", "Linares", "Colbún", "Longaví", "Parral", "Retiro", "San Javier", "Villa Alegre", "Yerbas Buenas"]
-  },
-  "nuble": {
-    nombre: "Ñuble",
-    comunas: ["Chillán", "Bulnes", "Cobquecura", "Coelemu", "Coihueco", "Chillán Viejo", "El Carmen", "Ninhue", "Ñiquén", "Pemuco", "Pinto", "Portezuelo", "Quillón", "Quirihue", "Ránquil", "San Carlos", "San Fabián", "San Ignacio", "San Nicolás", "Treguaco", "Yungay"]
-  },
-  "biobio": {
-    nombre: "Biobío",
-    comunas: ["Concepción", "Coronel", "Chiguayante", "Florida", "Hualqui", "Lota", "Penco", "San Pedro de la Paz", "Santa Juana", "Talcahuano", "Tomé", "Hualpén", "Lebu", "Arauco", "Cañete", "Contulmo", "Curanilahue", "Los Álamos", "Tirúa", "Los Ángeles", "Antuco", "Cabrero", "Laja", "Mulchén", "Nacimiento", "Negrete", "Quilaco", "Quilleco", "San Rosendo", "Santa Bárbara", "Tucapel", "Yumbel", "Alto Biobío"]
-  },
-  "araucania": {
-    nombre: "La Araucanía",
-    comunas: ["Temuco", "Carahue", "Cunco", "Curarrehue", "Freire", "Galvarino", "Gorbea", "Lautaro", "Loncoche", "Melipeuco", "Nueva Imperial", "Padre Las Casas", "Perquenco", "Pitrufquén", "Pucón", "Saavedra", "Teodoro Schmidt", "Toltén", "Vilcún", "Villarrica", "Cholchol", "Angol", "Collipulli", "Curacautín", "Ercilla", "Lonquimay", "Los Sauces", "Lumaco", "Purén", "Renaico", "Traiguén", "Victoria"]
-  },
-  "losrios": {
-    nombre: "Los Ríos",
-    comunas: ["Valdivia", "Corral", "Lanco", "Los Lagos", "Máfil", "Mariquina", "Paillaco", "Panguipulli", "La Unión", "Futrono", "Lago Ranco", "Río Bueno"]
-  },
-  "loslagos": {
-    nombre: "Los Lagos",
-    comunas: ["Puerto Montt", "Calbuco", "Cochamó", "Fresia", "Frutillar", "Los Muermos", "Llanquihue", "Maullín", "Puerto Varas", "Castro", "Ancud", "Chonchi", "Curaco de Vélez", "Dalcahue", "Puqueldón", "Queilén", "Quellón", "Quemchi", "Quinchao", "Osorno", "Puerto Octay", "Purranque", "Puyehue", "Río Negro", "San Juan de la Costa", "San Pablo", "Chaitén", "Futaleufú", "Hualaihué", "Palena"]
-  },
-  "aysen": {
-    nombre: "Aysén del General Carlos Ibáñez del Campo",
-    comunas: ["Coyhaique", "Lago Verde", "Aysén", "Cisnes", "Guaitecas", "Cochrane", "O'Higgins", "Tortel", "Chile Chico", "Río Ibáñez"]
-  },
-  "magallanes": {
-    nombre: "Magallanes y de la Antártica Chilena",
-    comunas: ["Punta Arenas", "Laguna Blanca", "Río Verde", "San Gregorio", "Cabo de Hornos", "Antártica", "Porvenir", "Primavera", "Timaukel", "Natales", "Torres del Paine"]
-  }
-};
-
 // Global Variables
 let currentUser = null;
 let currentUserData = null;
 let currentFormStep = 1;
-let maxFormStep = 3;
+let maxFormStep = 4;
 let formData = {};
 let isDraftSaved = false;
 
@@ -127,10 +59,6 @@ function showModal(modalId) {
 function closeModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) {
-    // Limpiar formulario si es patient-modal y no se guardó borrador
-    if (modalId === 'patient-modal' && !isDraftSaved) {
-      resetForm();
-    }
     modal.style.display = 'none';
     document.body.style.overflow = 'auto';
   }
@@ -275,40 +203,12 @@ function initializeApp() {
     setupModalControls();
     setupTabFunctionality();
     loadDraftIfExists();
-    loadRegionsData();
     
     console.log('SENDA Platform initialized successfully');
     showNotification('Sistema SENDA cargado correctamente', 'success', 2000);
   } catch (error) {
     console.error('Error initializing app:', error);
     showNotification('Error al cargar el sistema', 'error');
-  }
-}
-
-function loadRegionsData() {
-  const regionSelect = document.getElementById('patient-region');
-  if (regionSelect) {
-    regionSelect.innerHTML = '<option value="">Seleccionar región...</option>';
-    Object.keys(regionesChile).forEach(key => {
-      const option = document.createElement('option');
-      option.value = key;
-      option.textContent = regionesChile[key].nombre;
-      regionSelect.appendChild(option);
-    });
-  }
-}
-
-function loadCommunesData(regionKey) {
-  const comunaSelect = document.getElementById('patient-comuna');
-  if (comunaSelect && regionKey && regionesChile[regionKey]) {
-    comunaSelect.innerHTML = '<option value="">Seleccionar comuna...</option>';
-    regionesChile[regionKey].comunas.forEach(comuna => {
-      const option = document.createElement('option');
-      option.value = comuna.toLowerCase().replace(/\s+/g, '_');
-      option.textContent = comuna;
-      comunaSelect.appendChild(option);
-    });
-    comunaSelect.disabled = false;
   }
 }
 
@@ -324,7 +224,6 @@ function initializeEventListeners() {
     registerBtn.addEventListener('click', () => {
       formData = {}; // Reset form data
       currentFormStep = 1;
-      isDraftSaved = false; // Reset draft flag
       showModal('patient-modal');
       updateFormProgress();
     });
@@ -352,7 +251,6 @@ function initializeEventListeners() {
     reentryBtn.addEventListener('click', () => {
       formData = { isReentry: true };
       currentFormStep = 1;
-      isDraftSaved = false;
       showModal('patient-modal');
       updateFormProgress();
       showNotification('Formulario de reingreso activado', 'info');
@@ -392,14 +290,6 @@ function initializeEventListeners() {
   if (useLocationBtn) {
     useLocationBtn.addEventListener('click', getCurrentLocation);
   }
-
-  // Region change listener
-  const regionSelect = document.getElementById('patient-region');
-  if (regionSelect) {
-    regionSelect.addEventListener('change', function() {
-      loadCommunesData(this.value);
-    });
-  }
 }
 
 function setupModalControls() {
@@ -411,16 +301,20 @@ function setupModalControls() {
     });
   });
 
-  // NO cerrar modales al hacer clic fuera - comentado
-  /*
+  // Close modals when clicking outside
   document.querySelectorAll('.modal-overlay').forEach(modal => {
     modal.addEventListener('click', function(e) {
       if (e.target === modal) {
-        // No hacer nada - no cerrar el modal
+        const modalId = modal.id;
+        if (modalId === 'patient-modal' && !isDraftSaved) {
+          if (confirm('¿Deseas guardar tu progreso antes de salir?')) {
+            saveDraft();
+          }
+        }
+        closeModal(modalId);
       }
     });
   });
-  */
 }
 
 function setupTabFunctionality() {
@@ -466,50 +360,27 @@ function setupMultiStepForm() {
 }
 
 function updateFormSteps() {
-  const step2 = document.querySelector('[data-step="2"]');
   const step3 = document.querySelector('[data-step="3"]');
-  
-  // Actualizar visibilidad de campos según tipo de solicitud
-  if (formData.tipoSolicitud === 'anonimo') {
-    // Mostrar campo de teléfono en paso 1
-    const phoneFieldContainer = document.getElementById('anonymous-phone-container');
-    if (phoneFieldContainer) {
-      phoneFieldContainer.style.display = 'block';
+  if (step3) {
+    if (formData.tipoSolicitud === 'anonimo' || formData.tipoSolicitud === 'informacion') {
+      maxFormStep = 3; // Skip contact info for anonymous users
+      step3.style.display = 'none';
+    } else {
+      maxFormStep = 4;
+      step3.style.display = 'block';
     }
-    // Ocultar paso de datos personales completos
-    if (step2) step2.querySelector('h3').textContent = 'Evaluación inicial';
-    if (step3) step3.querySelector('h3').textContent = 'Información adicional';
-  } else if (formData.tipoSolicitud === 'identificado') {
-    // Ocultar campo de teléfono en paso 1
-    const phoneFieldContainer = document.getElementById('anonymous-phone-container');
-    if (phoneFieldContainer) {
-      phoneFieldContainer.style.display = 'none';
-    }
-    // Mostrar paso de datos personales
-    if (step2) step2.querySelector('h3').textContent = 'Datos de contacto';
-    if (step3) step3.querySelector('h3').textContent = 'Evaluación e información adicional';
-  } else if (formData.tipoSolicitud === 'informacion') {
-    // Mostrar campo de email en paso 1
-    const emailFieldContainer = document.getElementById('info-email-container');
-    if (emailFieldContainer) {
-      emailFieldContainer.style.display = 'block';
-    }
-    // Ajustar pasos
-    if (step2) step2.querySelector('h3').textContent = 'Evaluación inicial';
-    if (step3) step3.querySelector('h3').textContent = 'Información adicional';
   }
-  
-  maxFormStep = 3; // Siempre 3 pasos
 }
 
 function updateFormProgress() {
   const progressFill = document.getElementById('form-progress');
   const progressText = document.getElementById('progress-text');
   
-  const progress = (currentFormStep / 3) * 100;
+  const actualMaxStep = formData.tipoSolicitud === 'anonimo' ? 3 : 4;
+  const progress = (currentFormStep / actualMaxStep) * 100;
   
   if (progressFill) progressFill.style.width = progress + '%';
-  if (progressText) progressText.textContent = `Paso ${currentFormStep} de 3`;
+  if (progressText) progressText.textContent = `Paso ${currentFormStep} de ${actualMaxStep}`;
   
   // Show/hide navigation buttons
   const prevBtn = document.getElementById('prev-step');
@@ -517,20 +388,24 @@ function updateFormProgress() {
   const submitBtn = document.getElementById('submit-form');
   
   if (prevBtn) prevBtn.style.display = currentFormStep > 1 ? 'block' : 'none';
-  if (nextBtn) nextBtn.style.display = currentFormStep < 3 ? 'block' : 'none';
-  if (submitBtn) submitBtn.style.display = currentFormStep === 3 ? 'block' : 'none';
+  if (nextBtn) nextBtn.style.display = currentFormStep < actualMaxStep ? 'block' : 'none';
+  if (submitBtn) submitBtn.style.display = currentFormStep === actualMaxStep ? 'block' : 'none';
 }
 
 function nextFormStep() {
   if (validateCurrentStep()) {
     collectCurrentStepData();
+    const actualMaxStep = formData.tipoSolicitud === 'anonimo' ? 3 : 4;
     
-    if (currentFormStep < 3) {
+    if (currentFormStep < actualMaxStep) {
       // Hide current step
       document.querySelector(`[data-step="${currentFormStep}"]`).classList.remove('active');
       
       // Show next step
       currentFormStep++;
+      if (currentFormStep === 3 && formData.tipoSolicitud === 'anonimo') {
+        currentFormStep = 4; // Skip contact step for anonymous
+      }
       
       document.querySelector(`[data-step="${currentFormStep}"]`).classList.add('active');
       updateFormProgress();
@@ -548,6 +423,9 @@ function prevFormStep() {
     
     // Show previous step
     currentFormStep--;
+    if (currentFormStep === 3 && formData.tipoSolicitud === 'anonimo') {
+      currentFormStep = 2; // Skip contact step for anonymous
+    }
     
     document.querySelector(`[data-step="${currentFormStep}"]`).classList.add('active');
     updateFormProgress();
@@ -556,13 +434,10 @@ function prevFormStep() {
 
 function validateCurrentStep() {
   const currentStepElement = document.querySelector(`[data-step="${currentFormStep}"]`);
-  const requiredFields = currentStepElement.querySelectorAll('[required]:not([style*="display: none"] [required])');
+  const requiredFields = currentStepElement.querySelectorAll('[required]');
   let isValid = true;
   
   requiredFields.forEach(field => {
-    // Skip hidden fields
-    if (field.offsetParent === null) return;
-    
     if (!field.value.trim()) {
       field.classList.add('error');
       isValid = false;
@@ -580,48 +455,28 @@ function validateCurrentStep() {
       showNotification('Por favor completa todos los campos obligatorios', 'error');
       isValid = false;
     }
-    
-    // Validar teléfono si es anónimo
-    if (tipoSolicitud && tipoSolicitud.value === 'anonimo') {
-      const phone = document.getElementById('anonymous-phone')?.value;
-      if (!phone) {
-        showNotification('Por favor ingresa un teléfono de contacto', 'error');
-        isValid = false;
-      }
-    }
-    
-    // Validar email si es información
-    if (tipoSolicitud && tipoSolicitud.value === 'informacion') {
-      const email = document.getElementById('info-email')?.value;
-      if (!email || !isValidEmail(email)) {
-        showNotification('Por favor ingresa un email válido', 'error');
-        isValid = false;
-      }
-    }
   }
   
   if (currentFormStep === 2) {
-    if (formData.tipoSolicitud === 'identificado') {
-      // Validar datos de contacto
-      const rut = document.getElementById('patient-rut')?.value;
-      const email = document.getElementById('patient-email')?.value;
-      
-      if (rut && !validateRUT(rut)) {
-        showNotification('El RUT ingresado no es válido', 'error');
-        isValid = false;
-      }
-      
-      if (email && !isValidEmail(email)) {
-        showNotification('El email ingresado no es válido', 'error');
-        isValid = false;
-      }
-    } else {
-      // Validar evaluación inicial
-      const sustancias = document.querySelectorAll('input[name="sustancias"]:checked');
-      if (sustancias.length === 0) {
-        showNotification('Por favor selecciona al menos una sustancia', 'error');
-        isValid = false;
-      }
+    const sustancias = document.querySelectorAll('input[name="sustancias"]:checked');
+    if (sustancias.length === 0) {
+      showNotification('Por favor selecciona al menos una sustancia', 'error');
+      isValid = false;
+    }
+  }
+  
+  if (currentFormStep === 3 && formData.tipoSolicitud === 'identificado') {
+    const rut = document.getElementById('patient-rut').value;
+    const email = document.getElementById('patient-email').value;
+    
+    if (rut && !validateRUT(rut)) {
+      showNotification('El RUT ingresado no es válido', 'error');
+      isValid = false;
+    }
+    
+    if (email && !isValidEmail(email)) {
+      showNotification('El email ingresado no es válido', 'error');
+      isValid = false;
     }
   }
   
@@ -640,51 +495,28 @@ function collectCurrentStepData() {
     formData.edad = document.getElementById('patient-age').value;
     formData.region = document.getElementById('patient-region').value;
     formData.paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
-    
-    // Collect phone if anonymous
-    if (formData.tipoSolicitud === 'anonimo') {
-      formData.telefonoContacto = document.getElementById('anonymous-phone')?.value;
-    }
-    
-    // Collect email if information only
-    if (formData.tipoSolicitud === 'informacion') {
-      formData.emailInformacion = document.getElementById('info-email')?.value;
-    }
   }
   
   if (currentFormStep === 2) {
-    if (formData.tipoSolicitud === 'identificado') {
-      // Collect contact data
-      formData.nombre = document.getElementById('patient-name').value;
-      formData.apellido = document.getElementById('patient-lastname').value;
-      formData.rut = document.getElementById('patient-rut').value;
-      formData.telefono = document.getElementById('patient-phone').value;
-      formData.email = document.getElementById('patient-email').value;
-      formData.comuna = document.getElementById('patient-comuna').value;
-      formData.direccion = document.getElementById('patient-address').value;
-    } else {
-      // Collect evaluation data
-      const sustancias = Array.from(document.querySelectorAll('input[name="sustancias"]:checked'))
-        .map(cb => cb.value);
-      formData.sustancias = sustancias;
-      formData.tiempoConsumo = document.getElementById('tiempo-consumo').value;
-      formData.motivacion = document.getElementById('motivacion').value;
-      formData.urgencia = document.querySelector('input[name="urgencia"]:checked')?.value;
-    }
+    const sustancias = Array.from(document.querySelectorAll('input[name="sustancias"]:checked'))
+      .map(cb => cb.value);
+    formData.sustancias = sustancias;
+    formData.tiempoConsumo = document.getElementById('tiempo-consumo').value;
+    formData.motivacion = document.getElementById('motivacion').value;
+    formData.urgencia = document.querySelector('input[name="urgencia"]:checked')?.value;
   }
   
   if (currentFormStep === 3) {
-    if (formData.tipoSolicitud === 'identificado') {
-      // Collect evaluation and additional info
-      const sustancias = Array.from(document.querySelectorAll('input[name="sustancias"]:checked'))
-        .map(cb => cb.value);
-      formData.sustancias = sustancias;
-      formData.tiempoConsumo = document.getElementById('tiempo-consumo').value;
-      formData.motivacion = document.getElementById('motivacion').value;
-      formData.urgencia = document.querySelector('input[name="urgencia"]:checked')?.value;
-    }
-    
-    // Additional info for all
+    formData.nombre = document.getElementById('patient-name').value;
+    formData.apellido = document.getElementById('patient-lastname').value;
+    formData.rut = document.getElementById('patient-rut').value;
+    formData.telefono = document.getElementById('patient-phone').value;
+    formData.email = document.getElementById('patient-email').value;
+    formData.comuna = document.getElementById('patient-comuna').value;
+    formData.direccion = document.getElementById('patient-address').value;
+  }
+  
+  if (currentFormStep === 4) {
     formData.razon = document.getElementById('patient-reason').value;
     formData.tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked')?.value;
     formData.centroPreferencia = document.getElementById('centro-preferencia').value;
@@ -723,9 +555,6 @@ function loadDraftIfExists() {
           currentFormStep = draftData.currentStep || 1;
           restoreFormData();
           isDraftSaved = true;
-        } else {
-          // Clear draft if user doesn't want to continue
-          localStorage.removeItem('senda_draft');
         }
       } else {
         localStorage.removeItem('senda_draft');
@@ -761,16 +590,6 @@ function restoreFormData() {
     }
   });
   
-  // Restore region and communes if needed
-  if (formData.region) {
-    loadCommunesData(formData.region);
-    setTimeout(() => {
-      if (formData.comuna) {
-        document.getElementById('patient-comuna').value = formData.comuna;
-      }
-    }, 100);
-  }
-  
   updateFormSteps();
   updateFormProgress();
 }
@@ -796,12 +615,12 @@ function setupFormValidation() {
   }
 
   // Phone formatting
-  const phoneInputs = document.querySelectorAll('#patient-phone, #anonymous-phone');
-  phoneInputs.forEach(input => {
-    input.addEventListener('input', function(e) {
+  const phoneInput = document.getElementById('patient-phone');
+  if (phoneInput) {
+    phoneInput.addEventListener('input', function(e) {
       e.target.value = formatPhoneNumber(e.target.value);
     });
-  });
+  }
 
   // Email validation
   const emailInputs = document.querySelectorAll('input[type="email"]');
@@ -863,27 +682,31 @@ async function handlePatientRegistration(e) {
       // Datos personales
       datos_personales: {
         anonimo: formData.tipoSolicitud === 'anonimo',
-        solo_informacion: formData.tipoSolicitud === 'informacion',
         edad: parseInt(formData.edad),
         genero: 'no_especificado',
-        region: formData.region,
         id_comuna_residencia: formData.comuna || 'no_especificada',
         situacion_laboral: 'no_especificada',
         para_quien: formData.paraMi
       },
       
-      // Datos de contacto
-      datos_contacto: {},
+      // Datos de contacto (si aplica)
+      datos_contacto: formData.tipoSolicitud === 'identificado' ? {
+        telefono_principal: formData.telefono,
+        email: formData.email,
+        direccion: formData.direccion,
+        nombre_completo: `${formData.nombre} ${formData.apellido}`,
+        rut: formData.rut
+      } : {},
       
-      // Evaluación inicial (solo si no es información)
-      evaluacion_inicial: formData.tipoSolicitud !== 'informacion' ? {
+      // Evaluación inicial
+      evaluacion_inicial: {
         sustancias_consumo: formData.sustancias || [],
         tiempo_consumo_meses: parseInt(formData.tiempoConsumo) || 0,
         motivacion_cambio: parseInt(formData.motivacion) || 5,
         urgencia_declarada: formData.urgencia || 'no_especificada',
         tratamiento_previo: formData.tratamientoPrevio || 'no',
         descripcion_situacion: formData.razon || ''
-      } : null,
+      },
       
       // Derivación
       derivacion: {
@@ -899,27 +722,6 @@ async function handlePatientRegistration(e) {
         canal_ingreso: 'web_publica'
       }
     };
-    
-    // Add contact data based on type
-    if (formData.tipoSolicitud === 'identificado') {
-      solicitudData.datos_contacto = {
-        telefono_principal: formData.telefono,
-        email: formData.email,
-        direccion: formData.direccion,
-        nombre_completo: `${formData.nombre} ${formData.apellido}`,
-        rut: formData.rut
-      };
-    } else if (formData.tipoSolicitud === 'anonimo') {
-      solicitudData.datos_contacto = {
-        telefono_principal: formData.telefonoContacto,
-        es_anonimo: true
-      };
-    } else if (formData.tipoSolicitud === 'informacion') {
-      solicitudData.datos_contacto = {
-        email: formData.emailInformacion,
-        solo_informacion: true
-      };
-    }
 
     // Save to Firestore
     const docRef = await db.collection('solicitudes_ingreso').add(solicitudData);
@@ -931,10 +733,9 @@ async function handlePatientRegistration(e) {
     
     // Clear draft
     localStorage.removeItem('senda_draft');
-    isDraftSaved = false;
     
     // Show success message
-    showSuccessMessage(docRef.id, formData.tipoSolicitud);
+    showSuccessMessage(docRef.id, formData.tipoSolicitud === 'anonimo');
     
     // Close modal and reset form
     closeModal('patient-modal');
@@ -948,20 +749,14 @@ async function handlePatientRegistration(e) {
   }
 }
 
-function showSuccessMessage(solicitudId, tipoSolicitud) {
-  const trackingCode = solicitudId.substring(0, 8).toUpperCase();
+function showSuccessMessage(solicitudId, isAnonymous) {
+  const trackingCode = isAnonymous ? solicitudId.substring(0, 8).toUpperCase() : null;
   
-  if (tipoSolicitud === 'anonimo') {
+  if (isAnonymous) {
     showNotification(
-      `Solicitud enviada exitosamente. Tu código de seguimiento es: ${trackingCode}. Te contactaremos al teléfono proporcionado.`,
+      `Solicitud enviada exitosamente. Tu código de seguimiento es: ${trackingCode}. Guárdalo para consultar el estado de tu solicitud.`,
       'success',
       8000
-    );
-  } else if (tipoSolicitud === 'informacion') {
-    showNotification(
-      `Solicitud enviada exitosamente. Te enviaremos información del programa al email proporcionado.`,
-      'success',
-      6000
     );
   } else {
     showNotification(
@@ -978,7 +773,7 @@ async function createCriticalCaseAlert(solicitudId, solicitudData) {
       id_solicitud: solicitudId,
       tipo_alerta: 'caso_critico_nuevo',
       prioridad: 'maxima',
-      mensaje: `Nuevo caso crítico: ${solicitudData.datos_personales.edad} años, urgencia ${solicitudData.evaluacion_inicial?.urgencia_declarada}`,
+      mensaje: `Nuevo caso crítico: ${solicitudData.datos_personales.edad} años, urgencia ${solicitudData.evaluacion_inicial.urgencia_declarada}`,
       fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
       estado: 'pendiente',
       notificado: false
@@ -1003,24 +798,11 @@ function resetForm() {
       step.classList.toggle('active', index === 0);
     });
     
-    // Hide conditional fields
-    const phoneContainer = document.getElementById('anonymous-phone-container');
-    const emailContainer = document.getElementById('info-email-container');
-    if (phoneContainer) phoneContainer.style.display = 'none';
-    if (emailContainer) emailContainer.style.display = 'none';
-    
-    // Reset comuna select
-    const comunaSelect = document.getElementById('patient-comuna');
-    if (comunaSelect) {
-      comunaSelect.innerHTML = '<option value="">Seleccionar comuna...</option>';
-      comunaSelect.disabled = true;
-    }
-    
     updateFormProgress();
   }
 }
 
-// Professional Authentication (remaining functions stay the same)
+// Professional Authentication
 async function handleProfessionalLogin(e) {
   e.preventDefault();
   showLoading(true);
@@ -1079,7 +861,1005 @@ async function handleProfessionalLogin(e) {
   }
 }
 
-// (Rest of the professional panel functions remain the same...)
+async function handleProfessionalRegistration(e) {
+  e.preventDefault();
+  showLoading(true);
+  
+  const formData = {
+    name: document.getElementById('register-name').value.trim(),
+    email: document.getElementById('register-email').value.trim(),
+    password: document.getElementById('register-password').value,
+    profession: document.getElementById('register-profession').value,
+    license: document.getElementById('register-license').value.trim(),
+    center: document.getElementById('register-center').value
+  };
+
+  // Validation
+  if (!formData.name || !formData.email || !formData.password || !formData.profession || !formData.license) {
+    showNotification('Por favor completa todos los campos', 'error');
+    showLoading(false);
+    return;
+  }
+
+  if (!isValidEmail(formData.email)) {
+    showNotification('Por favor ingresa un correo electrónico válido', 'error');
+    showLoading(false);
+    return;
+  }
+
+  if (formData.password.length < 6) {
+    showNotification('La contraseña debe tener al menos 6 caracteres', 'error');
+    showLoading(false);
+    return;
+  }
+
+  try {
+    const userCredential = await auth.createUserWithEmailAndPassword(formData.email, formData.password);
+    const user = userCredential.user;
+    
+    await db.collection('profesionales').doc(user.uid).set({
+      nombre: formData.name,
+      correo: formData.email,
+      profesion: formData.profession,
+      licencia: formData.license,
+      id_centro_asignado: formData.center,
+      configuracion_sistema: {
+        rol: formData.profession,
+        permisos: getDefaultPermissions(formData.profession),
+        activo: true
+      },
+      metadata: {
+        fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
+        ultima_actividad: firebase.firestore.FieldValue.serverTimestamp()
+      }
+    });
+
+    showNotification('Registro exitoso. Ahora puedes iniciar sesión.', 'success');
+    
+    // Switch to login tab
+    const loginTab = document.querySelector('[data-tab="login"]');
+    if (loginTab) loginTab.click();
+    
+    document.getElementById('register-form').reset();
+    document.getElementById('login-email').value = formData.email;
+    
+  } catch (error) {
+    console.error('Registration error:', error);
+    let errorMessage = 'Error al registrar';
+    
+    switch (error.code) {
+      case 'auth/email-already-in-use':
+        errorMessage = 'El correo ya está registrado';
+        break;
+      case 'auth/weak-password':
+        errorMessage = 'La contraseña es muy débil';
+        break;
+      case 'auth/invalid-email':
+        errorMessage = 'Correo electrónico inválido';
+        break;
+    }
+    
+    showNotification(errorMessage, 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+function getDefaultPermissions(profession) {
+  const permissions = {
+    'asistente_social': ['ver_casos', 'asignar_casos', 'derivar_casos', 'seguimiento'],
+    'medico': ['ver_casos', 'atencion_medica', 'seguimiento', 'prescripcion'],
+    'psicologo': ['ver_casos', 'atencion_psicologica', 'seguimiento'],
+    'terapeuta': ['ver_casos', 'terapia_ocupacional', 'seguimiento'],
+    'coordinador': ['ver_casos', 'asignar_casos', 'reportes', 'supervision'],
+    'admin': ['ver_casos', 'asignar_casos', 'reportes', 'usuarios', 'configuracion']
+  };
+  
+  return permissions[profession] || ['ver_casos'];
+}
+
+// Professional Panel Functions
+function showProfessionalPanel(userData) {
+  showModal('panel-modal');
+  
+  // Update user info
+  document.getElementById('user-name').textContent = userData.nombre;
+  document.getElementById('user-role').textContent = getProfessionName(userData.profesion);
+  document.getElementById('user-avatar').textContent = userData.nombre.substring(0, 2).toUpperCase();
+
+  // Show/hide navigation based on role
+  setupRoleBasedNavigation(userData);
+  
+  // Setup navigation
+  setupPanelNavigation(userData);
+  
+  // Load initial panel
+  showPanel('dashboard', userData);
+  
+  // Setup logout
+  document.getElementById('logout-btn').addEventListener('click', handleLogout);
+  
+  // Start real-time listeners
+  startRealTimeListeners(userData);
+}
+
+function setupRoleBasedNavigation(userData) {
+  const role = userData.profesion;
+  
+  // Show/hide navigation items based on role
+  const centersNav = document.getElementById('centers-nav');
+  const usersNav = document.getElementById('users-nav');
+  const analyticsNav = document.getElementById('analytics-nav');
+  
+  if (role === 'coordinador' || role === 'admin') {
+    if (centersNav) centersNav.style.display = 'flex';
+    if (analyticsNav) analyticsNav.style.display = 'flex';
+  }
+  
+  if (role === 'admin') {
+    if (usersNav) usersNav.style.display = 'flex';
+  }
+}
+
+function setupPanelNavigation(userData) {
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', function() {
+      const panel = item.dataset.panel;
+      if (panel) {
+        showPanel(panel, userData);
+        
+        // Update active nav item
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+      }
+    });
+  });
+}
+
+function showPanel(panelId, userData) {
+  // Hide all panels
+  document.querySelectorAll('.panel-content').forEach(panel => {
+    panel.classList.add('hidden');
+    panel.classList.remove('active');
+  });
+
+  // Show selected panel
+  const targetPanel = document.getElementById(panelId + '-panel');
+  if (targetPanel) {
+    targetPanel.classList.remove('hidden');
+    targetPanel.classList.add('active');
+
+    // Load panel-specific content
+    switch (panelId) {
+      case 'dashboard':
+        loadDashboard(userData);
+        break;
+      case 'requests':
+        loadRequests(userData);
+        break;
+      case 'patients':
+        setupPatientSearch(userData);
+        break;
+      case 'calendar':
+        loadCalendar(userData);
+        break;
+      case 'followups':
+        loadFollowups(userData);
+        break;
+      case 'reports':
+        loadReports(userData);
+        break;
+      case 'centers':
+        loadCenters(userData);
+        break;
+      case 'users':
+        loadUsers(userData);
+        break;
+      case 'analytics':
+        loadAnalytics(userData);
+        break;
+    }
+  }
+}
+
+// Dashboard Functions
+async function loadDashboard(userData) {
+  try {
+    showLoading(true);
+    
+    const stats = await loadDashboardStats(userData);
+    updateDashboardMetrics(stats);
+    
+    await loadRecentActivity();
+    await loadDashboardCharts(stats);
+    
+  } catch (error) {
+    console.error('Error loading dashboard:', error);
+    showNotification('Error al cargar el dashboard', 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function loadDashboardStats(userData) {
+  const stats = {
+    totalPatients: 0,
+    todayAppointments: 0,
+    pendingRequests: 0,
+    criticalCases: 0,
+    priorityBreakdown: { critica: 0, alta: 0, media: 0, baja: 0 },
+    monthlyTrend: []
+  };
+
+  try {
+    // Get base query based on user role
+    let baseQuery = db.collection('solicitudes_ingreso');
+    
+    if (userData.profesion === 'profesional_senda') {
+      // Filter by assigned center
+      baseQuery = baseQuery.where('derivacion.id_centro_preferido', '==', userData.id_centro_asignado);
+    }
+
+    // Total patients
+    const patientsSnapshot = await baseQuery.get();
+    stats.totalPatients = patientsSnapshot.size;
+
+    // Pending requests
+    const pendingSnapshot = await baseQuery
+      .where('clasificacion.estado', '==', 'pendiente')
+      .get();
+    stats.pendingRequests = pendingSnapshot.size;
+
+    // Critical cases
+    const criticalSnapshot = await baseQuery
+      .where('clasificacion.prioridad', '==', 'critica')
+      .where('clasificacion.estado', 'in', ['pendiente', 'en_proceso'])
+      .get();
+    stats.criticalCases = criticalSnapshot.size;
+
+    // Priority breakdown
+    patientsSnapshot.forEach(doc => {
+      const data = doc.data();
+      const priority = data.clasificacion?.prioridad || 'baja';
+      stats.priorityBreakdown[priority]++;
+    });
+
+    // Monthly trend (last 6 months)
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    
+    const trendSnapshot = await baseQuery
+      .where('metadata.fecha_creacion', '>=', sixMonthsAgo)
+      .get();
+    
+    // Group by month
+    const monthlyData = {};
+    trendSnapshot.forEach(doc => {
+      const data = doc.data();
+      if (data.metadata?.fecha_creacion) {
+        const date = data.metadata.fecha_creacion.toDate();
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        monthlyData[monthKey] = (monthlyData[monthKey] || 0) + 1;
+      }
+    });
+    
+    stats.monthlyTrend = Object.entries(monthlyData)
+      .sort()
+      .map(([month, count]) => ({ month, count }));
+
+    // Today's appointments (mock data - would integrate with calendar system)
+    stats.todayAppointments = Math.floor(Math.random() * 12) + 3;
+
+  } catch (error) {
+    console.error('Error loading dashboard stats:', error);
+  }
+
+  return stats;
+}
+
+function updateDashboardMetrics(stats) {
+  document.getElementById('total-patients').textContent = stats.totalPatients;
+  document.getElementById('today-appointments').textContent = stats.todayAppointments;
+  document.getElementById('pending-requests').textContent = stats.pendingRequests;
+  document.getElementById('critical-cases').textContent = stats.criticalCases;
+  
+  // Update requests badge
+  const badge = document.getElementById('requests-badge');
+  if (badge) {
+    badge.textContent = stats.pendingRequests;
+    badge.style.display = stats.pendingRequests > 0 ? 'block' : 'none';
+  }
+  
+  // Mock next appointment time
+  const nextAppointment = document.getElementById('next-appointment');
+  if (nextAppointment) {
+    const times = ['09:00', '10:30', '14:00', '15:30', '16:45'];
+    nextAppointment.textContent = times[Math.floor(Math.random() * times.length)];
+  }
+  
+  // Mock last alert
+  const lastAlert = document.getElementById('last-alert');
+  if (lastAlert && stats.criticalCases > 0) {
+    lastAlert.textContent = 'Hace 23 min';
+  }
+}
+
+async function loadRecentActivity() {
+  const activityContainer = document.getElementById('activity-list');
+  if (!activityContainer) return;
+
+  try {
+    const recentSolicitudes = await db.collection('solicitudes_ingreso')
+      .orderBy('metadata.fecha_creacion', 'desc')
+      .limit(5)
+      .get();
+
+    let html = '';
+    recentSolicitudes.forEach(doc => {
+      const data = doc.data();
+      const prioridad = data.clasificacion?.prioridad || 'baja';
+      const color = prioridad === 'critica' ? 'var(--danger-red)' : 
+                   prioridad === 'alta' ? 'var(--warning-orange)' : 
+                   prioridad === 'media' ? 'var(--secondary-blue)' : 'var(--success-green)';
+      
+      const edad = data.datos_personales?.edad || 'N/A';
+      const tipo = data.clasificacion?.tipo || 'ingreso';
+      
+      html += `
+        <div class="activity-item" style="border-left: 3px solid ${color};">
+          <div class="activity-header">
+            <strong>${tipo === 'reingreso' ? 'Reingreso' : 'Nueva solicitud'}</strong>
+            <span class="activity-time">${formatDate(data.metadata?.fecha_creacion)}</span>
+          </div>
+          <div class="activity-details">
+            Edad: ${edad} años • Prioridad: ${prioridad}
+          </div>
+        </div>
+      `;
+    });
+
+    activityContainer.innerHTML = html || '<p>No hay actividad reciente.</p>';
+  } catch (error) {
+    console.error('Error loading recent activity:', error);
+    activityContainer.innerHTML = '<p>Error al cargar actividad reciente.</p>';
+  }
+}
+
+async function loadDashboardCharts(stats) {
+  // Priority Chart
+  const priorityCtx = document.getElementById('priority-chart');
+  if (priorityCtx) {
+    new Chart(priorityCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Crítica', 'Alta', 'Media', 'Baja'],
+        datasets: [{
+          data: [
+            stats.priorityBreakdown.critica,
+            stats.priorityBreakdown.alta,
+            stats.priorityBreakdown.media,
+            stats.priorityBreakdown.baja
+          ],
+          backgroundColor: [
+            'var(--danger-red)',
+            'var(--warning-orange)',
+            'var(--secondary-blue)',
+            'var(--success-green)'
+          ]
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }
+    });
+  }
+
+  // Trend Chart
+  const trendCtx = document.getElementById('trend-chart');
+  if (trendCtx && stats.monthlyTrend.length > 0) {
+    new Chart(trendCtx, {
+      type: 'line',
+      data: {
+        labels: stats.monthlyTrend.map(item => item.month),
+        datasets: [{
+          label: 'Casos por mes',
+          data: stats.monthlyTrend.map(item => item.count),
+          borderColor: 'var(--primary-blue)',
+          backgroundColor: 'rgba(15, 76, 117, 0.1)',
+          tension: 0.4
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  }
+}
+
+// Requests Management
+async function loadRequests(userData) {
+  const requestsList = document.getElementById('requests-list');
+  if (!requestsList) return;
+  
+  requestsList.innerHTML = '<div class="loading"><div class="spinner"></div> Cargando solicitudes...</div>';
+
+  try {
+    let query = db.collection('solicitudes_ingreso');
+    
+    // Apply role-based filtering
+    if (userData.profesion !== 'coordinador' && userData.profesion !== 'admin') {
+      query = query.where('derivacion.id_centro_preferido', '==', userData.id_centro_asignado);
+    }
+    
+    // Apply status filter
+    query = query.where('clasificacion.estado', 'in', ['pendiente', 'en_proceso']);
+    
+    const snapshot = await query
+      .orderBy('clasificacion.prioridad', 'desc')
+      .orderBy('metadata.fecha_creacion', 'desc')
+      .get();
+
+    if (snapshot.empty) {
+      requestsList.innerHTML = '<div class="empty-state"><p>No hay solicitudes pendientes.</p></div>';
+      return;
+    }
+
+    let html = '';
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      html += createRequestCard(doc.id, data, userData);
+    });
+
+    requestsList.innerHTML = html;
+    
+    // Setup filter listeners
+    setupRequestFilters(userData);
+
+    // Add event listeners for action buttons
+    setupRequestActions(userData);
+
+  } catch (error) {
+    console.error('Error loading requests:', error);
+    requestsList.innerHTML = '<div class="error-state"><p>Error al cargar solicitudes: ' + error.message + '</p></div>';
+  }
+}
+
+function createRequestCard(id, data, userData) {
+  const prioridad = data.clasificacion?.prioridad || 'baja';
+  const estado = data.clasificacion?.estado || 'pendiente';
+  const edad = data.datos_personales?.edad || 'N/A';
+  const sustancias = data.evaluacion_inicial?.sustancias_consumo || [];
+  const esAnonimo = data.datos_personales?.anonimo || false;
+  const fechaCreacion = formatDate(data.metadata?.fecha_creacion);
+  
+  const canTakeAction = userData.profesion === 'asistente_social' || 
+                       userData.profesion === 'coordinador' || 
+                       userData.profesion === 'admin';
+  
+  const priorityClass = {
+    'critica': 'priority-critical',
+    'alta': 'priority-high', 
+    'media': 'priority-medium',
+    'baja': 'priority-low'
+  }[prioridad] || 'priority-low';
+  
+  return `
+    <div class="request-card ${priorityClass}" data-request-id="${id}">
+      <div class="request-header">
+        <div class="request-info">
+          <h4>Solicitud ${esAnonimo ? 'Anónima' : 'Identificada'}</h4>
+          <span class="request-id">ID: ${id.substring(0, 8)}</span>
+        </div>
+        <div class="request-badges">
+          <span class="priority-badge priority-${prioridad}">${prioridad.toUpperCase()}</span>
+          <span class="status-badge status-${estado}">${estado.replace('_', ' ').toUpperCase()}</span>
+        </div>
+      </div>
+      
+      <div class="request-details">
+        <div class="detail-row">
+          <span><strong>Edad:</strong> ${edad} años</span>
+          <span><strong>Fecha:</strong> ${fechaCreacion}</span>
+        </div>
+        
+        ${sustancias.length > 0 ? `
+          <div class="detail-row">
+            <span><strong>Sustancias:</strong> ${sustancias.join(', ')}</span>
+          </div>
+        ` : ''}
+        
+        ${data.evaluacion_inicial?.descripcion_situacion ? `
+          <div class="description">
+            <strong>Descripción:</strong> ${data.evaluacion_inicial.descripcion_situacion.substring(0, 150)}${data.evaluacion_inicial.descripcion_situacion.length > 150 ? '...' : ''}
+          </div>
+        ` : ''}
+        
+        ${!esAnonimo && data.datos_contacto ? `
+          <div class="contact-info">
+            <strong>Contacto:</strong> 
+            ${data.datos_contacto.telefono_principal || ''} 
+            ${data.datos_contacto.email || ''}
+          </div>
+        ` : ''}
+      </div>
+      
+      <div class="request-actions">
+        <button class="btn btn-outline btn-sm view-details" data-id="${id}">
+          <i class="fas fa-eye"></i> Ver Detalles
+        </button>
+        
+        ${canTakeAction && estado === 'pendiente' ? `
+          <button class="btn btn-primary btn-sm assign-case" data-id="${id}">
+            <i class="fas fa-user-plus"></i> Asignar
+          </button>
+        ` : ''}
+        
+        ${userData.profesion === 'medico' && estado === 'en_proceso' ? `
+          <button class="btn btn-success btn-sm start-attention" data-id="${id}">
+            <i class="fas fa-stethoscope"></i> Atender
+          </button>
+        ` : ''}
+        
+        ${prioridad === 'critica' ? `
+          <button class="btn btn-danger btn-sm urgent-contact" data-id="${id}">
+            <i class="fas fa-phone"></i> Contacto Urgente
+          </button>
+        ` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function setupRequestFilters(userData) {
+  const priorityFilter = document.getElementById('filter-priority');
+  const statusFilter = document.getElementById('filter-status');
+  const dateFilter = document.getElementById('filter-date');
+  const clearFilters = document.getElementById('clear-filters');
+  
+  const applyFilters = debounce(() => {
+    loadRequestsWithFilters(userData);
+  }, 500);
+  
+  if (priorityFilter) priorityFilter.addEventListener('change', applyFilters);
+  if (statusFilter) statusFilter.addEventListener('change', applyFilters);
+  if (dateFilter) dateFilter.addEventListener('change', applyFilters);
+  
+  if (clearFilters) {
+    clearFilters.addEventListener('click', () => {
+      if (priorityFilter) priorityFilter.value = '';
+      if (statusFilter) statusFilter.value = '';
+      if (dateFilter) dateFilter.value = '';
+      loadRequests(userData);
+    });
+  }
+}
+
+async function loadRequestsWithFilters(userData) {
+  const priorityFilter = document.getElementById('filter-priority')?.value;
+  const statusFilter = document.getElementById('filter-status')?.value;
+  const dateFilter = document.getElementById('filter-date')?.value;
+  
+  let query = db.collection('solicitudes_ingreso');
+  
+  // Role-based filtering
+  if (userData.profesion !== 'coordinador' && userData.profesion !== 'admin') {
+    query = query.where('derivacion.id_centro_preferido', '==', userData.id_centro_asignado);
+  }
+  
+  // Apply filters
+  if (priorityFilter) {
+    query = query.where('clasificacion.prioridad', '==', priorityFilter);
+  }
+  
+  if (statusFilter) {
+    query = query.where('clasificacion.estado', '==', statusFilter);
+  }
+  
+  if (dateFilter) {
+    const selectedDate = new Date(dateFilter);
+    const nextDay = new Date(selectedDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    
+    query = query
+      .where('metadata.fecha_creacion', '>=', selectedDate)
+      .where('metadata.fecha_creacion', '<', nextDay);
+  }
+  
+  try {
+    const snapshot = await query
+      .orderBy('clasificacion.prioridad', 'desc')
+      .orderBy('metadata.fecha_creacion', 'desc')
+      .get();
+    
+    const requestsList = document.getElementById('requests-list');
+    if (snapshot.empty) {
+      requestsList.innerHTML = '<div class="empty-state"><p>No se encontraron solicitudes con los filtros aplicados.</p></div>';
+      return;
+    }
+    
+    let html = '';
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      html += createRequestCard(doc.id, data, userData);
+    });
+    
+    requestsList.innerHTML = html;
+    setupRequestActions(userData);
+    
+  } catch (error) {
+    console.error('Error filtering requests:', error);
+    showNotification('Error al aplicar filtros', 'error');
+  }
+}
+
+function setupRequestActions(userData) {
+  // View details
+  document.querySelectorAll('.view-details').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const requestId = e.target.dataset.id;
+      showRequestDetails(requestId);
+    });
+  });
+  
+  // Assign case
+  document.querySelectorAll('.assign-case').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const requestId = e.target.dataset.id;
+      assignCase(requestId, userData);
+    });
+  });
+  
+  // Start attention
+  document.querySelectorAll('.start-attention').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const requestId = e.target.dataset.id;
+      startMedicalAttention(requestId, userData);
+    });
+  });
+  
+  // Urgent contact
+  document.querySelectorAll('.urgent-contact').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const requestId = e.target.dataset.id;
+      initiateUrgentContact(requestId, userData);
+    });
+  });
+}
+
+async function showRequestDetails(requestId) {
+  try {
+    const doc = await db.collection('solicitudes_ingreso').doc(requestId).get();
+    if (!doc.exists) {
+      showNotification('No se encontró la solicitud', 'error');
+      return;
+    }
+    
+    const data = doc.data();
+    
+    // Create modal with request details
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal large-modal">
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">
+          <i class="fas fa-times"></i>
+        </button>
+        <h2>Detalle de Solicitud</h2>
+        
+        <div class="request-detail-content">
+          <div class="detail-section">
+            <h3>Información General</h3>
+            <div class="detail-grid">
+              <div><strong>ID:</strong> ${requestId}</div>
+              <div><strong>Tipo:</strong> ${data.clasificacion?.tipo || 'N/A'}</div>
+              <div><strong>Estado:</strong> ${data.clasificacion?.estado || 'N/A'}</div>
+              <div><strong>Prioridad:</strong> ${data.clasificacion?.prioridad || 'N/A'}</div>
+              <div><strong>Fecha:</strong> ${formatDate(data.metadata?.fecha_creacion)}</div>
+              <div><strong>Anónimo:</strong> ${data.datos_personales?.anonimo ? 'Sí' : 'No'}</div>
+            </div>
+          </div>
+          
+          <div class="detail-section">
+            <h3>Datos Personales</h3>
+            <div class="detail-grid">
+              <div><strong>Edad:</strong> ${data.datos_personales?.edad || 'N/A'} años</div>
+              <div><strong>Para quién:</strong> ${data.datos_personales?.para_quien || 'N/A'}</div>
+            </div>
+          </div>
+          
+          ${!data.datos_personales?.anonimo && data.datos_contacto ? `
+            <div class="detail-section">
+              <h3>Datos de Contacto</h3>
+              <div class="detail-grid">
+                <div><strong>Nombre:</strong> ${data.datos_contacto.nombre_completo || 'N/A'}</div>
+                <div><strong>RUT:</strong> ${data.datos_contacto.rut || 'N/A'}</div>
+                <div><strong>Teléfono:</strong> ${data.datos_contacto.telefono_principal || 'N/A'}</div>
+                <div><strong>Email:</strong> ${data.datos_contacto.email || 'N/A'}</div>
+                <div><strong>Dirección:</strong> ${data.datos_contacto.direccion || 'N/A'}</div>
+              </div>
+            </div>
+          ` : ''}
+          
+          <div class="detail-section">
+            <h3>Evaluación Inicial</h3>
+            <div class="detail-grid">
+              <div><strong>Sustancias:</strong> ${data.evaluacion_inicial?.sustancias_consumo?.join(', ') || 'N/A'}</div>
+              <div><strong>Tiempo de consumo:</strong> ${data.evaluacion_inicial?.tiempo_consumo_meses || 'N/A'} meses</div>
+              <div><strong>Motivación:</strong> ${data.evaluacion_inicial?.motivacion_cambio || 'N/A'}/10</div>
+              <div><strong>Urgencia:</strong> ${data.evaluacion_inicial?.urgencia_declarada || 'N/A'}</div>
+              <div><strong>Tratamiento previo:</strong> ${data.evaluacion_inicial?.tratamiento_previo || 'N/A'}</div>
+            </div>
+            
+            ${data.evaluacion_inicial?.descripcion_situacion ? `
+              <div class="description-full">
+                <strong>Descripción de la situación:</strong>
+                <p>${data.evaluacion_inicial.descripcion_situacion}</p>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+        
+        <div class="modal-actions">
+          <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+    
+  } catch (error) {
+    console.error('Error loading request details:', error);
+    showNotification('Error al cargar los detalles', 'error');
+  }
+}
+
+async function assignCase(requestId, userData) {
+  try {
+    await db.collection('solicitudes_ingreso').doc(requestId).update({
+      'clasificacion.estado': 'en_proceso',
+      'derivacion.id_profesional_asignado': userData.uid,
+      'derivacion.fecha_asignacion': firebase.firestore.FieldValue.serverTimestamp(),
+      'derivacion.asignado_por': userData.nombre
+    });
+    
+    // Create follow-up record
+    await db.collection('seguimientos').add({
+      referencias: {
+        id_solicitud: requestId,
+        id_profesional: userData.uid
+      },
+      accion_realizada: {
+        tipo: 'asignacion_caso',
+        fecha_accion: firebase.firestore.FieldValue.serverTimestamp(),
+        descripcion: `Caso asignado a ${userData.nombre}`
+      },
+      cambio_estado: {
+        estado_anterior: 'pendiente',
+        estado_nuevo: 'en_proceso',
+        justificacion: 'Asignación inicial del caso'
+      }
+    });
+    
+    showNotification('Caso asignado exitosamente', 'success');
+    loadRequests(userData); // Reload requests
+    
+  } catch (error) {
+    console.error('Error assigning case:', error);
+    showNotification('Error al asignar el caso', 'error');
+  }
+}
+
+// Real-time listeners
+function startRealTimeListeners(userData) {
+  // Listen for new requests
+  let query = db.collection('solicitudes_ingreso')
+    .where('clasificacion.estado', '==', 'pendiente');
+  
+  if (userData.profesion !== 'coordinador' && userData.profesion !== 'admin') {
+    query = query.where('derivacion.id_centro_preferido', '==', userData.id_centro_asignado);
+  }
+  
+  query.onSnapshot(snapshot => {
+    snapshot.docChanges().forEach(change => {
+      if (change.type === 'added') {
+        const data = change.doc.data();
+        if (data.clasificacion?.prioridad === 'critica') {
+          showNotification(
+            `🚨 NUEVO CASO CRÍTICO: Paciente ${data.datos_personales?.edad} años`,
+            'error',
+            10000
+          );
+        }
+      }
+    });
+    
+    // Update badge count
+    updateRequestsBadge(snapshot.size);
+  });
+}
+
+function updateRequestsBadge(count) {
+  const badge = document.getElementById('requests-badge');
+  if (badge) {
+    badge.textContent = count;
+    badge.style.display = count > 0 ? 'block' : 'none';
+  }
+}
+
+// Logout function
+async function handleLogout() {
+  if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
+    try {
+      await auth.signOut();
+      currentUser = null;
+      currentUserData = null;
+      closeModal('panel-modal');
+      showNotification('Sesión cerrada correctamente', 'success');
+      
+      // Clear forms
+      document.getElementById('login-form')?.reset();
+      document.getElementById('register-form')?.reset();
+      
+      // Reset to login tab
+      document.querySelector('[data-tab="login"]')?.click();
+      
+    } catch (error) {
+      console.error('Logout error:', error);
+      showNotification('Error al cerrar sesión: ' + error.message, 'error');
+    }
+  }
+}
+
+// Center finder functions
+async function loadNearbyClínicas() {
+  const centersList = document.getElementById('centers-list');
+  if (!centersList) return;
+  
+  centersList.innerHTML = '<div class="loading"><div class="spinner"></div> Buscando centros cercanos...</div>';
+  
+  // Mock data for demonstration
+  const mockCenters = [
+    {
+      name: 'CESFAM La Florida',
+      address: 'Av. Walker Martinez 1234, La Florida',
+      distance: '1.2 km',
+      phone: '+56 2 2987 6543',
+      hours: 'Lun-Vie 8:00-17:00'
+    },
+    {
+      name: 'CESFAM Maipú',
+      address: 'Av. Pajaritos 5678, Maipú', 
+      distance: '3.5 km',
+      phone: '+56 2 2765 4321',
+      hours: 'Lun-Vie 8:30-17:30'
+    },
+    {
+      name: 'Centro SENDA Providencia',
+      address: 'Av. Providencia 9876, Providencia',
+      distance: '5.1 km', 
+      phone: '+56 2 2234 5678',
+      hours: 'Lun-Vie 9:00-18:00'
+    }
+  ];
+  
+  setTimeout(() => {
+    let html = '';
+    mockCenters.forEach(center => {
+      html += `
+        <div class="center-card">
+          <div class="center-header">
+            <h4>${center.name}</h4>
+            <span class="distance">${center.distance}</span>
+          </div>
+          <div class="center-details">
+            <p><i class="fas fa-map-marker-alt"></i> ${center.address}</p>
+            <p><i class="fas fa-phone"></i> ${center.phone}</p>
+            <p><i class="fas fa-clock"></i> ${center.hours}</p>
+          </div>
+          <div class="center-actions">
+            <button class="btn btn-outline btn-sm">
+              <i class="fas fa-directions"></i> Cómo llegar
+            </button>
+            <button class="btn btn-primary btn-sm">
+              <i class="fas fa-phone"></i> Llamar
+            </button>
+          </div>
+        </div>
+      `;
+    });
+    
+    centersList.innerHTML = html;
+  }, 1000);
+}
+
+function getCurrentLocation() {
+  if (navigator.geolocation) {
+    showNotification('Obteniendo tu ubicación...', 'info');
+    
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        const { latitude, longitude } = position.coords;
+        document.getElementById('location-input').value = `${latitude}, ${longitude}`;
+        showNotification('Ubicación detectada', 'success');
+        loadNearbyClínicas();
+      },
+      error => {
+        console.error('Geolocation error:', error);
+        showNotification('No se pudo obtener tu ubicación. Por favor ingresa tu dirección manualmente.', 'error');
+      }
+    );
+  } else {
+    showNotification('Tu navegador no soporta geolocalización', 'error');
+  }
+}
+
+// Additional panel functions (stubs for now)
+async function setupPatientSearch(userData) {
+  console.log('Setting up patient search for:', userData.nombre);
+  // Implementation would go here
+}
+
+async function loadCalendar(userData) {
+  console.log('Loading calendar for:', userData.nombre);
+  // Implementation would go here
+}
+
+async function loadFollowups(userData) {
+  console.log('Loading followups for:', userData.nombre);
+  // Implementation would go here
+}
+
+async function loadReports(userData) {
+  console.log('Loading reports for:', userData.nombre);
+  // Implementation would go here
+}
+
+async function loadCenters(userData) {
+  console.log('Loading centers for:', userData.nombre);
+  // Implementation would go here
+}
+
+async function loadUsers(userData) {
+  console.log('Loading users for:', userData.nombre);
+  // Implementation would go here
+}
+
+async function loadAnalytics(userData) {
+  console.log('Loading analytics for:', userData.nombre);
+  // Implementation would go here
+}
+
+// Authentication State Observer
+auth.onAuthStateChanged(user => {
+  currentUser = user;
+  if (user) {
+    loadUserData(user.uid);
+  }
+});
+
+async function loadUserData(uid) {
+  try {
+    const doc = await db.collection('profesionales').doc(uid).get();
+    if (doc.exists) {
+      currentUserData = { uid, ...doc.data() };
+    }
+  } catch (error) {
+    console.error('Error loading user data:', error);
+  }
+}
 
 // Export functions for debugging
 window.sendaApp = {
@@ -1090,8 +1870,7 @@ window.sendaApp = {
   validateRUT,
   getProfessionName,
   formData,
-  currentUserData,
-  regionesChile
+  currentUserData
 };
 
 console.log('SENDA Platform JavaScript loaded successfully');
