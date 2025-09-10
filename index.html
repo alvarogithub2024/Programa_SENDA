@@ -104,7 +104,7 @@
     </div>
   </footer>
 
-  <!-- Patient Registration Modal - COMPLETAMENTE REESTRUCTURADO EN 4 PASOS -->
+  <!-- Patient Registration Modal -->
   <div class="modal-overlay" id="patient-modal">
     <div class="modal large-modal">
       <button class="modal-close" data-close="patient-modal">
@@ -612,7 +612,7 @@
     </div>
   </div>
 
-  <!-- Professional Login Modal -->
+  <!-- Professional Login Modal - CORREGIDO -->
   <div class="modal-overlay" id="professional-modal">
     <div class="modal">
       <button class="modal-close" data-close="professional-modal">
@@ -652,7 +652,7 @@
         </form>
       </div>
 
-      <!-- Register Tab -->
+      <!-- Register Tab - COMPLETAMENTE CORREGIDO -->
       <div class="tab-content" id="register-tab">
         <form id="register-form">
           <div class="form-group">
@@ -660,8 +660,9 @@
             <input type="text" class="form-input" id="register-name" required>
           </div>
           <div class="form-group">
-            <label class="form-label">Correo Electrónico</label>
-            <input type="email" class="form-input" id="register-email" required>
+            <label class="form-label">Correo Electrónico Institucional</label>
+            <input type="email" class="form-input" id="register-email" placeholder="nombre@senda.cl" required>
+            <small style="color: var(--gray-600);">Debe ser un correo institucional @senda.cl</small>
           </div>
           <div class="form-group">
             <label class="form-label">Contraseña</label>
@@ -678,6 +679,10 @@
               <option value="coordinador">Coordinador Regional</option>
               <option value="admin">Administrador</option>
             </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Número de Registro/Licencia Profesional</label>
+            <input type="text" class="form-input" id="register-license" placeholder="Ej: 12345" required>
           </div>
           <div class="form-group">
             <label class="form-label">Centro de Salud</label>
@@ -704,10 +709,4 @@
   <div id="loading-overlay" class="loading-overlay hidden">
     <div class="loading-spinner">
       <div class="spinner"></div>
-      <p>Cargando...</p>
-    </div>
-  </div>
-
-  <script src="app.js"></script>
-</body>
-</html>
+      <p>
