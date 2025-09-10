@@ -277,6 +277,7 @@ function initializeApp() {
     setupTabFunctionality();
     loadDraftIfExists();
     loadRegionsData();
+    setupEmailValidation(); // AGREGAR ESTA LÍNEA
     
     console.log('SENDA Platform initialized successfully');
     showNotification('Sistema SENDA cargado correctamente', 'success', 2000);
@@ -867,7 +868,7 @@ function submitPatientForm() {
   }
 }
 
-async function handlePatientRegistration(e) {
+async function handleProfessionalLogin(e) {
   if (e) e.preventDefault();
   
   showLoading(true);
@@ -1050,10 +1051,32 @@ function resetForm() {
 }
 
 // Professional Authentication Functions (unchanged)
-async function handleProfessionalLogin(e) {
+function getDefaultPermissions(profession) {
   e.preventDefault();
   showLoading(true);
+
+  // Función para validar email institucional en tiempo real
+function setupEmailValidation() {
+  const emailInput = document.getElementById('register-email');
+  if (emailInput) {
+    emailInput.addEventListener('blur', function(e) {
+      const email = e.target.value.trim();
+      if (email && !email.endsWith('@senda.cl')) {
+        e.target.classList.add('error');
+        showNotification('El correo debe ser institucional (@senda.cl)', 'warning');
+      } else if (email && isValidEmail(email)) {
+        e.target.classList.remove('error');
+      }
+    });
+    
+    emailInput.placeholder = 'nombre@senda.cl';
+  }
   
+  const loginEmailInput = document.getElementById('login-email');
+  if (loginEmailInput) {
+    loginEmailInput.placeholder = 'nombre@senda.cl';
+  }
+}
   const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
 
