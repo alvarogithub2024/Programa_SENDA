@@ -1,6 +1,3 @@
-49.01 KB •1420 líneas
-•
-El formato puede ser inconsistente con respecto al original
 // Firebase Configuration
 const firebaseConfig = {
   apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
