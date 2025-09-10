@@ -1,193 +1,145 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>SENDA - Sistema de Gestión Integral</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="styles.css">
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
-  <!-- Header -->
-  <header class="header">
-    <div class="header-content">
-      <div class="logo">
-        <i class="fas fa-heartbeat"></i>
-        <span>SENDA</span>
+<!-- Patient Registration Modal - SECCIÓN MODIFICADA -->
+<div class="modal-overlay" id="patient-modal">
+  <div class="modal large-modal">
+    <button class="modal-close" data-close="patient-modal">
+      <i class="fas fa-times"></i>
+    </button>
+    <h2>Solicitud de Ayuda - Confidencial</h2>
+    
+    <div class="form-progress">
+      <div class="progress-bar">
+        <div class="progress-fill" id="form-progress"></div>
       </div>
-      <div class="header-actions">
-        <button class="btn btn-outline" id="find-center">
-          <i class="fas fa-map-marker-alt"></i>
-          Encontrar Centro
-        </button>
-        <button class="btn btn-professional" id="login-professional">
-          <i class="fas fa-user-md"></i>
-          Acceso Profesional
-        </button>
-      </div>
+      <span class="progress-text" id="progress-text">Paso 1 de 3</span>
     </div>
-  </header>
 
-  <!-- Main Content -->
-  <main class="main-content">
-    <div class="hero-card">
-      <h1>Programa SENDA</h1>
-      <p class="subtitle">Tu recuperación comienza aquí</p>
-      
-      <p class="description">
-        Un espacio seguro y confidencial para solicitar ayuda cuando estés listo. 
-        SENDA busca mitigar el impacto social y sanitario de los consumos de alcohol y otras drogas, 
-        mejorando el bienestar y la calidad de vida en las personas y comunidades.
-      </p>
-
-      <div class="stats-grid">
-        <div class="stat-item">
-          <span class="stat-number">1,250+</span>
-          <span class="stat-label">Pacientes Atendidos</span>
+    <form id="patient-form" class="multi-step-form">
+      <!-- Paso 1: Tipo de solicitud y datos básicos -->
+      <div class="form-step active" data-step="1">
+        <h3>Tipo de solicitud</h3>
+        
+        <div class="form-group">
+          <label class="form-label">¿Cómo te gustaría proceder? *</label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input type="radio" name="tipoSolicitud" value="anonimo" required>
+              <span class="radio-custom"></span>
+              Mantenerme anónimo por ahora
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="tipoSolicitud" value="identificado" required>
+              <span class="radio-custom"></span>
+              Proporcionar mis datos para contacto directo
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="tipoSolicitud" value="informacion" required>
+              <span class="radio-custom"></span>
+              Solo necesito información sobre el programa
+            </label>
+          </div>
         </div>
-        <div class="stat-item">
-          <span class="stat-number">48</span>
-          <span class="stat-label">Profesionales Activos</span>
+
+        <!-- Campo de teléfono para anónimos (oculto por defecto) -->
+        <div class="form-group" id="anonymous-phone-container" style="display: none;">
+          <label class="form-label">Teléfono de contacto *</label>
+          <input type="tel" class="form-input" id="anonymous-phone" placeholder="+56 9 1234 5678">
+          <small style="color: var(--gray-600);">Tu número será utilizado únicamente para contactarte sobre tu solicitud</small>
         </div>
-        <div class="stat-item">
-          <span class="stat-number">95%</span>
-          <span class="stat-label">Satisfacción</span>
+
+        <!-- Campo de email para solo información (oculto por defecto) -->
+        <div class="form-group" id="info-email-container" style="display: none;">
+          <label class="form-label">Email para recibir información *</label>
+          <input type="email" class="form-input" id="info-email" placeholder="tu@email.com">
+          <small style="color: var(--gray-600);">Te enviaremos información completa sobre el programa SENDA</small>
         </div>
-      </div>
 
-      <div class="btn-group">
-        <button class="btn btn-primary" id="register-patient">
-          <i class="fas fa-user-plus"></i>
-          Solicitar Ayuda
-        </button>
-        <button class="btn btn-secondary" id="reentry-program">
-          <i class="fas fa-redo"></i>
-          Reingresar al Programa
-        </button>
-        <button class="btn btn-outline" id="about-program">
-          <i class="fas fa-info-circle"></i>
-          Sobre el Programa
-        </button>
-      </div>
-
-      <div class="emergency-info">
-        <p class="emergency-title">¿Necesitas ayuda inmediata?</p>
-        <div class="emergency-numbers">
-          <span>🚨 Emergencias: 131</span>
-          <span>📞 SENDA: 1412 (gratuito)</span>
-        </div>
-      </div>
-
-      <div class="features">
-        <span>✓ Confidencial</span>
-        <span>✓ Disponible 24/7</span>
-        <span>✓ Sin juicios</span>
-      </div>
-    </div>
-  </main>
-
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="footer-content">
-      <p>Para más información oficial sobre SENDA:</p>
-      <a href="https://www.senda.gob.cl" target="_blank" class="footer-link">
-        <i class="fas fa-globe"></i>
-        Sitio Oficial SENDA
-      </a>
-      <p style="margin-top: 16px; font-size: 14px; color: var(--gray-400);">
-        Sistema interno para profesionales del Programa SENDA
-      </p>
-    </div>
-  </footer>
-
-  <!-- Patient Registration Modal -->
-  <div class="modal-overlay" id="patient-modal">
-    <div class="modal large-modal">
-      <button class="modal-close" data-close="patient-modal">
-        <i class="fas fa-times"></i>
-      </button>
-      <h2>Solicitud de Ayuda - Confidencial</h2>
-      
-      <div class="form-progress">
-        <div class="progress-bar">
-          <div class="progress-fill" id="form-progress"></div>
-        </div>
-        <span class="progress-text" id="progress-text">Paso 1 de 4</span>
-      </div>
-
-      <form id="patient-form" class="multi-step-form">
-        <!-- Paso 1: Tipo de solicitud -->
-        <div class="form-step active" data-step="1">
-          <h3>Tipo de solicitud</h3>
-          
+        <div class="form-row">
           <div class="form-group">
-            <label class="form-label">¿Cómo te gustaría proceder? *</label>
-            <div class="radio-group">
-              <label class="radio-option">
-                <input type="radio" name="tipoSolicitud" value="anonimo" required>
-                <span class="radio-custom"></span>
-                Mantenerme anónimo por ahora
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="tipoSolicitud" value="identificado" required>
-                <span class="radio-custom"></span>
-                Proporcionar mis datos para contacto directo
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="tipoSolicitud" value="informacion" required>
-                <span class="radio-custom"></span>
-                Solo necesito información sobre el programa
-              </label>
+            <label class="form-label">Tu edad *</label>
+            <input type="number" class="form-input" id="patient-age" min="12" max="120" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Región *</label>
+            <select class="form-select" id="patient-region" required>
+              <option value="">Seleccionar región...</option>
+              <!-- Se llenará dinámicamente con JavaScript -->
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">¿Para quién solicitas ayuda? *</label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input type="radio" name="paraMi" value="mi_mismo" required>
+              <span class="radio-custom"></span>
+              Para mí mismo/a
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="paraMi" value="familiar" required>
+              <span class="radio-custom"></span>
+              Para un familiar
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="paraMi" value="amigo" required>
+              <span class="radio-custom"></span>
+              Para un amigo/a
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paso 2: Datos de contacto (SOLO para identificados) O Evaluación inicial (para anónimos/información) -->
+      <div class="form-step" data-step="2">
+        <h3>Datos de contacto</h3>
+        <p class="step-description">Esta información nos permitirá contactarte directamente</p>
+        
+        <!-- Campos para solicitud identificada -->
+        <div id="identified-contact-fields">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Nombre *</label>
+              <input type="text" class="form-input" id="patient-name">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Apellidos *</label>
+              <input type="text" class="form-input" id="patient-lastname">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">RUT *</label>
+            <input type="text" class="form-input" id="patient-rut" placeholder="12.345.678-9">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Teléfono *</label>
+              <input type="tel" class="form-input" id="patient-phone" placeholder="+56 9 1234 5678">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-input" id="patient-email">
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Tu edad *</label>
-              <input type="number" class="form-input" id="patient-age" min="12" max="120" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Región *</label>
-              <select class="form-select" id="patient-region" required>
-                <option value="">Seleccionar región...</option>
-                <option value="metropolitana">Metropolitana</option>
-                <option value="valparaiso">Valparaíso</option>
-                <option value="antofagasta">Antofagasta</option>
-                <option value="bio_bio">Biobío</option>
+              <label class="form-label">Comuna *</label>
+              <select class="form-select" id="patient-comuna" disabled>
+                <option value="">Primero selecciona una región</option>
+                <!-- Se llenará dinámicamente según la región seleccionada -->
               </select>
             </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">¿Para quién solicitas ayuda? *</label>
-            <div class="radio-group">
-              <label class="radio-option">
-                <input type="radio" name="paraMi" value="mi_mismo" required>
-                <span class="radio-custom"></span>
-                Para mí mismo/a
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="paraMi" value="familiar" required>
-                <span class="radio-custom"></span>
-                Para un familiar
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="paraMi" value="amigo" required>
-                <span class="radio-custom"></span>
-                Para un amigo/a
-              </label>
+            <div class="form-group">
+              <label class="form-label">Dirección</label>
+              <input type="text" class="form-input" id="patient-address">
             </div>
           </div>
         </div>
 
-        <!-- Paso 2: Evaluación inicial -->
-        <div class="form-step" data-step="2">
-          <h3>Evaluación inicial</h3>
-          
+        <!-- Campos para evaluación inicial (anónimos/información) -->
+        <div id="evaluation-fields" style="display: none;">
           <div class="form-group">
             <label class="form-label">Tipo de sustancia principal *</label>
             <div class="checkbox-group">
@@ -272,468 +224,155 @@
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Paso 3: Datos de contacto (condicional) -->
-        <div class="form-step" data-step="3">
-          <h3>Datos de contacto</h3>
-          <p class="step-description">Esta información nos permitirá contactarte directamente</p>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Nombre</label>
-              <input type="text" class="form-input" id="patient-name">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Apellidos</label>
-              <input type="text" class="form-input" id="patient-lastname">
+      <!-- Paso 3: Evaluación e información adicional (para identificados) O solo información adicional (para anónimos/información) -->
+      <div class="form-step" data-step="3">
+        <h3>Información adicional</h3>
+        
+        <!-- Evaluación para identificados (que no la llenaron en paso 2) -->
+        <div id="identified-evaluation-fields" style="display: none;">
+          <div class="form-group">
+            <label class="form-label">Tipo de sustancia principal *</label>
+            <div class="checkbox-group">
+              <label class="checkbox-option">
+                <input type="checkbox" name="sustancias" value="alcohol">
+                <span class="checkbox-custom"></span>
+                Alcohol
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="sustancias" value="marihuana">
+                <span class="checkbox-custom"></span>
+                Marihuana
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="sustancias" value="cocaina">
+                <span class="checkbox-custom"></span>
+                Cocaína
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="sustancias" value="pasta_base">
+                <span class="checkbox-custom"></span>
+                Pasta base
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="sustancias" value="medicamentos">
+                <span class="checkbox-custom"></span>
+                Medicamentos
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="sustancias" value="otras">
+                <span class="checkbox-custom"></span>
+                Otras
+              </label>
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">RUT</label>
-            <input type="text" class="form-input" id="patient-rut" placeholder="12.345.678-9">
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Teléfono</label>
-              <input type="tel" class="form-input" id="patient-phone" placeholder="+56 9 1234 5678">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Email</label>
-              <input type="email" class="form-input" id="patient-email">
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Comuna</label>
-              <select class="form-select" id="patient-comuna">
-                <option value="">Seleccionar comuna...</option>
-                <option value="santiago">Santiago</option>
-                <option value="providencia">Providencia</option>
-                <option value="las_condes">Las Condes</option>
-                <option value="maipu">Maipú</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Dirección</label>
-              <input type="text" class="form-input" id="patient-address">
-            </div>
-          </div>
-        </div>
-
-        <!-- Paso 4: Información adicional -->
-        <div class="form-step" data-step="4">
-          <h3>Información adicional</h3>
-          
-          <div class="form-group">
-            <label class="form-label">Cuéntanos tu situación (opcional)</label>
-            <textarea class="form-textarea" id="patient-reason" placeholder="Describe brevemente tu situación actual y qué tipo de ayuda necesitas..."></textarea>
+            <label class="form-label">Tiempo aproximado de consumo</label>
+            <select class="form-select" id="tiempo-consumo">
+              <option value="">Seleccionar...</option>
+              <option value="6">Menos de 6 meses</option>
+              <option value="12">6 meses - 1 año</option>
+              <option value="24">1 - 2 años</option>
+              <option value="60">2 - 5 años</option>
+              <option value="120">Más de 5 años</option>
+            </select>
           </div>
 
           <div class="form-group">
-            <label class="form-label">¿Has recibido tratamiento anteriormente?</label>
+            <label class="form-label">Motivación para el cambio (1-10)</label>
+            <input type="range" class="form-range" id="motivacion" min="1" max="10" value="5">
+            <div class="range-labels">
+              <span>1 - Poco motivado</span>
+              <span id="motivacion-value">5</span>
+              <span>10 - Muy motivado</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Urgencia de la situación</label>
             <div class="radio-group">
               <label class="radio-option">
-                <input type="radio" name="tratamientoPrevio" value="no">
+                <input type="radio" name="urgencia" value="baja">
                 <span class="radio-custom"></span>
-                No, es mi primera vez
+                No es urgente
               </label>
               <label class="radio-option">
-                <input type="radio" name="tratamientoPrevio" value="si_senda">
+                <input type="radio" name="urgencia" value="moderada">
                 <span class="radio-custom"></span>
-                Sí, en SENDA
+                Moderada
               </label>
               <label class="radio-option">
-                <input type="radio" name="tratamientoPrevio" value="si_otro">
+                <input type="radio" name="urgencia" value="alta">
                 <span class="radio-custom"></span>
-                Sí, en otro lugar
+                Urgente
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="urgencia" value="critica">
+                <span class="radio-custom"></span>
+                Emergencia
               </label>
             </div>
           </div>
-
-          <div class="form-group">
-            <label class="form-label">Centro de preferencia</label>
-            <select class="form-select" id="centro-preferencia">
-              <option value="">Sin preferencia</option>
-              <option value="cesfam_la_florida">CESFAM La Florida</option>
-              <option value="cesfam_maipu">CESFAM Maipú</option>
-              <option value="cesfam_providencia">CESFAM Providencia</option>
-            </select>
-          </div>
         </div>
-
-        <div class="form-navigation">
-          <button type="button" class="btn btn-outline" id="prev-step" style="display: none;">
-            <i class="fas fa-arrow-left"></i>
-            Anterior
-          </button>
-          <button type="button" class="btn btn-secondary" id="save-draft">
-            <i class="fas fa-save"></i>
-            Guardar borrador
-          </button>
-          <button type="button" class="btn btn-primary" id="next-step">
-            Siguiente
-            <i class="fas fa-arrow-right"></i>
-          </button>
-          <button type="submit" class="btn btn-success" id="submit-form" style="display: none;">
-            <i class="fas fa-paper-plane"></i>
-            Enviar Solicitud
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Professional Panel Modal -->
-  <div class="modal-overlay" id="panel-modal">
-    <div class="modal professional-panel">
-      <!-- Sidebar -->
-      <div class="sidebar">
-        <div class="sidebar-header">
-          <div class="user-info">
-            <div class="user-avatar" id="user-avatar">DR</div>
-            <div>
-              <div id="user-name" style="font-weight: 600;">Dr. Juan Pérez</div>
-              <div id="user-role" style="font-size: 14px; opacity: 0.8;">Médico</div>
-            </div>
-          </div>
-        </div>
-
-        <nav class="nav-menu">
-          <div class="nav-item active" data-panel="dashboard">
-            <i class="fas fa-chart-line"></i>
-            Dashboard
-          </div>
-          <div class="nav-item" data-panel="requests">
-            <i class="fas fa-inbox"></i>
-            Solicitudes
-            <span class="badge" id="requests-badge">0</span>
-          </div>
-          <div class="nav-item" data-panel="patients">
-            <i class="fas fa-users"></i>
-            Pacientes
-          </div>
-          <div class="nav-item" data-panel="calendar">
-            <i class="fas fa-calendar-alt"></i>
-            Agenda
-          </div>
-          <div class="nav-item" data-panel="followups">
-            <i class="fas fa-clipboard-list"></i>
-            Seguimientos
-          </div>
-          <div class="nav-item" data-panel="reports">
-            <i class="fas fa-file-medical-alt"></i>
-            Reportes
-          </div>
-          <div class="nav-item" data-panel="centers" id="centers-nav" style="display: none;">
-            <i class="fas fa-hospital"></i>
-            Centros
-          </div>
-          <div class="nav-item" data-panel="users" id="users-nav" style="display: none;">
-            <i class="fas fa-user-cog"></i>
-            Usuarios
-          </div>
-          <div class="nav-item" data-panel="analytics" id="analytics-nav" style="display: none;">
-            <i class="fas fa-chart-bar"></i>
-            Analytics
-          </div>
-        </nav>
-
-        <div class="sidebar-footer">
-          <button class="logout-btn" id="logout-btn">
-            <i class="fas fa-sign-out-alt"></i>
-            Cerrar Sesión
-          </button>
-        </div>
-      </div>
-
-      <!-- Main Panel -->
-      <div class="main-panel">
-        <!-- Dashboard Panel -->
-        <div class="panel-content active" id="dashboard-panel">
-          <div class="panel-header">
-            <h1 class="panel-title">Dashboard</h1>
-            <p class="panel-subtitle">Resumen general de actividades</p>
-          </div>
-
-          <div class="metrics-grid">
-            <div class="metric-card">
-              <div class="metric-header">
-                <h3>Pacientes Activos</h3>
-                <i class="fas fa-users metric-icon"></i>
-              </div>
-              <div class="metric-value" id="total-patients">0</div>
-              <div class="metric-change positive">
-                <i class="fas fa-arrow-up"></i> +12% desde el mes pasado
-              </div>
-            </div>
-
-            <div class="metric-card">
-              <div class="metric-header">
-                <h3>Citas Hoy</h3>
-                <i class="fas fa-calendar metric-icon"></i>
-              </div>
-              <div class="metric-value" id="today-appointments">0</div>
-              <div class="metric-detail">
-                Próxima cita: <span id="next-appointment">--:--</span>
-              </div>
-            </div>
-
-            <div class="metric-card">
-              <div class="metric-header">
-                <h3>Solicitudes Pendientes</h3>
-                <i class="fas fa-clock metric-icon"></i>
-              </div>
-              <div class="metric-value" id="pending-requests">0</div>
-              <div class="metric-change negative">
-                Requieren atención inmediata
-              </div>
-            </div>
-
-            <div class="metric-card">
-              <div class="metric-header">
-                <h3>Casos Críticos</h3>
-                <i class="fas fa-exclamation-triangle metric-icon"></i>
-              </div>
-              <div class="metric-value critical" id="critical-cases">0</div>
-              <div class="metric-detail">
-                Última alerta: <span id="last-alert">N/A</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="dashboard-charts">
-            <div class="chart-container">
-              <h3>Casos por Prioridad</h3>
-              <canvas id="priority-chart"></canvas>
-            </div>
-            <div class="chart-container">
-              <h3>Tendencia Mensual</h3>
-              <canvas id="trend-chart"></canvas>
-            </div>
-          </div>
-
-          <div class="recent-activity">
-            <h3>Actividad Reciente</h3>
-            <div id="activity-list">
-              <!-- Se llenará dinámicamente -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Requests Panel -->
-        <div class="panel-content hidden" id="requests-panel">
-          <div class="panel-header">
-            <h1 class="panel-title">Gestión de Solicitudes</h1>
-            <p class="panel-subtitle">Revisa y gestiona las solicitudes pendientes</p>
-          </div>
-
-          <div class="filters-section">
-            <div class="filter-group">
-              <select class="form-select" id="filter-priority">
-                <option value="">Todas las prioridades</option>
-                <option value="critica">Crítica</option>
-                <option value="alta">Alta</option>
-                <option value="media">Media</option>
-                <option value="baja">Baja</option>
-              </select>
-              
-              <select class="form-select" id="filter-status">
-                <option value="">Todos los estados</option>
-                <option value="pendiente">Pendiente</option>
-                <option value="en_proceso">En proceso</option>
-                <option value="atendido">Atendido</option>
-              </select>
-
-              <input type="date" class="form-input" id="filter-date">
-              
-              <button class="btn btn-outline" id="clear-filters">
-                <i class="fas fa-times"></i>
-                Limpiar
-              </button>
-            </div>
-          </div>
-
-          <div id="requests-list">
-            <!-- Las solicitudes se cargarán aquí dinámicamente -->
-          </div>
-        </div>
-
-        <!-- Patients Panel -->
-        <div class="panel-content hidden" id="patients-panel">
-          <div class="panel-header">
-            <h1 class="panel-title">Gestión de Pacientes</h1>
-            <p class="panel-subtitle">Busca y gestiona información de pacientes</p>
-          </div>
-
-          <div class="search-section">
-            <div class="search-container">
-              <i class="fas fa-search search-icon"></i>
-              <input type="text" class="search-input" id="patient-search" placeholder="Buscar por RUT, nombre o apellido...">
-            </div>
-          </div>
-
-          <div id="patients-list">
-            <!-- Los pacientes se cargarán aquí dinámicamente -->
-          </div>
-        </div>
-
-        <!-- Calendar Panel -->
-        <div class="panel-content hidden" id="calendar-panel">
-          <div class="panel-header">
-            <h1 class="panel-title">Agenda</h1>
-            <p class="panel-subtitle">Gestiona tus citas y horarios</p>
-          </div>
-
-          <div class="calendar-controls">
-            <button class="btn btn-primary" id="new-appointment">
-              <i class="fas fa-plus"></i>
-              Nueva Cita
-            </button>
-            <div class="calendar-navigation">
-              <button class="btn btn-outline" id="prev-month">
-                <i class="fas fa-chevron-left"></i>
-              </button>
-              <span id="current-month">Septiembre 2025</span>
-              <button class="btn btn-outline" id="next-month">
-                <i class="fas fa-chevron-right"></i>
-              </button>
-            </div>
-          </div>
-
-          <div id="calendar-grid">
-            <!-- El calendario se generará dinámicamente -->
-          </div>
-        </div>
-
-        <!-- Otros paneles se cargarán dinámicamente según el rol -->
-      </div>
-    </div>
-  </div>
-
-  <!-- Center Finder Modal -->
-  <div class="modal-overlay" id="center-modal">
-    <div class="modal">
-      <button class="modal-close" data-close="center-modal">
-        <i class="fas fa-times"></i>
-      </button>
-      <h2>Encontrar Centro de Salud</h2>
-      
-      <div class="location-input">
+        
+        <!-- Información adicional para todos -->
         <div class="form-group">
-          <label class="form-label">Tu ubicación</label>
-          <input type="text" class="form-input" id="location-input" placeholder="Ingresa tu dirección o permite geolocalización">
-          <button class="btn btn-outline" id="use-location">
-            <i class="fas fa-location-arrow"></i>
-            Usar mi ubicación
-          </button>
+          <label class="form-label">Cuéntanos tu situación (opcional)</label>
+          <textarea class="form-textarea" id="patient-reason" placeholder="Describe brevemente tu situación actual y qué tipo de ayuda necesitas..."></textarea>
         </div>
-      </div>
 
-      <div id="centers-list">
-        <!-- Lista de centros se cargará dinámicamente -->
-      </div>
-    </div>
-  </div>
-
-  <!-- Professional Login Modal -->
-  <div class="modal-overlay" id="professional-modal">
-    <div class="modal">
-      <button class="modal-close" data-close="professional-modal">
-        <i class="fas fa-times"></i>
-      </button>
-      <h2>Acceso Profesional</h2>
-      
-      <div class="tabs">
-        <div class="tab-list">
-          <button class="tab-button active" data-tab="login">Iniciar Sesión</button>
-          <button class="tab-button" data-tab="register">Registrarse</button>
-        </div>
-      </div>
-
-      <!-- Login Tab -->
-      <div class="tab-content active" id="login-tab">
-        <form id="login-form">
-          <div class="form-group">
-            <label class="form-label">Correo Electrónico</label>
-            <input type="email" class="form-input" id="login-email" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Contraseña</label>
-            <input type="password" class="form-input" id="login-password" required>
-          </div>
-          <div class="form-group">
-            <label class="checkbox-option">
-              <input type="checkbox" id="remember-me">
-              <span class="checkbox-custom"></span>
-              Recordar sesión
+        <div class="form-group">
+          <label class="form-label">¿Has recibido tratamiento anteriormente?</label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input type="radio" name="tratamientoPrevio" value="no">
+              <span class="radio-custom"></span>
+              No, es mi primera vez
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="tratamientoPrevio" value="si_senda">
+              <span class="radio-custom"></span>
+              Sí, en SENDA
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="tratamientoPrevio" value="si_otro">
+              <span class="radio-custom"></span>
+              Sí, en otro lugar
             </label>
           </div>
-          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px;">
-            <i class="fas fa-sign-in-alt"></i>
-            Iniciar Sesión
-          </button>
-        </form>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Centro de preferencia</label>
+          <select class="form-select" id="centro-preferencia">
+            <option value="">Sin preferencia</option>
+            <option value="cesfam_la_florida">CESFAM La Florida</option>
+            <option value="cesfam_maipu">CESFAM Maipú</option>
+            <option value="cesfam_providencia">CESFAM Providencia</option>
+          </select>
+        </div>
       </div>
 
-      <!-- Register Tab -->
-      <div class="tab-content" id="register-tab">
-        <form id="register-form">
-          <div class="form-group">
-            <label class="form-label">Nombre Completo</label>
-            <input type="text" class="form-input" id="register-name" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Correo Electrónico</label>
-            <input type="email" class="form-input" id="register-email" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Contraseña</label>
-            <input type="password" class="form-input" id="register-password" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Profesión</label>
-            <select class="form-select" id="register-profession" required>
-              <option value="">Seleccionar profesión...</option>
-              <option value="asistente_social">Asistente Social</option>
-              <option value="medico">Médico</option>
-              <option value="psicologo">Psicólogo</option>
-              <option value="terapeuta">Terapeuta Ocupacional</option>
-              <option value="coordinador">Coordinador Regional</option>
-              <option value="admin">Administrador</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Centro de Salud</label>
-            <select class="form-select" id="register-center" required>
-              <option value="">Seleccionar centro...</option>
-              <option value="cesfam_la_florida">CESFAM La Florida</option>
-              <option value="cesfam_maipu">CESFAM Maipú</option>
-              <option value="cesfam_providencia">CESFAM Providencia</option>
-            </select>
-          </div>
-          <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 16px;">
-            <i class="fas fa-user-plus"></i>
-            Registrarse
-          </button>
-        </form>
+      <div class="form-navigation">
+        <button type="button" class="btn btn-outline" id="prev-step" style="display: none;">
+          <i class="fas fa-arrow-left"></i>
+          Anterior
+        </button>
+        <button type="button" class="btn btn-secondary" id="save-draft">
+          <i class="fas fa-save"></i>
+          Guardar borrador
+        </button>
+        <button type="button" class="btn btn-primary" id="next-step">
+          Siguiente
+          <i class="fas fa-arrow-right"></i>
+        </button>
+        <button type="submit" class="btn btn-success" id="submit-form" style="display: none;">
+          <i class="fas fa-paper-plane"></i>
+          Enviar Solicitud
+        </button>
       </div>
-    </div>
+    </form>
   </div>
-
-  <!-- Notification Container -->
-  <div id="notifications"></div>
-
-  <!-- Loading Overlay -->
-  <div id="loading-overlay" class="loading-overlay hidden">
-    <div class="loading-spinner">
-      <div class="spinner"></div>
-      <p>Cargando...</p>
-    </div>
-  </div>
-
-  <script src="app.js"></script>
-</body>
-</html>
+</div>
