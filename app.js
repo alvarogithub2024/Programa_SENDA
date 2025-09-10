@@ -499,7 +499,7 @@ function updateFormSteps() {
     if (step3) step3.querySelector('h3').textContent = 'Información adicional';
   }
   
-  maxFormStep = 3; // Siempre 3 pasos
+  maxFormStep = 4; // Siempre 4 pasos
 }
 
 function updateFormProgress() {
@@ -690,6 +690,14 @@ function collectCurrentStepData() {
     formData.centroPreferencia = document.getElementById('centro-preferencia').value;
   }
 }
+if (currentFormStep === 4) {
+    const sustancias = Array.from(document.querySelectorAll('input[name="sustancias"]:checked'))
+      .map(cb => cb.value);
+    formData.sustancias = sustancias;
+    formData.tiempoConsumo = document.getElementById('tiempo-consumo').value;
+    formData.motivacion = document.getElementById('motivacion').value;
+    formData.urgencia = document.querySelector('input[name="urgencia"]:checked')?.value;
+  }
 
 function saveDraft(showMessage = true) {
   collectCurrentStepData();
