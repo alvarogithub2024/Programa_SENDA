@@ -1,3 +1,6 @@
+49.01 KB •1420 líneas
+•
+El formato puede ser inconsistente con respecto al original
 // Firebase Configuration
 const firebaseConfig = {
   apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
@@ -180,11 +183,6 @@ function isValidEmail(email) {
   return emailRegex.test(email);
 }
 
-// NUEVA FUNCIÓN: Validar email institucional
-function isValidInstitutionalEmail(email) {
-  return email.endsWith('@senda.cl');
-}
-
 function formatPhoneNumber(phone) {
   const cleaned = phone.replace(/\D/g, '');
   if (cleaned.length === 8) {
@@ -277,7 +275,6 @@ function initializeApp() {
   try {
     initializeEventListeners();
     setupFormValidation();
-    setupEmailValidation(); // NUEVA LÍNEA
     setupMultiStepForm();
     setupModalControls();
     setupTabFunctionality();
@@ -865,27 +862,6 @@ function setupFormValidation() {
   }
 }
 
-// NUEVA FUNCIÓN: Validación para email institucional
-function setupEmailValidation() {
-  const emailInput = document.getElementById('register-email');
-  if (emailInput) {
-    emailInput.addEventListener('blur', function(e) {
-      const email = e.target.value.trim();
-      if (email) {
-        if (!isValidEmail(email)) {
-          e.target.classList.add('error');
-          showNotification('Formato de correo inválido', 'error');
-        } else if (!isValidInstitutionalEmail(email)) {
-          e.target.classList.add('error');
-          showNotification('Debe usar un correo institucional @senda.cl', 'error');
-        } else {
-          e.target.classList.remove('error');
-        }
-      }
-    });
-  }
-}
-
 // Patient Registration Handler
 function submitPatientForm() {
   if (validateCurrentStep()) {
@@ -1076,7 +1052,7 @@ function resetForm() {
   }
 }
 
-// Professional Authentication Functions - CORREGIDAS
+// Professional Authentication Functions (unchanged)
 async function handleProfessionalLogin(e) {
   e.preventDefault();
   showLoading(true);
@@ -1134,38 +1110,27 @@ async function handleProfessionalLogin(e) {
   }
 }
 
-// FUNCIÓN COMPLETAMENTE CORREGIDA: Registro de profesionales
 async function handleProfessionalRegistration(e) {
   e.preventDefault();
   showLoading(true);
   
-  // Recolectar datos del formulario - CORREGIDO
   const formData = {
     name: document.getElementById('register-name').value.trim(),
     email: document.getElementById('register-email').value.trim(),
     password: document.getElementById('register-password').value,
     profession: document.getElementById('register-profession').value,
-    license: document.getElementById('register-license').value.trim(), // CORREGIDO
+    license: document.getElementById('register-license').value.trim(),
     center: document.getElementById('register-center').value
   };
 
-  // Validaciones básicas
-  if (!formData.name || !formData.email || !formData.password || !formData.profession || !formData.license || !formData.center) {
+  if (!formData.name || !formData.email || !formData.password || !formData.profession || !formData.license) {
     showNotification('Por favor completa todos los campos', 'error');
     showLoading(false);
     return;
   }
 
-  // Validar email general
   if (!isValidEmail(formData.email)) {
     showNotification('Por favor ingresa un correo electrónico válido', 'error');
-    showLoading(false);
-    return;
-  }
-
-  // NUEVA VALIDACIÓN: Email institucional
-  if (!isValidInstitutionalEmail(formData.email)) {
-    showNotification('Debe usar un correo institucional @senda.cl', 'error');
     showLoading(false);
     return;
   }
@@ -1177,12 +1142,10 @@ async function handleProfessionalRegistration(e) {
   }
 
   try {
-    // Crear usuario en Firebase Auth
     const userCredential = await auth.createUserWithEmailAndPassword(formData.email, formData.password);
     const user = userCredential.user;
     
-    // ESTRUCTURA CORREGIDA para Firestore
-    const professionalData = {
+    await db.collection('profesionales').doc(user.uid).set({
       nombre: formData.name,
       correo: formData.email,
       profesion: formData.profession,
@@ -1195,17 +1158,12 @@ async function handleProfessionalRegistration(e) {
       },
       metadata: {
         fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
-        ultima_actividad: firebase.firestore.FieldValue.serverTimestamp(),
-        registro_validado: false // Requiere validación de admin
+        ultima_actividad: firebase.firestore.FieldValue.serverTimestamp()
       }
-    };
+    });
 
-    // Guardar en Firestore
-    await db.collection('profesionales').doc(user.uid).set(professionalData);
-
-    showNotification('Registro exitoso. Tu cuenta será activada por un administrador.', 'success');
+    showNotification('Registro exitoso. Ahora puedes iniciar sesión.', 'success');
     
-    // Cambiar a tab de login y prellenar email
     const loginTab = document.querySelector('[data-tab="login"]');
     if (loginTab) loginTab.click();
     
@@ -1226,11 +1184,6 @@ async function handleProfessionalRegistration(e) {
       case 'auth/invalid-email':
         errorMessage = 'Correo electrónico inválido';
         break;
-      case 'auth/network-request-failed':
-        errorMessage = 'Error de conexión. Verifica tu internet.';
-        break;
-      default:
-        errorMessage = `Error: ${error.message}`;
     }
     
     showNotification(errorMessage, 'error');
@@ -1239,15 +1192,14 @@ async function handleProfessionalRegistration(e) {
   }
 }
 
-// FUNCIÓN MEJORADA: Permisos por defecto
 function getDefaultPermissions(profession) {
   const permissions = {
-    'asistente_social': ['ver_casos', 'asignar_casos', 'derivar_casos', 'seguimiento', 'reportes_basicos'],
-    'medico': ['ver_casos', 'atencion_medica', 'seguimiento', 'prescripcion', 'reportes_medicos'],
-    'psicologo': ['ver_casos', 'atencion_psicologica', 'seguimiento', 'evaluaciones', 'reportes_psicologicos'],
-    'terapeuta': ['ver_casos', 'terapia_ocupacional', 'seguimiento', 'evaluaciones', 'reportes_terapia'],
-    'coordinador': ['ver_casos', 'asignar_casos', 'reportes', 'supervision', 'coordinacion_regional'],
-    'admin': ['ver_casos', 'asignar_casos', 'reportes', 'usuarios', 'configuracion', 'administracion_completa']
+    'asistente_social': ['ver_casos', 'asignar_casos', 'derivar_casos', 'seguimiento'],
+    'medico': ['ver_casos', 'atencion_medica', 'seguimiento', 'prescripcion'],
+    'psicologo': ['ver_casos', 'atencion_psicologica', 'seguimiento'],
+    'terapeuta': ['ver_casos', 'terapia_ocupacional', 'seguimiento'],
+    'coordinador': ['ver_casos', 'asignar_casos', 'reportes', 'supervision'],
+    'admin': ['ver_casos', 'asignar_casos', 'reportes', 'usuarios', 'configuracion']
   };
   
   return permissions[profession] || ['ver_casos'];
