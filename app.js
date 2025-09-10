@@ -86,9 +86,11 @@ const regionesChile = {
 let currentUser = null;
 let currentUserData = null;
 let currentFormStep = 1;
-let maxFormStep = 4; // Máximo ahora es 4
+let maxFormStep = 4;
 let formData = {};
 let isDraftSaved = false;
+let flowSteps = []; // Array para almacenar la secuencia de pasos según el tipo de solicitud
+let currentStepIndex = 0; // Índice actual en el array de pasos
 
 // Utility Functions
 function showNotification(message, type = 'info', duration = 4000) {
@@ -323,6 +325,8 @@ function initializeEventListeners() {
     registerBtn.addEventListener('click', () => {
       formData = {};
       currentFormStep = 1;
+      currentStepIndex = 0;
+      flowSteps = [1]; // Iniciar con paso 1
       isDraftSaved = false;
       showModal('patient-modal');
       updateFormProgress();
@@ -351,6 +355,8 @@ function initializeEventListeners() {
     reentryBtn.addEventListener('click', () => {
       formData = { isReentry: true };
       currentFormStep = 1;
+      currentStepIndex = 0;
+      flowSteps = [1];
       isDraftSaved = false;
       showModal('patient-modal');
       updateFormProgress();
@@ -462,24 +468,28 @@ function handleTipoSolicitudChange(tipoSolicitud) {
   if (phoneContainer) phoneContainer.style.display = 'none';
   if (emailContainer) emailContainer.style.display = 'none';
   
-  // Mostrar campos según selección
-  if (tipoSolicitud === 'anonimo') {
-    if (phoneContainer) phoneContainer.style.display = 'block';
-  } else if (tipoSolicitud === 'informacion') {
-    if (emailContainer) emailContainer.style.display = 'block';
+  // Configurar flujo de pasos según tipo de solicitud
+  switch(tipoSolicitud) {
+    case 'anonimo':
+      // Anónimo: pasos 1, 3, 4 (saltar paso 2)
+      flowSteps = [1, 3, 4];
+      if (phoneContainer) phoneContainer.style.display = 'block';
+      break;
+      
+    case 'identificado':
+      // Identificado: todos los pasos 1, 2, 3, 4
+      flowSteps = [1, 2, 3, 4];
+      break;
+      
+    case 'informacion':
+      // Solo información: solo paso 1
+      flowSteps = [1];
+      if (emailContainer) emailContainer.style.display = 'block';
+      break;
   }
   
-  // Actualizar maxFormStep según tipo
-  updateMaxFormStep(tipoSolicitud);
-}
-
-// NUEVA FUNCIÓN: Actualizar máximo de pasos según tipo
-function updateMaxFormStep(tipoSolicitud) {
-  if (tipoSolicitud === 'identificado') {
-    maxFormStep = 4; // Paso 1, 2 (contacto), 3 (evaluación), 4 (adicional)
-  } else if (tipoSolicitud === 'anonimo' || tipoSolicitud === 'informacion') {
-    maxFormStep = 3; // Paso 1, 3 (evaluación), 4 (adicional) - saltar paso 2
-  }
+  // Actualizar progreso
+  updateFormProgress();
 }
 
 // NUEVA FUNCIÓN: Actualizar progreso considerando los pasos dinámicos
@@ -487,20 +497,21 @@ function updateFormProgress() {
   const progressFill = document.getElementById('form-progress');
   const progressText = document.getElementById('progress-text');
   
-  let totalSteps = maxFormStep;
-  let progress = (currentFormStep / totalSteps) * 100;
+  const totalSteps = flowSteps.length;
+  const currentStepInFlow = currentStepIndex + 1;
+  const progress = (currentStepInFlow / totalSteps) * 100;
   
   if (progressFill) progressFill.style.width = progress + '%';
-  if (progressText) progressText.textContent = `Paso ${currentFormStep} de ${totalSteps}`;
+  if (progressText) progressText.textContent = `Paso ${currentStepInFlow} de ${totalSteps}`;
   
   // Show/hide navigation buttons
   const prevBtn = document.getElementById('prev-step');
   const nextBtn = document.getElementById('next-step');
   const submitBtn = document.getElementById('submit-form');
   
-  if (prevBtn) prevBtn.style.display = currentFormStep > 1 ? 'block' : 'none';
-  if (nextBtn) nextBtn.style.display = currentFormStep < maxFormStep ? 'block' : 'none';
-  if (submitBtn) submitBtn.style.display = currentFormStep === maxFormStep ? 'block' : 'none';
+  if (prevBtn) prevBtn.style.display = currentStepIndex > 0 ? 'block' : 'none';
+  if (nextBtn) nextBtn.style.display = currentStepIndex < flowSteps.length - 1 ? 'block' : 'none';
+  if (submitBtn) submitBtn.style.display = currentStepIndex === flowSteps.length - 1 ? 'block' : 'none';
 }
 
 // FUNCIÓN ACTUALIZADA: Navegar al siguiente paso
@@ -508,16 +519,18 @@ function nextFormStep() {
   if (validateCurrentStep()) {
     collectCurrentStepData();
     
-    if (currentFormStep < maxFormStep) {
+    if (currentStepIndex < flowSteps.length - 1) {
       // Hide current step
-      document.querySelector(`[data-step="${currentFormStep}"]`).classList.remove('active');
+      const currentStepNumber = flowSteps[currentStepIndex];
+      document.querySelector(`[data-step="${currentStepNumber}"]`).classList.remove('active');
       
-      // Determinar próximo paso según tipo de solicitud
-      const nextStep = getNextStep(currentFormStep, formData.tipoSolicitud);
-      currentFormStep = nextStep;
+      // Move to next step in flow
+      currentStepIndex++;
+      const nextStepNumber = flowSteps[currentStepIndex];
+      currentFormStep = nextStepNumber;
       
       // Show next step
-      document.querySelector(`[data-step="${currentFormStep}"]`).classList.add('active');
+      document.querySelector(`[data-step="${nextStepNumber}"]`).classList.add('active');
       updateFormProgress();
       
       // Auto-save progress
@@ -526,52 +539,22 @@ function nextFormStep() {
   }
 }
 
-// NUEVA FUNCIÓN: Determinar próximo paso según tipo de solicitud
-function getNextStep(currentStep, tipoSolicitud) {
-  if (currentStep === 1) {
-    if (tipoSolicitud === 'identificado') {
-      return 2; // Ir a datos de contacto
-    } else {
-      return 3; // Saltar datos de contacto, ir directo a evaluación
-    }
-  } else if (currentStep === 2) {
-    return 3; // De contacto a evaluación
-  } else if (currentStep === 3) {
-    return 4; // De evaluación a información adicional
-  }
-  return currentStep + 1;
-}
-
 // FUNCIÓN ACTUALIZADA: Navegar al paso anterior
 function prevFormStep() {
-  if (currentFormStep > 1) {
+  if (currentStepIndex > 0) {
     // Hide current step
-    document.querySelector(`[data-step="${currentFormStep}"]`).classList.remove('active');
+    const currentStepNumber = flowSteps[currentStepIndex];
+    document.querySelector(`[data-step="${currentStepNumber}"]`).classList.remove('active');
     
-    // Determinar paso anterior según tipo de solicitud
-    const prevStep = getPrevStep(currentFormStep, formData.tipoSolicitud);
-    currentFormStep = prevStep;
+    // Move to previous step in flow
+    currentStepIndex--;
+    const prevStepNumber = flowSteps[currentStepIndex];
+    currentFormStep = prevStepNumber;
     
     // Show previous step
-    document.querySelector(`[data-step="${currentFormStep}"]`).classList.add('active');
+    document.querySelector(`[data-step="${prevStepNumber}"]`).classList.add('active');
     updateFormProgress();
   }
-}
-
-// NUEVA FUNCIÓN: Determinar paso anterior según tipo de solicitud
-function getPrevStep(currentStep, tipoSolicitud) {
-  if (currentStep === 4) {
-    return 3; // De información adicional a evaluación
-  } else if (currentStep === 3) {
-    if (tipoSolicitud === 'identificado') {
-      return 2; // De evaluación a contacto
-    } else {
-      return 1; // Saltar contacto, ir directo a tipo de solicitud
-    }
-  } else if (currentStep === 2) {
-    return 1; // De contacto a tipo de solicitud
-  }
-  return currentStep - 1;
 }
 
 // FUNCIÓN ACTUALIZADA: Validación según el paso actual
@@ -730,6 +713,8 @@ function saveDraft(showMessage = true) {
   const draftData = {
     ...formData,
     currentStep: currentFormStep,
+    currentStepIndex: currentStepIndex,
+    flowSteps: flowSteps,
     timestamp: new Date().toISOString()
   };
   
@@ -754,6 +739,8 @@ function loadDraftIfExists() {
         if (loadDraft) {
           formData = draftData;
           currentFormStep = draftData.currentStep || 1;
+          currentStepIndex = draftData.currentStepIndex || 0;
+          flowSteps = draftData.flowSteps || [1];
           restoreFormData();
           isDraftSaved = true;
         } else {
@@ -807,6 +794,10 @@ function restoreFormData() {
       }
     }, 100);
   }
+  
+  // Show correct step
+  document.querySelectorAll('.form-step').forEach(step => step.classList.remove('active'));
+  document.querySelector(`[data-step="${currentFormStep}"]`)?.classList.add('active');
   
   updateFormProgress();
 }
@@ -1027,7 +1018,8 @@ async function createCriticalCaseAlert(solicitudId, solicitudData) {
 function resetForm() {
   formData = {};
   currentFormStep = 1;
-  maxFormStep = 4;
+  currentStepIndex = 0;
+  flowSteps = [1];
   isDraftSaved = false;
   
   // Reset form elements
