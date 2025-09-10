@@ -14,11 +14,79 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// Chilean Regions and Communes Data
+const regionesChile = {
+  "arica": {
+    nombre: "Arica y Parinacota",
+    comunas: ["Arica", "Camarones", "Putre", "General Lagos"]
+  },
+  "tarapaca": {
+    nombre: "Tarapacá",
+    comunas: ["Iquique", "Alto Hospicio", "Pozo Almonte", "Camiña", "Colchane", "Huara", "Pica"]
+  },
+  "antofagasta": {
+    nombre: "Antofagasta",
+    comunas: ["Antofagasta", "Mejillones", "Sierra Gorda", "Taltal", "Calama", "Ollagüe", "San Pedro de Atacama", "Tocopilla", "María Elena"]
+  },
+  "atacama": {
+    nombre: "Atacama",
+    comunas: ["Copiapó", "Caldera", "Tierra Amarilla", "Chañaral", "Diego de Almagro", "Vallenar", "Alto del Carmen", "Freirina", "Huasco"]
+  },
+  "coquimbo": {
+    nombre: "Coquimbo",
+    comunas: ["La Serena", "Coquimbo", "Andacollo", "La Higuera", "Paiguano", "Vicuña", "Illapel", "Canela", "Los Vilos", "Salamanca", "Ovalle", "Combarbalá", "Monte Patria", "Punitaqui", "Río Hurtado"]
+  },
+  "valparaiso": {
+    nombre: "Valparaíso",
+    comunas: ["Valparaíso", "Casablanca", "Concón", "Juan Fernández", "Puchuncaví", "Quintero", "Viña del Mar", "Isla de Pascua", "Los Andes", "Calle Larga", "Rinconada", "San Esteban", "La Ligua", "Cabildo", "Papudo", "Petorca", "Zapallar", "Quillota", "Calera", "Hijuelas", "La Cruz", "Nogales", "San Antonio", "Algarrobo", "Cartagena", "El Quisco", "El Tabo", "Santo Domingo", "San Felipe", "Catemu", "Llaillay", "Panquehue", "Putaendo", "Santa María", "Quilpué", "Limache", "Olmué", "Villa Alemana"]
+  },
+  "metropolitana": {
+    nombre: "Metropolitana de Santiago",
+    comunas: ["Cerrillos", "Cerro Navia", "Conchalí", "El Bosque", "Estación Central", "Huechuraba", "Independencia", "La Cisterna", "La Florida", "La Granja", "La Pintana", "La Reina", "Las Condes", "Lo Barnechea", "Lo Espejo", "Lo Prado", "Macul", "Maipú", "Ñuñoa", "Pedro Aguirre Cerda", "Peñalolén", "Providencia", "Pudahuel", "Quilicura", "Quinta Normal", "Recoleta", "Renca", "Santiago", "San Joaquín", "San Miguel", "San Ramón", "Vitacura", "Puente Alto", "Pirque", "San José de Maipo", "Colina", "Lampa", "Tiltil", "San Bernardo", "Buin", "Calera de Tango", "Paine", "Melipilla", "Alhué", "Curacaví", "María Pinto", "San Pedro", "Talagante", "El Monte", "Isla de Maipo", "Padre Hurtado", "Peñaflor"]
+  },
+  "ohiggins": {
+    nombre: "Libertador General Bernardo O'Higgins",
+    comunas: ["Rancagua", "Codegua", "Coinco", "Coltauco", "Doñihue", "Graneros", "Las Cabras", "Machalí", "Malloa", "Mostazal", "Olivar", "Peumo", "Pichidegua", "Quinta de Tilcoco", "Rengo", "Requínoa", "San Vicente", "Pichilemu", "La Estrella", "Litueche", "Marchihue", "Navidad", "Paredones", "San Fernando", "Chépica", "Chimbarongo", "Lolol", "Nancagua", "Palmilla", "Peralillo", "Placilla", "Pumanque", "Santa Cruz"]
+  },
+  "maule": {
+    nombre: "Maule",
+    comunas: ["Talca", "Constitución", "Curepto", "Empedrado", "Maule", "Pelarco", "Pencahue", "Río Claro", "San Clemente", "San Rafael", "Cauquenes", "Chanco", "Pelluhue", "Curicó", "Hualañé", "Licantén", "Molina", "Rauco", "Romeral", "Sagrada Familia", "Teno", "Vichuquén", "Linares", "Colbún", "Longaví", "Parral", "Retiro", "San Javier", "Villa Alegre", "Yerbas Buenas"]
+  },
+  "nuble": {
+    nombre: "Ñuble",
+    comunas: ["Chillán", "Bulnes", "Cobquecura", "Coelemu", "Coihueco", "Chillán Viejo", "El Carmen", "Ninhue", "Ñiquén", "Pemuco", "Pinto", "Portezuelo", "Quillón", "Quirihue", "Ránquil", "San Carlos", "San Fabián", "San Ignacio", "San Nicolás", "Treguaco", "Yungay"]
+  },
+  "biobio": {
+    nombre: "Biobío",
+    comunas: ["Concepción", "Coronel", "Chiguayante", "Florida", "Hualqui", "Lota", "Penco", "San Pedro de la Paz", "Santa Juana", "Talcahuano", "Tomé", "Hualpén", "Lebu", "Arauco", "Cañete", "Contulmo", "Curanilahue", "Los Álamos", "Tirúa", "Los Ángeles", "Antuco", "Cabrero", "Laja", "Mulchén", "Nacimiento", "Negrete", "Quilaco", "Quilleco", "San Rosendo", "Santa Bárbara", "Tucapel", "Yumbel", "Alto Biobío"]
+  },
+  "araucania": {
+    nombre: "La Araucanía",
+    comunas: ["Temuco", "Carahue", "Cunco", "Curarrehue", "Freire", "Galvarino", "Gorbea", "Lautaro", "Loncoche", "Melipeuco", "Nueva Imperial", "Padre Las Casas", "Perquenco", "Pitrufquén", "Pucón", "Saavedra", "Teodoro Schmidt", "Toltén", "Vilcún", "Villarrica", "Cholchol", "Angol", "Collipulli", "Curacautín", "Ercilla", "Lonquimay", "Los Sauces", "Lumaco", "Purén", "Renaico", "Traiguén", "Victoria"]
+  },
+  "losrios": {
+    nombre: "Los Ríos",
+    comunas: ["Valdivia", "Corral", "Lanco", "Los Lagos", "Máfil", "Mariquina", "Paillaco", "Panguipulli", "La Unión", "Futrono", "Lago Ranco", "Río Bueno"]
+  },
+  "loslagos": {
+    nombre: "Los Lagos",
+    comunas: ["Puerto Montt", "Calbuco", "Cochamó", "Fresia", "Frutillar", "Los Muermos", "Llanquihue", "Maullín", "Puerto Varas", "Castro", "Ancud", "Chonchi", "Curaco de Vélez", "Dalcahue", "Puqueldón", "Queilén", "Quellón", "Quemchi", "Quinchao", "Osorno", "Puerto Octay", "Purranque", "Puyehue", "Río Negro", "San Juan de la Costa", "San Pablo", "Chaitén", "Futaleufú", "Hualaihué", "Palena"]
+  },
+  "aysen": {
+    nombre: "Aysén del General Carlos Ibáñez del Campo",
+    comunas: ["Coyhaique", "Lago Verde", "Aysén", "Cisnes", "Guaitecas", "Cochrane", "O'Higgins", "Tortel", "Chile Chico", "Río Ibáñez"]
+  },
+  "magallanes": {
+    nombre: "Magallanes y de la Antártica Chilena",
+    comunas: ["Punta Arenas", "Laguna Blanca", "Río Verde", "San Gregorio", "Cabo de Hornos", "Antártica", "Porvenir", "Primavera", "Timaukel", "Natales", "Torres del Paine"]
+  }
+};
+
 // Global Variables
 let currentUser = null;
 let currentUserData = null;
 let currentFormStep = 1;
-let maxFormStep = 4;
+let maxFormStep = 3;
 let formData = {};
 let isDraftSaved = false;
 
@@ -59,6 +127,10 @@ function showModal(modalId) {
 function closeModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) {
+    // Limpiar formulario si es patient-modal y no se guardó borrador
+    if (modalId === 'patient-modal' && !isDraftSaved) {
+      resetForm();
+    }
     modal.style.display = 'none';
     document.body.style.overflow = 'auto';
   }
@@ -203,12 +275,40 @@ function initializeApp() {
     setupModalControls();
     setupTabFunctionality();
     loadDraftIfExists();
+    loadRegionsData();
     
     console.log('SENDA Platform initialized successfully');
     showNotification('Sistema SENDA cargado correctamente', 'success', 2000);
   } catch (error) {
     console.error('Error initializing app:', error);
     showNotification('Error al cargar el sistema', 'error');
+  }
+}
+
+function loadRegionsData() {
+  const regionSelect = document.getElementById('patient-region');
+  if (regionSelect) {
+    regionSelect.innerHTML = '<option value="">Seleccionar región...</option>';
+    Object.keys(regionesChile).forEach(key => {
+      const option = document.createElement('option');
+      option.value = key;
+      option.textContent = regionesChile[key].nombre;
+      regionSelect.appendChild(option);
+    });
+  }
+}
+
+function loadCommunesData(regionKey) {
+  const comunaSelect = document.getElementById('patient-comuna');
+  if (comunaSelect && regionKey && regionesChile[regionKey]) {
+    comunaSelect.innerHTML = '<option value="">Seleccionar comuna...</option>';
+    regionesChile[regionKey].comunas.forEach(comuna => {
+      const option = document.createElement('option');
+      option.value = comuna.toLowerCase().replace(/\s+/g, '_');
+      option.textContent = comuna;
+      comunaSelect.appendChild(option);
+    });
+    comunaSelect.disabled = false;
   }
 }
 
@@ -224,6 +324,7 @@ function initializeEventListeners() {
     registerBtn.addEventListener('click', () => {
       formData = {}; // Reset form data
       currentFormStep = 1;
+      isDraftSaved = false; // Reset draft flag
       showModal('patient-modal');
       updateFormProgress();
     });
@@ -251,6 +352,7 @@ function initializeEventListeners() {
     reentryBtn.addEventListener('click', () => {
       formData = { isReentry: true };
       currentFormStep = 1;
+      isDraftSaved = false;
       showModal('patient-modal');
       updateFormProgress();
       showNotification('Formulario de reingreso activado', 'info');
@@ -290,6 +392,14 @@ function initializeEventListeners() {
   if (useLocationBtn) {
     useLocationBtn.addEventListener('click', getCurrentLocation);
   }
+
+  // Region change listener
+  const regionSelect = document.getElementById('patient-region');
+  if (regionSelect) {
+    regionSelect.addEventListener('change', function() {
+      loadCommunesData(this.value);
+    });
+  }
 }
 
 function setupModalControls() {
@@ -301,20 +411,16 @@ function setupModalControls() {
     });
   });
 
-  // Close modals when clicking outside
+  // NO cerrar modales al hacer clic fuera - comentado
+  /*
   document.querySelectorAll('.modal-overlay').forEach(modal => {
     modal.addEventListener('click', function(e) {
       if (e.target === modal) {
-        const modalId = modal.id;
-        if (modalId === 'patient-modal' && !isDraftSaved) {
-          if (confirm('¿Deseas guardar tu progreso antes de salir?')) {
-            saveDraft();
-          }
-        }
-        closeModal(modalId);
+        // No hacer nada - no cerrar el modal
       }
     });
   });
+  */
 }
 
 function setupTabFunctionality() {
@@ -360,27 +466,50 @@ function setupMultiStepForm() {
 }
 
 function updateFormSteps() {
+  const step2 = document.querySelector('[data-step="2"]');
   const step3 = document.querySelector('[data-step="3"]');
-  if (step3) {
-    if (formData.tipoSolicitud === 'anonimo' || formData.tipoSolicitud === 'informacion') {
-      maxFormStep = 3; // Skip contact info for anonymous users
-      step3.style.display = 'none';
-    } else {
-      maxFormStep = 4;
-      step3.style.display = 'block';
+  
+  // Actualizar visibilidad de campos según tipo de solicitud
+  if (formData.tipoSolicitud === 'anonimo') {
+    // Mostrar campo de teléfono en paso 1
+    const phoneFieldContainer = document.getElementById('anonymous-phone-container');
+    if (phoneFieldContainer) {
+      phoneFieldContainer.style.display = 'block';
     }
+    // Ocultar paso de datos personales completos
+    if (step2) step2.querySelector('h3').textContent = 'Evaluación inicial';
+    if (step3) step3.querySelector('h3').textContent = 'Información adicional';
+  } else if (formData.tipoSolicitud === 'identificado') {
+    // Ocultar campo de teléfono en paso 1
+    const phoneFieldContainer = document.getElementById('anonymous-phone-container');
+    if (phoneFieldContainer) {
+      phoneFieldContainer.style.display = 'none';
+    }
+    // Mostrar paso de datos personales
+    if (step2) step2.querySelector('h3').textContent = 'Datos de contacto';
+    if (step3) step3.querySelector('h3').textContent = 'Evaluación e información adicional';
+  } else if (formData.tipoSolicitud === 'informacion') {
+    // Mostrar campo de email en paso 1
+    const emailFieldContainer = document.getElementById('info-email-container');
+    if (emailFieldContainer) {
+      emailFieldContainer.style.display = 'block';
+    }
+    // Ajustar pasos
+    if (step2) step2.querySelector('h3').textContent = 'Evaluación inicial';
+    if (step3) step3.querySelector('h3').textContent = 'Información adicional';
   }
+  
+  maxFormStep = 3; // Siempre 3 pasos
 }
 
 function updateFormProgress() {
   const progressFill = document.getElementById('form-progress');
   const progressText = document.getElementById('progress-text');
   
-  const actualMaxStep = formData.tipoSolicitud === 'anonimo' ? 3 : 4;
-  const progress = (currentFormStep / actualMaxStep) * 100;
+  const progress = (currentFormStep / 3) * 100;
   
   if (progressFill) progressFill.style.width = progress + '%';
-  if (progressText) progressText.textContent = `Paso ${currentFormStep} de ${actualMaxStep}`;
+  if (progressText) progressText.textContent = `Paso ${currentFormStep} de 3`;
   
   // Show/hide navigation buttons
   const prevBtn = document.getElementById('prev-step');
@@ -388,24 +517,20 @@ function updateFormProgress() {
   const submitBtn = document.getElementById('submit-form');
   
   if (prevBtn) prevBtn.style.display = currentFormStep > 1 ? 'block' : 'none';
-  if (nextBtn) nextBtn.style.display = currentFormStep < actualMaxStep ? 'block' : 'none';
-  if (submitBtn) submitBtn.style.display = currentFormStep === actualMaxStep ? 'block' : 'none';
+  if (nextBtn) nextBtn.style.display = currentFormStep < 3 ? 'block' : 'none';
+  if (submitBtn) submitBtn.style.display = currentFormStep === 3 ? 'block' : 'none';
 }
 
 function nextFormStep() {
   if (validateCurrentStep()) {
     collectCurrentStepData();
-    const actualMaxStep = formData.tipoSolicitud === 'anonimo' ? 3 : 4;
     
-    if (currentFormStep < actualMaxStep) {
+    if (currentFormStep < 3) {
       // Hide current step
       document.querySelector(`[data-step="${currentFormStep}"]`).classList.remove('active');
       
       // Show next step
       currentFormStep++;
-      if (currentFormStep === 3 && formData.tipoSolicitud === 'anonimo') {
-        currentFormStep = 4; // Skip contact step for anonymous
-      }
       
       document.querySelector(`[data-step="${currentFormStep}"]`).classList.add('active');
       updateFormProgress();
@@ -423,9 +548,6 @@ function prevFormStep() {
     
     // Show previous step
     currentFormStep--;
-    if (currentFormStep === 3 && formData.tipoSolicitud === 'anonimo') {
-      currentFormStep = 2; // Skip contact step for anonymous
-    }
     
     document.querySelector(`[data-step="${currentFormStep}"]`).classList.add('active');
     updateFormProgress();
@@ -434,10 +556,13 @@ function prevFormStep() {
 
 function validateCurrentStep() {
   const currentStepElement = document.querySelector(`[data-step="${currentFormStep}"]`);
-  const requiredFields = currentStepElement.querySelectorAll('[required]');
+  const requiredFields = currentStepElement.querySelectorAll('[required]:not([style*="display: none"] [required])');
   let isValid = true;
   
   requiredFields.forEach(field => {
+    // Skip hidden fields
+    if (field.offsetParent === null) return;
+    
     if (!field.value.trim()) {
       field.classList.add('error');
       isValid = false;
@@ -455,28 +580,48 @@ function validateCurrentStep() {
       showNotification('Por favor completa todos los campos obligatorios', 'error');
       isValid = false;
     }
+    
+    // Validar teléfono si es anónimo
+    if (tipoSolicitud && tipoSolicitud.value === 'anonimo') {
+      const phone = document.getElementById('anonymous-phone')?.value;
+      if (!phone) {
+        showNotification('Por favor ingresa un teléfono de contacto', 'error');
+        isValid = false;
+      }
+    }
+    
+    // Validar email si es información
+    if (tipoSolicitud && tipoSolicitud.value === 'informacion') {
+      const email = document.getElementById('info-email')?.value;
+      if (!email || !isValidEmail(email)) {
+        showNotification('Por favor ingresa un email válido', 'error');
+        isValid = false;
+      }
+    }
   }
   
   if (currentFormStep === 2) {
-    const sustancias = document.querySelectorAll('input[name="sustancias"]:checked');
-    if (sustancias.length === 0) {
-      showNotification('Por favor selecciona al menos una sustancia', 'error');
-      isValid = false;
-    }
-  }
-  
-  if (currentFormStep === 3 && formData.tipoSolicitud === 'identificado') {
-    const rut = document.getElementById('patient-rut').value;
-    const email = document.getElementById('patient-email').value;
-    
-    if (rut && !validateRUT(rut)) {
-      showNotification('El RUT ingresado no es válido', 'error');
-      isValid = false;
-    }
-    
-    if (email && !isValidEmail(email)) {
-      showNotification('El email ingresado no es válido', 'error');
-      isValid = false;
+    if (formData.tipoSolicitud === 'identificado') {
+      // Validar datos de contacto
+      const rut = document.getElementById('patient-rut')?.value;
+      const email = document.getElementById('patient-email')?.value;
+      
+      if (rut && !validateRUT(rut)) {
+        showNotification('El RUT ingresado no es válido', 'error');
+        isValid = false;
+      }
+      
+      if (email && !isValidEmail(email)) {
+        showNotification('El email ingresado no es válido', 'error');
+        isValid = false;
+      }
+    } else {
+      // Validar evaluación inicial
+      const sustancias = document.querySelectorAll('input[name="sustancias"]:checked');
+      if (sustancias.length === 0) {
+        showNotification('Por favor selecciona al menos una sustancia', 'error');
+        isValid = false;
+      }
     }
   }
   
@@ -495,28 +640,51 @@ function collectCurrentStepData() {
     formData.edad = document.getElementById('patient-age').value;
     formData.region = document.getElementById('patient-region').value;
     formData.paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
+    
+    // Collect phone if anonymous
+    if (formData.tipoSolicitud === 'anonimo') {
+      formData.telefonoContacto = document.getElementById('anonymous-phone')?.value;
+    }
+    
+    // Collect email if information only
+    if (formData.tipoSolicitud === 'informacion') {
+      formData.emailInformacion = document.getElementById('info-email')?.value;
+    }
   }
   
   if (currentFormStep === 2) {
-    const sustancias = Array.from(document.querySelectorAll('input[name="sustancias"]:checked'))
-      .map(cb => cb.value);
-    formData.sustancias = sustancias;
-    formData.tiempoConsumo = document.getElementById('tiempo-consumo').value;
-    formData.motivacion = document.getElementById('motivacion').value;
-    formData.urgencia = document.querySelector('input[name="urgencia"]:checked')?.value;
+    if (formData.tipoSolicitud === 'identificado') {
+      // Collect contact data
+      formData.nombre = document.getElementById('patient-name').value;
+      formData.apellido = document.getElementById('patient-lastname').value;
+      formData.rut = document.getElementById('patient-rut').value;
+      formData.telefono = document.getElementById('patient-phone').value;
+      formData.email = document.getElementById('patient-email').value;
+      formData.comuna = document.getElementById('patient-comuna').value;
+      formData.direccion = document.getElementById('patient-address').value;
+    } else {
+      // Collect evaluation data
+      const sustancias = Array.from(document.querySelectorAll('input[name="sustancias"]:checked'))
+        .map(cb => cb.value);
+      formData.sustancias = sustancias;
+      formData.tiempoConsumo = document.getElementById('tiempo-consumo').value;
+      formData.motivacion = document.getElementById('motivacion').value;
+      formData.urgencia = document.querySelector('input[name="urgencia"]:checked')?.value;
+    }
   }
   
   if (currentFormStep === 3) {
-    formData.nombre = document.getElementById('patient-name').value;
-    formData.apellido = document.getElementById('patient-lastname').value;
-    formData.rut = document.getElementById('patient-rut').value;
-    formData.telefono = document.getElementById('patient-phone').value;
-    formData.email = document.getElementById('patient-email').value;
-    formData.comuna = document.getElementById('patient-comuna').value;
-    formData.direccion = document.getElementById('patient-address').value;
-  }
-  
-  if (currentFormStep === 4) {
+    if (formData.tipoSolicitud === 'identificado') {
+      // Collect evaluation and additional info
+      const sustancias = Array.from(document.querySelectorAll('input[name="sustancias"]:checked'))
+        .map(cb => cb.value);
+      formData.sustancias = sustancias;
+      formData.tiempoConsumo = document.getElementById('tiempo-consumo').value;
+      formData.motivacion = document.getElementById('motivacion').value;
+      formData.urgencia = document.querySelector('input[name="urgencia"]:checked')?.value;
+    }
+    
+    // Additional info for all
     formData.razon = document.getElementById('patient-reason').value;
     formData.tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked')?.value;
     formData.centroPreferencia = document.getElementById('centro-preferencia').value;
@@ -555,6 +723,9 @@ function loadDraftIfExists() {
           currentFormStep = draftData.currentStep || 1;
           restoreFormData();
           isDraftSaved = true;
+        } else {
+          // Clear draft if user doesn't want to continue
+          localStorage.removeItem('senda_draft');
         }
       } else {
         localStorage.removeItem('senda_draft');
@@ -590,6 +761,16 @@ function restoreFormData() {
     }
   });
   
+  // Restore region and communes if needed
+  if (formData.region) {
+    loadCommunesData(formData.region);
+    setTimeout(() => {
+      if (formData.comuna) {
+        document.getElementById('patient-comuna').value = formData.comuna;
+      }
+    }, 100);
+  }
+  
   updateFormSteps();
   updateFormProgress();
 }
@@ -615,12 +796,12 @@ function setupFormValidation() {
   }
 
   // Phone formatting
-  const phoneInput = document.getElementById('patient-phone');
-  if (phoneInput) {
-    phoneInput.addEventListener('input', function(e) {
+  const phoneInputs = document.querySelectorAll('#patient-phone, #anonymous-phone');
+  phoneInputs.forEach(input => {
+    input.addEventListener('input', function(e) {
       e.target.value = formatPhoneNumber(e.target.value);
     });
-  }
+  });
 
   // Email validation
   const emailInputs = document.querySelectorAll('input[type="email"]');
@@ -682,31 +863,27 @@ async function handlePatientRegistration(e) {
       // Datos personales
       datos_personales: {
         anonimo: formData.tipoSolicitud === 'anonimo',
+        solo_informacion: formData.tipoSolicitud === 'informacion',
         edad: parseInt(formData.edad),
         genero: 'no_especificado',
+        region: formData.region,
         id_comuna_residencia: formData.comuna || 'no_especificada',
         situacion_laboral: 'no_especificada',
         para_quien: formData.paraMi
       },
       
-      // Datos de contacto (si aplica)
-      datos_contacto: formData.tipoSolicitud === 'identificado' ? {
-        telefono_principal: formData.telefono,
-        email: formData.email,
-        direccion: formData.direccion,
-        nombre_completo: `${formData.nombre} ${formData.apellido}`,
-        rut: formData.rut
-      } : {},
+      // Datos de contacto
+      datos_contacto: {},
       
-      // Evaluación inicial
-      evaluacion_inicial: {
+      // Evaluación inicial (solo si no es información)
+      evaluacion_inicial: formData.tipoSolicitud !== 'informacion' ? {
         sustancias_consumo: formData.sustancias || [],
         tiempo_consumo_meses: parseInt(formData.tiempoConsumo) || 0,
         motivacion_cambio: parseInt(formData.motivacion) || 5,
         urgencia_declarada: formData.urgencia || 'no_especificada',
         tratamiento_previo: formData.tratamientoPrevio || 'no',
         descripcion_situacion: formData.razon || ''
-      },
+      } : null,
       
       // Derivación
       derivacion: {
@@ -722,6 +899,27 @@ async function handlePatientRegistration(e) {
         canal_ingreso: 'web_publica'
       }
     };
+    
+    // Add contact data based on type
+    if (formData.tipoSolicitud === 'identificado') {
+      solicitudData.datos_contacto = {
+        telefono_principal: formData.telefono,
+        email: formData.email,
+        direccion: formData.direccion,
+        nombre_completo: `${formData.nombre} ${formData.apellido}`,
+        rut: formData.rut
+      };
+    } else if (formData.tipoSolicitud === 'anonimo') {
+      solicitudData.datos_contacto = {
+        telefono_principal: formData.telefonoContacto,
+        es_anonimo: true
+      };
+    } else if (formData.tipoSolicitud === 'informacion') {
+      solicitudData.datos_contacto = {
+        email: formData.emailInformacion,
+        solo_informacion: true
+      };
+    }
 
     // Save to Firestore
     const docRef = await db.collection('solicitudes_ingreso').add(solicitudData);
@@ -733,9 +931,10 @@ async function handlePatientRegistration(e) {
     
     // Clear draft
     localStorage.removeItem('senda_draft');
+    isDraftSaved = false;
     
     // Show success message
-    showSuccessMessage(docRef.id, formData.tipoSolicitud === 'anonimo');
+    showSuccessMessage(docRef.id, formData.tipoSolicitud);
     
     // Close modal and reset form
     closeModal('patient-modal');
@@ -749,14 +948,20 @@ async function handlePatientRegistration(e) {
   }
 }
 
-function showSuccessMessage(solicitudId, isAnonymous) {
-  const trackingCode = isAnonymous ? solicitudId.substring(0, 8).toUpperCase() : null;
+function showSuccessMessage(solicitudId, tipoSolicitud) {
+  const trackingCode = solicitudId.substring(0, 8).toUpperCase();
   
-  if (isAnonymous) {
+  if (tipoSolicitud === 'anonimo') {
     showNotification(
-      `Solicitud enviada exitosamente. Tu código de seguimiento es: ${trackingCode}. Guárdalo para consultar el estado de tu solicitud.`,
+      `Solicitud enviada exitosamente. Tu código de seguimiento es: ${trackingCode}. Te contactaremos al teléfono proporcionado.`,
       'success',
       8000
+    );
+  } else if (tipoSolicitud === 'informacion') {
+    showNotification(
+      `Solicitud enviada exitosamente. Te enviaremos información del programa al email proporcionado.`,
+      'success',
+      6000
     );
   } else {
     showNotification(
@@ -773,7 +978,7 @@ async function createCriticalCaseAlert(solicitudId, solicitudData) {
       id_solicitud: solicitudId,
       tipo_alerta: 'caso_critico_nuevo',
       prioridad: 'maxima',
-      mensaje: `Nuevo caso crítico: ${solicitudData.datos_personales.edad} años, urgencia ${solicitudData.evaluacion_inicial.urgencia_declarada}`,
+      mensaje: `Nuevo caso crítico: ${solicitudData.datos_personales.edad} años, urgencia ${solicitudData.evaluacion_inicial?.urgencia_declarada}`,
       fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
       estado: 'pendiente',
       notificado: false
@@ -798,11 +1003,24 @@ function resetForm() {
       step.classList.toggle('active', index === 0);
     });
     
+    // Hide conditional fields
+    const phoneContainer = document.getElementById('anonymous-phone-container');
+    const emailContainer = document.getElementById('info-email-container');
+    if (phoneContainer) phoneContainer.style.display = 'none';
+    if (emailContainer) emailContainer.style.display = 'none';
+    
+    // Reset comuna select
+    const comunaSelect = document.getElementById('patient-comuna');
+    if (comunaSelect) {
+      comunaSelect.innerHTML = '<option value="">Seleccionar comuna...</option>';
+      comunaSelect.disabled = true;
+    }
+    
     updateFormProgress();
   }
 }
 
-// Professional Authentication
+// Professional Authentication (remaining functions stay the same)
 async function handleProfessionalLogin(e) {
   e.preventDefault();
   showLoading(true);
@@ -861,6 +1079,22 @@ async function handleProfessionalLogin(e) {
   }
 }
 
+// (Rest of the professional panel functions remain the same...)
+
+// Export functions for debugging
+window.sendaApp = {
+  showNotification,
+  showModal,
+  closeModal,
+  formatRUT,
+  validateRUT,
+  getProfessionName,
+  formData,
+  currentUserData,
+  regionesChile
+};
+
+console.log('SENDA Platform JavaScript loaded successfully');
 async function handleProfessionalRegistration(e) {
   e.preventDefault();
   showLoading(true);
