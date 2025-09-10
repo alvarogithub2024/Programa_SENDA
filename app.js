@@ -785,3 +785,162 @@ function setupFormValidation() {
     });
     rutInput.addEventListener('blur', function(e) {
       const rut = e.target.value.trim();
+      if (rut && !validateRUT(rut)) {
+        e.target.classList.add('error');
+        showNotification('RUT inválido', 'error');
+      } else {
+        e.target.classList.remove('error');
+      }
+    });
+  }
+
+  // Email validation
+  document.addEventListener('blur', function(e) {
+    if (e.target.type === 'email') {
+      const email = e.target.value.trim();
+      if (email && !isValidEmail(email)) {
+        e.target.classList.add('error');
+        showNotification('Email inválido', 'error');
+      } else {
+        e.target.classList.remove('error');
+      }
+    }
+  }, true);
+
+  // Age validation
+  const ageInput = document.getElementById('patient-age');
+  if (ageInput) {
+    ageInput.addEventListener('blur', function(e) {
+      const age = parseInt(e.target.value);
+      if (age && (age < 12 || age > 120)) {
+        e.target.classList.add('error');
+        showNotification('Edad debe estar entre 12-120 años', 'error');
+      } else {
+        e.target.classList.remove('error');
+      }
+    });
+  }
+
+  // Motivation slider
+  const motivacionSlider = document.getElementById('motivacion');
+  const motivacionValue = document.getElementById('motivacion-value');
+  if (motivacionSlider && motivacionValue) {
+    motivacionSlider.addEventListener('input', function() {
+      motivacionValue.textContent = this.value;
+    });
+  }
+}
+
+async function loadNearbyClinicas() {
+  const centersList = document.getElementById('centers-list');
+  if (!centersList) return;
+  
+  centersList.innerHTML = '<div class="loading"><div class="spinner"></div> Buscando centros...</div>';
+  
+  const mockCenters = [
+    {
+      name: 'CESFAM La Florida',
+      address: 'Av. Walker Martinez 1234, La Florida',
+      distance: '1.2 km',
+      phone: '+56 2 2987 6543',
+      hours: 'Lun-Vie 8:00-17:00'
+    },
+    {
+      name: 'CESFAM Maipú',
+      address: 'Av. Pajaritos 5678, Maipú', 
+      distance: '3.5 km',
+      phone: '+56 2 2765 4321',
+      hours: 'Lun-Vie 8:30-17:30'
+    },
+    {
+      name: 'Centro SENDA Providencia',
+      address: 'Av. Providencia 9876, Providencia',
+      distance: '5.1 km', 
+      phone: '+56 2 2234 5678',
+      hours: 'Lun-Vie 9:00-18:00'
+    }
+  ];
+  
+  setTimeout(() => {
+    let html = '';
+    mockCenters.forEach(center => {
+      html += `
+        <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid var(--gray-200);">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <h4 style="color: var(--primary-blue); margin: 0;">${center.name}</h4>
+            <span style="color: var(--primary-blue); font-weight: 600;">${center.distance}</span>
+          </div>
+          <p style="margin: 4px 0;"><i class="fas fa-map-marker-alt"></i> ${center.address}</p>
+          <p style="margin: 4px 0;"><i class="fas fa-phone"></i> ${center.phone}</p>
+          <p style="margin: 4px 0;"><i class="fas fa-clock"></i> ${center.hours}</p>
+          <div style="margin-top: 16px;">
+            <button class="btn btn-outline" style="margin-right: 8px;">
+              <i class="fas fa-directions"></i> Cómo llegar
+            </button>
+            <button class="btn btn-primary">
+              <i class="fas fa-phone"></i> Llamar
+            </button>
+          </div>
+        </div>
+      `;
+    });
+    centersList.innerHTML = html;
+  }, 1000);
+}
+
+function getCurrentLocation() {
+  if (navigator.geolocation) {
+    showNotification('Obteniendo ubicación...', 'info');
+    
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        const { latitude, longitude } = position.coords;
+        const locationInput = document.getElementById('location-input');
+        if (locationInput) {
+          locationInput.value = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+        }
+        showNotification('Ubicación detectada', 'success');
+        loadNearbyClinicas();
+      },
+      error => {
+        console.error('Geolocation error:', error);
+        showNotification('No se pudo obtener ubicación. Ingresa dirección manualmente.', 'error');
+      }
+    );
+  } else {
+    showNotification('Tu navegador no soporta geolocalización', 'error');
+  }
+}
+
+// Authentication state observer
+auth.onAuthStateChanged(user => {
+  currentUser = user;
+  if (user) {
+    loadUserData(user.uid);
+  }
+});
+
+async function loadUserData(uid) {
+  try {
+    const doc = await db.collection('profesionales').doc(uid).get();
+    if (doc.exists) {
+      currentUserData = { uid, ...doc.data() };
+    }
+  } catch (error) {
+    console.error('Error loading user data:', error);
+  }
+}
+
+// Export for debugging
+window.sendaApp = {
+  showNotification,
+  showModal,
+  closeModal,
+  formatRUT,
+  validateRUT,
+  formData,
+  currentUserData,
+  regionesChile
+};
+
+console.log('✅ SENDA Platform cargado correctamente');
