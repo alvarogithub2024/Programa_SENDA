@@ -339,8 +339,8 @@ function initializeEventListeners() {
 
   if (aboutBtn) {
     aboutBtn.addEventListener('click', () => {
-      showNotification('Redirigiendo a información sobre el programa SENDA...', 'info');
-      setTimeout(() => window.open('https://www.senda.gob.cl/quienes-somos/', '_blank'), 1000);
+      showNotification('Redirigiendo al sitio oficial de SENDA...', 'info');
+      setTimeout(() => window.open('https://www.senda.gob.cl', '_blank'), 1000);
     });
   }
 
