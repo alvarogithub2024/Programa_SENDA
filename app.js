@@ -867,7 +867,29 @@ function submitPatientForm() {
   }
 }
 
-poSolicitud === 'anonimo',
+async function handlePatientRegistration(e) {
+  if (e) e.preventDefault();
+  
+  showLoading(true);
+  
+  try {
+    // Calculate priority based on collected data
+    const prioridad = calculatePriority(formData);
+    
+    const solicitudData = {
+      // Clasificación
+      clasificacion: {
+        tipo: formData.isReentry ? 'reingreso' : 'ingreso_voluntario',
+        estado: 'pendiente',
+        prioridad: prioridad,
+        categoria_riesgo: prioridad === 'critica' ? 'extremo' : 
+                         prioridad === 'alta' ? 'alto' : 
+                         prioridad === 'media' ? 'moderado' : 'bajo'
+      },
+      
+      // Datos personales
+      datos_personales: {
+        anonimo: formData.tipoSolicitud === 'anonimo',
         solo_informacion: formData.tipoSolicitud === 'informacion',
         edad: parseInt(formData.edad),
         genero: 'no_especificado',
