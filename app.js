@@ -4527,439 +4527,55 @@ window.sendaApp = {
   }
 };
 
-// ============================================
-// FUNCIONES DE AUTENTICACIÓN BÁSICAS
-// ============================================
+console.log('SENDA Platform JavaScript loaded successfully');
+console.log('Sistema cargado - Todos los paneles deberían funcionar correctamente');
+console.log('Funciones de debug disponibles en window.sendaApp');
+console.log('Para probar, usa: window.sendaApp.simulateLogin("asistente_social")');
 
-async function handleProfessionalLogin() {
-  try {
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
-    
-    if (!email || !password) {
-      showNotification('Por favor completa todos los campos', 'error');
-      return;
-    }
-    
-    showLoading(true);
-    
-    // Simular login exitoso para demo
-    const mockUserData = {
-      uid: 'demo-user-' + Date.now(),
-      nombre: 'Dr. Juan Pérez',
-      correo: email,
-      profesion: 'asistente_social',
-      centro_salud: 'CESFAM La Florida'
-    };
-    
-    currentUserData = mockUserData;
-    closeModal('professional-modal');
-    showProfessionalPanel(mockUserData);
-    showNotification('Login exitoso (DEMO)', 'success');
-    
-  } catch (error) {
-    console.error('Error en login:', error);
-    showNotification('Error al iniciar sesión', 'error');
-  } finally {
-    showLoading(false);
-  }
-}
-
-async function handleProfessionalRegister() {
-  try {
-    const formData = {
-      nombre: document.getElementById('register-name').value,
-      email: document.getElementById('register-email').value,
-      password: document.getElementById('register-password').value,
-      profesion: document.getElementById('register-profession').value,
-      licencia: document.getElementById('register-license').value,
-      centro: document.getElementById('register-center').value
-    };
-    
-    if (!formData.nombre || !formData.email || !formData.password || !formData.profesion) {
-      showNotification('Por favor completa todos los campos obligatorios', 'error');
-      return;
-    }
-    
-    showLoading(true);
-    
-    // Simular registro exitoso para demo
-    setTimeout(() => {
-      showLoading(false);
-      showNotification('Registro exitoso (DEMO). Por favor inicia sesión.', 'success');
-      
-      // Cambiar a tab de login
-      document.querySelector('[data-tab="login"]').click();
-    }, 2000);
-    
-  } catch (error) {
-    console.error('Error en registro:', error);
-    showNotification('Error al registrar usuario', 'error');
-    showLoading(false);
-  }
-}
-
-async function handlePatientFormSubmit() {
-  try {
-    showLoading(true);
-    
-    // Simular envío de formulario
-    setTimeout(() => {
-      showLoading(false);
-      showNotification('Solicitud enviada exitosamente (DEMO)', 'success');
-      closeModal('patient-modal');
-      resetForm();
-    }, 2000);
-    
-  } catch (error) {
-    console.error('Error enviando formulario:', error);
-    showNotification('Error al enviar la solicitud', 'error');
-    showLoading(false);
-  }
-}
-
-// ============================================
-// MODALES ADICIONALES
-// ============================================
-
-function showReentryModal() {
-  const modalHTML = `
-    <div class="modal-overlay" id="reentry-modal">
-      <div class="modal">
-        <button class="modal-close" onclick="closeModal('reentry-modal')">
-          <i class="fas fa-times"></i>
-        </button>
-        <h2>Reingresar al Programa</h2>
-        <p>Si ya has participado en el programa SENDA anteriormente, puedes reingresar proporcionando tu información.</p>
-        
-        <form id="reentry-form">
-          <div class="form-group">
-            <label class="form-label">Número de Ficha Anterior</label>
-            <input type="text" class="form-input" placeholder="Ej: 202300123">
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">RUT</label>
-            <input type="text" class="form-input" placeholder="12.345.678-9">
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">Motivo del Reingreso</label>
-            <textarea class="form-textarea" placeholder="Describe brevemente por qué deseas reingresar al programa..."></textarea>
-          </div>
-          
-          <div class="modal-actions">
-            <button type="button" class="btn btn-outline" onclick="closeModal('reentry-modal')">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Solicitar Reingreso</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  `;
-  
-  document.body.insertAdjacentHTML('beforeend', modalHTML);
-  showModal('reentry-modal');
-}
-
-function showAboutModal() {
-  const modalHTML = `
-    <div class="modal-overlay" id="about-modal">
-      <div class="modal">
-        <button class="modal-close" onclick="closeModal('about-modal')">
-          <i class="fas fa-times"></i>
-        </button>
-        <h2>Sobre el Programa SENDA</h2>
-        
-        <div style="text-align: left; line-height: 1.6;">
-          <h3>¿Qué es SENDA?</h3>
-          <p>El Servicio Nacional para la Prevención y Rehabilitación del Consumo de Drogas y Alcohol (SENDA) es la institución del Gobierno de Chile encargada de elaborar las políticas de prevención del consumo y tratamiento de la dependencia a sustancias.</p>
-          
-          <h3>Nuestros Servicios</h3>
-          <ul>
-            <li>Evaluación y tratamiento ambulatorio</li>
-            <li>Programas de prevención comunitaria</li>
-            <li>Apoyo familiar y social</li>
-            <li>Seguimiento y rehabilitación</li>
-            <li>Programas especializados para diferentes grupos</li>
-          </ul>
-          
-          <h3>Confidencialidad</h3>
-          <p>Todos nuestros servicios son <strong>completamente confidenciales</strong> y están protegidos por la Ley de Protección de Datos Personales.</p>
-          
-          <h3>Contacto</h3>
-          <p><strong>Línea de Ayuda:</strong> 1412 (gratuita, 24/7)<br>
-          <strong>Emergencias:</strong> 131<br>
-          <strong>Sitio web oficial:</strong> www.senda.gob.cl</p>
-        </div>
-        
-        <div class="modal-actions">
-          <button type="button" class="btn btn-primary" onclick="closeModal('about-modal')">Entendido</button>
-        </div>
-      </div>
-    </div>
-  `;
-  
-  document.body.insertAdjacentHTML('beforeend', modalHTML);
-  showModal('about-modal');
-}
-
-// ============================================
-// CONFIGURACIÓN DE TABS
-// ============================================
-
-function setupTabFunctionality() {
-  // Tabs en modal profesional
-  document.querySelectorAll('.tab-button').forEach(button => {
-    button.addEventListener('click', function() {
-      const tabName = this.dataset.tab;
-      
-      // Actualizar botones
-      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-      this.classList.add('active');
-      
-      // Actualizar contenido
-      document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active');
-      });
-      
-      const targetTab = document.getElementById(tabName + '-tab');
-      if (targetTab) {
-        targetTab.classList.add('active');
-      }
-    });
-  });
-}
-
-// ============================================
-// EVENT LISTENERS PRINCIPALES
-// ============================================
-
-function initializeEventListeners() {
-  console.log('Initializing event listeners...');
-  
+// Esperar a que el DOM esté completamente cargado antes de asignar los listeners
+document.addEventListener('DOMContentLoaded', function() {
   // Botón "Solicitar Ayuda"
   const btnRegisterPatient = document.getElementById('register-patient');
   if (btnRegisterPatient) {
-    btnRegisterPatient.addEventListener('click', function(e) {
-      e.preventDefault();
-      console.log('Solicitar Ayuda clicked');
+    btnRegisterPatient.addEventListener('click', function() {
       showModal('patient-modal');
     });
   }
-  
-  // Botón "Acceso Profesional" 
-  const btnLoginProfessional = document.getElementById('login-professional');
-  if (btnLoginProfessional) {
-    btnLoginProfessional.addEventListener('click', function(e) {
-      e.preventDefault();
-      console.log('Acceso Profesional clicked');
-      showModal('professional-modal');
-    });
-  }
-  
-  // Botón "Encontrar Centro"
-  const btnFindCenter = document.getElementById('find-center');
-  if (btnFindCenter) {
-    btnFindCenter.addEventListener('click', function(e) {
-      e.preventDefault();
-      console.log('Encontrar Centro clicked');
-      showModal('center-modal');
-    });
-  }
-  
   // Botón "Reingresar al Programa"
   const btnReentry = document.getElementById('reentry-program');
   if (btnReentry) {
-    btnReentry.addEventListener('click', function(e) {
-      e.preventDefault();
-      console.log('Reingresar clicked');
-      showReentryModal();
+    btnReentry.addEventListener('click', function() {
+      showModal('reentry-modal');
     });
   }
-  
   // Botón "Sobre el Programa"
   const btnAbout = document.getElementById('about-program');
   if (btnAbout) {
-    btnAbout.addEventListener('click', function(e) {
-      e.preventDefault();
-      console.log('Sobre el Programa clicked');
-      showAboutModal();
+    btnAbout.addEventListener('click', function() {
+      showModal('about-modal');
     });
   }
-  
-  // Configurar cierres de modales
-  setupModalCloseListeners();
-  
-  // Configurar formularios
-  setupFormListeners();
-  
-  console.log('Event listeners initialized successfully');
-}
-
-function setupModalCloseListeners() {
-  // Cerrar modales al hacer click en el overlay
-  document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('modal-overlay')) {
-      const modalId = e.target.id;
-      closeModal(modalId);
-    }
-  });
-  
-  // Cerrar modales con botones de cierre (usar delegación de eventos)
-  document.addEventListener('click', function(e) {
-    if (e.target.closest('.modal-close')) {
-      e.preventDefault();
-      const closeBtn = e.target.closest('.modal-close');
-      const modalId = closeBtn.dataset.close || closeBtn.closest('.modal-overlay').id;
-      closeModal(modalId);
-    }
-  });
-  
-  // Cerrar modales con ESC
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-      const openModal = document.querySelector('.modal-overlay[style*="flex"]');
-      if (openModal) {
-        closeModal(openModal.id);
-      }
-    }
-  });
-}
-
-function setupFormListeners() {
-  // Usar delegación de eventos para formularios dinámicos
-  document.addEventListener('submit', function(e) {
-    const formId = e.target.id;
-    
-    switch (formId) {
-      case 'patient-form':
-        e.preventDefault();
-        console.log('Patient form submitted');
-        handlePatientFormSubmit();
-        break;
-        
-      case 'login-form':
-        e.preventDefault();
-        console.log('Login form submitted');
-        handleProfessionalLogin();
-        break;
-        
-      case 'register-form':
-        e.preventDefault();
-        console.log('Register form submitted');
-        handleProfessionalRegister();
-        break;
-        
-      case 'reentry-form':
-        e.preventDefault();
-        console.log('Reentry form submitted');
-        showNotification('Solicitud de reingreso enviada (DEMO)', 'success');
-        closeModal('reentry-modal');
-        break;
-    }
-  });
-}
-
-// ============================================
-// INICIALIZACIÓN PRINCIPAL
-// ============================================
-
-function initializeApp() {
-  try {
-    console.log('SENDA Platform initializing...');
-    
-    // Verificar Firebase
-    if (typeof firebase === 'undefined') {
-      console.error('Firebase no está cargado');
-      showNotification('Error: Firebase no disponible', 'error');
-      return;
-    }
-    
-    // Inicializar componentes
-    initializeEventListeners();
-    setupTabFunctionality();
-    loadRegionsData();
-    
-    console.log('SENDA Platform initialized successfully');
-    showNotification('Sistema SENDA cargado correctamente', 'success', 2000);
-    
-  } catch (error) {
-    console.error('Error initializing app:', error);
-    showNotification('Error al cargar el sistema', 'error');
-  }
-}
-
-// ============================================
-// FUNCIONES DE DEBUG Y TESTING
-// ============================================
-
-window.sendaDebug = {
-  // Funciones básicas
-  showModal,
-  closeModal,
-  showNotification,
-  showLoading,
-  
-  // Estado de la aplicación
-  getCurrentUser: () => currentUserData,
-  getFormData: () => formData,
-  
-  // Testing
-  testModals: function() {
-    console.log('Testing modals...');
-    showModal('patient-modal');
-  },
-  
-  simulateLogin: function(profession = 'asistente_social') {
-    const mockUser = {
-      uid: 'test-user-' + Math.random(),
-      nombre: 'Usuario de Prueba',
-      profesion: profession,
-      correo: 'test@senda.cl',
-      centro_salud: 'Centro de Prueba'
-    };
-    
-    currentUserData = mockUser;
-    showProfessionalPanel(mockUser);
-    console.log('Login simulado como:', profession);
-  },
-  
-  testNotifications: function() {
-    showNotification('Notificación de prueba - Info', 'info');
-    setTimeout(() => showNotification('Notificación de prueba - Success', 'success'), 1000);
-    setTimeout(() => showNotification('Notificación de prueba - Warning', 'warning'), 2000);
-    setTimeout(() => showNotification('Notificación de prueba - Error', 'error'), 3000);
-  },
-  
-  resetApp: function() {
-    currentUser = null;
-    currentUserData = null;
-    formData = {};
-    
-    // Cerrar todos los modales
-    document.querySelectorAll('.modal-overlay').forEach(modal => {
-      modal.style.display = 'none';
+  // Botón "Acceso Profesional"
+  const btnLoginProfessional = document.getElementById('login-professional');
+  if (btnLoginProfessional) {
+    btnLoginProfessional.addEventListener('click', function() {
+      showModal('professional-modal');
     });
-    
-    document.body.style.overflow = 'auto';
-    console.log('Aplicación reiniciada');
-    showNotification('Aplicación reiniciada', 'info');
   }
-};
-
-// ============================================
-// INICIALIZACIÓN CUANDO DOM ESTÉ LISTO
-// ============================================
-
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('DOM Content Loaded - Initializing SENDA Platform...');
-  initializeApp();
+  // Botón "Encontrar Centro"
+  const btnFindCenter = document.getElementById('find-center');
+  if (btnFindCenter) {
+    btnFindCenter.addEventListener('click', function() {
+      showModal('center-modal');
+    });
+  }
+  // Botón "Usar mi ubicación"
+  const btnUseLocation = document.getElementById('use-location');
+  if (btnUseLocation) {
+    btnUseLocation.addEventListener('click', function(e) {
+      e.preventDefault();
+      // Aquí puedes poner tu lógica para geolocalización
+      alert("Función de geolocalización no implementada");
+    });
+  }
 });
-
-// Logs finales
-console.log('SENDA Platform JavaScript loaded successfully');
-console.log('Para testing, usa:');
-console.log('- window.sendaDebug.testModals()');
-console.log('- window.sendaDebug.simulateLogin("asistente_social")');
-console.log('- window.sendaDebug.testNotifications()');
-console.log('- window.sendaDebug.resetApp()');
