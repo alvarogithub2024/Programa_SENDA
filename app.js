@@ -1169,7 +1169,6 @@ function generateFollowupHTML(followup) {
 
 // Variables globales para agenda
 let currentCalendarDate = new Date();
-let professionalSchedules = {};
 let availableTimeSlots = {};
 
 // ============================================
