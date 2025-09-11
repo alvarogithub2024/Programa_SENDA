@@ -4531,3 +4531,51 @@ console.log('SENDA Platform JavaScript loaded successfully');
 console.log('Sistema cargado - Todos los paneles deberían funcionar correctamente');
 console.log('Funciones de debug disponibles en window.sendaApp');
 console.log('Para probar, usa: window.sendaApp.simulateLogin("asistente_social")');
+
+// Esperar a que el DOM esté completamente cargado antes de asignar los listeners
+document.addEventListener('DOMContentLoaded', function() {
+  // Botón "Solicitar Ayuda"
+  const btnRegisterPatient = document.getElementById('register-patient');
+  if (btnRegisterPatient) {
+    btnRegisterPatient.addEventListener('click', function() {
+      showModal('patient-modal');
+    });
+  }
+  // Botón "Reingresar al Programa"
+  const btnReentry = document.getElementById('reentry-program');
+  if (btnReentry) {
+    btnReentry.addEventListener('click', function() {
+      showModal('reentry-modal');
+    });
+  }
+  // Botón "Sobre el Programa"
+  const btnAbout = document.getElementById('about-program');
+  if (btnAbout) {
+    btnAbout.addEventListener('click', function() {
+      showModal('about-modal');
+    });
+  }
+  // Botón "Acceso Profesional"
+  const btnLoginProfessional = document.getElementById('login-professional');
+  if (btnLoginProfessional) {
+    btnLoginProfessional.addEventListener('click', function() {
+      showModal('professional-modal');
+    });
+  }
+  // Botón "Encontrar Centro"
+  const btnFindCenter = document.getElementById('find-center');
+  if (btnFindCenter) {
+    btnFindCenter.addEventListener('click', function() {
+      showModal('center-modal');
+    });
+  }
+  // Botón "Usar mi ubicación"
+  const btnUseLocation = document.getElementById('use-location');
+  if (btnUseLocation) {
+    btnUseLocation.addEventListener('click', function(e) {
+      e.preventDefault();
+      // Aquí puedes poner tu lógica para geolocalización
+      alert("Función de geolocalización no implementada");
+    });
+  }
+});
