@@ -1631,20 +1631,42 @@ async function loadRequestsPanel(userData) {
     
     requestsList.innerHTML = '<div class="loading"><div class="spinner"></div> Cargando solicitudes...</div>';
     
-    // Obtener solicitudes pendientes
+    // Obtener solicitudes pendientes y asignadas al usuario actual
     let query = db.collection('solicitudes_ingreso')
-      .where('clasificacion.estado', '==', 'pendiente')
+      .where('clasificacion.estado', 'in', ['pendiente', 'asignada'])
       .orderBy('metadata.fecha_creacion', 'desc')
       .limit(50);
     
+    // Si no es admin, filtrar solo las solicitudes asignadas al usuario actual (además de las pendientes)
+    if (userData.profesion !== 'admin') {
+      // Para asistentes sociales, mostrar solicitudes pendientes (no asignadas) y las asignadas a ellos
+      query = db.collection('solicitudes_ingreso')
+        .where('clasificacion.estado', 'in', ['pendiente', 'asignada'])
+        .orderBy('metadata.fecha_creacion', 'desc')
+        .limit(50);
+    }
+    
     const snapshot = await query.get();
     
-    if (snapshot.empty) {
+    let filteredDocs = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const estado = data.clasificacion?.estado;
+      const profesionalAsignado = data.clasificacion?.profesional_asignado;
+      
+      // Mostrar solicitudes pendientes (para todos) o asignadas al usuario actual
+      if (estado === 'pendiente' || 
+          (estado === 'asignada' && profesionalAsignado === userData.uid)) {
+        filteredDocs.push({id: doc.id, data: data});
+      }
+    });
+    
+    if (filteredDocs.length === 0) {
       requestsList.innerHTML = `
         <div class="card">
           <p style="text-align: center; color: var(--gray-600);">
             <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
-            No hay solicitudes pendientes en este momento.
+            No hay solicitudes pendientes o asignadas en este momento.
           </p>
         </div>
       `;
@@ -1652,8 +1674,9 @@ async function loadRequestsPanel(userData) {
     }
     
     let html = '';
-    snapshot.forEach(doc => {
-      const data = doc.data();
+    filteredDocs.forEach(docData => {
+      const doc = {id: docData.id};
+      const data = docData.data;
       const priority = data.clasificacion?.prioridad || 'baja';
       const estado = data.clasificacion?.estado || 'pendiente';
       const isAnonymous = data.datos_personales?.anonimo || false;
@@ -2076,7 +2099,7 @@ async function loadCalendarPanel(userData) {
           <button class="btn btn-outline" id="prev-month">
             <i class="fas fa-chevron-left"></i>
           </button>
-          <span id="current-month-year">Marzo 2024</span>
+          <span id="current-month-year">Enero 2025</span>
           <button class="btn btn-outline" id="next-month">
             <i class="fas fa-chevron-right"></i>
           </button>
@@ -2127,7 +2150,7 @@ async function loadProfessionalsList() {
     
     const professionalsSnapshot = await db.collection('profesionales')
       .where('configuracion_sistema.activo', '==', true)
-      .where('profesion', 'in', ['medico', 'psicologo', 'terapeuta'])
+      .where('profesion', 'in', ['medico', 'psicologo', 'terapeuta', 'asistente_social'])
       .get();
     
     let html = '';
@@ -2164,7 +2187,7 @@ async function loadProfessionalsList() {
 }
 
 let selectedProfessional = null;
-let currentCalendarDate = new Date();
+let currentCalendarDate = new Date(2025, 0, 1); // Inicializar en enero 2025
 
 function selectProfessional(professionalId) {
   selectedProfessional = professionalId;
@@ -2186,8 +2209,17 @@ function setupCalendarEvents() {
   
   if (prevMonth) {
     prevMonth.addEventListener('click', () => {
-      currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
-      loadCalendarView();
+      // No permitir navegar antes de enero 2025
+      const minDate = new Date(2025, 0, 1);
+      const newDate = new Date(currentCalendarDate);
+      newDate.setMonth(newDate.getMonth() - 1);
+      
+      if (newDate >= minDate) {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+        loadCalendarView();
+      } else {
+        showNotification('No se puede navegar antes de enero 2025', 'warning');
+      }
     });
   }
   
@@ -2758,7 +2790,7 @@ async function loadAppointmentFormData() {
     // Cargar profesionales activos
     const professionalsSnapshot = await db.collection('profesionales')
       .where('configuracion_sistema.activo', '==', true)
-      .where('profesion', 'in', ['medico', 'psicologo', 'terapeuta'])
+      .where('profesion', 'in', ['medico', 'psicologo', 'terapeuta', 'asistente_social'])
       .get();
     
     const professionalSelect = document.getElementById('appointment-professional');
