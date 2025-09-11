@@ -3822,3 +3822,712 @@ function previewPatientReport() {
 function regenerateReport(reportId) {
   showNotification('Función de regeneración en desarrollo', 'info');
 }
+// ============================================
+// SENDA SYSTEM - PARTE 6: PANEL PRINCIPAL Y NAVEGACIÓN
+// ============================================
+
+// ============================================
+// ACTUALIZACIÓN DE LA FUNCIÓN PRINCIPAL showPanel
+// ============================================
+
+function showPanel(panelId, userData) {
+  console.log('Showing panel:', panelId, 'for user:', userData.nombre);
+  
+  // Ocultar todos los paneles
+  document.querySelectorAll('.panel-content').forEach(panel => {
+    panel.classList.add('hidden');
+    panel.classList.remove('active');
+  });
+
+  // Mostrar panel seleccionado
+  const targetPanel = document.getElementById(panelId + '-panel');
+  if (targetPanel) {
+    targetPanel.classList.remove('hidden');
+    targetPanel.classList.add('active');
+
+    // Cargar contenido específico según el panel
+    switch (panelId) {
+      case 'dashboard':
+        loadDashboard(userData);
+        break;
+      case 'requests':
+        loadRequestsForSocialWorkers(userData);
+        break;
+      case 'patients':
+        loadPatientsPanel(userData);
+        break;
+      case 'calendar':
+        loadCalendarPanel(userData);
+        break;
+      case 'followups':
+        loadFollowupsPanel(userData);
+        break;
+      case 'reports':
+        loadReportsPanel(userData);
+        break;
+      case 'centers':
+        loadCentersPanel(userData);
+        break;
+      case 'users':
+        loadUsersPanel(userData);
+        break;
+      case 'analytics':
+        loadAnalyticsPanel(userData);
+        break;
+      default:
+        console.warn('Panel desconocido:', panelId);
+    }
+  }
+}
+
+// ============================================
+// ACTUALIZACIÓN DE showProfessionalPanel
+// ============================================
+
+function showProfessionalPanel(userData) {
+  showModal('panel-modal');
+  
+  // Actualizar información del usuario
+  document.getElementById('user-name').textContent = userData.nombre;
+  document.getElementById('user-role').textContent = getProfessionName(userData.profesion);
+  document.getElementById('user-avatar').textContent = userData.nombre.substring(0, 2).toUpperCase();
+
+  // Configurar navegación basada en roles
+  setupRoleBasedNavigation(userData);
+  setupPanelNavigation(userData);
+  
+  // Mostrar dashboard por defecto
+  showPanel('dashboard', userData);
+  
+  // Configurar botón de logout
+  document.getElementById('logout-btn').addEventListener('click', handleLogout);
+  
+  // Iniciar listeners en tiempo real
+  startRealTimeListeners(userData);
+}
+
+// ============================================
+// ACTUALIZACIÓN DE setupRoleBasedNavigation
+// ============================================
+
+function setupRoleBasedNavigation(userData) {
+  const role = userData.profesion;
+  
+  // Elementos de navegación
+  const requestsNav = document.querySelector('[data-panel="requests"]');
+  const patientsNav = document.querySelector('[data-panel="patients"]');
+  const calendarNav = document.querySelector('[data-panel="calendar"]');
+  const followupsNav = document.querySelector('[data-panel="followups"]');
+  const reportsNav = document.querySelector('[data-panel="reports"]');
+  const centersNav = document.querySelector('[data-panel="centers"]');
+  const usersNav = document.querySelector('[data-panel="users"]');
+  const analyticsNav = document.querySelector('[data-panel="analytics"]');
+  
+  // Ocultar todos los elementos inicialmente
+  [requestsNav, patientsNav, calendarNav, followupsNav, reportsNav, centersNav, usersNav, analyticsNav]
+    .forEach(nav => {
+      if (nav) nav.style.display = 'none';
+    });
+  
+  // Mostrar según permisos
+  if (canViewRequests(role) && requestsNav) {
+    requestsNav.style.display = 'flex';
+  }
+  
+  if (canManagePatients(role) && patientsNav) {
+    patientsNav.style.display = 'flex';
+  }
+  
+  if (canScheduleAppointments(role) && calendarNav) {
+    calendarNav.style.display = 'flex';
+  }
+  
+  if (canWriteFollowups(role) && followupsNav) {
+    followupsNav.style.display = 'flex';
+  }
+  
+  if (canGenerateReports(role) && reportsNav) {
+    reportsNav.style.display = 'flex';
+  }
+  
+  if (['coordinador', 'admin'].includes(role) && centersNav) {
+    centersNav.style.display = 'flex';
+  }
+  
+  if (role === 'admin' && usersNav) {
+    usersNav.style.display = 'flex';
+  }
+  
+  if (['coordinador', 'admin'].includes(role) && analyticsNav) {
+    analyticsNav.style.display = 'flex';
+  }
+}
+
+// ============================================
+// DASHBOARD ACTUALIZADO
+// ============================================
+
+async function loadDashboard(userData) {
+  console.log('Loading dashboard for:', userData.nombre);
+  
+  try {
+    // Cargar estadísticas generales
+    const stats = await loadDashboardStats(userData);
+    
+    // Actualizar métricas
+    updateDashboardMetrics(stats);
+    
+    // Cargar actividad reciente
+    await loadRecentActivity(userData);
+    
+    // Cargar gráficos si es necesario
+    loadDashboardCharts(stats);
+    
+  } catch (error) {
+    console.error('Error loading dashboard:', error);
+    showNotification('Error al cargar el dashboard', 'error');
+  }
+}
+
+async function loadDashboardStats(userData) {
+  const stats = {
+    totalPatients: 0,
+    todayAppointments: 0,
+    pendingRequests: 0,
+    criticalCases: 0,
+    weekAppointments: 0,
+    monthAppointments: 0
+  };
+  
+  try {
+    const today = new Date();
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfDay = new Date(startOfDay);
+    endOfDay.setDate(startOfDay.getDate() + 1);
+    
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 7);
+    
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    
+    // Contar pacientes totales (según rol)
+    if (canManagePatients(userData.profesion)) {
+      const patientsQuery = userData.profesion === 'admin' 
+        ? db.collection('pacientes')
+        : db.collection('pacientes').where('profesional_asignado', '==', userData.uid);
+      
+      const patientsSnapshot = await patientsQuery.get();
+      stats.totalPatients = patientsSnapshot.size;
+    }
+    
+    // Contar citas de hoy
+    if (canWriteFollowups(userData.profesion)) {
+      const todayAppointmentsQuery = db.collection('citas')
+        .where('profesional_id', '==', userData.uid)
+        .where('fecha', '>=', startOfDay)
+        .where('fecha', '<', endOfDay);
+      
+      const todaySnapshot = await todayAppointmentsQuery.get();
+      stats.todayAppointments = todaySnapshot.size;
+      
+      // Contar citas de la semana
+      const weekAppointmentsQuery = db.collection('citas')
+        .where('profesional_id', '==', userData.uid)
+        .where('fecha', '>=', startOfWeek)
+        .where('fecha', '<', endOfWeek);
+      
+      const weekSnapshot = await weekAppointmentsQuery.get();
+      stats.weekAppointments = weekSnapshot.size;
+      
+      // Contar citas del mes
+      const monthAppointmentsQuery = db.collection('citas')
+        .where('profesional_id', '==', userData.uid)
+        .where('fecha', '>=', startOfMonth)
+        .where('fecha', '<=', endOfMonth);
+      
+      const monthSnapshot = await monthAppointmentsQuery.get();
+      stats.monthAppointments = monthSnapshot.size;
+    }
+    
+    // Contar solicitudes pendientes (solo asistentes sociales)
+    if (canViewRequests(userData.profesion)) {
+      const pendingRequestsQuery = db.collection('solicitudes_ingreso')
+        .where('clasificacion.estado', '==', 'pendiente');
+      
+      const pendingSnapshot = await pendingRequestsQuery.get();
+      stats.pendingRequests = pendingSnapshot.size;
+      
+      // Contar casos críticos
+      const criticalCasesQuery = db.collection('solicitudes_ingreso')
+        .where('clasificacion.prioridad', '==', 'critica')
+        .where('clasificacion.estado', '==', 'pendiente');
+      
+      const criticalSnapshot = await criticalCasesQuery.get();
+      stats.criticalCases = criticalSnapshot.size;
+    }
+    
+    return stats;
+    
+  } catch (error) {
+    console.error('Error loading dashboard stats:', error);
+    return stats;
+  }
+}
+
+function updateDashboardMetrics(stats) {
+  const elements = {
+    'total-patients': stats.totalPatients,
+    'today-appointments': stats.todayAppointments,
+    'pending-requests': stats.pendingRequests,
+    'critical-cases': stats.criticalCases
+  };
+  
+  Object.keys(elements).forEach(id => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.textContent = elements[id];
+    }
+  });
+  
+  // Actualizar próxima cita
+  updateNextAppointment();
+}
+
+async function updateNextAppointment() {
+  try {
+    const now = new Date();
+    const nextAppointmentQuery = db.collection('citas')
+      .where('profesional_id', '==', currentUserData.uid)
+      .where('fecha', '>', now)
+      .where('estado', '==', 'programada')
+      .orderBy('fecha')
+      .limit(1);
+    
+    const snapshot = await nextAppointmentQuery.get();
+    const nextAppointmentElement = document.getElementById('next-appointment');
+    
+    if (nextAppointmentElement) {
+      if (snapshot.empty) {
+        nextAppointmentElement.textContent = 'Sin citas';
+      } else {
+        const appointment = snapshot.docs[0].data();
+        const appointmentDate = appointment.fecha.toDate();
+        nextAppointmentElement.textContent = appointmentDate.toLocaleTimeString('es-CL', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+    }
+    
+  } catch (error) {
+    console.error('Error updating next appointment:', error);
+  }
+}
+
+async function loadRecentActivity(userData) {
+  try {
+    const activityList = document.getElementById('activity-list');
+    if (!activityList) return;
+    
+    const activities = [];
+    
+    // Cargar seguimientos recientes
+    if (canWriteFollowups(userData.profesion)) {
+      const followupsQuery = db.collection('seguimientos')
+        .where('profesional_id', '==', userData.uid)
+        .orderBy('fecha', 'desc')
+        .limit(5);
+      
+      const followupsSnapshot = await followupsQuery.get();
+      
+      for (const doc of followupsSnapshot.docs) {
+        const followup = doc.data();
+        const patientDoc = await db.collection('pacientes').doc(followup.paciente_id).get();
+        const patient = patientDoc.exists ? patientDoc.data() : null;
+        
+        activities.push({
+          type: 'followup',
+          date: followup.fecha.toDate(),
+          patient: patient?.datos_contacto?.nombre_completo || 'Paciente no encontrado',
+          description: 'Seguimiento clínico completado'
+        });
+      }
+    }
+    
+    // Cargar solicitudes procesadas recientes (asistentes sociales)
+    if (canViewRequests(userData.profesion)) {
+      const processedRequestsQuery = db.collection('solicitudes_ingreso')
+        .where('clasificacion.procesado_por', '==', userData.uid)
+        .orderBy('clasificacion.fecha_procesamiento', 'desc')
+        .limit(5);
+      
+      const processedSnapshot = await processedRequestsQuery.get();
+      
+      processedSnapshot.forEach(doc => {
+        const request = doc.data();
+        activities.push({
+          type: 'request',
+          date: request.clasificacion.fecha_procesamiento.toDate(),
+          patient: request.datos_contacto?.nombre_completo || 'Solicitud anónima',
+          description: 'Solicitud procesada'
+        });
+      });
+    }
+    
+    // Ordenar actividades por fecha
+    activities.sort((a, b) => b.date - a.date);
+    
+    // Generar HTML
+    if (activities.length === 0) {
+      activityList.innerHTML = '<p class="no-data">No hay actividad reciente.</p>';
+    } else {
+      let html = '';
+      activities.slice(0, 8).forEach(activity => {
+        const timeAgo = getTimeAgo(activity.date);
+        html += `
+          <div class="activity-item">
+            <div class="activity-icon activity-${activity.type}">
+              <i class="fas fa-${activity.type === 'followup' ? 'notes-medical' : 'user-plus'}"></i>
+            </div>
+            <div class="activity-content">
+              <div class="activity-description">${activity.description}</div>
+              <div class="activity-patient">${activity.patient}</div>
+              <div class="activity-time">${timeAgo}</div>
+            </div>
+          </div>
+        `;
+      });
+      activityList.innerHTML = html;
+    }
+    
+  } catch (error) {
+    console.error('Error loading recent activity:', error);
+    const activityList = document.getElementById('activity-list');
+    if (activityList) {
+      activityList.innerHTML = '<p class="error-message">Error al cargar actividad reciente.</p>';
+    }
+  }
+}
+
+function loadDashboardCharts(stats) {
+  // Cargar gráfico de casos por prioridad (solo para asistentes sociales)
+  if (canViewRequests(currentUserData.profesion)) {
+    loadPriorityChart();
+  }
+  
+  // Cargar gráfico de tendencia mensual
+  loadTrendChart(stats);
+}
+
+async function loadPriorityChart() {
+  try {
+    const priorityCanvas = document.getElementById('priority-chart');
+    if (!priorityCanvas) return;
+    
+    // Contar casos por prioridad
+    const priorities = { critica: 0, alta: 0, media: 0, baja: 0 };
+    
+    const requestsQuery = db.collection('solicitudes_ingreso')
+      .where('clasificacion.estado', '==', 'pendiente');
+    
+    const snapshot = await requestsQuery.get();
+    
+    snapshot.forEach(doc => {
+      const priority = doc.data().clasificacion?.prioridad || 'baja';
+      if (priorities.hasOwnProperty(priority)) {
+        priorities[priority]++;
+      }
+    });
+    
+    // Crear gráfico
+    new Chart(priorityCanvas, {
+      type: 'doughnut',
+      data: {
+        labels: ['Crítica', 'Alta', 'Media', 'Baja'],
+        datasets: [{
+          data: [priorities.critica, priorities.alta, priorities.media, priorities.baja],
+          backgroundColor: ['#dc2626', '#ea580c', '#d97706', '#65a30d'],
+          borderWidth: 2,
+          borderColor: '#ffffff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error loading priority chart:', error);
+  }
+}
+
+function loadTrendChart(stats) {
+  const trendCanvas = document.getElementById('trend-chart');
+  if (!trendCanvas) return;
+  
+  // Datos simulados para tendencia mensual
+  const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'];
+  const data = [12, 19, 15, 25, 22, stats.monthAppointments || 18];
+  
+  new Chart(trendCanvas, {
+    type: 'line',
+    data: {
+      labels: months,
+      datasets: [{
+        label: 'Citas por Mes',
+        data: data,
+        borderColor: '#2563eb',
+        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+        tension: 0.4,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+// ============================================
+// FUNCIONES AUXILIARES
+// ============================================
+
+function getTimeAgo(date) {
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  
+  if (diffMins < 1) return 'Hace un momento';
+  if (diffMins < 60) return `Hace ${diffMins} minutos`;
+  if (diffHours < 24) return `Hace ${diffHours} horas`;
+  if (diffDays < 7) return `Hace ${diffDays} días`;
+  return date.toLocaleDateString('es-CL');
+}
+
+// ============================================
+// PANELES ADICIONALES (Placeholder)
+// ============================================
+
+function loadCentersPanel(userData) {
+  const centersPanel = document.getElementById('centers-panel');
+  if (centersPanel) {
+    centersPanel.innerHTML = `
+      <div class="panel-header">
+        <h1 class="panel-title">Gestión de Centros</h1>
+        <p class="panel-subtitle">Administra centros de salud y recursos</p>
+      </div>
+      <div class="placeholder-content">
+        <i class="fas fa-hospital"></i>
+        <h3>Función en Desarrollo</h3>
+        <p>La gestión de centros estará disponible próximamente.</p>
+      </div>
+    `;
+  }
+}
+
+function loadUsersPanel(userData) {
+  const usersPanel = document.getElementById('users-panel');
+  if (usersPanel) {
+    usersPanel.innerHTML = `
+      <div class="panel-header">
+        <h1 class="panel-title">Gestión de Usuarios</h1>
+        <p class="panel-subtitle">Administra profesionales y permisos del sistema</p>
+      </div>
+      <div class="placeholder-content">
+        <i class="fas fa-user-cog"></i>
+        <h3>Función en Desarrollo</h3>
+        <p>La gestión de usuarios estará disponible próximamente.</p>
+      </div>
+    `;
+  }
+}
+
+function loadAnalyticsPanel(userData) {
+  const analyticsPanel = document.getElementById('analytics-panel');
+  if (analyticsPanel) {
+    analyticsPanel.innerHTML = `
+      <div class="panel-header">
+        <h1 class="panel-title">Analytics Avanzado</h1>
+        <p class="panel-subtitle">Análisis estadístico y métricas de desempeño</p>
+      </div>
+      <div class="placeholder-content">
+        <i class="fas fa-chart-bar"></i>
+        <h3>Función en Desarrollo</h3>
+        <p>Las analíticas avanzadas estarán disponibles próximamente.</p>
+      </div>
+    `;
+  }
+}
+
+// ============================================
+// INICIALIZACIÓN MEJORADA
+// ============================================
+
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('SENDA Platform loading...');
+  
+  // Verificar disponibilidad de Firebase
+  if (typeof firebase === 'undefined') {
+    console.error('Firebase no está cargado');
+    showNotification('Error: Firebase no disponible', 'error');
+    return;
+  }
+  
+  initializeApp();
+});
+
+function initializeApp() {
+  try {
+    // Inicializar componentes básicos
+    initializeEventListeners();
+    setupFormValidation();
+    setupMultiStepForm();
+    setupModalControls();
+    setupTabFunctionality();
+    
+    // Cargar datos iniciales
+    loadDraftIfExists();
+    loadRegionsData();
+    setupEmailValidation();
+    
+    console.log('SENDA Platform initialized successfully');
+    showNotification('Sistema SENDA cargado correctamente', 'success', 2000);
+    
+  } catch (error) {
+    console.error('Error initializing app:', error);
+    showNotification('Error al cargar el sistema', 'error');
+  }
+}
+
+// ============================================
+// ACTUALIZACIÓN DE FUNCIONES EXISTENTES
+// ============================================
+
+// Actualizar loadRequests para usar la nueva función
+async function loadRequests(userData) {
+  return loadRequestsForSocialWorkers(userData);
+}
+
+// Función para mostrar modal de cierre
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    if (modalId === 'patient-modal' && !isDraftSaved) {
+      const shouldClose = confirm('¿Estás seguro de que quieres cerrar? Los datos no guardados se perderán.');
+      if (!shouldClose) return;
+      resetForm();
+    }
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+    
+    // Limpiar modales dinámicos
+    if (modalId.includes('dynamic') || modalId.includes('request') || modalId.includes('report')) {
+      modal.remove();
+    }
+  }
+}
+
+// Mejorar la función showModal
+function showModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    // Focus en el primer elemento focuseable
+    const firstFocusable = modal.querySelector('input, button, select, textarea');
+    if (firstFocusable) {
+      setTimeout(() => firstFocusable.focus(), 100);
+    }
+  }
+}
+
+// ============================================
+// EXPORTAR FUNCIONES GLOBALES
+// ============================================
+
+// Actualizar las funciones de debug
+window.sendaApp = {
+  // Funciones básicas
+  showNotification,
+  showModal,
+  closeModal,
+  formatRUT,
+  validateRUT,
+  getProfessionName,
+  
+  // Estado de la aplicación
+  formData,
+  currentUserData,
+  regionesChile,
+  
+  // Funciones de panel
+  loadDashboard,
+  loadRequestsForSocialWorkers,
+  loadPatientsPanel,
+  loadCalendarPanel,
+  loadFollowupsPanel,
+  loadReportsPanel,
+  
+  // Funciones de pacientes
+  searchPatients,
+  viewPatientDetails,
+  generatePatientReport,
+  
+  // Funciones de calendario
+  selectCalendarDay,
+  scheduleNewAppointment,
+  
+  // Funciones de seguimiento
+  startFollowupSession: startAppointmentSession,
+  completeFollowupSession,
+  
+  // Funciones de debug
+  testPatientForm: () => {
+    showModal('patient-modal');
+    updateFormProgress();
+  },
+  testProfessionalLogin: () => {
+    showModal('professional-modal');
+  },
+  getCurrentFormData: () => formData,
+  getCurrentUser: () => currentUserData,
+  
+  // Simulaciones de datos para pruebas
+  simulateLogin: (profession = 'asistente_social') => {
+    currentUserData = {
+      uid: 'test-user-' + Math.random(),
+      nombre: 'Usuario de Prueba',
+      profesion: profession,
+      correo: 'test@senda.cl'
+    };
+    showProfessionalPanel(currentUserData);
+  }
+};
+
+console.log('SENDA Platform JavaScript loaded successfully');
+console.log('Sistema cargado - Todos los paneles deberían funcionar correctamente');
+console.log('Funciones de debug disponibles en window.sendaApp');
+console.log('Para probar, usa: window.sendaApp.simulateLogin("asistente_social")');
