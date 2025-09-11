@@ -867,12 +867,7 @@ async function handleReentrySubmission(e) {
       return;
     }
 
-    // Verificar si ya existe en el sistema
-    const existingPatient = await db.collection('pacientes')
-      .where('datos_personales.rut', '==', reentryData.rut)
-      .get();
-
-    // Crear solicitud de reingreso en Firebase
+    // ESTRUCTURA AJUSTADA PARA COINCIDIR CON LAS REGLAS DE FIRESTORE
     const reingreso = {
       tipo_solicitud: 'reingreso',
       datos_personales: {
@@ -882,17 +877,10 @@ async function handleReentrySubmission(e) {
         correo: reentryData.correo
       },
       cesfam_asignado: reentryData.cesfam,
-      motivo_reingreso: reentryData.motivo_reingreso,
-      paciente_existente: !existingPatient.empty,
-      estado: 'pendiente',
-      prioridad: 'alta',
-      fecha_solicitud: firebase.firestore.FieldValue.serverTimestamp(),
-      metadata: {
-        fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
-        canal_ingreso: 'web_publica',
-        tipo: 'reingreso'
-      }
+      motivo_reingreso: reentryData.motivo_reingreso
     };
+
+    console.log('Enviando reingreso:', reingreso); // Para debugging
 
     await db.collection('solicitudes_reingreso').add(reingreso);
 
@@ -902,210 +890,15 @@ async function handleReentrySubmission(e) {
 
   } catch (error) {
     console.error('Error submitting reentry:', error);
-    showNotification('Error al enviar la solicitud de reingreso: ' + error.message, 'error');
+    
+    // Mostrar error más específico
+    if (error.code === 'permission-denied') {
+      showNotification('Error de permisos: No se puede guardar la solicitud de reingreso', 'error');
+    } else {
+      showNotification('Error al enviar la solicitud de reingreso: ' + error.message, 'error');
+    }
   } finally {
     showLoading(false);
-  }
-}
-
-function setupModalControls() {
-  document.querySelectorAll('[data-close]').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-      const modalId = e.target.closest('[data-close]').dataset.close;
-      closeModal(modalId);
-    });
-  });
-}
-
-function setupTabFunctionality() {
-  document.querySelectorAll('.tab-button').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const tabGroup = btn.closest('.tabs');
-      const targetTab = btn.dataset.tab;
-      
-      if (tabGroup) {
-        tabGroup.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-        tabGroup.parentElement.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        
-        btn.classList.add('active');
-        const tabContent = document.getElementById(targetTab + '-tab');
-        if (tabContent) {
-          tabContent.classList.add('active');
-        }
-      }
-    });
-  });
-}
-
-function setupMultiStepForm() {
-  const motivacionSlider = document.getElementById('motivacion');
-  const motivacionValue = document.getElementById('motivacion-value');
-  
-  if (motivacionSlider && motivacionValue) {
-    motivacionSlider.addEventListener('input', function() {
-      motivacionValue.textContent = this.value;
-    });
-  }
-
-  const tipoSolicitudInputs = document.querySelectorAll('input[name="tipoSolicitud"]');
-  tipoSolicitudInputs.forEach(input => {
-    input.addEventListener('change', function() {
-      const tipoSolicitud = this.value;
-      handleTipoSolicitudChange(tipoSolicitud);
-    });
-  });
-}
-
-function handleTipoSolicitudChange(tipoSolicitud) {
-  const phoneContainer = document.getElementById('anonymous-phone-container');
-  const emailContainer = document.getElementById('info-email-container');
-  
-  if (phoneContainer) phoneContainer.style.display = 'none';
-  if (emailContainer) emailContainer.style.display = 'none';
-  
-  switch(tipoSolicitud) {
-    case 'anonimo':
-      flowSteps = [1, 3, 4];
-      if (phoneContainer) phoneContainer.style.display = 'block';
-      break;
-      
-    case 'identificado':
-      flowSteps = [1, 2, 3, 4];
-      break;
-      
-    case 'informacion':
-      flowSteps = [1];
-      if (emailContainer) emailContainer.style.display = 'block';
-      break;
-  }
-  
-  updateFormProgress();
-}
-
-function updateFormProgress() {
-  const progressFill = document.getElementById('form-progress');
-  const progressText = document.getElementById('progress-text');
-  
-  const totalSteps = flowSteps.length;
-  const currentStepInFlow = currentStepIndex + 1;
-  const progress = (currentStepInFlow / totalSteps) * 100;
-  
-  if (progressFill) progressFill.style.width = progress + '%';
-  if (progressText) progressText.textContent = `Paso ${currentStepInFlow} de ${totalSteps}`;
-  
-  const prevBtn = document.getElementById('prev-step');
-  const nextBtn = document.getElementById('next-step');
-  const submitBtn = document.getElementById('submit-form');
-  
-  if (prevBtn) prevBtn.style.display = currentStepIndex > 0 ? 'block' : 'none';
-  if (nextBtn) nextBtn.style.display = currentStepIndex < flowSteps.length - 1 ? 'block' : 'none';
-  if (submitBtn) submitBtn.style.display = currentStepIndex === flowSteps.length - 1 ? 'block' : 'none';
-}
-
-function nextFormStep() {
-  if (validateCurrentStep()) {
-    collectCurrentStepData();
-    
-    if (currentStepIndex < flowSteps.length - 1) {
-      const currentStepNumber = flowSteps[currentStepIndex];
-      document.querySelector(`[data-step="${currentStepNumber}"]`).classList.remove('active');
-      
-      currentStepIndex++;
-      const nextStepNumber = flowSteps[currentStepIndex];
-      currentFormStep = nextStepNumber;
-      
-      document.querySelector(`[data-step="${nextStepNumber}"]`).classList.add('active');
-      updateFormProgress();
-      
-      saveDraft(false);
-    }
-  }
-}
-
-function prevFormStep() {
-  if (currentStepIndex > 0) {
-    const currentStepNumber = flowSteps[currentStepIndex];
-    document.querySelector(`[data-step="${currentStepNumber}"]`).classList.remove('active');
-    
-    currentStepIndex--;
-    const prevStepNumber = flowSteps[currentStepIndex];
-    currentFormStep = prevStepNumber;
-    
-    document.querySelector(`[data-step="${prevStepNumber}"]`).classList.add('active');
-    updateFormProgress();
-  }
-}
-
-function setupFormValidation() {
-  // Validación de RUT para formulario principal
-  const rutInput = document.getElementById('patient-rut');
-  if (rutInput) {
-    rutInput.addEventListener('input', function(e) {
-      e.target.value = formatRUT(e.target.value);
-    });
-
-    rutInput.addEventListener('blur', function(e) {
-      const rut = e.target.value.trim();
-      if (rut && !validateRUT(rut)) {
-        e.target.classList.add('error');
-        showNotification('El RUT ingresado no es válido', 'error');
-      } else {
-        e.target.classList.remove('error');
-      }
-    });
-  }
-
-  // NUEVO: Validación de RUT para formulario de reingreso
-  const reentryRutInput = document.getElementById('reentry-rut');
-  if (reentryRutInput) {
-    reentryRutInput.addEventListener('input', function(e) {
-      e.target.value = formatRUT(e.target.value);
-    });
-
-    reentryRutInput.addEventListener('blur', function(e) {
-      const rut = e.target.value.trim();
-      if (rut && !validateRUT(rut)) {
-        e.target.classList.add('error');
-        showNotification('El RUT ingresado no es válido', 'error');
-      } else {
-        e.target.classList.remove('error');
-      }
-    });
-  }
-
-  // Validación de teléfonos
-  const phoneInputs = document.querySelectorAll('#patient-phone, #anonymous-phone, #reentry-phone');
-  phoneInputs.forEach(input => {
-    input.addEventListener('input', function(e) {
-      e.target.value = formatPhoneNumber(e.target.value);
-    });
-  });
-
-  // Validación de emails
-  const emailInputs = document.querySelectorAll('input[type="email"]');
-  emailInputs.forEach(input => {
-    input.addEventListener('blur', function(e) {
-      const email = e.target.value.trim();
-      if (email && !isValidEmail(email)) {
-        e.target.classList.add('error');
-        showNotification('Por favor ingresa un correo electrónico válido', 'error');
-      } else {
-        e.target.classList.remove('error');
-      }
-    });
-  });
-
-  const ageInput = document.getElementById('patient-age');
-  if (ageInput) {
-    ageInput.addEventListener('blur', function(e) {
-      const age = parseInt(e.target.value);
-      if (age && (age < 12 || age > 120)) {
-        e.target.classList.add('error');
-        showNotification('Por favor ingresa una edad válida (12-120 años)', 'error');
-      } else {
-        e.target.classList.remove('error');
-      }
-    });
   }
 }
 
