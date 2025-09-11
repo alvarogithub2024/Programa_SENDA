@@ -1,530 +1,1609 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>SENDA - Sistema de Gestión Integral</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="styles.css">
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
-  <!-- Header -->
-  <header class="header">
-    <div class="header-content">
-      <div class="logo">
-        <i class="fas fa-heartbeat"></i>
-        <span>SENDA</span>
-      </div>
-      <div class="header-actions">
-        <button class="btn btn-outline" id="find-center">
-          <i class="fas fa-map-marker-alt"></i>
-          Encontrar Centro
-        </button>
-        <button class="btn btn-professional" id="login-professional">
-          <i class="fas fa-user-md"></i>
-          Acceso Profesional
-        </button>
-      </div>
-    </div>
-  </header>
+// Firebase Configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
+  authDomain: "senda-6d5c9.firebaseapp.com",
+  projectId: "senda-6d5c9",
+  storageBucket: "senda-6d5c9.firebasestorage.app",
+  messagingSenderId: "1090028669785",
+  appId: "1:1090028669785:web:d4e1c1b9945fc2fddc1a48",
+  measurementId: "G-82DCLW5R2W"
+};
 
-  <!-- Main Content -->
-  <main class="main-content">
-    <div class="hero-card">
-      <h1>Programa SENDA</h1>
-      <p class="subtitle">Tu recuperación comienza aquí</p>
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// Chilean Regions and Communes Data
+const regionesChile = {
+  "arica": {
+    nombre: "Arica y Parinacota",
+    comunas: ["Arica", "Camarones", "Putre", "General Lagos"]
+  },
+  "tarapaca": {
+    nombre: "Tarapacá",
+    comunas: ["Iquique", "Alto Hospicio", "Pozo Almonte", "Camiña", "Colchane", "Huara", "Pica"]
+  },
+  "antofagasta": {
+    nombre: "Antofagasta",
+    comunas: ["Antofagasta", "Mejillones", "Sierra Gorda", "Taltal", "Calama", "Ollagüe", "San Pedro de Atacama", "Tocopilla", "María Elena"]
+  },
+  "atacama": {
+    nombre: "Atacama",
+    comunas: ["Copiapó", "Caldera", "Tierra Amarilla", "Chañaral", "Diego de Almagro", "Vallenar", "Alto del Carmen", "Freirina", "Huasco"]
+  },
+  "coquimbo": {
+    nombre: "Coquimbo",
+    comunas: ["La Serena", "Coquimbo", "Andacollo", "La Higuera", "Paiguano", "Vicuña", "Illapel", "Canela", "Los Vilos", "Salamanca", "Ovalle", "Combarbalá", "Monte Patria", "Punitaqui", "Río Hurtado"]
+  },
+  "valparaiso": {
+    nombre: "Valparaíso",
+    comunas: ["Valparaíso", "Casablanca", "Concón", "Juan Fernández", "Puchuncaví", "Quintero", "Viña del Mar", "Isla de Pascua", "Los Andes", "Calle Larga", "Rinconada", "San Esteban", "La Ligua", "Cabildo", "Papudo", "Petorca", "Zapallar", "Quillota", "Calera", "Hijuelas", "La Cruz", "Nogales", "San Antonio", "Algarrobo", "Cartagena", "El Quisco", "El Tabo", "Santo Domingo", "San Felipe", "Catemu", "Llaillay", "Panquehue", "Putaendo", "Santa María", "Quilpué", "Limache", "Olmué", "Villa Alemana"]
+  },
+  "metropolitana": {
+    nombre: "Metropolitana de Santiago",
+    comunas: ["Cerrillos", "Cerro Navia", "Conchalí", "El Bosque", "Estación Central", "Huechuraba", "Independencia", "La Cisterna", "La Florida", "La Granja", "La Pintana", "La Reina", "Las Condes", "Lo Barnechea", "Lo Espejo", "Lo Prado", "Macul", "Maipú", "Ñuñoa", "Pedro Aguirre Cerda", "Peñalolén", "Providencia", "Pudahuel", "Quilicura", "Quinta Normal", "Recoleta", "Renca", "Santiago", "San Joaquín", "San Miguel", "San Ramón", "Vitacura", "Puente Alto", "Pirque", "San José de Maipo", "Colina", "Lampa", "Tiltil", "San Bernardo", "Buin", "Calera de Tango", "Paine", "Melipilla", "Alhué", "Curacaví", "María Pinto", "San Pedro", "Talagante", "El Monte", "Isla de Maipo", "Padre Hurtado", "Peñaflor"]
+  },
+  "ohiggins": {
+    nombre: "Libertador General Bernardo O'Higgins",
+    comunas: ["Rancagua", "Codegua", "Coinco", "Coltauco", "Doñihue", "Graneros", "Las Cabras", "Machalí", "Malloa", "Mostazal", "Olivar", "Peumo", "Pichidegua", "Quinta de Tilcoco", "Rengo", "Requínoa", "San Vicente", "Pichilemu", "La Estrella", "Litueche", "Marchihue", "Navidad", "Paredones", "San Fernando", "Chépica", "Chimbarongo", "Lolol", "Nancagua", "Palmilla", "Peralillo", "Placilla", "Pumanque", "Santa Cruz"]
+  },
+  "maule": {
+    nombre: "Maule",
+    comunas: ["Talca", "Constitución", "Curepto", "Empedrado", "Maule", "Pelarco", "Pencahue", "Río Claro", "San Clemente", "San Rafael", "Cauquenes", "Chanco", "Pelluhue", "Curicó", "Hualañé", "Licantén", "Molina", "Rauco", "Romeral", "Sagrada Familia", "Teno", "Vichuquén", "Linares", "Colbún", "Longaví", "Parral", "Retiro", "San Javier", "Villa Alegre", "Yerbas Buenas"]
+  },
+  "nuble": {
+    nombre: "Ñuble",
+    comunas: ["Chillán", "Bulnes", "Cobquecura", "Coelemu", "Coihueco", "Chillán Viejo", "El Carmen", "Ninhue", "Ñiquén", "Pemuco", "Pinto", "Portezuelo", "Quillón", "Quirihue", "Ránquil", "San Carlos", "San Fabián", "San Ignacio", "San Nicolás", "Treguaco", "Yungay"]
+  },
+  "biobio": {
+    nombre: "Biobío",
+    comunas: ["Concepción", "Coronel", "Chiguayante", "Florida", "Hualqui", "Lota", "Penco", "San Pedro de la Paz", "Santa Juana", "Talcahuano", "Tomé", "Hualpén", "Lebu", "Arauco", "Cañete", "Contulmo", "Curanilahue", "Los Álamos", "Tirúa", "Los Ángeles", "Antuco", "Cabrero", "Laja", "Mulchén", "Nacimiento", "Negrete", "Quilaco", "Quilleco", "San Rosendo", "Santa Bárbara", "Tucapel", "Yumbel", "Alto Biobío"]
+  },
+  "araucania": {
+    nombre: "La Araucanía",
+    comunas: ["Temuco", "Carahue", "Cunco", "Curarrehue", "Freire", "Galvarino", "Gorbea", "Lautaro", "Loncoche", "Melipeuco", "Nueva Imperial", "Padre Las Casas", "Perquenco", "Pitrufquén", "Pucón", "Saavedra", "Teodoro Schmidt", "Toltén", "Vilcún", "Villarrica", "Cholchol", "Angol", "Collipulli", "Curacautín", "Ercilla", "Lonquimay", "Los Sauces", "Lumaco", "Purén", "Renaico", "Traiguén", "Victoria"]
+  },
+  "losrios": {
+    nombre: "Los Ríos",
+    comunas: ["Valdivia", "Corral", "Lanco", "Los Lagos", "Máfil", "Mariquina", "Paillaco", "Panguipulli", "La Unión", "Futrono", "Lago Ranco", "Río Bueno"]
+  },
+  "loslagos": {
+    nombre: "Los Lagos",
+    comunas: ["Puerto Montt", "Calbuco", "Cochamó", "Fresia", "Frutillar", "Los Muermos", "Llanquihue", "Maullín", "Puerto Varas", "Castro", "Ancud", "Chonchi", "Curaco de Vélez", "Dalcahue", "Puqueldón", "Queilén", "Quellón", "Quemchi", "Quinchao", "Osorno", "Puerto Octay", "Purranque", "Puyehue", "Río Negro", "San Juan de la Costa", "San Pablo", "Chaitén", "Futaleufú", "Hualaihué", "Palena"]
+  },
+  "aysen": {
+    nombre: "Aysén del General Carlos Ibáñez del Campo",
+    comunas: ["Coyhaique", "Lago Verde", "Aysén", "Cisnes", "Guaitecas", "Cochrane", "O'Higgins", "Tortel", "Chile Chico", "Río Ibáñez"]
+  },
+  "magallanes": {
+    nombre: "Magallanes y de la Antártica Chilena",
+    comunas: ["Punta Arenas", "Laguna Blanca", "Río Verde", "San Gregorio", "Cabo de Hornos", "Antártica", "Porvenir", "Primavera", "Timaukel", "Natales", "Torres del Paine"]
+  }
+};
+
+// Global Variables
+let currentUser = null;
+let currentUserData = null;
+let currentFormStep = 1;
+let maxFormStep = 4;
+let formData = {};
+let isDraftSaved = false;
+let flowSteps = []; 
+let currentStepIndex = 0; 
+
+// Utility Functions
+function showNotification(message, type = 'info', duration = 4000) {
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.innerHTML = `
+    <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i> 
+    ${message}
+    <button class="notification-close" onclick="this.parentElement.remove()">
+      <i class="fas fa-times"></i>
+    </button>
+  `;
+  
+  const container = document.getElementById('notifications');
+  if (container) {
+    container.appendChild(notification);
+    
+    setTimeout(() => notification.classList.add('show'), 100);
+    setTimeout(() => {
+      if (notification.parentElement) {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+      }
+    }, duration);
+  }
+}
+
+function showModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    if (modalId === 'patient-modal' && !isDraftSaved) {
+      resetForm();
+    }
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+  }
+}
+
+function showLoading(show = true) {
+  const overlay = document.getElementById('loading-overlay');
+  if (overlay) {
+    overlay.classList.toggle('hidden', !show);
+  }
+}
+
+function formatRUT(rut) {
+  const cleaned = rut.replace(/[^\dKk]/g, '');
+  if (cleaned.length > 1) {
+    const body = cleaned.slice(0, -1);
+    const dv = cleaned.slice(-1);
+    return body.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.') + '-' + dv;
+  }
+  return cleaned;
+}
+
+function validateRUT(rut) {
+  const cleaned = rut.replace(/[^\dKk]/g, '').toUpperCase();
+  if (cleaned.length < 8) return false;
+  
+  const body = cleaned.slice(0, -1);
+  const dv = cleaned.slice(-1);
+  
+  let sum = 0;
+  let multiplier = 2;
+  
+  for (let i = body.length - 1; i >= 0; i--) {
+    sum += parseInt(body[i]) * multiplier;
+    multiplier = multiplier === 7 ? 2 : multiplier + 1;
+  }
+  
+  const expectedDV = 11 - (sum % 11);
+  const finalDV = expectedDV === 11 ? '0' : expectedDV === 10 ? 'K' : expectedDV.toString();
+  
+  return dv === finalDV;
+}
+
+function isValidEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+function formatPhoneNumber(phone) {
+  const cleaned = phone.replace(/\D/g, '');
+  if (cleaned.length === 8) {
+    return cleaned.replace(/(\d{4})(\d{4})/, '$1 $2');
+  } else if (cleaned.length === 9 && cleaned.startsWith('9')) {
+    return '+56 ' + cleaned.replace(/(\d)(\d{4})(\d{4})/, '$1 $2 $3');
+  } else if (cleaned.length === 11 && cleaned.startsWith('56')) {
+    return '+' + cleaned.replace(/(\d{2})(\d)(\d{4})(\d{4})/, '$1 $2 $3 $4');
+  }
+  return phone;
+}
+
+function getProfessionName(profession) {
+  const names = {
+    'asistente_social': 'Asistente Social',
+    'medico': 'Médico',
+    'psicologo': 'Psicólogo',
+    'terapeuta': 'Terapeuta Ocupacional',
+    'coordinador': 'Coordinador Regional',
+    'admin': 'Administrador'
+  };
+  return names[profession] || profession;
+}
+
+function formatDate(timestamp) {
+  if (!timestamp) return 'N/A';
+  
+  let date;
+  if (timestamp.toDate) {
+    date = timestamp.toDate();
+  } else if (timestamp instanceof Date) {
+    date = timestamp;
+  } else {
+    date = new Date(timestamp);
+  }
+  
+  return date.toLocaleDateString('es-CL', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function calculatePriority(evaluationData) {
+  let score = 0;
+  
+  if (evaluationData.sustancias?.includes('pasta_base')) score += 3;
+  if (evaluationData.sustancias?.includes('cocaina')) score += 2;
+  if (evaluationData.edad < 18) score += 2;
+  if (evaluationData.tiempoConsumo > 60) score += 2;
+  if (evaluationData.urgencia === 'critica') score += 4;
+  if (evaluationData.urgencia === 'alta') score += 2;
+  if (evaluationData.motivacion >= 8) score += 1;
+  if (evaluationData.tratamientoPrevio === 'si_senda') score += 1;
+  
+  const descripcion = evaluationData.razon?.toLowerCase() || '';
+  if (descripcion.includes('suicid') || descripcion.includes('muerte') || descripcion.includes('morir')) {
+    score += 4;
+  }
+  
+  if (score >= 6) return 'critica';
+  if (score >= 4) return 'alta';
+  if (score >= 2) return 'media';
+  return 'baja';
+}
+
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+// Initialize Application
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('SENDA Platform loading...');
+  initializeApp();
+});
+
+function initializeApp() {
+  try {
+    initializeEventListeners();
+    setupFormValidation();
+    setupMultiStepForm();
+    setupModalControls();
+    setupTabFunctionality();
+    loadDraftIfExists();
+    loadRegionsData();
+    setupEmailValidation();
+    
+    console.log('SENDA Platform initialized successfully');
+    showNotification('Sistema SENDA cargado correctamente', 'success', 2000);
+  } catch (error) {
+    console.error('Error initializing app:', error);
+    showNotification('Error al cargar el sistema', 'error');
+  }
+}
+
+function setupEmailValidation() {
+  const emailInput = document.getElementById('register-email');
+  if (emailInput) {
+    emailInput.addEventListener('blur', function(e) {
+      const email = e.target.value.trim();
+      if (email && !email.endsWith('@senda.cl')) {
+        e.target.classList.add('error');
+        showNotification('El correo debe ser institucional (@senda.cl)', 'warning');
+      } else if (email && isValidEmail(email)) {
+        e.target.classList.remove('error');
+      }
+    });
+    
+    emailInput.placeholder = 'nombre@senda.cl';
+  }
+  
+  const loginEmailInput = document.getElementById('login-email');
+  if (loginEmailInput) {
+    loginEmailInput.placeholder = 'nombre@senda.cl';
+  }
+}
+
+function loadRegionsData() {
+  const regionSelect = document.getElementById('patient-region');
+  if (regionSelect) {
+    regionSelect.innerHTML = '<option value="">Seleccionar región...</option>';
+    Object.keys(regionesChile).forEach(key => {
+      const option = document.createElement('option');
+      option.value = key;
+      option.textContent = regionesChile[key].nombre;
+      regionSelect.appendChild(option);
+    });
+  }
+}
+
+function loadCommunesData(regionKey) {
+  const comunaSelect = document.getElementById('patient-comuna');
+  if (comunaSelect && regionKey && regionesChile[regionKey]) {
+    comunaSelect.innerHTML = '<option value="">Seleccionar comuna...</option>';
+    regionesChile[regionKey].comunas.forEach(comuna => {
+      const option = document.createElement('option');
+      option.value = comuna.toLowerCase().replace(/\s+/g, '_');
+      option.textContent = comuna;
+      comunaSelect.appendChild(option);
+    });
+    comunaSelect.disabled = false;
+  }
+}
+
+function initializeEventListeners() {
+  // Main action buttons
+  const registerBtn = document.getElementById('register-patient');
+  const loginBtn = document.getElementById('login-professional');
+  const aboutBtn = document.getElementById('about-program');
+  const findCenterBtn = document.getElementById('find-center');
+  const reentryBtn = document.getElementById('reentry-program');
+
+  if (registerBtn) {
+    registerBtn.addEventListener('click', () => {
+      formData = {};
+      currentFormStep = 1;
+      currentStepIndex = 0;
+      flowSteps = [1];
+      isDraftSaved = false;
+      showModal('patient-modal');
+      updateFormProgress();
+    });
+  }
+
+  if (loginBtn) {
+    loginBtn.addEventListener('click', () => showModal('professional-modal'));
+  }
+
+  if (aboutBtn) {
+    aboutBtn.addEventListener('click', () => {
+      showNotification('Redirigiendo a información sobre el programa SENDA...', 'info');
+      setTimeout(() => window.open('https://www.senda.gob.cl/quienes-somos/', '_blank'), 1000);
+    });
+  }
+
+  if (findCenterBtn) {
+    findCenterBtn.addEventListener('click', () => {
+      showModal('center-modal');
+      loadNearbyClínicas();
+    });
+  }
+
+  if (reentryBtn) {
+    reentryBtn.addEventListener('click', () => {
+      formData = { isReentry: true };
+      currentFormStep = 1;
+      currentStepIndex = 0;
+      flowSteps = [1];
+      isDraftSaved = false;
+      showModal('patient-modal');
+      updateFormProgress();
+      showNotification('Formulario de reingreso activado', 'info');
+    });
+  }
+
+  // Form submissions
+  const patientForm = document.getElementById('patient-form');
+  const loginForm = document.getElementById('login-form');
+  const registerForm = document.getElementById('register-form');
+
+  if (patientForm) {
+    patientForm.addEventListener('submit', handlePatientRegistration);
+  }
+
+  if (loginForm) {
+    loginForm.addEventListener('submit', handleProfessionalLogin);
+  }
+
+  if (registerForm) {
+    registerForm.addEventListener('submit', handleProfessionalRegistration);
+  }
+
+  // Navigation buttons
+  const nextBtn = document.getElementById('next-step');
+  const prevBtn = document.getElementById('prev-step');
+  const submitBtn = document.getElementById('submit-form');
+  const saveDraftBtn = document.getElementById('save-draft');
+
+  if (nextBtn) nextBtn.addEventListener('click', nextFormStep);
+  if (prevBtn) prevBtn.addEventListener('click', prevFormStep);
+  if (submitBtn) submitBtn.addEventListener('click', submitPatientForm);
+  if (saveDraftBtn) saveDraftBtn.addEventListener('click', saveDraft);
+
+  // Geolocation
+  const useLocationBtn = document.getElementById('use-location');
+  if (useLocationBtn) {
+    useLocationBtn.addEventListener('click', getCurrentLocation);
+  }
+
+  // Region change listener
+  const regionSelect = document.getElementById('patient-region');
+  if (regionSelect) {
+    regionSelect.addEventListener('change', function() {
+      loadCommunesData(this.value);
+    });
+  }
+}
+
+function setupModalControls() {
+  document.querySelectorAll('[data-close]').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      const modalId = e.target.closest('[data-close]').dataset.close;
+      closeModal(modalId);
+    });
+  });
+}
+
+function setupTabFunctionality() {
+  document.querySelectorAll('.tab-button').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const tabGroup = btn.closest('.tabs');
+      const targetTab = btn.dataset.tab;
       
-      <p class="description">
-        Un espacio seguro y confidencial para solicitar ayuda cuando estés listo. 
-        SENDA busca mitigar el impacto social y sanitario de los consumos de alcohol y otras drogas, 
-        mejorando el bienestar y la calidad de vida en las personas y comunidades.
-      </p>
+      if (tabGroup) {
+        tabGroup.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+        tabGroup.parentElement.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        btn.classList.add('active');
+        const tabContent = document.getElementById(targetTab + '-tab');
+        if (tabContent) {
+          tabContent.classList.add('active');
+        }
+      }
+    });
+  });
+}
 
-      <div class="stats-grid">
-        <div class="stat-item">
-          <span class="stat-number">1,250+</span>
-          <span class="stat-label">Pacientes Atendidos</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-number">48</span>
-          <span class="stat-label">Profesionales Activos</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-number">95%</span>
-          <span class="stat-label">Satisfacción</span>
-        </div>
-      </div>
+function setupMultiStepForm() {
+  const motivacionSlider = document.getElementById('motivacion');
+  const motivacionValue = document.getElementById('motivacion-value');
+  
+  if (motivacionSlider && motivacionValue) {
+    motivacionSlider.addEventListener('input', function() {
+      motivacionValue.textContent = this.value;
+    });
+  }
 
-      <div class="btn-group">
-        <button class="btn btn-primary" id="register-patient">
-          <i class="fas fa-user-plus"></i>
-          Solicitar Ayuda
-        </button>
-        <button class="btn btn-secondary" id="reentry-program">
-          <i class="fas fa-redo"></i>
-          Reingresar al Programa
-        </button>
-        <button class="btn btn-outline" id="about-program">
-          <i class="fas fa-info-circle"></i>
-          Sobre el Programa
-        </button>
-      </div>
+  const tipoSolicitudInputs = document.querySelectorAll('input[name="tipoSolicitud"]');
+  tipoSolicitudInputs.forEach(input => {
+    input.addEventListener('change', function() {
+      const tipoSolicitud = this.value;
+      handleTipoSolicitudChange(tipoSolicitud);
+    });
+  });
+}
 
-      <div class="emergency-info">
-        <p class="emergency-title">¿Necesitas ayuda inmediata?</p>
-        <div class="emergency-numbers">
-          <span>🚨 Emergencias: 131</span>
-          <span>📞 SENDA: 1412 (gratuito)</span>
-        </div>
-      </div>
-
-      <div class="features">
-        <span>✓ Confidencial</span>
-        <span>✓ Disponible 24/7</span>
-        <span>✓ Sin juicios</span>
-      </div>
-    </div>
-  </main>
-
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="footer-content">
-      <p>Para más información oficial sobre SENDA:</p>
-      <a href="https://www.senda.gob.cl" target="_blank" class="footer-link">
-        <i class="fas fa-globe"></i>
-        Sitio Oficial SENDA
-      </a>
-      <p style="margin-top: 16px; font-size: 14px; color: var(--gray-400);">
-        Sistema interno para profesionales del Programa SENDA
-      </p>
-    </div>
-  </footer>
-
-  <!-- Patient Registration Modal -->
-  <div class="modal-overlay" id="patient-modal" style="display: none;">
-    <div class="modal large-modal">
-      <button class="modal-close" onclick="closeModal('patient-modal')">
-        <i class="fas fa-times"></i>
-      </button>
-      <h2>Solicitud de Ayuda - Confidencial</h2>
+function handleTipoSolicitudChange(tipoSolicitud) {
+  const phoneContainer = document.getElementById('anonymous-phone-container');
+  const emailContainer = document.getElementById('info-email-container');
+  
+  if (phoneContainer) phoneContainer.style.display = 'none';
+  if (emailContainer) emailContainer.style.display = 'none';
+  
+  switch(tipoSolicitud) {
+    case 'anonimo':
+      flowSteps = [1, 3, 4];
+      if (phoneContainer) phoneContainer.style.display = 'block';
+      break;
       
-      <div class="form-progress">
-        <div class="progress-bar">
-          <div class="progress-fill" id="form-progress"></div>
-        </div>
-        <span class="progress-text" id="progress-text">Paso 1 de 4</span>
-      </div>
-
-      <form id="patient-form" class="multi-step-form">
-        <!-- PASO 1: Tipo de solicitud y datos básicos -->
-        <div class="form-step active" data-step="1">
-          <h3>Tipo de solicitud</h3>
-          
-          <div class="form-group">
-            <label class="form-label">¿Cómo te gustaría proceder? *</label>
-            <div class="radio-group">
-              <label class="radio-option">
-                <input type="radio" name="tipoSolicitud" value="anonimo" required>
-                <span class="radio-custom"></span>
-                Mantenerme anónimo por ahora
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="tipoSolicitud" value="identificado" required>
-                <span class="radio-custom"></span>
-                Proporcionar mis datos para contacto directo
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="tipoSolicitud" value="informacion" required>
-                <span class="radio-custom"></span>
-                Solo necesito información sobre el programa
-              </label>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Tu edad *</label>
-              <input type="number" class="form-input" id="patient-age" min="12" max="120" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Región *</label>
-              <select class="form-select" id="patient-region" required>
-                <option value="">Seleccionar región...</option>
-                <option value="region-metropolitana">Región Metropolitana</option>
-                <option value="valparaiso">Valparaíso</option>
-                <option value="biobio">Biobío</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">¿Para quién solicitas ayuda? *</label>
-            <div class="radio-group">
-              <label class="radio-option">
-                <input type="radio" name="paraMi" value="mi_mismo" required>
-                <span class="radio-custom"></span>
-                Para mí mismo/a
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="paraMi" value="familiar" required>
-                <span class="radio-custom"></span>
-                Para un familiar
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="paraMi" value="amigo" required>
-                <span class="radio-custom"></span>
-                Para un amigo/a
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <!-- Más steps del formulario aquí... -->
-        
-        <div class="form-navigation">
-          <button type="button" class="btn btn-outline" id="prev-step" style="display: none;">
-            <i class="fas fa-arrow-left"></i>
-            Anterior
-          </button>
-          <button type="button" class="btn btn-secondary" id="save-draft">
-            <i class="fas fa-save"></i>
-            Guardar borrador
-          </button>
-          <button type="button" class="btn btn-primary" id="next-step">
-            Siguiente
-            <i class="fas fa-arrow-right"></i>
-          </button>
-          <button type="submit" class="btn btn-success" id="submit-form" style="display: none;">
-            <i class="fas fa-paper-plane"></i>
-            Enviar Solicitud
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Professional Login Modal -->
-  <div class="modal-overlay" id="professional-modal" style="display: none;">
-    <div class="modal">
-      <button class="modal-close" onclick="closeModal('professional-modal')">
-        <i class="fas fa-times"></i>
-      </button>
-      <h2>Acceso Profesional</h2>
+    case 'identificado':
+      flowSteps = [1, 2, 3, 4];
+      break;
       
-      <div class="tabs">
-        <div class="tab-list">
-          <button class="tab-button active" data-tab="login">Iniciar Sesión</button>
-          <button class="tab-button" data-tab="register">Registrarse</button>
-        </div>
-      </div>
+    case 'informacion':
+      flowSteps = [1];
+      if (emailContainer) emailContainer.style.display = 'block';
+      break;
+  }
+  
+  updateFormProgress();
+}
 
-      <!-- Login Tab -->
-      <div class="tab-content active" id="login-tab">
-        <form id="login-form">
-          <div class="form-group">
-            <label class="form-label">Correo Electrónico</label>
-            <input type="email" class="form-input" id="login-email" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Contraseña</label>
-            <input type="password" class="form-input" id="login-password" required>
-          </div>
-          <div class="form-group">
-            <label class="checkbox-option">
-              <input type="checkbox" id="remember-me">
-              <span class="checkbox-custom"></span>
-              Recordar sesión
-            </label>
-          </div>
-          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px;">
-            <i class="fas fa-sign-in-alt"></i>
-            Iniciar Sesión
-          </button>
-        </form>
-      </div>
+function updateFormProgress() {
+  const progressFill = document.getElementById('form-progress');
+  const progressText = document.getElementById('progress-text');
+  
+  const totalSteps = flowSteps.length;
+  const currentStepInFlow = currentStepIndex + 1;
+  const progress = (currentStepInFlow / totalSteps) * 100;
+  
+  if (progressFill) progressFill.style.width = progress + '%';
+  if (progressText) progressText.textContent = `Paso ${currentStepInFlow} de ${totalSteps}`;
+  
+  const prevBtn = document.getElementById('prev-step');
+  const nextBtn = document.getElementById('next-step');
+  const submitBtn = document.getElementById('submit-form');
+  
+  if (prevBtn) prevBtn.style.display = currentStepIndex > 0 ? 'block' : 'none';
+  if (nextBtn) nextBtn.style.display = currentStepIndex < flowSteps.length - 1 ? 'block' : 'none';
+  if (submitBtn) submitBtn.style.display = currentStepIndex === flowSteps.length - 1 ? 'block' : 'none';
+}
 
-      <!-- Register Tab -->
-      <div class="tab-content" id="register-tab" style="display: none;">
-        <form id="register-form">
-          <div class="form-group">
-            <label class="form-label">Nombre Completo</label>
-            <input type="text" class="form-input" id="register-name" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Correo Electrónico</label>
-            <input type="email" class="form-input" id="register-email" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Contraseña</label>
-            <input type="password" class="form-input" id="register-password" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Profesión</label>
-            <select class="form-select" id="register-profession" required>
-              <option value="">Seleccionar profesión...</option>
-              <option value="asistente_social">Asistente Social</option>
-              <option value="medico">Médico</option>
-              <option value="psicologo">Psicólogo</option>
-              <option value="terapeuta">Terapeuta Ocupacional</option>
-              <option value="coordinador">Coordinador Regional</option>
-              <option value="admin">Administrador</option>
-            </select>
-          </div>
-          <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 16px;">
-            <i class="fas fa-user-plus"></i>
-            Registrarse
-          </button>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Center Finder Modal -->
-  <div class="modal-overlay" id="center-modal" style="display: none;">
-    <div class="modal">
-      <button class="modal-close" onclick="closeModal('center-modal')">
-        <i class="fas fa-times"></i>
-      </button>
-      <h2>Encontrar Centro de Salud</h2>
+function nextFormStep() {
+  if (validateCurrentStep()) {
+    collectCurrentStepData();
+    
+    if (currentStepIndex < flowSteps.length - 1) {
+      const currentStepNumber = flowSteps[currentStepIndex];
+      document.querySelector(`[data-step="${currentStepNumber}"]`).classList.remove('active');
       
-      <div class="location-input">
-        <div class="form-group">
-          <label class="form-label">Tu ubicación</label>
-          <input type="text" class="form-input" id="location-input" placeholder="Ingresa tu dirección o permite geolocalización">
-          <button class="btn btn-outline" id="use-location" style="margin-top: 8px;">
-            <i class="fas fa-location-arrow"></i>
-            Usar mi ubicación
-          </button>
-        </div>
-      </div>
-
-      <div id="centers-list">
-        <p>Centros disponibles aparecerán aquí...</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- About Modal -->
-  <div class="modal-overlay" id="about-modal" style="display: none;">
-    <div class="modal">
-      <button class="modal-close" onclick="closeModal('about-modal')">
-        <i class="fas fa-times"></i>
-      </button>
-      <h2>Sobre el Programa SENDA</h2>
+      currentStepIndex++;
+      const nextStepNumber = flowSteps[currentStepIndex];
+      currentFormStep = nextStepNumber;
       
-      <div class="about-content">
-        <p>El Servicio Nacional para la Prevención y Rehabilitación del Consumo de Drogas y Alcohol (SENDA) es el organismo del Gobierno de Chile encargado de elaborar las políticas de prevención del consumo de drogas y alcohol, de tratamiento, rehabilitación e integración social de las personas afectadas por estas sustancias.</p>
-        
-        <h3>Nuestros Objetivos</h3>
-        <ul>
-          <li>Reducir el consumo de drogas y alcohol en la población</li>
-          <li>Mejorar el acceso a tratamiento especializado</li>
-          <li>Facilitar la reinserción social</li>
-          <li>Fortalecer la prevención en comunidades</li>
-        </ul>
-        
-        <h3>Contacto</h3>
-        <p><strong>Fono SENDA:</strong> 1412 (gratuito)</p>
-        <p><strong>Web:</strong> www.senda.gob.cl</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Reentry Modal -->
-  <div class="modal-overlay" id="reentry-modal" style="display: none;">
-    <div class="modal">
-      <button class="modal-close" onclick="closeModal('reentry-modal')">
-        <i class="fas fa-times"></i>
-      </button>
-      <h2>Reingresar al Programa</h2>
+      document.querySelector(`[data-step="${nextStepNumber}"]`).classList.add('active');
+      updateFormProgress();
       
-      <div class="reentry-content">
-        <p>Si ya has participado en el programa SENDA anteriormente y necesitas volver a recibir apoyo, puedes solicitar tu reingreso.</p>
-        
-        <div class="form-group">
-          <label class="form-label">Número de ficha anterior (si lo recuerdas)</label>
-          <input type="text" class="form-input" placeholder="Ej: 2023001234">
-        </div>
-        
-        <div class="form-group">
-          <label class="form-label">Teléfono de contacto</label>
-          <input type="tel" class="form-input" placeholder="+56 9 1234 5678">
-        </div>
-        
-        <div class="form-group">
-          <label class="form-label">Motivo del reingreso</label>
-          <textarea class="form-textarea" placeholder="Describe brevemente por qué necesitas volver al programa..."></textarea>
-        </div>
-        
-        <button class="btn btn-primary" style="width: 100%;">
-          <i class="fas fa-paper-plane"></i>
-          Solicitar Reingreso
-        </button>
-      </div>
-    </div>
-  </div>
+      saveDraft(false);
+    }
+  }
+}
 
-  <!-- Professional Panel Modal -->
-  <div class="modal-overlay" id="panel-modal" style="display: none;">
-    <div class="modal professional-panel">
-      <!-- Sidebar -->
-      <div class="sidebar">
-        <div class="sidebar-header">
-          <div class="user-info">
-            <div class="user-avatar" id="user-avatar">DR</div>
+function prevFormStep() {
+  if (currentStepIndex > 0) {
+    const currentStepNumber = flowSteps[currentStepIndex];
+    document.querySelector(`[data-step="${currentStepNumber}"]`).classList.remove('active');
+    
+    currentStepIndex--;
+    const prevStepNumber = flowSteps[currentStepIndex];
+    currentFormStep = prevStepNumber;
+    
+    document.querySelector(`[data-step="${prevStepNumber}"]`).classList.add('active');
+    updateFormProgress();
+  }
+}
+
+function setupFormValidation() {
+  const rutInput = document.getElementById('patient-rut');
+  if (rutInput) {
+    rutInput.addEventListener('input', function(e) {
+      e.target.value = formatRUT(e.target.value);
+    });
+
+    rutInput.addEventListener('blur', function(e) {
+      const rut = e.target.value.trim();
+      if (rut && !validateRUT(rut)) {
+        e.target.classList.add('error');
+        showNotification('El RUT ingresado no es válido', 'error');
+      } else {
+        e.target.classList.remove('error');
+      }
+    });
+  }
+
+  const phoneInputs = document.querySelectorAll('#patient-phone, #anonymous-phone');
+  phoneInputs.forEach(input => {
+    input.addEventListener('input', function(e) {
+      e.target.value = formatPhoneNumber(e.target.value);
+    });
+  });
+
+  const emailInputs = document.querySelectorAll('input[type="email"]');
+  emailInputs.forEach(input => {
+    input.addEventListener('blur', function(e) {
+      const email = e.target.value.trim();
+      if (email && !isValidEmail(email)) {
+        e.target.classList.add('error');
+        showNotification('Por favor ingresa un correo electrónico válido', 'error');
+      } else {
+        e.target.classList.remove('error');
+      }
+    });
+  });
+
+  const ageInput = document.getElementById('patient-age');
+  if (ageInput) {
+    ageInput.addEventListener('blur', function(e) {
+      const age = parseInt(e.target.value);
+      if (age && (age < 12 || age > 120)) {
+        e.target.classList.add('error');
+        showNotification('Por favor ingresa una edad válida (12-120 años)', 'error');
+      } else {
+        e.target.classList.remove('error');
+      }
+    });
+  }
+}
+function validateCurrentStep() {
+  const currentStepElement = document.querySelector(`[data-step="${currentFormStep}"]`);
+  const requiredFields = currentStepElement.querySelectorAll('[required]:not([style*="display: none"] [required])');
+  let isValid = true;
+  
+  requiredFields.forEach(field => {
+    if (field.offsetParent === null) return;
+    
+    if (!field.value.trim()) {
+      field.classList.add('error');
+      isValid = false;
+    } else {
+      field.classList.remove('error');
+    }
+  });
+  
+  if (currentFormStep === 1) {
+    isValid = validateStep1() && isValid;
+  } else if (currentFormStep === 2) {
+    isValid = validateStep2() && isValid;
+  } else if (currentFormStep === 3) {
+    isValid = validateStep3() && isValid;
+  }
+  
+  if (!isValid) {
+    showNotification('Por favor corrige los errores antes de continuar', 'error');
+  }
+  
+  return isValid;
+}
+
+function validateStep1() {
+  const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked');
+  const paraMi = document.querySelector('input[name="paraMi"]:checked');
+  
+  if (!tipoSolicitud || !paraMi) {
+    showNotification('Por favor completa todos los campos obligatorios', 'error');
+    return false;
+  }
+  
+  if (tipoSolicitud.value === 'anonimo') {
+    const phone = document.getElementById('anonymous-phone')?.value;
+    if (!phone) {
+      showNotification('Por favor ingresa un teléfono de contacto', 'error');
+      return false;
+    }
+  }
+  
+  if (tipoSolicitud.value === 'informacion') {
+    const email = document.getElementById('info-email')?.value;
+    if (!email || !isValidEmail(email)) {
+      showNotification('Por favor ingresa un email válido', 'error');
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+function validateStep2() {
+  if (formData.tipoSolicitud !== 'identificado') return true;
+  
+  const rut = document.getElementById('patient-rut')?.value;
+  const email = document.getElementById('patient-email')?.value;
+  
+  if (rut && !validateRUT(rut)) {
+    showNotification('El RUT ingresado no es válido', 'error');
+    return false;
+  }
+  
+  if (email && !isValidEmail(email)) {
+    showNotification('El email ingresado no es válido', 'error');
+    return false;
+  }
+  
+  return true;
+}
+
+function validateStep3() {
+  if (formData.tipoSolicitud !== 'informacion') {
+    const sustancias = document.querySelectorAll('input[name="sustancias"]:checked');
+    if (sustancias.length === 0) {
+      showNotification('Por favor selecciona al menos una sustancia', 'error');
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+function collectCurrentStepData() {
+  if (currentFormStep === 1) {
+    formData.tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+    formData.edad = document.getElementById('patient-age').value;
+    formData.region = document.getElementById('patient-region').value;
+    formData.paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
+    
+    if (formData.tipoSolicitud === 'anonimo') {
+      formData.telefonoContacto = document.getElementById('anonymous-phone')?.value;
+    }
+    
+    if (formData.tipoSolicitud === 'informacion') {
+      formData.emailInformacion = document.getElementById('info-email')?.value;
+    }
+  }
+  
+  if (currentFormStep === 2 && formData.tipoSolicitud === 'identificado') {
+    formData.nombre = document.getElementById('patient-name').value;
+    formData.apellido = document.getElementById('patient-lastname').value;
+    formData.rut = document.getElementById('patient-rut').value;
+    formData.telefono = document.getElementById('patient-phone').value;
+    formData.email = document.getElementById('patient-email').value;
+    formData.comuna = document.getElementById('patient-comuna').value;
+    formData.direccion = document.getElementById('patient-address').value;
+  }
+  
+  if (currentFormStep === 3) {
+    if (formData.tipoSolicitud !== 'informacion') {
+      const sustancias = Array.from(document.querySelectorAll('input[name="sustancias"]:checked'))
+        .map(cb => cb.value);
+      formData.sustancias = sustancias;
+      formData.tiempoConsumo = document.getElementById('tiempo-consumo').value;
+      formData.motivacion = document.getElementById('motivacion').value;
+      formData.urgencia = document.querySelector('input[name="urgencia"]:checked')?.value;
+    }
+  }
+  
+  if (currentFormStep === 4) {
+    formData.razon = document.getElementById('patient-reason').value;
+    formData.tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked')?.value;
+    formData.centroPreferencia = document.getElementById('centro-preferencia').value;
+  }
+}
+
+function saveDraft(showMessage = true) {
+  collectCurrentStepData();
+  
+  const draftData = {
+    ...formData,
+    currentStep: currentFormStep,
+    currentStepIndex: currentStepIndex,
+    flowSteps: flowSteps,
+    timestamp: new Date().toISOString()
+  };
+  
+  localStorage.setItem('senda_draft', JSON.stringify(draftData));
+  isDraftSaved = true;
+  
+  if (showMessage) {
+    showNotification('Borrador guardado correctamente', 'success', 2000);
+  }
+}
+
+function loadDraftIfExists() {
+  const draft = localStorage.getItem('senda_draft');
+  if (draft) {
+    try {
+      const draftData = JSON.parse(draft);
+      const draftAge = new Date() - new Date(draftData.timestamp);
+      
+      if (draftAge < 24 * 60 * 60 * 1000) {
+        const loadDraft = confirm('Se encontró un borrador guardado. ¿Deseas continuar donde lo dejaste?');
+        if (loadDraft) {
+          formData = draftData;
+          currentFormStep = draftData.currentStep || 1;
+          currentStepIndex = draftData.currentStepIndex || 0;
+          flowSteps = draftData.flowSteps || [1];
+          restoreFormData();
+          isDraftSaved = true;
+        } else {
+          localStorage.removeItem('senda_draft');
+        }
+      } else {
+        localStorage.removeItem('senda_draft');
+      }
+    } catch (error) {
+      console.error('Error loading draft:', error);
+      localStorage.removeItem('senda_draft');
+    }
+  }
+}
+
+function restoreFormData() {
+  Object.keys(formData).forEach(key => {
+    const element = document.getElementById(`patient-${key}`) || 
+                   document.querySelector(`input[name="${key}"]`) ||
+                   document.querySelector(`select[name="${key}"]`);
+    
+    if (element && formData[key]) {
+      if (element.type === 'radio' || element.type === 'checkbox') {
+        if (Array.isArray(formData[key])) {
+          formData[key].forEach(value => {
+            const checkbox = document.querySelector(`input[name="${key}"][value="${value}"]`);
+            if (checkbox) checkbox.checked = true;
+          });
+        } else {
+          const radio = document.querySelector(`input[name="${key}"][value="${formData[key]}"]`);
+          if (radio) radio.checked = true;
+        }
+      } else {
+        element.value = formData[key];
+      }
+    }
+  });
+  
+  if (formData.tipoSolicitud) {
+    handleTipoSolicitudChange(formData.tipoSolicitud);
+  }
+  
+  if (formData.region) {
+    loadCommunesData(formData.region);
+    setTimeout(() => {
+      if (formData.comuna) {
+        document.getElementById('patient-comuna').value = formData.comuna;
+      }
+    }, 100);
+  }
+  
+  document.querySelectorAll('.form-step').forEach(step => step.classList.remove('active'));
+  document.querySelector(`[data-step="${currentFormStep}"]`)?.classList.add('active');
+  
+  updateFormProgress();
+}
+
+function submitPatientForm() {
+  if (validateCurrentStep()) {
+    collectCurrentStepData();
+    handlePatientRegistration();
+  }
+}
+
+async function handlePatientRegistration(e) {
+  if (e) e.preventDefault();
+  
+  showLoading(true);
+  
+  try {
+    const prioridad = calculatePriority(formData);
+    
+    const solicitudData = {
+      clasificacion: {
+        tipo: formData.isReentry ? 'reingreso' : 'ingreso_voluntario',
+        estado: 'pendiente',
+        prioridad: prioridad,
+        categoria_riesgo: prioridad === 'critica' ? 'extremo' : 
+                         prioridad === 'alta' ? 'alto' : 
+                         prioridad === 'media' ? 'moderado' : 'bajo'
+      },
+      
+      datos_personales: {
+        anonimo: formData.tipoSolicitud === 'anonimo',
+        solo_informacion: formData.tipoSolicitud === 'informacion',
+        edad: parseInt(formData.edad),
+        genero: 'no_especificado',
+        region: formData.region,
+        id_comuna_residencia: formData.comuna || 'no_especificada',
+        situacion_laboral: 'no_especificada',
+        para_quien: formData.paraMi
+      },
+      
+      datos_contacto: {},
+      
+      evaluacion_inicial: formData.tipoSolicitud !== 'informacion' ? {
+        sustancias_consumo: formData.sustancias || [],
+        tiempo_consumo_meses: parseInt(formData.tiempoConsumo) || 0,
+        motivacion_cambio: parseInt(formData.motivacion) || 5,
+        urgencia_declarada: formData.urgencia || 'no_especificada',
+        tratamiento_previo: formData.tratamientoPrevio || 'no',
+        descripcion_situacion: formData.razon || ''
+      } : null,
+      
+      derivacion: {
+        id_centro_preferido: formData.centroPreferencia || null,
+        fecha_solicitud: firebase.firestore.FieldValue.serverTimestamp()
+      },
+      
+      metadata: {
+        fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
+        ip_origen: 'anonimizada',
+        dispositivo_usado: navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop',
+        canal_ingreso: 'web_publica'
+      }
+    };
+    
+    if (formData.tipoSolicitud === 'identificado') {
+      solicitudData.datos_contacto = {
+        telefono_principal: formData.telefono,
+        email: formData.email,
+        direccion: formData.direccion,
+        nombre_completo: `${formData.nombre} ${formData.apellido}`,
+        rut: formData.rut
+      };
+    } else if (formData.tipoSolicitud === 'anonimo') {
+      solicitudData.datos_contacto = {
+        telefono_principal: formData.telefonoContacto,
+        es_anonimo: true
+      };
+    } else if (formData.tipoSolicitud === 'informacion') {
+      solicitudData.datos_contacto = {
+        email: formData.emailInformacion,
+        solo_informacion: true
+      };
+    }
+
+    const docRef = await db.collection('solicitudes_ingreso').add(solicitudData);
+    
+    if (prioridad === 'critica') {
+      await createCriticalCaseAlert(docRef.id, solicitudData);
+    }
+    
+    localStorage.removeItem('senda_draft');
+    isDraftSaved = false;
+    
+    showSuccessMessage(docRef.id, formData.tipoSolicitud);
+    
+    closeModal('patient-modal');
+    resetForm();
+    
+  } catch (error) {
+    console.error('Error submitting patient registration:', error);
+    showNotification('Error al enviar la solicitud. Por favor intenta nuevamente.', 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+function showSuccessMessage(solicitudId, tipoSolicitud) {
+  const trackingCode = solicitudId.substring(0, 8).toUpperCase();
+  
+  if (tipoSolicitud === 'anonimo') {
+    showNotification(
+      `Solicitud enviada exitosamente. Tu código de seguimiento es: ${trackingCode}. Te contactaremos al teléfono proporcionado.`,
+      'success',
+      8000
+    );
+  } else if (tipoSolicitud === 'informacion') {
+    showNotification(
+      `Solicitud enviada exitosamente. Te enviaremos información del programa al email proporcionado.`,
+      'success',
+      6000
+    );
+  } else {
+    showNotification(
+      'Solicitud enviada exitosamente. Te contactaremos pronto al teléfono o email proporcionado.',
+      'success',
+      6000
+    );
+  }
+}
+
+async function createCriticalCaseAlert(solicitudId, solicitudData) {
+  try {
+    await db.collection('alertas_criticas').add({
+      id_solicitud: solicitudId,
+      tipo_alerta: 'caso_critico_nuevo',
+      prioridad: 'maxima',
+      mensaje: `Nuevo caso crítico: ${solicitudData.datos_personales.edad} años, urgencia ${solicitudData.evaluacion_inicial?.urgencia_declarada}`,
+      fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
+      estado: 'pendiente',
+      notificado: false
+    });
+  } catch (error) {
+    console.error('Error creating critical alert:', error);
+  }
+}
+
+function resetForm() {
+  formData = {};
+  currentFormStep = 1;
+  currentStepIndex = 0;
+  flowSteps = [1];
+  isDraftSaved = false;
+  
+  const form = document.getElementById('patient-form');
+  if (form) {
+    form.reset();
+    
+    document.querySelectorAll('.form-step').forEach((step, index) => {
+      step.classList.toggle('active', index === 0);
+    });
+    
+    const phoneContainer = document.getElementById('anonymous-phone-container');
+    const emailContainer = document.getElementById('info-email-container');
+    if (phoneContainer) phoneContainer.style.display = 'none';
+    if (emailContainer) emailContainer.style.display = 'none';
+    
+    const comunaSelect = document.getElementById('patient-comuna');
+    if (comunaSelect) {
+      comunaSelect.innerHTML = '<option value="">Seleccionar comuna...</option>';
+      comunaSelect.disabled = true;
+    }
+    
+    updateFormProgress();
+  }
+}
+
+async function handleProfessionalLogin(e) {
+  e.preventDefault();
+  showLoading(true);
+  
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+
+  if (!email || !password) {
+    showNotification('Por favor ingresa tu correo y contraseña', 'error');
+    showLoading(false);
+    return;
+  }
+
+  if (!email.endsWith('@senda.cl')) {
+    showNotification('Solo se permite acceso con correos institucionales (@senda.cl)', 'error');
+    showLoading(false);
+    return;
+  }
+
+  try {
+    const userCredential = await auth.signInWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+    
+    const doc = await db.collection('profesionales').doc(user.uid).get();
+    
+    if (!doc.exists) {
+      await auth.signOut();
+      showNotification('Usuario no registrado como profesional del sistema', 'error');
+      showLoading(false);
+      return;
+    }
+    
+    const userData = doc.data();
+    
+    if (!userData.configuracion_sistema?.activo) {
+      await auth.signOut();
+      showNotification('Tu cuenta está desactivada. Contacta al administrador.', 'error');
+      showLoading(false);
+      return;
+    }
+    
+    currentUserData = { uid: user.uid, ...userData };
+    
+    await db.collection('profesionales').doc(user.uid).update({
+      'metadata.ultima_actividad': firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    showNotification(`Bienvenido, ${userData.nombre}`, 'success');
+    closeModal('professional-modal');
+    showProfessionalPanel(userData);
+    
+  } catch (error) {
+    console.error('Login error:', error);
+    let errorMessage = 'Error al iniciar sesión';
+    
+    switch (error.code) {
+      case 'auth/user-not-found':
+        errorMessage = 'No existe un usuario con este correo electrónico';
+        break;
+      case 'auth/wrong-password':
+        errorMessage = 'Contraseña incorrecta';
+        break;
+      case 'auth/invalid-email':
+        errorMessage = 'Correo electrónico inválido';
+        break;
+      case 'auth/too-many-requests':
+        errorMessage = 'Demasiados intentos fallidos. Intenta más tarde';
+        break;
+      case 'auth/user-disabled':
+        errorMessage = 'Esta cuenta ha sido deshabilitada';
+        break;
+      default:
+        errorMessage = `Error: ${error.message}`;
+    }
+    
+    showNotification(errorMessage, 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+// FUNCIÓN CORREGIDA DE REGISTRO DE PROFESIONALES
+async function handleProfessionalRegistration(e) {
+  e.preventDefault();
+  showLoading(true);
+  
+  // Verificar que todos los elementos existan antes de acceder a sus valores
+  const nameElement = document.getElementById('register-name');
+  const emailElement = document.getElementById('register-email');
+  const passwordElement = document.getElementById('register-password');
+  const professionElement = document.getElementById('register-profession');
+  const licenseElement = document.getElementById('register-license');
+  const centerElement = document.getElementById('register-center');
+
+  // Verificar que todos los elementos existan
+  if (!nameElement || !emailElement || !passwordElement || !professionElement) {
+    console.error('Elementos del formulario no encontrados');
+    showNotification('Error: Formulario no cargado correctamente', 'error');
+    showLoading(false);
+    return;
+  }
+
+  const registrationData = {
+    name: nameElement.value.trim(),
+    email: emailElement.value.trim(),
+    password: passwordElement.value,
+    profession: professionElement.value,
+    license: licenseElement ? licenseElement.value.trim() : '', // Verificación segura
+    center: centerElement ? centerElement.value : '' // Verificación segura
+  };
+
+  // Validaciones mejoradas
+  if (!registrationData.name || !registrationData.email || !registrationData.password || !registrationData.profession) {
+    showNotification('Por favor completa todos los campos obligatorios', 'error');
+    showLoading(false);
+    return;
+  }
+
+  // Validar email institucional @senda.cl
+  if (!registrationData.email.endsWith('@senda.cl')) {
+    showNotification('El correo debe ser institucional (@senda.cl)', 'error');
+    showLoading(false);
+    return;
+  }
+
+  if (!isValidEmail(registrationData.email)) {
+    showNotification('Por favor ingresa un correo electrónico válido', 'error');
+    showLoading(false);
+    return;
+  }
+
+  if (registrationData.password.length < 6) {
+    showNotification('La contraseña debe tener al menos 6 caracteres', 'error');
+    showLoading(false);
+    return;
+  }
+
+  try {
+    // Crear usuario en Firebase Auth
+    const userCredential = await auth.createUserWithEmailAndPassword(registrationData.email, registrationData.password);
+    const user = userCredential.user;
+    
+    // Preparar datos del profesional para Firestore
+    const professionalData = {
+      nombre: registrationData.name,
+      correo: registrationData.email,
+      profesion: registrationData.profession,
+      licencia: registrationData.license || 'No especificada', // Valor por defecto
+      id_centro_asignado: registrationData.center || null,
+      configuracion_sistema: {
+        rol: registrationData.profession,
+        permisos: getDefaultPermissions(registrationData.profession),
+        activo: true,
+        fecha_activacion: firebase.firestore.FieldValue.serverTimestamp()
+      },
+      metadata: {
+        fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
+        ultima_actividad: firebase.firestore.FieldValue.serverTimestamp(),
+        estado: 'activo'
+      }
+    };
+
+    // Guardar en Firestore
+    await db.collection('profesionales').doc(user.uid).set(professionalData);
+
+    // Actualizar perfil de Firebase Auth con el nombre
+    await user.updateProfile({
+      displayName: registrationData.name
+    });
+
+    showNotification('Registro exitoso. Ahora puedes iniciar sesión.', 'success');
+    
+    // Cambiar a la pestaña de login y prellenar el email
+    const loginTab = document.querySelector('[data-tab="login"]');
+    if (loginTab) loginTab.click();
+    
+    const registerForm = document.getElementById('register-form');
+    if (registerForm) registerForm.reset();
+    
+    const loginEmailInput = document.getElementById('login-email');
+    if (loginEmailInput) loginEmailInput.value = registrationData.email;
+    
+  } catch (error) {
+    console.error('Registration error:', error);
+    let errorMessage = 'Error al registrar';
+    
+    switch (error.code) {
+      case 'auth/email-already-in-use':
+        errorMessage = 'El correo ya está registrado en el sistema';
+        break;
+      case 'auth/weak-password':
+        errorMessage = 'La contraseña es muy débil (mínimo 6 caracteres)';
+        break;
+      case 'auth/invalid-email':
+        errorMessage = 'Correo electrónico inválido';
+        break;
+      case 'auth/operation-not-allowed':
+        errorMessage = 'El registro de usuarios no está habilitado';
+        break;
+      default:
+        errorMessage = `Error al registrar: ${error.message}`;
+    }
+    
+    showNotification(errorMessage, 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+function getDefaultPermissions(profession) {
+  const permissions = {
+    'asistente_social': [
+      'ver_casos', 
+      'asignar_casos', 
+      'derivar_casos', 
+      'seguimiento', 
+      'crear_reportes_sociales'
+    ],
+    'medico': [
+      'ver_casos', 
+      'atencion_medica', 
+      'seguimiento', 
+      'prescripcion', 
+      'evaluacion_medica'
+    ],
+    'psicologo': [
+      'ver_casos', 
+      'atencion_psicologica', 
+      'seguimiento', 
+      'evaluacion_psicologica',
+      'crear_planes_tratamiento'
+    ],
+    'terapeuta': [
+      'ver_casos', 
+      'terapia_ocupacional', 
+      'seguimiento', 
+      'evaluacion_funcional'
+    ],
+    'coordinador': [
+      'ver_casos', 
+      'asignar_casos', 
+      'reportes', 
+      'supervision', 
+      'gestion_centro',
+      'estadisticas'
+    ],
+    'admin': [
+      'ver_casos', 
+      'asignar_casos', 
+      'reportes', 
+      'usuarios', 
+      'configuracion',
+      'sistema_completo'
+    ]
+  };
+  
+  return permissions[profession] || ['ver_casos'];
+}
+
+function showProfessionalPanel(userData) {
+  showModal('panel-modal');
+  
+  document.getElementById('user-name').textContent = userData.nombre;
+  document.getElementById('user-role').textContent = getProfessionName(userData.profesion);
+  document.getElementById('user-avatar').textContent = userData.nombre.substring(0, 2).toUpperCase();
+
+  setupRoleBasedNavigation(userData);
+  setupPanelNavigation(userData);
+  showPanel('dashboard', userData);
+  
+  document.getElementById('logout-btn').addEventListener('click', handleLogout);
+  startRealTimeListeners(userData);
+}
+
+function setupRoleBasedNavigation(userData) {
+  const role = userData.profesion;
+  
+  const centersNav = document.getElementById('centers-nav');
+  const usersNav = document.getElementById('users-nav');
+  const analyticsNav = document.getElementById('analytics-nav');
+  
+  if (role === 'coordinador' || role === 'admin') {
+    if (centersNav) centersNav.style.display = 'flex';
+    if (analyticsNav) analyticsNav.style.display = 'flex';
+  }
+  
+  if (role === 'admin') {
+    if (usersNav) usersNav.style.display = 'flex';
+  }
+}
+
+function setupPanelNavigation(userData) {
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', function() {
+      const panel = item.dataset.panel;
+      if (panel) {
+        showPanel(panel, userData);
+        
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+      }
+    });
+  });
+}
+
+function showPanel(panelId, userData) {
+  document.querySelectorAll('.panel-content').forEach(panel => {
+    panel.classList.add('hidden');
+    panel.classList.remove('active');
+  });
+
+  const targetPanel = document.getElementById(panelId + '-panel');
+  if (targetPanel) {
+    targetPanel.classList.remove('hidden');
+    targetPanel.classList.add('active');
+
+    switch (panelId) {
+      case 'dashboard':
+        loadDashboard(userData);
+        break;
+      case 'requests':
+        loadRequests(userData);
+        break;
+    }
+  }
+}
+
+async function loadDashboard(userData) {
+  console.log('Loading dashboard for:', userData.nombre);
+  
+  try {
+    // Cargar estadísticas del dashboard
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    // Contar solicitudes pendientes
+    const pendingRequests = await db.collection('solicitudes_ingreso')
+      .where('clasificacion.estado', '==', 'pendiente')
+      .get();
+    
+    // Contar casos críticos
+    const criticalCases = await db.collection('solicitudes_ingreso')
+      .where('clasificacion.prioridad', '==', 'critica')
+      .where('clasificacion.estado', '==', 'pendiente')
+      .get();
+    
+    // Actualizar métricas en el dashboard
+    const totalPatientsElement = document.getElementById('total-patients');
+    const pendingRequestsElement = document.getElementById('pending-requests');
+    const criticalCasesElement = document.getElementById('critical-cases');
+    
+    if (totalPatientsElement) totalPatientsElement.textContent = pendingRequests.size;
+    if (pendingRequestsElement) pendingRequestsElement.textContent = pendingRequests.size;
+    if (criticalCasesElement) criticalCasesElement.textContent = criticalCases.size;
+    
+  } catch (error) {
+    console.error('Error loading dashboard:', error);
+  }
+}
+
+async function loadRequests(userData) {
+  console.log('Loading requests for:', userData.nombre);
+  
+  try {
+    const requestsList = document.getElementById('requests-list');
+    if (!requestsList) return;
+    
+    requestsList.innerHTML = '<div class="loading"><div class="spinner"></div> Cargando solicitudes...</div>';
+    
+    // Obtener solicitudes según el rol del usuario
+    let query = db.collection('solicitudes_ingreso')
+      .orderBy('metadata.fecha_creacion', 'desc')
+      .limit(20);
+    
+    const snapshot = await query.get();
+    
+    if (snapshot.empty) {
+      requestsList.innerHTML = '<p>No hay solicitudes disponibles.</p>';
+      return;
+    }
+    
+    let html = '';
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const priority = data.clasificacion?.prioridad || 'baja';
+      const estado = data.clasificacion?.estado || 'pendiente';
+      
+      html += `
+        <div class="card patient-card">
+          <div class="card-header">
             <div>
-              <div id="user-name" style="font-weight: 600;">Dr. Juan Pérez</div>
-              <div id="user-role" style="font-size: 14px; opacity: 0.8;">Médico</div>
+              <h3>Solicitud ${doc.id.substring(0, 8).toUpperCase()}</h3>
+              <p>Edad: ${data.datos_personales?.edad || 'N/A'} años</p>
+            </div>
+            <div>
+              <span class="priority-indicator priority-${priority}">${priority.toUpperCase()}</span>
+              <span class="status-badge status-${estado}">${estado}</span>
             </div>
           </div>
-        </div>
-
-        <nav class="nav-menu">
-          <div class="nav-item active" data-panel="dashboard">
-            <i class="fas fa-chart-line"></i>
-            Dashboard
-          </div>
-          <div class="nav-item" data-panel="requests">
-            <i class="fas fa-inbox"></i>
-            Solicitudes
-            <span class="badge" id="requests-badge">0</span>
-          </div>
-          <div class="nav-item" data-panel="patients">
-            <i class="fas fa-users"></i>
-            Pacientes
-          </div>
-          <div class="nav-item" data-panel="calendar">
-            <i class="fas fa-calendar-alt"></i>
-            Agenda
-          </div>
-          <div class="nav-item" data-panel="followups">
-            <i class="fas fa-clipboard-list"></i>
-            Seguimientos
-          </div>
-          <div class="nav-item" data-panel="reports">
-            <i class="fas fa-file-medical-alt"></i>
-            Reportes
-          </div>
-        </nav>
-
-        <div class="sidebar-footer">
-          <button class="logout-btn" id="logout-btn">
-            <i class="fas fa-sign-out-alt"></i>
-            Cerrar Sesión
-          </button>
-        </div>
-      </div>
-
-      <!-- Main Panel -->
-      <div class="main-panel">
-        <!-- Dashboard Panel -->
-        <div class="panel-content active" id="dashboard-panel">
-          <div class="panel-header">
-            <h1 class="panel-title">Dashboard</h1>
-            <p class="panel-subtitle">Resumen general de actividades</p>
-          </div>
-
-          <div class="metrics-grid">
-            <div class="metric-card">
-              <div class="metric-header">
-                <h3>Pacientes Activos</h3>
-                <i class="fas fa-users metric-icon"></i>
-              </div>
-              <div class="metric-value" id="total-patients">0</div>
-              <div class="metric-change positive">
-                <i class="fas fa-arrow-up"></i> +12% desde el mes pasado
-              </div>
-            </div>
-
-            <div class="metric-card">
-              <div class="metric-header">
-                <h3>Citas Hoy</h3>
-                <i class="fas fa-calendar metric-icon"></i>
-              </div>
-              <div class="metric-value" id="today-appointments">0</div>
-              <div class="metric-detail">
-                Próxima cita: <span id="next-appointment">--:--</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="dashboard-charts">
-            <div class="chart-container">
-              <h3>Casos por Prioridad</h3>
-              <canvas id="priority-chart"></canvas>
-            </div>
+          <div class="patient-info">
+            <div>Región: ${data.datos_personales?.region || 'N/A'}</div>
+            <div>Tipo: ${data.datos_personales?.anonimo ? 'Anónimo' : 'Identificado'}</div>
+            <div>Fecha: ${formatDate(data.metadata?.fecha_creacion)}</div>
           </div>
         </div>
+      `;
+    });
+    
+    requestsList.innerHTML = html;
+    
+  } catch (error) {
+    console.error('Error loading requests:', error);
+    const requestsList = document.getElementById('requests-list');
+    if (requestsList) {
+      requestsList.innerHTML = '<p>Error al cargar las solicitudes.</p>';
+    }
+  }
+}
 
-        <!-- Otros paneles -->
-        <div class="panel-content" id="requests-panel" style="display: none;">
-          <div class="panel-header">
-            <h1 class="panel-title">Gestión de Solicitudes</h1>
-            <p class="panel-subtitle">Revisa y gestiona las solicitudes pendientes</p>
+function startRealTimeListeners(userData) {
+  console.log('Starting real-time listeners for:', userData.nombre);
+  
+  // Listener para nuevas solicitudes críticas
+  const unsubscribeCritical = db.collection('alertas_criticas')
+    .where('estado', '==', 'pendiente')
+    .onSnapshot(snapshot => {
+      snapshot.docChanges().forEach(change => {
+        if (change.type === 'added') {
+          const alertData = change.doc.data();
+          showNotification(
+            `Nueva alerta crítica: ${alertData.mensaje}`,
+            'error',
+            10000
+          );
+        }
+      });
+    });
+  
+  // Listener para nuevas solicitudes
+  const unsubscribeRequests = db.collection('solicitudes_ingreso')
+    .where('clasificacion.estado', '==', 'pendiente')
+    .onSnapshot(snapshot => {
+      const pendingCount = snapshot.size;
+      const badge = document.getElementById('requests-badge');
+      if (badge) {
+        badge.textContent = pendingCount;
+        badge.style.display = pendingCount > 0 ? 'inline' : 'none';
+      }
+    });
+  
+  // Guardar referencias para cleanup
+  window.sendaUnsubscribers = [unsubscribeCritical, unsubscribeRequests];
+}
+
+async function handleLogout() {
+  if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
+    try {
+      // Limpiar listeners en tiempo real
+      if (window.sendaUnsubscribers) {
+        window.sendaUnsubscribers.forEach(unsubscribe => unsubscribe());
+        window.sendaUnsubscribers = [];
+      }
+      
+      await auth.signOut();
+      currentUser = null;
+      currentUserData = null;
+      closeModal('panel-modal');
+      showNotification('Sesión cerrada correctamente', 'success');
+      
+      document.getElementById('login-form')?.reset();
+      document.getElementById('register-form')?.reset();
+      document.querySelector('[data-tab="login"]')?.click();
+      
+    } catch (error) {
+      console.error('Logout error:', error);
+      showNotification('Error al cerrar sesión: ' + error.message, 'error');
+    }
+  }
+}
+
+async function loadNearbyClínicas() {
+  const centersList = document.getElementById('centers-list');
+  if (!centersList) return;
+  
+  centersList.innerHTML = '<div class="loading"><div class="spinner"></div> Buscando centros cercanos...</div>';
+  
+  const mockCenters = [
+    {
+      name: 'CESFAM La Florida',
+      address: 'Av. Walker Martinez 1234, La Florida',
+      distance: '1.2 km',
+      phone: '+56 2 2987 6543',
+      hours: 'Lun-Vie 8:00-17:00'
+    },
+    {
+      name: 'CESFAM Maipú',
+      address: 'Av. Pajaritos 5678, Maipú', 
+      distance: '3.5 km',
+      phone: '+56 2 2765 4321',
+      hours: 'Lun-Vie 8:30-17:30'
+    },
+    {
+      name: 'Centro SENDA Providencia',
+      address: 'Av. Providencia 9876, Providencia',
+      distance: '5.1 km', 
+      phone: '+56 2 2234 5678',
+      hours: 'Lun-Vie 9:00-18:00'
+    }
+  ];
+  
+  setTimeout(() => {
+    let html = '';
+    mockCenters.forEach(center => {
+      html += `
+        <div class="center-card">
+          <div class="center-header">
+            <h4>${center.name}</h4>
+            <span class="distance">${center.distance}</span>
           </div>
-          <div id="requests-list">
-            <!-- Las solicitudes se cargarán aquí dinámicamente -->
+          <div class="center-details">
+            <p><i class="fas fa-map-marker-alt"></i> ${center.address}</p>
+            <p><i class="fas fa-phone"></i> ${center.phone}</p>
+            <p><i class="fas fa-clock"></i> ${center.hours}</p>
+          </div>
+          <div class="center-actions">
+            <button class="btn btn-outline btn-sm">
+              <i class="fas fa-directions"></i> Cómo llegar
+            </button>
+            <button class="btn btn-primary btn-sm">
+              <i class="fas fa-phone"></i> Llamar
+            </button>
           </div>
         </div>
+      `;
+    });
+    
+    centersList.innerHTML = html;
+  }, 1000);
+}
 
-        <div class="panel-content" id="patients-panel" style="display: none;">
-          <div class="panel-header">
-            <h1 class="panel-title">Gestión de Pacientes</h1>
-            <p class="panel-subtitle">Busca y gestiona fichas clínicas</p>
-          </div>
-          <div id="patients-list">
-            <!-- Los pacientes se cargarán aquí dinámicamente -->
-          </div>
-        </div>
+function getCurrentLocation() {
+  if (navigator.geolocation) {
+    showNotification('Obteniendo tu ubicación...', 'info');
+    
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        const { latitude, longitude } = position.coords;
+        document.getElementById('location-input').value = `${latitude}, ${longitude}`;
+        showNotification('Ubicación detectada', 'success');
+        loadNearbyClínicas();
+      },
+      error => {
+        console.error('Geolocation error:', error);
+        showNotification('No se pudo obtener tu ubicación. Por favor ingresa tu dirección manualmente.', 'error');
+      }
+    );
+  } else {
+    showNotification('Tu navegador no soporta geolocalización', 'error');
+  }
+}
 
-        <div class="panel-content" id="calendar-panel" style="display: none;">
-          <div class="panel-header">
-            <h1 class="panel-title">Gestión de Agenda</h1>
-            <p class="panel-subtitle">Programa y gestiona citas con profesionales</p>
-          </div>
-          <div id="calendar-content">
-            <!-- El calendario se cargará aquí dinámicamente -->
-          </div>
-        </div>
+// Authentication State Observer
+auth.onAuthStateChanged(user => {
+  currentUser = user;
+  if (user) {
+    loadUserData(user.uid);
+  }
+});
 
-        <div class="panel-content" id="followups-panel" style="display: none;">
-          <div class="panel-header">
-            <h1 class="panel-title">Seguimientos Clínicos</h1>
-            <p class="panel-subtitle">Gestiona el historial clínico de tus pacientes</p>
-          </div>
-          <div id="followups-content">
-            <!-- Los seguimientos se cargarán aquí dinámicamente -->
-          </div>
-        </div>
+async function loadUserData(uid) {
+  try {
+    const doc = await db.collection('profesionales').doc(uid).get();
+    if (doc.exists) {
+      currentUserData = { uid, ...doc.data() };
+    }
+  } catch (error) {
+    console.error('Error loading user data:', error);
+  }
+}
 
-        <div class="panel-content" id="reports-panel" style="display: none;">
-          <div class="panel-header">
-            <h1 class="panel-title">Generación de Reportes</h1>
-            <p class="panel-subtitle">Genera reportes clínicos y estadísticos del programa</p>
-          </div>
-          <div id="reports-content">
-            <!-- Los reportes se cargarán aquí dinámicamente -->
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+// Export functions for debugging
+window.sendaApp = {
+  showNotification,
+  showModal,
+  closeModal,
+  formatRUT,
+  validateRUT,
+  getProfessionName,
+  formData,
+  currentUserData,
+  regionesChile,
+  // Funciones de prueba
+  testPatientForm: () => {
+    showModal('patient-modal');
+    updateFormProgress();
+  },
+  testProfessionalLogin: () => {
+    showModal('professional-modal');
+  },
+  getCurrentFormData: () => formData,
+  getCurrentUser: () => currentUserData
+};
 
-  <!-- Notification Container -->
-  <div id="notifications"></div>
-
-  <!-- Loading Overlay -->
-  <div id="loading-overlay" class="loading-overlay" style="display: none;">
-    <div class="loading-spinner">
-      <div class="spinner"></div>
-      <p>Cargando...</p>
-    </div>
-  </div>
-
-  <script src="app.js"></script>
-</body>
-</html>
+console.log('SENDA Platform JavaScript loaded successfully');
+console.log('Sistema cargado - Todos los botones deberían funcionar correctamente');
+console.log('Funciones de debug disponibles en window.sendaApp');
