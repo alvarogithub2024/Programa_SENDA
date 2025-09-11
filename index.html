@@ -104,7 +104,7 @@
     </div>
   </footer>
 
-  <!-- Patient Registration Modal - COMPLETAMENTE REESTRUCTURADO EN 4 PASOS -->
+  <!-- Patient Registration Modal -->
   <div class="modal-overlay" id="patient-modal">
     <div class="modal large-modal">
       <button class="modal-close" data-close="patient-modal">
@@ -145,14 +145,12 @@
             </div>
           </div>
 
-          <!-- Campo de teléfono para anónimos (oculto por defecto) -->
           <div class="form-group" id="anonymous-phone-container" style="display: none;">
             <label class="form-label">Teléfono de contacto *</label>
             <input type="tel" class="form-input" id="anonymous-phone" placeholder="+56 9 1234 5678">
             <small style="color: var(--gray-600);">Tu número será utilizado únicamente para contactarte sobre tu solicitud</small>
           </div>
 
-          <!-- Campo de email para solo información (oculto por defecto) -->
           <div class="form-group" id="info-email-container" style="display: none;">
             <label class="form-label">Email para recibir información *</label>
             <input type="email" class="form-input" id="info-email" placeholder="tu@email.com">
@@ -194,7 +192,7 @@
           </div>
         </div>
 
-        <!-- PASO 2: Datos de contacto (SOLO para identificados) -->
+        <!-- PASO 2: Datos de contacto -->
         <div class="form-step" data-step="2">
           <h3>Datos de contacto</h3>
           <p class="step-description">Esta información nos permitirá contactarte directamente</p>
@@ -569,19 +567,39 @@
           </div>
         </div>
 
-        <!-- Otros paneles se mantienen igual... -->
+        <!-- Patients Panel -->
         <div class="panel-content hidden" id="patients-panel">
-          <div class="panel-header">
-            <h1 class="panel-title">Gestión de Pacientes</h1>
-            <p class="panel-subtitle">Busca y gestiona información de pacientes</p>
-          </div>
+          <!-- El contenido se generará dinámicamente -->
         </div>
 
+        <!-- Calendar Panel -->
         <div class="panel-content hidden" id="calendar-panel">
-          <div class="panel-header">
-            <h1 class="panel-title">Agenda</h1>
-            <p class="panel-subtitle">Gestiona tus citas y horarios</p>
-          </div>
+          <!-- El contenido se generará dinámicamente -->
+        </div>
+
+        <!-- Followups Panel -->
+        <div class="panel-content hidden" id="followups-panel">
+          <!-- El contenido se generará dinámicamente -->
+        </div>
+
+        <!-- Reports Panel -->
+        <div class="panel-content hidden" id="reports-panel">
+          <!-- El contenido se generará dinámicamente -->
+        </div>
+
+        <!-- Centers Panel -->
+        <div class="panel-content hidden" id="centers-panel">
+          <!-- El contenido se generará dinámicamente -->
+        </div>
+
+        <!-- Users Panel -->
+        <div class="panel-content hidden" id="users-panel">
+          <!-- El contenido se generará dinámicamente -->
+        </div>
+
+        <!-- Analytics Panel -->
+        <div class="panel-content hidden" id="analytics-panel">
+          <!-- El contenido se generará dinámicamente -->
         </div>
       </div>
     </div>
@@ -680,8 +698,12 @@
             </select>
           </div>
           <div class="form-group">
+            <label class="form-label">Número de Licencia</label>
+            <input type="text" class="form-input" id="register-license" placeholder="Número de licencia profesional">
+          </div>
+          <div class="form-group">
             <label class="form-label">Centro de Salud</label>
-            <select class="form-select" id="register-center" required>
+            <select class="form-select" id="register-center">
               <option value="">Seleccionar centro...</option>
               <option value="cesfam_la_florida">CESFAM La Florida</option>
               <option value="cesfam_maipu">CESFAM Maipú</option>
