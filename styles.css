@@ -1545,3 +1545,680 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(135deg, var(--primary-blue), var(--accent-blue));
 }
+/* ================= ESTILOS ADICIONALES PARA FUNCIONALIDADES CLÍNICAS ================= */
+
+/* Estilos para profesionales en el sidebar de agenda */
+.professionals-sidebar {
+  width: 280px;
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  margin-right: 24px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.professionals-sidebar h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.professional-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 8px;
+  border: 2px solid transparent;
+}
+
+.professional-item:hover {
+  background: var(--gray-50);
+}
+
+.professional-item.selected {
+  background: rgba(15, 76, 117, 0.1);
+  border-color: var(--primary-blue);
+}
+
+.professional-avatar {
+  width: 40px;
+  height: 40px;
+  background: var(--secondary-blue);
+  color: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.professional-info {
+  flex: 1;
+}
+
+.professional-name {
+  font-weight: 600;
+  color: var(--gray-900);
+  font-size: 14px;
+}
+
+.professional-role {
+  font-size: 12px;
+  color: var(--gray-600);
+  margin-top: 2px;
+}
+
+.professional-availability {
+  font-size: 11px;
+  color: var(--success-green);
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.availability-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.availability-dot.available {
+  background: var(--success-green);
+}
+
+.availability-dot.busy {
+  background: var(--warning-orange);
+}
+
+.availability-dot.unavailable {
+  background: var(--danger-red);
+}
+
+/* Layout del calendario */
+.calendar-layout {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.calendar-main {
+  flex: 1;
+}
+
+/* Elementos del calendario */
+.appointment-item {
+  font-size: 10px;
+  padding: 2px 4px;
+  margin: 1px 0;
+  border-radius: 2px;
+  background: var(--primary-blue);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.appointment-item:hover {
+  background: var(--secondary-blue);
+  transform: scale(1.05);
+}
+
+/* Citas del día en el resumen */
+.appointments-summary {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+}
+
+.appointments-summary h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.appointments-summary h3::before {
+  content: "📅";
+  font-size: 20px;
+}
+
+.appointment-summary-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--gray-200);
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+}
+
+.appointment-summary-item:hover {
+  background: var(--gray-50);
+  transform: translateX(4px);
+}
+
+.appointment-time {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary-blue);
+  min-width: 60px;
+}
+
+.appointment-details {
+  flex: 1;
+}
+
+.appointment-patient {
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 2px;
+}
+
+.appointment-professional {
+  font-size: 14px;
+  color: var(--gray-600);
+  margin-bottom: 2px;
+}
+
+.appointment-type {
+  font-size: 12px;
+  color: var(--gray-500);
+}
+
+.appointment-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Elementos detallados de citas en modales */
+.appointment-item-detailed {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--gray-200);
+  margin-bottom: 12px;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.appointment-item-detailed:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.appointment-item-detailed .appointment-time {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary-blue);
+  min-width: 70px;
+}
+
+.appointment-info {
+  flex: 1;
+}
+
+.appointment-info h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 4px;
+}
+
+.appointment-info p {
+  font-size: 14px;
+  color: var(--gray-600);
+  margin-bottom: 2px;
+}
+
+/* Secciones de reportes */
+.reports-actions {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+}
+
+/* Historial clínico en modales */
+.patient-history-content {
+  max-height: 500px;
+  overflow-y: auto;
+  margin-bottom: 24px;
+}
+
+.history-entry {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+}
+
+.history-entry:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.history-date {
+  font-size: 14px;
+  color: var(--gray-600);
+  font-weight: 500;
+}
+
+.history-type {
+  background: var(--primary-blue);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.history-professional {
+  font-size: 14px;
+  color: var(--secondary-blue);
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.history-section {
+  margin-bottom: 12px;
+}
+
+.history-section strong {
+  color: var(--gray-700);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.history-section p {
+  color: var(--gray-600);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.history-status {
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--gray-700);
+}
+
+/* Vista previa de reportes */
+.report-preview-content {
+  max-height: 600px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.report-header {
+  text-align: center;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--primary-blue);
+}
+
+.report-header h3 {
+  color: var(--primary-blue);
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.report-header h4 {
+  color: var(--gray-800);
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.report-section {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--gray-50);
+  border-radius: 8px;
+}
+
+.report-section h4 {
+  color: var(--primary-blue);
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--gray-300);
+  padding-bottom: 8px;
+}
+
+/* Detalle de solicitudes */
+.request-detail-content {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.section {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--gray-50);
+  border-radius: 8px;
+}
+
+.section h3 {
+  color: var(--primary-blue);
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.info-grid div {
+  font-size: 14px;
+  color: var(--gray-700);
+}
+
+.info-grid strong {
+  color: var(--gray-900);
+  font-weight: 600;
+}
+
+/* Estados específicos de seguimientos */
+.status-programado {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.status-en_curso {
+  background: #fbbf24;
+  color: #92400e;
+}
+
+.status-completado {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-active {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-inactive {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Botones específicos para funciones clínicas */
+.btn-sm {
+  padding: 8px 12px;
+  font-size: 12px;
+  min-width: auto;
+}
+
+.btn-sm i {
+  font-size: 12px;
+}
+
+/* Acciones de modales */
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Formularios de seguimiento */
+.followup-form-section {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--gray-50);
+  border-radius: 8px;
+}
+
+.followup-form-section h4 {
+  color: var(--gray-900);
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+/* Mejoras responsivas para funcionalidades clínicas */
+@media (max-width: 768px) {
+  .calendar-layout {
+    flex-direction: column;
+  }
+  
+  .professionals-sidebar {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 20px;
+    max-height: 200px;
+  }
+  
+  .professional-item {
+    padding: 8px;
+  }
+  
+  .professional-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+  
+  .appointment-summary-item {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+  
+  .appointment-time {
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+  
+  .appointment-item-detailed {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .appointment-item-detailed .appointment-time {
+    margin-bottom: 8px;
+  }
+  
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .reports-actions {
+    flex-direction: column;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+  }
+  
+  .card-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .btn-sm {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .professionals-sidebar {
+    padding: 12px;
+  }
+  
+  .professional-item {
+    padding: 6px;
+    gap: 8px;
+  }
+  
+  .professional-name {
+    font-size: 13px;
+  }
+  
+  .professional-role {
+    font-size: 11px;
+  }
+  
+  .appointment-summary-item {
+    padding: 8px;
+  }
+  
+  .history-entry {
+    padding: 12px;
+  }
+  
+  .report-preview-content {
+    padding: 16px;
+  }
+  
+  .section {
+    padding: 12px;
+  }
+}
+
+/* Animaciones para elementos clínicos */
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.patient-card {
+  animation: slideInFromRight 0.3s ease;
+}
+
+.history-entry {
+  animation: slideInFromRight 0.2s ease;
+}
+
+.appointment-summary-item {
+  animation: slideInFromRight 0.25s ease;
+}
+
+/* Indicadores de estado mejorados */
+.priority-indicator::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.priority-critica::before {
+  background: #dc2626;
+}
+
+.priority-alta::before {
+  background: #ea580c;
+}
+
+.priority-media::before {
+  background: #d97706;
+}
+
+.priority-baja::before {
+  background: #059669;
+}
+
+/* Mejoras visuales para formularios de seguimiento */
+.form-textarea {
+  min-height: 80px;
+}
+
+.form-textarea:focus {
+  min-height: 120px;
+  transition: min-height 0.3s ease;
+}
+
+/* Estilos para carga de datos */
+.loading-placeholder {
+  background: linear-gradient(90deg, var(--gray-200) 25%, var(--gray-100) 50%, var(--gray-200) 75%);
+  background-size: 200% 100%;
+  animation: loading-shimmer 1.5s infinite;
+  border-radius: 4px;
+  height: 20px;
+  margin-bottom: 8px;
+}
+
+@keyframes loading-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Estilos para elementos vacíos */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--gray-600);
+}
+
+.empty-state i {
+  font-size: 48px;
+  opacity: 0.5;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.empty-state h3 {
+  font-size: 18px;
+  margin-bottom: 8px;
+  color: var(--gray-700);
+}
+
+.empty-state p {
+  font-size: 14px;
+  line-height: 1.5;
+}
