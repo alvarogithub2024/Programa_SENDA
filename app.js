@@ -1,212 +1,4 @@
-// Professional Panel Functions (simplified for space)
-function showProfessionalPanel(userData) {
-  showModal('panel-modal');
-  
-  document.getElementById('user-name').textContent = userData.nombre;
-  document.getElementById('user-role').textContent = getProfessionName(userData.profesion);
-  document.getElementById('user-avatar').textContent = userData.nombre.substring(0, 2).toUpperCase();
-
-  setupRoleBasedNavigation(userData);
-  setupPanelNavigation(userData);
-  showPanel('dashboard', userData);
-  
-  document.getElementById('logout-btn').addEventListener('click', handleLogout);
-  startRealTimeListeners(userData);
-}
-
-function setupRoleBasedNavigation(userData) {
-  const role = userData.profesion;
-  
-  const centersNav = document.getElementById('centers-nav');
-  const usersNav = document.getElementById('users-nav');
-  const analyticsNav = document.getElementById('analytics-nav');
-  
-  if (role === 'coordinador' || role === 'admin') {
-    if (centersNav) centersNav.style.display = 'flex';
-    if (analyticsNav) analyticsNav.style.display = 'flex';
-  }
-  
-  if (role === 'admin') {
-    if (usersNav) usersNav.style.display = 'flex';
-  }
-}
-
-function setupPanelNavigation(userData) {
-  document.querySelectorAll('.nav-item').forEach(item => {
-    item.addEventListener('click', function() {
-      const panel = item.dataset.panel;
-      if (panel) {
-        showPanel(panel, userData);
-        
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        item.classList.add('active');
-      }
-    });
-  });
-}
-
-function showPanel(panelId, userData) {
-  document.querySelectorAll('.panel-content').forEach(panel => {
-    panel.classList.add('hidden');
-    panel.classList.remove('active');
-  });
-
-  const targetPanel = document.getElementById(panelId + '-panel');
-  if (targetPanel) {
-    targetPanel.classList.remove('hidden');
-    targetPanel.classList.add('active');
-
-    switch (panelId) {
-      case 'dashboard':
-        loadDashboard(userData);
-        break;
-      case 'requests':
-        loadRequests(userData);
-        break;
-    }
-  }
-}
-
-async function loadDashboard(userData) {
-  console.log('Loading dashboard for:', userData.nombre);
-}
-
-async function loadRequests(userData) {
-  console.log('Loading requests for:', userData.nombre);
-}
-
-function startRealTimeListeners(userData) {
-  console.log('Starting real-time listeners for:', userData.nombre);
-}
-
-async function handleLogout() {
-  if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
-    try {
-      await auth.signOut();
-      currentUser = null;
-      currentUserData = null;
-      closeModal('panel-modal');
-      showNotification('Sesión cerrada correctamente', 'success');
-      
-      document.getElementById('login-form')?.reset();
-      document.getElementById('register-form')?.reset();
-      document.querySelector('[data-tab="login"]')?.click();
-      
-    } catch (error) {
-      console.error('Logout error:', error);
-      showNotification('Error al cerrar sesión: ' + error.message, 'error');
-    }
-  }
-}
-
-// Center finder functions
-async function loadNearbyClínicas() {
-  const centersList = document.getElementById('centers-list');
-  if (!centersList) return;
-  
-  centersList.innerHTML = '<div class="loading"><div class="spinner"></div> Buscando centros cercanos...</div>';
-  
-  const mockCenters = [
-    {
-      name: 'CESFAM Maipú',
-      address: 'Av. Pajaritos 5678, Maipú', 
-      distance: '3.5 km',
-      phone: '+56 2 2765 4321',
-      hours: 'Lun-Vie 8:30-17:30'
-    },
-    {
-      name: 'Centro SENDA Providencia',
-      address: 'Av. Providencia 9876, Providencia',
-      distance: '5.1 km', 
-      phone: '+56 2 2234 5678',
-      hours: 'Lun-Vie 9:00-18:00'
-    }
-  ];
-  
-  setTimeout(() => {
-    let html = '';
-    mockCenters.forEach(center => {
-      html += `
-        <div class="center-card">
-          <div class="center-header">
-            <h4>${center.name}</h4>
-            <span class="distance">${center.distance}</span>
-          </div>
-          <div class="center-details">
-            <p><i class="fas fa-map-marker-alt"></i> ${center.address}</p>
-            <p><i class="fas fa-phone"></i> ${center.phone}</p>
-            <p><i class="fas fa-clock"></i> ${center.hours}</p>
-          </div>
-          <div class="center-actions">
-            <button class="btn btn-outline btn-sm">
-              <i class="fas fa-directions"></i> Cómo llegar
-            </button>
-            <button class="btn btn-primary btn-sm">
-              <i class="fas fa-phone"></i> Llamar
-            </button>
-          </div>
-        </div>
-      `;
-    });
-    
-    centersList.innerHTML = html;
-  }, 1000);
-}
-
-function getCurrentLocation() {
-  if (navigator.geolocation) {
-    showNotification('Obteniendo tu ubicación...', 'info');
-    
-    navigator.geolocation.getCurrentPosition(
-      position => {
-        const { latitude, longitude } = position.coords;
-        document.getElementById('location-input').value = `${latitude}, ${longitude}`;
-        showNotification('Ubicación detectada', 'success');
-        loadNearbyClínicas();
-      },
-      error => {
-        console.error('Geolocation error:', error);
-        showNotification('No se pudo obtener tu ubicación. Por favor ingresa tu dirección manualmente.', 'error');
-      }
-    );
-  } else {
-    showNotification('Tu navegador no soporta geolocalización', 'error');
-  }
-}
-
-// Authentication State Observer
-auth.onAuthStateChanged(user => {
-  currentUser = user;
-  if (user) {
-    loadUserData(user.uid);
-  }
-});
-
-async function loadUserData(uid) {
-  try {
-    const doc = await db.collection('profesionales').doc(uid).get();
-    if (doc.exists) {
-      currentUserData = { uid, ...doc.data() };
-    }
-  } catch (error) {
-    console.error('Error loading user data:', error);
-  }
-}
-
-// Export functions for debugging
-window.sendaApp = {
-  showNotification,
-  showModal,
-  closeModal,
-  formatRUT,
-  validateRUT,
-  getProfessionName,
-  formData,
-  currentUserData,
-  regionesChile
-};
-
-console.log('SENDA Platform JavaScript loaded successfully');// Firebase Configuration
+// Firebase Configuration
 const firebaseConfig = {
   apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
   authDomain: "senda-6d5c9.firebaseapp.com",
@@ -297,8 +89,8 @@ let currentFormStep = 1;
 let maxFormStep = 4;
 let formData = {};
 let isDraftSaved = false;
-let flowSteps = []; // Array para almacenar la secuencia de pasos según el tipo de solicitud
-let currentStepIndex = 0; // Índice actual en el array de pasos
+let flowSteps = []; 
+let currentStepIndex = 0; 
 
 // Utility Functions
 function showNotification(message, type = 'info', duration = 4000) {
@@ -436,7 +228,6 @@ function formatDate(timestamp) {
 function calculatePriority(evaluationData) {
   let score = 0;
   
-  // Factores de riesgo alto
   if (evaluationData.sustancias?.includes('pasta_base')) score += 3;
   if (evaluationData.sustancias?.includes('cocaina')) score += 2;
   if (evaluationData.edad < 18) score += 2;
@@ -446,7 +237,6 @@ function calculatePriority(evaluationData) {
   if (evaluationData.motivacion >= 8) score += 1;
   if (evaluationData.tratamientoPrevio === 'si_senda') score += 1;
   
-  // Verificar palabras clave críticas en descripción
   const descripcion = evaluationData.razon?.toLowerCase() || '';
   if (descripcion.includes('suicid') || descripcion.includes('muerte') || descripcion.includes('morir')) {
     score += 4;
@@ -485,13 +275,35 @@ function initializeApp() {
     setupTabFunctionality();
     loadDraftIfExists();
     loadRegionsData();
-    setupEmailValidation(); // Agregado para validación de emails @senda.cl
+    setupEmailValidation();
     
     console.log('SENDA Platform initialized successfully');
     showNotification('Sistema SENDA cargado correctamente', 'success', 2000);
   } catch (error) {
     console.error('Error initializing app:', error);
     showNotification('Error al cargar el sistema', 'error');
+  }
+}
+
+function setupEmailValidation() {
+  const emailInput = document.getElementById('register-email');
+  if (emailInput) {
+    emailInput.addEventListener('blur', function(e) {
+      const email = e.target.value.trim();
+      if (email && !email.endsWith('@senda.cl')) {
+        e.target.classList.add('error');
+        showNotification('El correo debe ser institucional (@senda.cl)', 'warning');
+      } else if (email && isValidEmail(email)) {
+        e.target.classList.remove('error');
+      }
+    });
+    
+    emailInput.placeholder = 'nombre@senda.cl';
+  }
+  
+  const loginEmailInput = document.getElementById('login-email');
+  if (loginEmailInput) {
+    loginEmailInput.placeholder = 'nombre@senda.cl';
   }
 }
 
@@ -521,7 +333,6 @@ function loadCommunesData(regionKey) {
     comunaSelect.disabled = false;
   }
 }
-
 function initializeEventListeners() {
   // Main action buttons
   const registerBtn = document.getElementById('register-patient');
@@ -535,7 +346,7 @@ function initializeEventListeners() {
       formData = {};
       currentFormStep = 1;
       currentStepIndex = 0;
-      flowSteps = [1]; // Iniciar con paso 1
+      flowSteps = [1];
       isDraftSaved = false;
       showModal('patient-modal');
       updateFormProgress();
@@ -617,7 +428,6 @@ function initializeEventListeners() {
 }
 
 function setupModalControls() {
-  // Close modal buttons
   document.querySelectorAll('[data-close]').forEach(btn => {
     btn.addEventListener('click', function(e) {
       const modalId = e.target.closest('[data-close]').dataset.close;
@@ -646,9 +456,7 @@ function setupTabFunctionality() {
   });
 }
 
-// NUEVA LÓGICA MULTI-STEP FORM COMPLETAMENTE REESTRUCTURADA
 function setupMultiStepForm() {
-  // Motivación slider
   const motivacionSlider = document.getElementById('motivacion');
   const motivacionValue = document.getElementById('motivacion-value');
   
@@ -658,7 +466,6 @@ function setupMultiStepForm() {
     });
   }
 
-  // NUEVA LÓGICA: Listener para tipo de solicitud
   const tipoSolicitudInputs = document.querySelectorAll('input[name="tipoSolicitud"]');
   tipoSolicitudInputs.forEach(input => {
     input.addEventListener('change', function() {
@@ -668,40 +475,32 @@ function setupMultiStepForm() {
   });
 }
 
-// NUEVA FUNCIÓN: Manejar cambio de tipo de solicitud
 function handleTipoSolicitudChange(tipoSolicitud) {
   const phoneContainer = document.getElementById('anonymous-phone-container');
   const emailContainer = document.getElementById('info-email-container');
   
-  // Ocultar todos los campos especiales por defecto
   if (phoneContainer) phoneContainer.style.display = 'none';
   if (emailContainer) emailContainer.style.display = 'none';
   
-  // Configurar flujo de pasos según tipo de solicitud
   switch(tipoSolicitud) {
     case 'anonimo':
-      // Anónimo: pasos 1, 3, 4 (saltar paso 2)
       flowSteps = [1, 3, 4];
       if (phoneContainer) phoneContainer.style.display = 'block';
       break;
       
     case 'identificado':
-      // Identificado: todos los pasos 1, 2, 3, 4
       flowSteps = [1, 2, 3, 4];
       break;
       
     case 'informacion':
-      // Solo información: solo paso 1
       flowSteps = [1];
       if (emailContainer) emailContainer.style.display = 'block';
       break;
   }
   
-  // Actualizar progreso
   updateFormProgress();
 }
 
-// NUEVA FUNCIÓN: Actualizar progreso considerando los pasos dinámicos
 function updateFormProgress() {
   const progressFill = document.getElementById('form-progress');
   const progressText = document.getElementById('progress-text');
@@ -713,7 +512,6 @@ function updateFormProgress() {
   if (progressFill) progressFill.style.width = progress + '%';
   if (progressText) progressText.textContent = `Paso ${currentStepInFlow} de ${totalSteps}`;
   
-  // Show/hide navigation buttons
   const prevBtn = document.getElementById('prev-step');
   const nextBtn = document.getElementById('next-step');
   const submitBtn = document.getElementById('submit-form');
@@ -723,57 +521,46 @@ function updateFormProgress() {
   if (submitBtn) submitBtn.style.display = currentStepIndex === flowSteps.length - 1 ? 'block' : 'none';
 }
 
-// FUNCIÓN ACTUALIZADA: Navegar al siguiente paso
 function nextFormStep() {
   if (validateCurrentStep()) {
     collectCurrentStepData();
     
     if (currentStepIndex < flowSteps.length - 1) {
-      // Hide current step
       const currentStepNumber = flowSteps[currentStepIndex];
       document.querySelector(`[data-step="${currentStepNumber}"]`).classList.remove('active');
       
-      // Move to next step in flow
       currentStepIndex++;
       const nextStepNumber = flowSteps[currentStepIndex];
       currentFormStep = nextStepNumber;
       
-      // Show next step
       document.querySelector(`[data-step="${nextStepNumber}"]`).classList.add('active');
       updateFormProgress();
       
-      // Auto-save progress
       saveDraft(false);
     }
   }
 }
 
-// FUNCIÓN ACTUALIZADA: Navegar al paso anterior
 function prevFormStep() {
   if (currentStepIndex > 0) {
-    // Hide current step
     const currentStepNumber = flowSteps[currentStepIndex];
     document.querySelector(`[data-step="${currentStepNumber}"]`).classList.remove('active');
     
-    // Move to previous step in flow
     currentStepIndex--;
     const prevStepNumber = flowSteps[currentStepIndex];
     currentFormStep = prevStepNumber;
     
-    // Show previous step
     document.querySelector(`[data-step="${prevStepNumber}"]`).classList.add('active');
     updateFormProgress();
   }
 }
 
-// FUNCIÓN ACTUALIZADA: Validación según el paso actual
 function validateCurrentStep() {
   const currentStepElement = document.querySelector(`[data-step="${currentFormStep}"]`);
   const requiredFields = currentStepElement.querySelectorAll('[required]:not([style*="display: none"] [required])');
   let isValid = true;
   
   requiredFields.forEach(field => {
-    // Skip hidden fields
     if (field.offsetParent === null) return;
     
     if (!field.value.trim()) {
@@ -784,7 +571,6 @@ function validateCurrentStep() {
     }
   });
   
-  // Validaciones específicas por paso
   if (currentFormStep === 1) {
     isValid = validateStep1() && isValid;
   } else if (currentFormStep === 2) {
@@ -800,7 +586,6 @@ function validateCurrentStep() {
   return isValid;
 }
 
-// NUEVA FUNCIÓN: Validar paso 1
 function validateStep1() {
   const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked');
   const paraMi = document.querySelector('input[name="paraMi"]:checked');
@@ -810,7 +595,6 @@ function validateStep1() {
     return false;
   }
   
-  // Validar teléfono si es anónimo
   if (tipoSolicitud.value === 'anonimo') {
     const phone = document.getElementById('anonymous-phone')?.value;
     if (!phone) {
@@ -819,7 +603,847 @@ function validateStep1() {
     }
   }
   
-  // Validar email si es información
   if (tipoSolicitud.value === 'informacion') {
     const email = document.getElementById('info-email')?.value;
-    if (!email || !isValidEmail(email))
+    if (!email || !isValidEmail(email)) {
+      showNotification('Por favor ingresa un email válido', 'error');
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+function validateStep2() {
+  if (formData.tipoSolicitud !== 'identificado') return true;
+  
+  const rut = document.getElementById('patient-rut')?.value;
+  const email = document.getElementById('patient-email')?.value;
+  
+  if (rut && !validateRUT(rut)) {
+    showNotification('El RUT ingresado no es válido', 'error');
+    return false;
+  }
+  
+  if (email && !isValidEmail(email)) {
+    showNotification('El email ingresado no es válido', 'error');
+    return false;
+  }
+  
+  return true;
+}
+
+function validateStep3() {
+  if (formData.tipoSolicitud !== 'informacion') {
+    const sustancias = document.querySelectorAll('input[name="sustancias"]:checked');
+    if (sustancias.length === 0) {
+      showNotification('Por favor selecciona al menos una sustancia', 'error');
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+function collectCurrentStepData() {
+  if (currentFormStep === 1) {
+    formData.tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+    formData.edad = document.getElementById('patient-age').value;
+    formData.region = document.getElementById('patient-region').value;
+    formData.paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
+    
+    if (formData.tipoSolicitud === 'anonimo') {
+      formData.telefonoContacto = document.getElementById('anonymous-phone')?.value;
+    }
+    
+    if (formData.tipoSolicitud === 'informacion') {
+      formData.emailInformacion = document.getElementById('info-email')?.value;
+    }
+  }
+  
+  if (currentFormStep === 2 && formData.tipoSolicitud === 'identificado') {
+    formData.nombre = document.getElementById('patient-name').value;
+    formData.apellido = document.getElementById('patient-lastname').value;
+    formData.rut = document.getElementById('patient-rut').value;
+    formData.telefono = document.getElementById('patient-phone').value;
+    formData.email = document.getElementById('patient-email').value;
+    formData.comuna = document.getElementById('patient-comuna').value;
+    formData.direccion = document.getElementById('patient-address').value;
+  }
+  
+  if (currentFormStep === 3) {
+    if (formData.tipoSolicitud !== 'informacion') {
+      const sustancias = Array.from(document.querySelectorAll('input[name="sustancias"]:checked'))
+        .map(cb => cb.value);
+      formData.sustancias = sustancias;
+      formData.tiempoConsumo = document.getElementById('tiempo-consumo').value;
+      formData.motivacion = document.getElementById('motivacion').value;
+      formData.urgencia = document.querySelector('input[name="urgencia"]:checked')?.value;
+    }
+  }
+  
+  if (currentFormStep === 4) {
+    formData.razon = document.getElementById('patient-reason').value;
+    formData.tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked')?.value;
+    formData.centroPreferencia = document.getElementById('centro-preferencia').value;
+  }
+}
+
+function saveDraft(showMessage = true) {
+  collectCurrentStepData();
+  
+  const draftData = {
+    ...formData,
+    currentStep: currentFormStep,
+    currentStepIndex: currentStepIndex,
+    flowSteps: flowSteps,
+    timestamp: new Date().toISOString()
+  };
+  
+  localStorage.setItem('senda_draft', JSON.stringify(draftData));
+  isDraftSaved = true;
+  
+  if (showMessage) {
+    showNotification('Borrador guardado correctamente', 'success', 2000);
+  }
+}
+
+function loadDraftIfExists() {
+  const draft = localStorage.getItem('senda_draft');
+  if (draft) {
+    try {
+      const draftData = JSON.parse(draft);
+      const draftAge = new Date() - new Date(draftData.timestamp);
+      
+      if (draftAge < 24 * 60 * 60 * 1000) {
+        const loadDraft = confirm('Se encontró un borrador guardado. ¿Deseas continuar donde lo dejaste?');
+        if (loadDraft) {
+          formData = draftData;
+          currentFormStep = draftData.currentStep || 1;
+          currentStepIndex = draftData.currentStepIndex || 0;
+          flowSteps = draftData.flowSteps || [1];
+          restoreFormData();
+          isDraftSaved = true;
+        } else {
+          localStorage.removeItem('senda_draft');
+        }
+      } else {
+        localStorage.removeItem('senda_draft');
+      }
+    } catch (error) {
+      console.error('Error loading draft:', error);
+      localStorage.removeItem('senda_draft');
+    }
+  }
+}
+
+function restoreFormData() {
+  Object.keys(formData).forEach(key => {
+    const element = document.getElementById(`patient-${key}`) || 
+                   document.querySelector(`input[name="${key}"]`) ||
+                   document.querySelector(`select[name="${key}"]`);
+    
+    if (element && formData[key]) {
+      if (element.type === 'radio' || element.type === 'checkbox') {
+        if (Array.isArray(formData[key])) {
+          formData[key].forEach(value => {
+            const checkbox = document.querySelector(`input[name="${key}"][value="${value}"]`);
+            if (checkbox) checkbox.checked = true;
+          });
+        } else {
+          const radio = document.querySelector(`input[name="${key}"][value="${formData[key]}"]`);
+          if (radio) radio.checked = true;
+        }
+      } else {
+        element.value = formData[key];
+      }
+    }
+  });
+  
+  if (formData.tipoSolicitud) {
+    handleTipoSolicitudChange(formData.tipoSolicitud);
+  }
+  
+  if (formData.region) {
+    loadCommunesData(formData.region);
+    setTimeout(() => {
+      if (formData.comuna) {
+        document.getElementById('patient-comuna').value = formData.comuna;
+      }
+    }, 100);
+  }
+  
+  document.querySelectorAll('.form-step').forEach(step => step.classList.remove('active'));
+  document.querySelector(`[data-step="${currentFormStep}"]`)?.classList.add('active');
+  
+  updateFormProgress();
+}
+
+function setupFormValidation() {
+  const rutInput = document.getElementById('patient-rut');
+  if (rutInput) {
+    rutInput.addEventListener('input', function(e) {
+      e.target.value = formatRUT(e.target.value);
+    });
+
+    rutInput.addEventListener('blur', function(e) {
+      const rut = e.target.value.trim();
+      if (rut && !validateRUT(rut)) {
+        e.target.classList.add('error');
+        showNotification('El RUT ingresado no es válido', 'error');
+      } else {
+        e.target.classList.remove('error');
+      }
+    });
+  }
+
+  const phoneInputs = document.querySelectorAll('#patient-phone, #anonymous-phone');
+  phoneInputs.forEach(input => {
+    input.addEventListener('input', function(e) {
+      e.target.value = formatPhoneNumber(e.target.value);
+    });
+  });
+
+  const emailInputs = document.querySelectorAll('input[type="email"]');
+  emailInputs.forEach(input => {
+    input.addEventListener('blur', function(e) {
+      const email = e.target.value.trim();
+      if (email && !isValidEmail(email)) {
+        e.target.classList.add('error');
+        showNotification('Por favor ingresa un correo electrónico válido', 'error');
+      } else {
+        e.target.classList.remove('error');
+      }
+    });
+  });
+
+  const ageInput = document.getElementById('patient-age');
+  if (ageInput) {
+    ageInput.addEventListener('blur', function(e) {
+      const age = parseInt(e.target.value);
+      if (age && (age < 12 || age > 120)) {
+        e.target.classList.add('error');
+        showNotification('Por favor ingresa una edad válida (12-120 años)', 'error');
+      } else {
+        e.target.classList.remove('error');
+      }
+    });
+  }
+}
+
+function submitPatientForm() {
+  if (validateCurrentStep()) {
+    collectCurrentStepData();
+    handlePatientRegistration();
+  }
+}
+
+async function handlePatientRegistration(e) {
+  if (e) e.preventDefault();
+  
+  showLoading(true);
+  
+  try {
+    const prioridad = calculatePriority(formData);
+    
+    const solicitudData = {
+      clasificacion: {
+        tipo: formData.isReentry ? 'reingreso' : 'ingreso_voluntario',
+        estado: 'pendiente',
+        prioridad: prioridad,
+        categoria_riesgo: prioridad === 'critica' ? 'extremo' : 
+                         prioridad === 'alta' ? 'alto' : 
+                         prioridad === 'media' ? 'moderado' : 'bajo'
+      },
+      
+      datos_personales: {
+        anonimo: formData.tipoSolicitud === 'anonimo',
+        solo_informacion: formData.tipoSolicitud === 'informacion',
+        edad: parseInt(formData.edad),
+        genero: 'no_especificado',
+        region: formData.region,
+        id_comuna_residencia: formData.comuna || 'no_especificada',
+        situacion_laboral: 'no_especificada',
+        para_quien: formData.paraMi
+      },
+      
+      datos_contacto: {},
+      
+      evaluacion_inicial: formData.tipoSolicitud !== 'informacion' ? {
+        sustancias_consumo: formData.sustancias || [],
+        tiempo_consumo_meses: parseInt(formData.tiempoConsumo) || 0,
+        motivacion_cambio: parseInt(formData.motivacion) || 5,
+        urgencia_declarada: formData.urgencia || 'no_especificada',
+        tratamiento_previo: formData.tratamientoPrevio || 'no',
+        descripcion_situacion: formData.razon || ''
+      } : null,
+      
+      derivacion: {
+        id_centro_preferido: formData.centroPreferencia || null,
+        fecha_solicitud: firebase.firestore.FieldValue.serverTimestamp()
+      },
+      
+      metadata: {
+        fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
+        ip_origen: 'anonimizada',
+        dispositivo_usado: navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop',
+        canal_ingreso: 'web_publica'
+      }
+    };
+    
+    if (formData.tipoSolicitud === 'identificado') {
+      solicitudData.datos_contacto = {
+        telefono_principal: formData.telefono,
+        email: formData.email,
+        direccion: formData.direccion,
+        nombre_completo: `${formData.nombre} ${formData.apellido}`,
+        rut: formData.rut
+      };
+    } else if (formData.tipoSolicitud === 'anonimo') {
+      solicitudData.datos_contacto = {
+        telefono_principal: formData.telefonoContacto,
+        es_anonimo: true
+      };
+    } else if (formData.tipoSolicitud === 'informacion') {
+      solicitudData.datos_contacto = {
+        email: formData.emailInformacion,
+        solo_informacion: true
+      };
+    }
+
+    const docRef = await db.collection('solicitudes_ingreso').add(solicitudData);
+    
+    if (prioridad === 'critica') {
+      await createCriticalCaseAlert(docRef.id, solicitudData);
+    }
+    
+    localStorage.removeItem('senda_draft');
+    isDraftSaved = false;
+    
+    showSuccessMessage(docRef.id, formData.tipoSolicitud);
+    
+    closeModal('patient-modal');
+    resetForm();
+    
+  } catch (error) {
+    console.error('Error submitting patient registration:', error);
+    showNotification('Error al enviar la solicitud. Por favor intenta nuevamente.', 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+function showSuccessMessage(solicitudId, tipoSolicitud) {
+  const trackingCode = solicitudId.substring(0, 8).toUpperCase();
+  
+  if (tipoSolicitud === 'anonimo') {
+    showNotification(
+      `Solicitud enviada exitosamente. Tu código de seguimiento es: ${trackingCode}. Te contactaremos al teléfono proporcionado.`,
+      'success',
+      8000
+    );
+  } else if (tipoSolicitud === 'informacion') {
+    showNotification(
+      `Solicitud enviada exitosamente. Te enviaremos información del programa al email proporcionado.`,
+      'success',
+      6000
+    );
+  } else {
+    showNotification(
+      'Solicitud enviada exitosamente. Te contactaremos pronto al teléfono o email proporcionado.',
+      'success',
+      6000
+    );
+  }
+}
+
+async function createCriticalCaseAlert(solicitudId, solicitudData) {
+  try {
+    await db.collection('alertas_criticas').add({
+      id_solicitud: solicitudId,
+      tipo_alerta: 'caso_critico_nuevo',
+      prioridad: 'maxima',
+      mensaje: `Nuevo caso crítico: ${solicitudData.datos_personales.edad} años, urgencia ${solicitudData.evaluacion_inicial?.urgencia_declarada}`,
+      fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
+      estado: 'pendiente',
+      notificado: false
+    });
+  } catch (error) {
+    console.error('Error creating critical alert:', error);
+  }
+}
+
+function resetForm() {
+  formData = {};
+  currentFormStep = 1;
+  currentStepIndex = 0;
+  flowSteps = [1];
+  isDraftSaved = false;
+  
+  const form = document.getElementById('patient-form');
+  if (form) {
+    form.reset();
+    
+    document.querySelectorAll('.form-step').forEach((step, index) => {
+      step.classList.toggle('active', index === 0);
+    });
+    
+    const phoneContainer = document.getElementById('anonymous-phone-container');
+    const emailContainer = document.getElementById('info-email-container');
+    if (phoneContainer) phoneContainer.style.display = 'none';
+    if (emailContainer) emailContainer.style.display = 'none';
+    
+    const comunaSelect = document.getElementById('patient-comuna');
+    if (comunaSelect) {
+      comunaSelect.innerHTML = '<option value="">Seleccionar comuna...</option>';
+      comunaSelect.disabled = true;
+    }
+    
+    updateFormProgress();
+  }
+}
+
+async function handleProfessionalLogin(e) {
+  e.preventDefault();
+  showLoading(true);
+  
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+
+  if (!email || !password) {
+    showNotification('Por favor ingresa tu correo y contraseña', 'error');
+    showLoading(false);
+    return;
+  }
+
+  if (!email.endsWith('@senda.cl')) {
+    showNotification('Solo se permite acceso con correos institucionales (@senda.cl)', 'error');
+    showLoading(false);
+    return;
+  }
+
+  try {
+    const userCredential = await auth.signInWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+    
+    const doc = await db.collection('profesionales').doc(user.uid).get();
+    
+    if (!doc.exists) {
+      await auth.signOut();
+      showNotification('Usuario no registrado como profesional del sistema', 'error');
+      showLoading(false);
+      return;
+    }
+    
+    const userData = doc.data();
+    
+    if (!userData.configuracion_sistema?.activo) {
+      await auth.signOut();
+      showNotification('Tu cuenta está desactivada. Contacta al administrador.', 'error');
+      showLoading(false);
+      return;
+    }
+    
+    currentUserData = { uid: user.uid, ...userData };
+    
+    await db.collection('profesionales').doc(user.uid).update({
+      'metadata.ultima_actividad': firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    showNotification(`Bienvenido, ${userData.nombre}`, 'success');
+    closeModal('professional-modal');
+    showProfessionalPanel(userData);
+    
+  } catch (error) {
+    console.error('Login error:', error);
+    let errorMessage = 'Error al iniciar sesión';
+    
+    switch (error.code) {
+      case 'auth/user-not-found':
+        errorMessage = 'No existe un usuario con este correo electrónico';
+        break;
+      case 'auth/wrong-password':
+        errorMessage = 'Contraseña incorrecta';
+        break;
+      case 'auth/invalid-email':
+        errorMessage = 'Correo electrónico inválido';
+        break;
+      case 'auth/too-many-requests':
+        errorMessage = 'Demasiados intentos fallidos. Intenta más tarde';
+        break;
+      case 'auth/user-disabled':
+        errorMessage = 'Esta cuenta ha sido deshabilitada';
+        break;
+      default:
+        errorMessage = `Error: ${error.message}`;
+    }
+    
+    showNotification(errorMessage, 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function handleProfessionalRegistration(e) {
+  e.preventDefault();
+  showLoading(true);
+  
+  const registrationData = {
+    name: document.getElementById('register-name').value.trim(),
+    email: document.getElementById('register-email').value.trim(),
+    password: document.getElementById('register-password').value,
+    profession: document.getElementById('register-profession').value,
+    license: document.getElementById('register-license').value.trim(),
+    center: document.getElementById('register-center').value
+  };
+
+  if (!registrationData.name || !registrationData.email || !registrationData.password || !registrationData.profession || !registrationData.license) {
+    showNotification('Por favor completa todos los campos obligatorios', 'error');
+    showLoading(false);
+    return;
+  }
+
+  if (!registrationData.email.endsWith('@senda.cl')) {
+    showNotification('El correo debe ser institucional (@senda.cl)', 'error');
+    showLoading(false);
+    return;
+  }
+
+  if (!isValidEmail(registrationData.email)) {
+    showNotification('Por favor ingresa un correo electrónico válido', 'error');
+    showLoading(false);
+    return;
+  }
+
+  if (registrationData.password.length < 6) {
+    showNotification('La contraseña debe tener al menos 6 caracteres', 'error');
+    showLoading(false);
+    return;
+  }
+
+  try {
+    const userCredential = await auth.createUserWithEmailAndPassword(registrationData.email, registrationData.password);
+    const user = userCredential.user;
+    
+    const professionalData = {
+      nombre: registrationData.name,
+      correo: registrationData.email,
+      profesion: registrationData.profession,
+      licencia: registrationData.license,
+      id_centro_asignado: registrationData.center || null,
+      configuracion_sistema: {
+        rol: registrationData.profession,
+        permisos: getDefaultPermissions(registrationData.profession),
+        activo: true,
+        fecha_activacion: firebase.firestore.FieldValue.serverTimestamp()
+      },
+      metadata: {
+        fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
+        ultima_actividad: firebase.firestore.FieldValue.serverTimestamp(),
+        estado: 'activo'
+      }
+    };
+
+    await db.collection('profesionales').doc(user.uid).set(professionalData);
+
+    await user.updateProfile({
+      displayName: registrationData.name
+    });
+
+    showNotification('Registro exitoso. Ahora puedes iniciar sesión.', 'success');
+    
+    const loginTab = document.querySelector('[data-tab="login"]');
+    if (loginTab) loginTab.click();
+    
+    document.getElementById('register-form').reset();
+    document.getElementById('login-email').value = registrationData.email;
+    
+  } catch (error) {
+    console.error('Registration error:', error);
+    let errorMessage = 'Error al registrar';
+    
+    switch (error.code) {
+      case 'auth/email-already-in-use':
+        errorMessage = 'El correo ya está registrado en el sistema';
+        break;
+      case 'auth/weak-password':
+        errorMessage = 'La contraseña es muy débil (mínimo 6 caracteres)';
+        break;
+      case 'auth/invalid-email':
+        errorMessage = 'Correo electrónico inválido';
+        break;
+      case 'auth/operation-not-allowed':
+        errorMessage = 'El registro de usuarios no está habilitado';
+        break;
+      default:
+        errorMessage = `Error al registrar: ${error.message}`;
+    }
+    
+    showNotification(errorMessage, 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+function getDefaultPermissions(profession) {
+  const permissions = {
+    'asistente_social': [
+      'ver_casos', 
+      'asignar_casos', 
+      'derivar_casos', 
+      'seguimiento', 
+      'crear_reportes_sociales'
+    ],
+    'medico': [
+      'ver_casos', 
+      'atencion_medica', 
+      'seguimiento', 
+      'prescripcion', 
+      'evaluacion_medica'
+    ],
+    'psicologo': [
+      'ver_casos', 
+      'atencion_psicologica', 
+      'seguimiento', 
+      'evaluacion_psicologica',
+      'crear_planes_tratamiento'
+    ],
+    'terapeuta': [
+      'ver_casos', 
+      'terapia_ocupacional', 
+      'seguimiento', 
+      'evaluacion_funcional'
+    ],
+    'coordinador': [
+      'ver_casos', 
+      'asignar_casos', 
+      'reportes', 
+      'supervision', 
+      'gestion_centro',
+      'estadisticas'
+    ],
+    'admin': [
+      'ver_casos', 
+      'asignar_casos', 
+      'reportes', 
+      'usuarios', 
+      'configuracion',
+      'sistema_completo'
+    ]
+  };
+  
+  return permissions[profession] || ['ver_casos'];
+}
+
+function showProfessionalPanel(userData) {
+  showModal('panel-modal');
+  
+  document.getElementById('user-name').textContent = userData.nombre;
+  document.getElementById('user-role').textContent = getProfessionName(userData.profesion);
+  document.getElementById('user-avatar').textContent = userData.nombre.substring(0, 2).toUpperCase();
+
+  setupRoleBasedNavigation(userData);
+  setupPanelNavigation(userData);
+  showPanel('dashboard', userData);
+  
+  document.getElementById('logout-btn').addEventListener('click', handleLogout);
+  startRealTimeListeners(userData);
+}
+
+function setupRoleBasedNavigation(userData) {
+  const role = userData.profesion;
+  
+  const centersNav = document.getElementById('centers-nav');
+  const usersNav = document.getElementById('users-nav');
+  const analyticsNav = document.getElementById('analytics-nav');
+  
+  if (role === 'coordinador' || role === 'admin') {
+    if (centersNav) centersNav.style.display = 'flex';
+    if (analyticsNav) analyticsNav.style.display = 'flex';
+  }
+  
+  if (role === 'admin') {
+    if (usersNav) usersNav.style.display = 'flex';
+  }
+}
+
+function setupPanelNavigation(userData) {
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', function() {
+      const panel = item.dataset.panel;
+      if (panel) {
+        showPanel(panel, userData);
+        
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+      }
+    });
+  });
+}
+
+function showPanel(panelId, userData) {
+  document.querySelectorAll('.panel-content').forEach(panel => {
+    panel.classList.add('hidden');
+    panel.classList.remove('active');
+  });
+
+  const targetPanel = document.getElementById(panelId + '-panel');
+  if (targetPanel) {
+    targetPanel.classList.remove('hidden');
+    targetPanel.classList.add('active');
+
+    switch (panelId) {
+      case 'dashboard':
+        loadDashboard(userData);
+        break;
+      case 'requests':
+        loadRequests(userData);
+        break;
+    }
+  }
+}
+
+async function loadDashboard(userData) {
+  console.log('Loading dashboard for:', userData.nombre);
+}
+
+async function loadRequests(userData) {
+  console.log('Loading requests for:', userData.nombre);
+}
+
+function startRealTimeListeners(userData) {
+  console.log('Starting real-time listeners for:', userData.nombre);
+}
+
+async function handleLogout() {
+  if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
+    try {
+      await auth.signOut();
+      currentUser = null;
+      currentUserData = null;
+      closeModal('panel-modal');
+      showNotification('Sesión cerrada correctamente', 'success');
+      
+      document.getElementById('login-form')?.reset();
+      document.getElementById('register-form')?.reset();
+      document.querySelector('[data-tab="login"]')?.click();
+      
+    } catch (error) {
+      console.error('Logout error:', error);
+      showNotification('Error al cerrar sesión: ' + error.message, 'error');
+    }
+  }
+}
+
+async function loadNearbyClínicas() {
+  const centersList = document.getElementById('centers-list');
+  if (!centersList) return;
+  
+  centersList.innerHTML = '<div class="loading"><div class="spinner"></div> Buscando centros cercanos...</div>';
+  
+  const mockCenters = [
+    {
+      name: 'CESFAM La Florida',
+      address: 'Av. Walker Martinez 1234, La Florida',
+      distance: '1.2 km',
+      phone: '+56 2 2987 6543',
+      hours: 'Lun-Vie 8:00-17:00'
+    },
+    {
+      name: 'CESFAM Maipú',
+      address: 'Av. Pajaritos 5678, Maipú', 
+      distance: '3.5 km',
+      phone: '+56 2 2765 4321',
+      hours: 'Lun-Vie 8:30-17:30'
+    },
+    {
+      name: 'Centro SENDA Providencia',
+      address: 'Av. Providencia 9876, Providencia',
+      distance: '5.1 km', 
+      phone: '+56 2 2234 5678',
+      hours: 'Lun-Vie 9:00-18:00'
+    }
+  ];
+  
+  setTimeout(() => {
+    let html = '';
+    mockCenters.forEach(center => {
+      html += `
+        <div class="center-card">
+          <div class="center-header">
+            <h4>${center.name}</h4>
+            <span class="distance">${center.distance}</span>
+          </div>
+          <div class="center-details">
+            <p><i class="fas fa-map-marker-alt"></i> ${center.address}</p>
+            <p><i class="fas fa-phone"></i> ${center.phone}</p>
+            <p><i class="fas fa-clock"></i> ${center.hours}</p>
+          </div>
+          <div class="center-actions">
+            <button class="btn btn-outline btn-sm">
+              <i class="fas fa-directions"></i> Cómo llegar
+            </button>
+            <button class="btn btn-primary btn-sm">
+              <i class="fas fa-phone"></i> Llamar
+            </button>
+          </div>
+        </div>
+      `;
+    });
+    
+    centersList.innerHTML = html;
+  }, 1000);
+}
+
+function getCurrentLocation() {
+  if (navigator.geolocation) {
+    showNotification('Obteniendo tu ubicación...', 'info');
+    
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        const { latitude, longitude } = position.coords;
+        document.getElementById('location-input').value = `${latitude}, ${longitude}`;
+        showNotification('Ubicación detectada', 'success');
+        loadNearbyClínicas();
+      },
+      error => {
+        console.error('Geolocation error:', error);
+        showNotification('No se pudo obtener tu ubicación. Por favor ingresa tu dirección manualmente.', 'error');
+      }
+    );
+  } else {
+    showNotification('Tu navegador no soporta geolocalización', 'error');
+  }
+}
+
+auth.onAuthStateChanged(user => {
+  currentUser = user;
+  if (user) {
+    loadUserData(user.uid);
+  }
+});
+
+async function loadUserData(uid) {
+  try {
+    const doc = await db.collection('profesionales').doc(uid).get();
+    if (doc.exists) {
+      currentUserData = { uid, ...doc.data() };
+    }
+  } catch (error) {
+    console.error('Error loading user data:', error);
+  }
+}
+
+window.sendaApp = {
+  showNotification,
+  showModal,
+  closeModal,
+  formatRUT,
+  validateRUT,
+  getProfessionName,
+  formData,
+  currentUserData,
+  regionesChile
+};
+
+console.log('SENDA Platform JavaScript loaded successfully');
