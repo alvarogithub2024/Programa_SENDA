@@ -1,3 +1,5 @@
+// ================= PARTE 1: CONFIGURACIÓN Y FUNCIONES UTILITARIAS =================
+
 // Firebase Configuration
 const firebaseConfig = {
   apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
@@ -38,7 +40,7 @@ const regionesChile = {
   },
   "valparaiso": {
     nombre: "Valparaíso",
-    comunas: ["Valparaíso", "Casablanca", "Concón", "Juan Fernández", "Puchuncaví", "Quintero", "Viña del Mar", "Isla de Pascua", "Los Andes", "Calle Larga", "Rinconada", "San Esteban", "La Ligua", "Cabildo", "Papudo", "Petorca", "Zapallar", "Quillota", "Calera", "Hijuelas", "La Cruz", "Nogales", "San Antonio", "Algarrobo", "Cartagena", "El Quisco", "El Tabo", "Santo Domingo", "San Felipe", "Catemu", "Llaillay", "Panquehue", "Putaendo", "Santa María", "Quilpué", "Limache", "Olmué", "Villa Alemana"]
+    comunas: ["Valparaíso", "Casablanca", "Concón", "Juan Fernández", "Puchuncaví", "Quintero", "Viña del Mar", "Isla de Pascua", "Los Andes", "Calle Larga", "Rinconada", "San Esteban", "La Ligua", "Cabildo", "Papudo", "Petorca", "Zapallar", "Hijuelas", "La Calera", "La Cruz", "Limache", "Nogales", "Olmué", "Quillota"]
   },
   "metropolitana": {
     nombre: "Metropolitana de Santiago",
@@ -92,6 +94,10 @@ let isDraftSaved = false;
 let flowSteps = []; 
 let currentStepIndex = 0; 
 
+// Variables para la agenda - NUEVAS PARA 2025
+let selectedProfessional = null;
+let currentCalendarDate = new Date(2025, 0, 1); // ESTABLECIDO EN ENERO 2025
+
 // Utility Functions
 function showNotification(message, type = 'info', duration = 4000) {
   const notification = document.createElement('div');
@@ -134,6 +140,13 @@ function closeModal(modalId) {
     }
     modal.style.display = 'none';
     document.body.style.overflow = 'auto';
+    
+    // Remover modales dinámicos del DOM
+    if (['request-detail-modal', 'patient-detail-modal', 'patient-history-modal', 
+         'patient-report-preview-modal', 'followup-note-modal', 'new-appointment-modal', 
+         'day-appointments-modal', 'assignment-modal'].includes(modalId)) {
+      modal.remove();
+    }
   }
 }
 
@@ -259,6 +272,8 @@ function debounce(func, wait) {
     timeout = setTimeout(later, wait);
   };
 }
+// ================= PARTE 2: INICIALIZACIÓN Y CONFIGURACIÓN DE EVENTOS =================
+
 // Initialize Application
 document.addEventListener('DOMContentLoaded', function() {
   console.log('SENDA Platform loading...');
@@ -367,7 +382,7 @@ function initializeEventListeners() {
   if (findCenterBtn) {
     findCenterBtn.addEventListener('click', () => {
       showModal('center-modal');
-      loadNearbyClínicas();
+      loadNearbyClinics();
     });
   }
 
@@ -606,6 +621,8 @@ function setupFormValidation() {
     });
   }
 }
+// ================= PARTE 3: VALIDACIÓN Y MANEJO DE FORMULARIOS =================
+
 function validateCurrentStep() {
   const currentStepElement = document.querySelector(`[data-step="${currentFormStep}"]`);
   const requiredFields = currentStepElement.querySelectorAll('[required]:not([style*="display: none"] [required])');
@@ -837,6 +854,36 @@ function submitPatientForm() {
   }
 }
 
+function resetForm() {
+  formData = {};
+  currentFormStep = 1;
+  currentStepIndex = 0;
+  flowSteps = [1];
+  isDraftSaved = false;
+  
+  const form = document.getElementById('patient-form');
+  if (form) {
+    form.reset();
+    
+    document.querySelectorAll('.form-step').forEach((step, index) => {
+      step.classList.toggle('active', index === 0);
+    });
+    
+    const phoneContainer = document.getElementById('anonymous-phone-container');
+    const emailContainer = document.getElementById('info-email-container');
+    if (phoneContainer) phoneContainer.style.display = 'none';
+    if (emailContainer) emailContainer.style.display = 'none';
+    
+    const comunaSelect = document.getElementById('patient-comuna');
+    if (comunaSelect) {
+      comunaSelect.innerHTML = '<option value="">Seleccionar comuna...</option>';
+      comunaSelect.disabled = true;
+    }
+    
+    updateFormProgress();
+  }
+}
+
 async function handlePatientRegistration(e) {
   if (e) e.preventDefault();
   
@@ -971,36 +1018,7 @@ async function createCriticalCaseAlert(solicitudId, solicitudData) {
     console.error('Error creating critical alert:', error);
   }
 }
-
-function resetForm() {
-  formData = {};
-  currentFormStep = 1;
-  currentStepIndex = 0;
-  flowSteps = [1];
-  isDraftSaved = false;
-  
-  const form = document.getElementById('patient-form');
-  if (form) {
-    form.reset();
-    
-    document.querySelectorAll('.form-step').forEach((step, index) => {
-      step.classList.toggle('active', index === 0);
-    });
-    
-    const phoneContainer = document.getElementById('anonymous-phone-container');
-    const emailContainer = document.getElementById('info-email-container');
-    if (phoneContainer) phoneContainer.style.display = 'none';
-    if (emailContainer) emailContainer.style.display = 'none';
-    
-    const comunaSelect = document.getElementById('patient-comuna');
-    if (comunaSelect) {
-      comunaSelect.innerHTML = '<option value="">Seleccionar comuna...</option>';
-      comunaSelect.disabled = true;
-    }
-    
-    updateFormProgress();
-  }
-}
+// ================= PARTE 4: AUTENTICACIÓN DE PROFESIONALES =================
 
 async function handleProfessionalLogin(e) {
   e.preventDefault();
@@ -1109,8 +1127,8 @@ async function handleProfessionalRegistration(e) {
     email: emailElement.value.trim(),
     password: passwordElement.value,
     profession: professionElement.value,
-    license: licenseElement ? licenseElement.value.trim() : '', // Verificación segura
-    center: centerElement ? centerElement.value : '' // Verificación segura
+    license: licenseElement ? licenseElement.value.trim() : '',
+    center: centerElement ? centerElement.value : ''
   };
 
   // Validaciones mejoradas
@@ -1149,7 +1167,7 @@ async function handleProfessionalRegistration(e) {
       nombre: registrationData.name,
       correo: registrationData.email,
       profesion: registrationData.profession,
-      licencia: registrationData.license || 'No especificada', // Valor por defecto
+      licencia: registrationData.license || 'No especificada',
       id_centro_asignado: registrationData.center || null,
       configuracion_sistema: {
         rol: registrationData.profession,
@@ -1210,6 +1228,7 @@ async function handleProfessionalRegistration(e) {
     showLoading(false);
   }
 }
+
 function getDefaultPermissions(profession) {
   const permissions = {
     'asistente_social': [
@@ -1306,117 +1325,48 @@ function setupPanelNavigation(userData) {
   });
 }
 
-function showPanel(panelId, userData) {
-  document.querySelectorAll('.panel-content').forEach(panel => {
-    panel.classList.add('hidden');
-    panel.classList.remove('active');
-  });
-
-  const targetPanel = document.getElementById(panelId + '-panel');
-  if (targetPanel) {
-    targetPanel.classList.remove('hidden');
-    targetPanel.classList.add('active');
-
-    switch (panelId) {
-      case 'dashboard':
-        loadDashboard(userData);
-        break;
-      case 'requests':
-        loadRequests(userData);
-        break;
-    }
-  }
-}
-
-async function loadDashboard(userData) {
-  console.log('Loading dashboard for:', userData.nombre);
-  
-  try {
-    // Cargar estadísticas del dashboard
-    const today = new Date();
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    
-    // Contar solicitudes pendientes
-    const pendingRequests = await db.collection('solicitudes_ingreso')
-      .where('clasificacion.estado', '==', 'pendiente')
-      .get();
-    
-    // Contar casos críticos
-    const criticalCases = await db.collection('solicitudes_ingreso')
-      .where('clasificacion.prioridad', '==', 'critica')
-      .where('clasificacion.estado', '==', 'pendiente')
-      .get();
-    
-    // Actualizar métricas en el dashboard
-    const totalPatientsElement = document.getElementById('total-patients');
-    const pendingRequestsElement = document.getElementById('pending-requests');
-    const criticalCasesElement = document.getElementById('critical-cases');
-    
-    if (totalPatientsElement) totalPatientsElement.textContent = pendingRequests.size;
-    if (pendingRequestsElement) pendingRequestsElement.textContent = pendingRequests.size;
-    if (criticalCasesElement) criticalCasesElement.textContent = criticalCases.size;
-    
-  } catch (error) {
-    console.error('Error loading dashboard:', error);
-  }
-}
-
-async function loadRequests(userData) {
-  console.log('Loading requests for:', userData.nombre);
-  
-  try {
-    const requestsList = document.getElementById('requests-list');
-    if (!requestsList) return;
-    
-    requestsList.innerHTML = '<div class="loading"><div class="spinner"></div> Cargando solicitudes...</div>';
-    
-    // Obtener solicitudes según el rol del usuario
-    let query = db.collection('solicitudes_ingreso')
-      .orderBy('metadata.fecha_creacion', 'desc')
-      .limit(20);
-    
-    const snapshot = await query.get();
-    
-    if (snapshot.empty) {
-      requestsList.innerHTML = '<p>No hay solicitudes disponibles.</p>';
-      return;
-    }
-    
-    let html = '';
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      const priority = data.clasificacion?.prioridad || 'baja';
-      const estado = data.clasificacion?.estado || 'pendiente';
+async function handleLogout() {
+  if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
+    try {
+      // Limpiar listeners en tiempo real
+      if (window.sendaUnsubscribers) {
+        window.sendaUnsubscribers.forEach(unsubscribe => unsubscribe());
+        window.sendaUnsubscribers = [];
+      }
       
-      html += `
-        <div class="card patient-card">
-          <div class="card-header">
-            <div>
-              <h3>Solicitud ${doc.id.substring(0, 8).toUpperCase()}</h3>
-              <p>Edad: ${data.datos_personales?.edad || 'N/A'} años</p>
-            </div>
-            <div>
-              <span class="priority-indicator priority-${priority}">${priority.toUpperCase()}</span>
-              <span class="status-badge status-${estado}">${estado}</span>
-            </div>
-          </div>
-          <div class="patient-info">
-            <div>Región: ${data.datos_personales?.region || 'N/A'}</div>
-            <div>Tipo: ${data.datos_personales?.anonimo ? 'Anónimo' : 'Identificado'}</div>
-            <div>Fecha: ${formatDate(data.metadata?.fecha_creacion)}</div>
-          </div>
-        </div>
-      `;
-    });
-    
-    requestsList.innerHTML = html;
-    
-  } catch (error) {
-    console.error('Error loading requests:', error);
-    const requestsList = document.getElementById('requests-list');
-    if (requestsList) {
-      requestsList.innerHTML = '<p>Error al cargar las solicitudes.</p>';
+      await auth.signOut();
+      currentUser = null;
+      currentUserData = null;
+      closeModal('panel-modal');
+      showNotification('Sesión cerrada correctamente', 'success');
+      
+      document.getElementById('login-form')?.reset();
+      document.getElementById('register-form')?.reset();
+      document.querySelector('[data-tab="login"]')?.click();
+      
+    } catch (error) {
+      console.error('Logout error:', error);
+      showNotification('Error al cerrar sesión: ' + error.message, 'error');
     }
+  }
+}
+
+// Authentication State Observer
+auth.onAuthStateChanged(user => {
+  currentUser = user;
+  if (user) {
+    loadUserData(user.uid);
+  }
+});
+
+async function loadUserData(uid) {
+  try {
+    const doc = await db.collection('profesionales').doc(uid).get();
+    if (doc.exists) {
+      currentUserData = { uid, ...doc.data() };
+    }
+  } catch (error) {
+    console.error('Error loading user data:', error);
   }
 }
 
@@ -1454,162 +1404,86 @@ function startRealTimeListeners(userData) {
   // Guardar referencias para cleanup
   window.sendaUnsubscribers = [unsubscribeCritical, unsubscribeRequests];
 }
+// ================= PARTE 5: PANEL DE GESTIÓN Y DASHBOARD =================
 
-async function handleLogout() {
-  if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
-    try {
-      // Limpiar listeners en tiempo real
-      if (window.sendaUnsubscribers) {
-        window.sendaUnsubscribers.forEach(unsubscribe => unsubscribe());
-        window.sendaUnsubscribers = [];
-      }
-      
-      await auth.signOut();
-      currentUser = null;
-      currentUserData = null;
-      closeModal('panel-modal');
-      showNotification('Sesión cerrada correctamente', 'success');
-      
-      document.getElementById('login-form')?.reset();
-      document.getElementById('register-form')?.reset();
-      document.querySelector('[data-tab="login"]')?.click();
-      
-    } catch (error) {
-      console.error('Logout error:', error);
-      showNotification('Error al cerrar sesión: ' + error.message, 'error');
+function showPanel(panelId, userData) {
+  document.querySelectorAll('.panel-content').forEach(panel => {
+    panel.classList.add('hidden');
+    panel.classList.remove('active');
+  });
+
+  const targetPanel = document.getElementById(panelId + '-panel');
+  if (targetPanel) {
+    targetPanel.classList.remove('hidden');
+    targetPanel.classList.add('active');
+
+    switch (panelId) {
+      case 'dashboard':
+        loadDashboard(userData);
+        break;
+      case 'requests':
+        loadRequestsPanel(userData);
+        break;
+      case 'patients':
+        loadPatientsPanel(userData);
+        break;
+      case 'calendar':
+        loadCalendarPanel(userData);
+        break;
+      case 'followups':
+        loadFollowupsPanel(userData);
+        break;
+      case 'reports':
+        loadReportsPanel(userData);
+        break;
     }
   }
 }
 
-async function loadNearbyClínicas() {
-  const centersList = document.getElementById('centers-list');
-  if (!centersList) return;
+async function loadDashboard(userData) {
+  console.log('Loading dashboard for:', userData.nombre);
   
-  centersList.innerHTML = '<div class="loading"><div class="spinner"></div> Buscando centros cercanos...</div>';
-  
-  const mockCenters = [
-    {
-      name: 'CESFAM La Florida',
-      address: 'Av. Walker Martinez 1234, La Florida',
-      distance: '1.2 km',
-      phone: '+56 2 2987 6543',
-      hours: 'Lun-Vie 8:00-17:00'
-    },
-    {
-      name: 'CESFAM Maipú',
-      address: 'Av. Pajaritos 5678, Maipú', 
-      distance: '3.5 km',
-      phone: '+56 2 2765 4321',
-      hours: 'Lun-Vie 8:30-17:30'
-    },
-    {
-      name: 'Centro SENDA Providencia',
-      address: 'Av. Providencia 9876, Providencia',
-      distance: '5.1 km', 
-      phone: '+56 2 2234 5678',
-      hours: 'Lun-Vie 9:00-18:00'
-    }
-  ];
-  
-  setTimeout(() => {
-    let html = '';
-    mockCenters.forEach(center => {
-      html += `
-        <div class="center-card">
-          <div class="center-header">
-            <h4>${center.name}</h4>
-            <span class="distance">${center.distance}</span>
-          </div>
-          <div class="center-details">
-            <p><i class="fas fa-map-marker-alt"></i> ${center.address}</p>
-            <p><i class="fas fa-phone"></i> ${center.phone}</p>
-            <p><i class="fas fa-clock"></i> ${center.hours}</p>
-          </div>
-          <div class="center-actions">
-            <button class="btn btn-outline btn-sm">
-              <i class="fas fa-directions"></i> Cómo llegar
-            </button>
-            <button class="btn btn-primary btn-sm">
-              <i class="fas fa-phone"></i> Llamar
-            </button>
-          </div>
-        </div>
-      `;
-    });
-    
-    centersList.innerHTML = html;
-  }, 1000);
-}
-
-function getCurrentLocation() {
-  if (navigator.geolocation) {
-    showNotification('Obteniendo tu ubicación...', 'info');
-    
-    navigator.geolocation.getCurrentPosition(
-      position => {
-        const { latitude, longitude } = position.coords;
-        document.getElementById('location-input').value = `${latitude}, ${longitude}`;
-        showNotification('Ubicación detectada', 'success');
-        loadNearbyClínicas();
-      },
-      error => {
-        console.error('Geolocation error:', error);
-        showNotification('No se pudo obtener tu ubicación. Por favor ingresa tu dirección manualmente.', 'error');
-      }
-    );
-  } else {
-    showNotification('Tu navegador no soporta geolocalización', 'error');
-  }
-}
-
-// Authentication State Observer
-auth.onAuthStateChanged(user => {
-  currentUser = user;
-  if (user) {
-    loadUserData(user.uid);
-  }
-});
-
-async function loadUserData(uid) {
   try {
-    const doc = await db.collection('profesionales').doc(uid).get();
-    if (doc.exists) {
-      currentUserData = { uid, ...doc.data() };
-    }
+    // Cargar estadísticas del dashboard
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    // Contar solicitudes pendientes
+    const pendingRequests = await db.collection('solicitudes_ingreso')
+      .where('clasificacion.estado', '==', 'pendiente')
+      .get();
+    
+    // Contar casos críticos
+    const criticalCases = await db.collection('solicitudes_ingreso')
+      .where('clasificacion.prioridad', '==', 'critica')
+      .where('clasificacion.estado', '==', 'pendiente')
+      .get();
+    
+    // Contar pacientes activos
+    const activePatients = await db.collection('pacientes')
+      .where('estado_actual.activo', '==', true)
+      .get();
+    
+    // Actualizar métricas en el dashboard
+    const totalPatientsElement = document.getElementById('total-patients');
+    const pendingRequestsElement = document.getElementById('pending-requests');
+    const criticalCasesElement = document.getElementById('critical-cases');
+    
+    if (totalPatientsElement) totalPatientsElement.textContent = activePatients.size;
+    if (pendingRequestsElement) pendingRequestsElement.textContent = pendingRequests.size;
+    if (criticalCasesElement) criticalCasesElement.textContent = criticalCases.size;
+    
   } catch (error) {
-    console.error('Error loading user data:', error);
+    console.error('Error loading dashboard:', error);
   }
 }
 
-// Export functions for debugging
-window.sendaApp = {
-  showNotification,
-  showModal,
-  closeModal,
-  formatRUT,
-  validateRUT,
-  getProfessionName,
-  formData,
-  currentUserData,
-  regionesChile,
-  // Funciones de prueba
-  testPatientForm: () => {
-    showModal('patient-modal');
-    updateFormProgress();
-  },
-  testProfessionalLogin: () => {
-    showModal('professional-modal');
-  },
-  getCurrentFormData: () => formData,
-  getCurrentUser: () => currentUserData
-};
-// ================= FUNCIONES CLÍNICAS ADICIONALES =================
+// ================= PANEL DE SOLICITUDES CORREGIDO PARA ASISTENTES SOCIALES =================
 
-// Funciones para el panel de Solicitudes (solo Asistentes Sociales)
 async function loadRequestsPanel(userData) {
   console.log('Loading requests panel for:', userData.nombre);
   
-  // Verificar si es asistente social
+  // Verificar si es asistente social o admin
   if (userData.profesion !== 'asistente_social' && userData.profesion !== 'admin') {
     const requestsList = document.getElementById('requests-list');
     if (requestsList) {
@@ -1631,11 +1505,10 @@ async function loadRequestsPanel(userData) {
     
     requestsList.innerHTML = '<div class="loading"><div class="spinner"></div> Cargando solicitudes...</div>';
     
-    // Obtener solicitudes pendientes
+    // CONSULTA CORREGIDA - Obtener TODAS las solicitudes sin filtros de fecha
     let query = db.collection('solicitudes_ingreso')
-      .where('clasificacion.estado', '==', 'pendiente')
       .orderBy('metadata.fecha_creacion', 'desc')
-      .limit(50);
+      .limit(100); // Aumentamos el límite para ver más solicitudes
     
     const snapshot = await query.get();
     
@@ -1644,7 +1517,7 @@ async function loadRequestsPanel(userData) {
         <div class="card">
           <p style="text-align: center; color: var(--gray-600);">
             <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
-            No hay solicitudes pendientes en este momento.
+            No hay solicitudes disponibles en este momento.
           </p>
         </div>
       `;
@@ -1687,23 +1560,28 @@ async function loadRequestsPanel(userData) {
               `<div><strong>Sustancias:</strong> ${data.evaluacion_inicial.sustancias_consumo.join(', ')}</div>` : ''}
             ${data.evaluacion_inicial?.urgencia_declarada ? 
               `<div><strong>Urgencia:</strong> ${data.evaluacion_inicial.urgencia_declarada}</div>` : ''}
+            ${data.datos_contacto?.telefono_principal ? 
+              `<div><strong>Teléfono:</strong> ${data.datos_contacto.telefono_principal}</div>` : ''}
+            ${data.datos_contacto?.email ? 
+              `<div><strong>Email:</strong> ${data.datos_contacto.email}</div>` : ''}
           </div>
           <div class="card-actions" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gray-200);">
             <button class="btn btn-primary btn-sm" onclick="reviewRequest('${doc.id}')">
-              <i class="fas fa-eye"></i> Revisar
+              <i class="fas fa-eye"></i> Revisar Completa
             </button>
-            ${!isInfoOnly ? `
+            ${!isInfoOnly && estado === 'pendiente' ? `
             <button class="btn btn-success btn-sm" onclick="acceptRequest('${doc.id}')">
               <i class="fas fa-check"></i> Aceptar
             </button>
             <button class="btn btn-secondary btn-sm" onclick="assignRequest('${doc.id}')">
-              <i class="fas fa-user-plus"></i> Asignar
+              <i class="fas fa-user-plus"></i> Asignar a Profesional
             </button>
-            ` : `
+            ` : ''}
+            ${isInfoOnly && estado === 'pendiente' ? `
             <button class="btn btn-success btn-sm" onclick="sendInformation('${doc.id}')">
-              <i class="fas fa-envelope"></i> Enviar Info
+              <i class="fas fa-envelope"></i> Enviar Información
             </button>
-            `}
+            ` : ''}
           </div>
         </div>
       `;
@@ -1715,7 +1593,7 @@ async function loadRequestsPanel(userData) {
     console.error('Error loading requests:', error);
     const requestsList = document.getElementById('requests-list');
     if (requestsList) {
-      requestsList.innerHTML = '<p>Error al cargar las solicitudes.</p>';
+      requestsList.innerHTML = '<p>Error al cargar las solicitudes: ' + error.message + '</p>';
     }
   }
 }
@@ -1730,11 +1608,110 @@ async function reviewRequest(requestId) {
     }
     
     const data = doc.data();
-    showRequestModal(requestId, data);
+    showRequestDetailModal(requestId, data);
   } catch (error) {
     console.error('Error reviewing request:', error);
     showNotification('Error al cargar la solicitud', 'error');
   }
+}
+
+function showRequestDetailModal(requestId, data) {
+  const isAnonymous = data.datos_personales?.anonimo || false;
+  const isInfoOnly = data.datos_personales?.solo_informacion || false;
+  
+  const modalHTML = `
+    <div class="modal-overlay" id="request-detail-modal">
+      <div class="modal large-modal">
+        <button class="modal-close" onclick="closeModal('request-detail-modal')">
+          <i class="fas fa-times"></i>
+        </button>
+        <h2>Detalle de Solicitud ${requestId.substring(0, 8).toUpperCase()}</h2>
+        
+        <div class="request-detail-content">
+          <div class="detail-section">
+            <h3>Información Personal</h3>
+            <div class="info-grid">
+              ${!isAnonymous && data.datos_contacto?.nombre_completo ? 
+                `<div><strong>Nombre:</strong> ${data.datos_contacto.nombre_completo}</div>` : ''}
+              ${!isAnonymous && data.datos_contacto?.rut ? 
+                `<div><strong>RUT:</strong> ${data.datos_contacto.rut}</div>` : ''}
+              <div><strong>Edad:</strong> ${data.datos_personales?.edad || 'N/A'} años</div>
+              <div><strong>Región:</strong> ${data.datos_personales?.region || 'N/A'}</div>
+              <div><strong>Para quien:</strong> ${data.datos_personales?.para_quien || 'N/A'}</div>
+              <div><strong>Tipo:</strong> ${isInfoOnly ? 'Solo información' : isAnonymous ? 'Anónimo' : 'Identificado'}</div>
+            </div>
+          </div>
+          
+          <div class="detail-section">
+            <h3>Datos de Contacto</h3>
+            <div class="info-grid">
+              ${data.datos_contacto?.telefono_principal ? 
+                `<div><strong>Teléfono:</strong> ${data.datos_contacto.telefono_principal}</div>` : ''}
+              ${data.datos_contacto?.email ? 
+                `<div><strong>Email:</strong> ${data.datos_contacto.email}</div>` : ''}
+              ${data.datos_contacto?.direccion ? 
+                `<div><strong>Dirección:</strong> ${data.datos_contacto.direccion}</div>` : ''}
+            </div>
+          </div>
+          
+          ${data.evaluacion_inicial ? `
+          <div class="detail-section">
+            <h3>Evaluación Inicial</h3>
+            <div class="info-grid">
+              ${data.evaluacion_inicial.sustancias_consumo ? 
+                `<div><strong>Sustancias:</strong> ${data.evaluacion_inicial.sustancias_consumo.join(', ')}</div>` : ''}
+              ${data.evaluacion_inicial.tiempo_consumo_meses ? 
+                `<div><strong>Tiempo de consumo:</strong> ${data.evaluacion_inicial.tiempo_consumo_meses} meses</div>` : ''}
+              ${data.evaluacion_inicial.motivacion_cambio ? 
+                `<div><strong>Motivación al cambio:</strong> ${data.evaluacion_inicial.motivacion_cambio}/10</div>` : ''}
+              ${data.evaluacion_inicial.urgencia_declarada ? 
+                `<div><strong>Urgencia:</strong> ${data.evaluacion_inicial.urgencia_declarada}</div>` : ''}
+              ${data.evaluacion_inicial.tratamiento_previo ? 
+                `<div><strong>Tratamiento previo:</strong> ${data.evaluacion_inicial.tratamiento_previo}</div>` : ''}
+            </div>
+            ${data.evaluacion_inicial.descripcion_situacion ? `
+            <div style="margin-top: 12px;">
+              <strong>Descripción de la situación:</strong>
+              <p style="margin-top: 8px; padding: 12px; background: var(--gray-50); border-radius: 4px;">
+                ${data.evaluacion_inicial.descripcion_situacion}
+              </p>
+            </div>
+            ` : ''}
+          </div>
+          ` : ''}
+          
+          <div class="detail-section">
+            <h3>Estado de la Solicitud</h3>
+            <div class="info-grid">
+              <div><strong>Estado:</strong> <span class="status-badge status-${data.clasificacion?.estado || 'pendiente'}">${data.clasificacion?.estado || 'pendiente'}</span></div>
+              <div><strong>Prioridad:</strong> <span class="priority-indicator priority-${data.clasificacion?.prioridad || 'baja'}">${data.clasificacion?.prioridad || 'baja'}</span></div>
+              <div><strong>Fecha solicitud:</strong> ${formatDate(data.metadata?.fecha_creacion)}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-actions" style="margin-top: 24px;">
+          ${!isInfoOnly && data.clasificacion?.estado === 'pendiente' ? `
+          <button class="btn btn-success" onclick="acceptRequest('${requestId}'); closeModal('request-detail-modal');">
+            <i class="fas fa-check"></i> Aceptar Solicitud
+          </button>
+          <button class="btn btn-secondary" onclick="assignRequest('${requestId}')">
+            <i class="fas fa-user-plus"></i> Asignar a Profesional
+          </button>
+          ` : ''}
+          ${isInfoOnly && data.clasificacion?.estado === 'pendiente' ? `
+          <button class="btn btn-success" onclick="sendInformation('${requestId}'); closeModal('request-detail-modal');">
+            <i class="fas fa-envelope"></i> Enviar Información
+          </button>
+          ` : ''}
+          <button class="btn btn-outline" onclick="closeModal('request-detail-modal')">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  document.getElementById('request-detail-modal').style.display = 'flex';
 }
 
 async function acceptRequest(requestId) {
@@ -1771,7 +1748,6 @@ async function acceptRequest(requestId) {
 
 async function assignRequest(requestId) {
   try {
-    // Mostrar modal de asignación con lista de profesionales
     showAssignmentModal(requestId);
   } catch (error) {
     console.error('Error in assign request:', error);
@@ -1838,224 +1814,7 @@ async function createPatientRecord(solicitudId, solicitudData) {
   
   await db.collection('pacientes').add(patientData);
 }
-
-// Funciones para el panel de Pacientes
-async function loadPatientsPanel(userData) {
-  console.log('Loading patients panel for:', userData.nombre);
-  
-  const patientsContainer = document.getElementById('patients-panel');
-  if (!patientsContainer) return;
-  
-  // Agregar HTML del panel de pacientes si no existe
-  if (!document.getElementById('patients-search')) {
-    patientsContainer.innerHTML = `
-      <div class="panel-header">
-        <h1 class="panel-title">Gestión de Pacientes</h1>
-        <p class="panel-subtitle">Busca y gestiona información de pacientes</p>
-      </div>
-      
-      <div class="search-section">
-        <div class="search-container">
-          <i class="fas fa-search search-icon"></i>
-          <input type="text" id="patients-search" class="search-input" placeholder="Buscar por nombre, RUT o ID de paciente...">
-        </div>
-      </div>
-      
-      <div class="filters-section">
-        <div class="filter-group">
-          <select class="form-select" id="filter-status-patient">
-            <option value="">Todos los estados</option>
-            <option value="activo">Activo</option>
-            <option value="en_tratamiento">En tratamiento</option>
-            <option value="alta">Alta</option>
-            <option value="derivado">Derivado</option>
-          </select>
-          
-          <select class="form-select" id="filter-professional">
-            <option value="">Todos los profesionales</option>
-          </select>
-          
-          <button class="btn btn-outline" id="clear-patient-filters">
-            <i class="fas fa-times"></i> Limpiar
-          </button>
-        </div>
-      </div>
-      
-      <div id="patients-list">
-        <!-- Los pacientes se cargarán aquí -->
-      </div>
-    `;
-  }
-  
-  // Configurar eventos de búsqueda
-  setupPatientsSearch();
-  
-  // Cargar lista de pacientes
-  await loadPatientsList(userData);
-}
-
-function setupPatientsSearch() {
-  const searchInput = document.getElementById('patients-search');
-  if (searchInput) {
-    searchInput.addEventListener('input', debounce(function() {
-      searchPatients(this.value);
-    }, 300));
-  }
-  
-  const clearFilters = document.getElementById('clear-patient-filters');
-  if (clearFilters) {
-    clearFilters.addEventListener('click', function() {
-      document.getElementById('patients-search').value = '';
-      document.getElementById('filter-status-patient').value = '';
-      document.getElementById('filter-professional').value = '';
-      loadPatientsList(currentUserData);
-    });
-  }
-}
-
-async function loadPatientsList(userData, searchTerm = '') {
-  try {
-    const patientsList = document.getElementById('patients-list');
-    if (!patientsList) return;
-    
-    patientsList.innerHTML = '<div class="loading"><div class="spinner"></div> Cargando pacientes...</div>';
-    
-    let query = db.collection('pacientes')
-      .where('estado_actual.activo', '==', true)
-      .orderBy('metadata.fecha_creacion', 'desc')
-      .limit(50);
-    
-    const snapshot = await query.get();
-    
-    if (snapshot.empty) {
-      patientsList.innerHTML = `
-        <div class="card">
-          <p style="text-align: center; color: var(--gray-600);">
-            <i class="fas fa-users" style="font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
-            No hay pacientes registrados en este momento.
-          </p>
-        </div>
-      `;
-      return;
-    }
-    
-    let html = '';
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      const patient = data.datos_personales;
-      const estado = data.estado_actual;
-      
-      // Filtrar por búsqueda si hay término
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase();
-        const patientText = `${patient.nombre_completo} ${patient.rut} ${doc.id}`.toLowerCase();
-        if (!patientText.includes(searchLower)) {
-          return;
-        }
-      }
-      
-      html += `
-        <div class="card patient-card" data-patient-id="${doc.id}">
-          <div class="card-header">
-            <div>
-              <h3>${patient.nombre_completo || 'Sin nombre'}</h3>
-              <p>RUT: ${patient.rut || 'Sin RUT'}</p>
-              <p>ID: ${doc.id.substring(0, 8).toUpperCase()}</p>
-            </div>
-            <div style="text-align: right;">
-              <span class="status-badge status-${estado.activo ? 'active' : 'inactive'}">
-                ${estado.activo ? 'Activo' : 'Inactivo'}
-              </span>
-              <div style="margin-top: 8px; font-size: 12px; color: var(--gray-600);">
-                ${estado.programa || 'Sin programa'}
-              </div>
-            </div>
-          </div>
-          <div class="patient-info">
-            <div><strong>Edad:</strong> ${patient.edad || 'N/A'} años</div>
-            <div><strong>Región:</strong> ${patient.region || 'N/A'}</div>
-            <div><strong>Comuna:</strong> ${patient.comuna || 'N/A'}</div>
-            <div><strong>Teléfono:</strong> ${data.contacto?.telefono || 'N/A'}</div>
-            <div><strong>Email:</strong> ${data.contacto?.email || 'N/A'}</div>
-            <div><strong>Fecha Ingreso:</strong> ${formatDate(estado.fecha_ingreso)}</div>
-          </div>
-          <div class="card-actions" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gray-200);">
-            <button class="btn btn-primary btn-sm" onclick="viewPatientDetails('${doc.id}')">
-              <i class="fas fa-eye"></i> Ver Ficha
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="editPatient('${doc.id}')">
-              <i class="fas fa-edit"></i> Editar
-            </button>
-            <button class="btn btn-outline btn-sm" onclick="viewHistory('${doc.id}')">
-              <i class="fas fa-history"></i> Historial
-            </button>
-          </div>
-        </div>
-      `;
-    });
-    
-    if (html === '') {
-      patientsList.innerHTML = `
-        <div class="card">
-          <p style="text-align: center; color: var(--gray-600);">
-            No se encontraron pacientes con los criterios de búsqueda.
-          </p>
-        </div>
-      `;
-    } else {
-      patientsList.innerHTML = html;
-    }
-    
-  } catch (error) {
-    console.error('Error loading patients:', error);
-    const patientsList = document.getElementById('patients-list');
-    if (patientsList) {
-      patientsList.innerHTML = '<p>Error al cargar los pacientes.</p>';
-    }
-  }
-}
-
-async function searchPatients(searchTerm) {
-  await loadPatientsList(currentUserData, searchTerm);
-}
-
-async function viewPatientDetails(patientId) {
-  try {
-    const doc = await db.collection('pacientes').doc(patientId).get();
-    if (!doc.exists) {
-      showNotification('Paciente no encontrado', 'error');
-      return;
-    }
-    
-    const data = doc.data();
-    showPatientDetailsModal(patientId, data);
-  } catch (error) {
-    console.error('Error viewing patient details:', error);
-    showNotification('Error al cargar los detalles del paciente', 'error');
-  }
-}
-
-async function editPatient(patientId) {
-  // Función para editar paciente - implementar según necesidades
-  showNotification('Función de edición en desarrollo', 'info');
-}
-
-async function viewHistory(patientId) {
-  try {
-    const doc = await db.collection('pacientes').doc(patientId).get();
-    if (!doc.exists) {
-      showNotification('Paciente no encontrado', 'error');
-      return;
-    }
-    
-    const data = doc.data();
-    showPatientHistoryModal(patientId, data);
-  } catch (error) {
-    console.error('Error viewing patient history:', error);
-    showNotification('Error al cargar el historial del paciente', 'error');
-  }
-}
-// ================= FUNCIONES PARA AGENDA =================
+// ================= PARTE 6: PANEL DE AGENDA 2025 Y GESTIÓN DE CITAS =================
 
 async function loadCalendarPanel(userData) {
   console.log('Loading calendar panel for:', userData.nombre);
@@ -2067,8 +1826,8 @@ async function loadCalendarPanel(userData) {
   if (!document.getElementById('professionals-list')) {
     calendarContainer.innerHTML = `
       <div class="panel-header">
-        <h1 class="panel-title">Agenda</h1>
-        <p class="panel-subtitle">Gestiona citas y horarios de profesionales</p>
+        <h1 class="panel-title">Agenda 2025</h1>
+        <p class="panel-subtitle">Gestiona citas y horarios de profesionales - Año 2025 en adelante</p>
       </div>
       
       <div class="calendar-controls">
@@ -2076,12 +1835,13 @@ async function loadCalendarPanel(userData) {
           <button class="btn btn-outline" id="prev-month">
             <i class="fas fa-chevron-left"></i>
           </button>
-          <span id="current-month-year">Marzo 2024</span>
+          <span id="current-month-year">Enero 2025</span>
           <button class="btn btn-outline" id="next-month">
             <i class="fas fa-chevron-right"></i>
           </button>
         </div>
-        <div>
+        <div class="calendar-view-controls">
+          <button class="btn btn-secondary btn-sm" id="go-to-today">Ir a Hoy</button>
           <button class="btn btn-primary" id="new-appointment">
             <i class="fas fa-plus"></i> Nueva Cita
           </button>
@@ -2090,7 +1850,7 @@ async function loadCalendarPanel(userData) {
       
       <div class="calendar-layout">
         <div class="professionals-sidebar">
-          <h3>Profesionales</h3>
+          <h3>Profesionales Activos</h3>
           <div id="professionals-list">
             <!-- Lista de profesionales se cargará aquí -->
           </div>
@@ -2104,18 +1864,26 @@ async function loadCalendarPanel(userData) {
       </div>
       
       <div class="appointments-summary">
-        <h3>Citas de Hoy</h3>
-        <div id="today-appointments-list">
-          <!-- Citas del día se mostrarán aquí -->
+        <h3>Resumen de Citas</h3>
+        <div class="appointments-tabs">
+          <button class="tab-btn active" data-period="today">Hoy</button>
+          <button class="tab-btn" data-period="week">Esta Semana</button>
+          <button class="tab-btn" data-period="month">Este Mes</button>
+        </div>
+        <div id="appointments-summary-list">
+          <!-- Citas del período seleccionado se mostrarán aquí -->
         </div>
       </div>
     `;
   }
   
+  // Asegurar que iniciamos en 2025
+  currentCalendarDate = new Date(2025, 0, 1); // Enero 1, 2025
+  
   setupCalendarEvents();
   await loadProfessionalsList();
   await loadCalendarView();
-  await loadTodayAppointments();
+  await loadAppointmentsSummary('today');
 }
 
 async function loadProfessionalsList() {
@@ -2125,46 +1893,50 @@ async function loadProfessionalsList() {
     
     professionalsContainer.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
     
+    // CONSULTA CORREGIDA para obtener profesionales vinculados
     const professionalsSnapshot = await db.collection('profesionales')
       .where('configuracion_sistema.activo', '==', true)
-      .where('profesion', 'in', ['medico', 'psicologo', 'terapeuta'])
       .get();
     
     let html = '';
-    professionalsSnapshot.forEach(doc => {
-      const data = doc.data();
-      html += `
-        <div class="professional-item ${selectedProfessional === doc.id ? 'selected' : ''}" 
-             data-professional-id="${doc.id}" onclick="selectProfessional('${doc.id}')">
-          <div class="professional-avatar">
-            ${data.nombre.substring(0, 2).toUpperCase()}
-          </div>
-          <div class="professional-info">
-            <div class="professional-name">${data.nombre}</div>
-            <div class="professional-role">${getProfessionName(data.profesion)}</div>
-            <div class="professional-availability">
-              <span class="availability-dot available"></span>
-              Disponible
+    if (professionalsSnapshot.empty) {
+      html = '<p style="text-align: center; color: var(--gray-600);">No hay profesionales registrados</p>';
+    } else {
+      professionalsSnapshot.forEach(doc => {
+        const data = doc.data();
+        // Filtrar solo profesionales clínicos
+        if (['medico', 'psicologo', 'terapeuta', 'asistente_social'].includes(data.profesion)) {
+          html += `
+            <div class="professional-item ${selectedProfessional === doc.id ? 'selected' : ''}" 
+                 data-professional-id="${doc.id}" onclick="selectProfessional('${doc.id}')">
+              <div class="professional-avatar">
+                ${data.nombre.substring(0, 2).toUpperCase()}
+              </div>
+              <div class="professional-info">
+                <div class="professional-name">${data.nombre}</div>
+                <div class="professional-role">${getProfessionName(data.profesion)}</div>
+                <div class="professional-availability">
+                  <span class="availability-dot available"></span>
+                  Disponible
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      `;
-    });
+          `;
+        }
+      });
+    }
     
     if (html === '') {
-      html = '<p style="text-align: center; color: var(--gray-600);">No hay profesionales disponibles</p>';
+      html = '<p style="text-align: center; color: var(--gray-600);">No hay profesionales clínicos disponibles</p>';
     }
     
     professionalsContainer.innerHTML = html;
     
   } catch (error) {
     console.error('Error loading professionals:', error);
-    document.getElementById('professionals-list').innerHTML = '<p>Error al cargar profesionales</p>';
+    document.getElementById('professionals-list').innerHTML = '<p>Error al cargar profesionales: ' + error.message + '</p>';
   }
 }
-
-let selectedProfessional = null;
-let currentCalendarDate = new Date();
 
 function selectProfessional(professionalId) {
   selectedProfessional = professionalId;
@@ -2173,20 +1945,30 @@ function selectProfessional(professionalId) {
   document.querySelectorAll('.professional-item').forEach(item => {
     item.classList.remove('selected');
   });
-  document.querySelector(`[data-professional-id="${professionalId}"]`).classList.add('selected');
+  const selectedItem = document.querySelector(`[data-professional-id="${professionalId}"]`);
+  if (selectedItem) {
+    selectedItem.classList.add('selected');
+  }
   
   // Recargar calendario con las citas del profesional seleccionado
   loadCalendarView();
+  showNotification(`Profesional seleccionado. Mostrando agenda.`, 'info', 2000);
 }
 
 function setupCalendarEvents() {
   const prevMonth = document.getElementById('prev-month');
   const nextMonth = document.getElementById('next-month');
   const newAppointment = document.getElementById('new-appointment');
+  const goToToday = document.getElementById('go-to-today');
   
   if (prevMonth) {
     prevMonth.addEventListener('click', () => {
       currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+      // No permitir ir antes de 2025
+      if (currentCalendarDate.getFullYear() < 2025) {
+        currentCalendarDate = new Date(2025, 0, 1);
+        showNotification('La agenda está disponible desde enero 2025 en adelante', 'warning');
+      }
       loadCalendarView();
     });
   }
@@ -2198,11 +1980,34 @@ function setupCalendarEvents() {
     });
   }
   
+  if (goToToday) {
+    goToToday.addEventListener('click', () => {
+      const today = new Date();
+      // Si estamos antes de 2025, ir a enero 2025
+      if (today.getFullYear() < 2025) {
+        currentCalendarDate = new Date(2025, 0, 1);
+        showNotification('Navegando a enero 2025 (inicio de agenda disponible)', 'info');
+      } else {
+        currentCalendarDate = new Date(today);
+      }
+      loadCalendarView();
+    });
+  }
+  
   if (newAppointment) {
     newAppointment.addEventListener('click', () => {
       showNewAppointmentModal();
     });
   }
+  
+  // Configurar tabs de resumen
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      loadAppointmentsSummary(this.dataset.period);
+    });
+  });
 }
 
 async function loadCalendarView() {
@@ -2226,19 +2031,23 @@ async function loadCalendarView() {
     // Obtener citas del mes si hay profesional seleccionado
     let appointments = {};
     if (selectedProfessional) {
-      const appointmentsSnapshot = await db.collection('citas')
-        .where('profesional_id', '==', selectedProfessional)
-        .where('fecha', '>=', firstDay)
-        .where('fecha', '<=', lastDay)
-        .get();
-      
-      appointmentsSnapshot.forEach(doc => {
-        const data = doc.data();
-        const date = data.fecha.toDate();
-        const dateKey = date.toDateString();
-        if (!appointments[dateKey]) appointments[dateKey] = [];
-        appointments[dateKey].push(data);
-      });
+      try {
+        const appointmentsSnapshot = await db.collection('citas')
+          .where('profesional_id', '==', selectedProfessional)
+          .where('fecha', '>=', firstDay)
+          .where('fecha', '<=', lastDay)
+          .get();
+        
+        appointmentsSnapshot.forEach(doc => {
+          const data = doc.data();
+          const date = data.fecha.toDate();
+          const dateKey = date.toDateString();
+          if (!appointments[dateKey]) appointments[dateKey] = [];
+          appointments[dateKey].push({...data, id: doc.id});
+        });
+      } catch (error) {
+        console.error('Error loading appointments:', error);
+      }
     }
     
     let html = `
@@ -2262,16 +2071,22 @@ async function loadCalendarView() {
       const isToday = currentDate.toDateString() === new Date().toDateString();
       const dateKey = currentDate.toDateString();
       const dayAppointments = appointments[dateKey] || [];
+      const isPast = currentDate < new Date().setHours(0,0,0,0);
       
       html += `
-        <div class="calendar-day ${isCurrentMonth ? '' : 'other-month'} ${isToday ? 'today' : ''}"
+        <div class="calendar-day ${isCurrentMonth ? '' : 'other-month'} ${isToday ? 'today' : ''} ${isPast ? 'past' : ''}"
              onclick="selectCalendarDay('${currentDate.toISOString()}')">
           <div class="day-number">${currentDate.getDate()}</div>
-          ${dayAppointments.map(apt => `
-            <div class="appointment-item" style="background: var(--primary-blue); color: white; font-size: 10px; padding: 2px 4px; margin: 1px 0; border-radius: 2px;">
-              ${new Date(apt.fecha.toDate()).toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})}
-            </div>
-          `).join('')}
+          <div class="appointments-container">
+            ${dayAppointments.slice(0, 3).map(apt => `
+              <div class="appointment-item" 
+                   style="background: var(--primary-blue); color: white; font-size: 10px; padding: 2px 4px; margin: 1px 0; border-radius: 2px; cursor: pointer;"
+                   onclick="event.stopPropagation(); viewAppointment('${apt.id}')">
+                ${new Date(apt.fecha.toDate()).toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})}
+              </div>
+            `).join('')}
+            ${dayAppointments.length > 3 ? `<div class="more-appointments">+${dayAppointments.length - 3} más</div>` : ''}
+          </div>
         </div>
       `;
     }
@@ -2281,36 +2096,77 @@ async function loadCalendarView() {
     
   } catch (error) {
     console.error('Error loading calendar view:', error);
+    document.getElementById('calendar-grid').innerHTML = '<p>Error al cargar el calendario</p>';
   }
 }
 
 function selectCalendarDay(dateISO) {
   if (!selectedProfessional) {
-    showNotification('Selecciona un profesional primero', 'warning');
+    showNotification('Selecciona un profesional primero para ver su agenda', 'warning');
     return;
   }
   
   const selectedDate = new Date(dateISO);
+  
+  // Verificar que no sea una fecha anterior a 2025
+  if (selectedDate.getFullYear() < 2025) {
+    showNotification('No se pueden agendar citas antes del año 2025', 'warning');
+    return;
+  }
+  
   showDayAppointmentsModal(selectedDate, selectedProfessional);
 }
 
-async function loadTodayAppointments() {
+async function loadAppointmentsSummary(period) {
   try {
-    const todayContainer = document.getElementById('today-appointments-list');
-    if (!todayContainer) return;
+    const summaryContainer = document.getElementById('appointments-summary-list');
+    if (!summaryContainer) return;
     
-    const today = new Date();
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+    summaryContainer.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
     
-    const appointmentsSnapshot = await db.collection('citas')
-      .where('fecha', '>=', startOfDay)
-      .where('fecha', '<=', endOfDay)
-      .orderBy('fecha', 'asc')
-      .get();
+    let startDate, endDate;
+    const now = new Date();
+    
+    switch (period) {
+      case 'today':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+        break;
+      case 'week':
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        startDate = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate());
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+        endDate.setHours(23, 59, 59);
+        break;
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+        break;
+    }
+    
+    // Si estamos antes de 2025, mostrar desde 2025
+    if (startDate.getFullYear() < 2025) {
+      startDate = new Date(2025, 0, 1);
+      if (period === 'today') {
+        endDate = new Date(2025, 0, 1, 23, 59, 59);
+      }
+    }
+    
+    let query = db.collection('citas')
+      .where('fecha', '>=', startDate)
+      .where('fecha', '<=', endDate)
+      .orderBy('fecha', 'asc');
+    
+    if (selectedProfessional) {
+      query = query.where('profesional_id', '==', selectedProfessional);
+    }
+    
+    const appointmentsSnapshot = await query.get();
     
     if (appointmentsSnapshot.empty) {
-      todayContainer.innerHTML = '<p style="color: var(--gray-600);">No hay citas programadas para hoy</p>';
+      summaryContainer.innerHTML = `<p style="color: var(--gray-600); text-align: center;">No hay citas programadas para ${period === 'today' ? 'hoy' : period === 'week' ? 'esta semana' : 'este mes'}</p>`;
       return;
     }
     
@@ -2320,400 +2176,76 @@ async function loadTodayAppointments() {
       
       // Obtener datos del profesional
       const professionalDoc = await db.collection('profesionales').doc(data.profesional_id).get();
-      const professionalData = professionalDoc.data();
-      
-      // Obtener datos del paciente
-      const patientDoc = await db.collection('pacientes').doc(data.paciente_id).get();
-      const patientData = patientDoc.data();
-      
-      html += `
-        <div class="appointment-summary-item">
-          <div class="appointment-time">
-            ${new Date(data.fecha.toDate()).toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})}
-          </div>
-          <div class="appointment-details">
-            <div class="appointment-patient">${patientData?.datos_personales?.nombre_completo || 'Paciente sin nombre'}</div>
-            <div class="appointment-professional">${professionalData?.nombre || 'Profesional'} - ${getProfessionName(professionalData?.profesion)}</div>
-            <div class="appointment-type">${data.tipo_cita || 'Consulta general'}</div>
-          </div>
-          <div class="appointment-actions">
-            <button class="btn btn-sm btn-outline" onclick="viewAppointment('${doc.id}')">
-              <i class="fas fa-eye"></i>
-            </button>
-          </div>
-        </div>
-      `;
-    }
-    
-    todayContainer.innerHTML = html;
-    
-  } catch (error) {
-    console.error('Error loading today appointments:', error);
-    document.getElementById('today-appointments-list').innerHTML = '<p>Error al cargar citas de hoy</p>';
-  }
-}
-
-// ================= FUNCIONES PARA SEGUIMIENTOS =================
-
-async function loadFollowupsPanel(userData) {
-  console.log('Loading followups panel for:', userData.nombre);
-  
-  const followupsContainer = document.getElementById('followups-panel');
-  if (!followupsContainer) return;
-  
-  // Agregar HTML del panel de seguimientos si no existe
-  if (!document.getElementById('followups-search')) {
-    followupsContainer.innerHTML = `
-      <div class="panel-header">
-        <h1 class="panel-title">Seguimientos</h1>
-        <p class="panel-subtitle">Gestiona el seguimiento de pacientes y registra evolución</p>
-      </div>
-      
-      <div class="search-section">
-        <div class="search-container">
-          <i class="fas fa-search search-icon"></i>
-          <input type="text" id="followups-search" class="search-input" placeholder="Buscar paciente por nombre o RUT...">
-        </div>
-      </div>
-      
-      <div class="filters-section">
-        <div class="filter-group">
-          <select class="form-select" id="filter-followup-status">
-            <option value="">Todos los estados</option>
-            <option value="programado">Programado</option>
-            <option value="en_curso">En curso</option>
-            <option value="completado">Completado</option>
-            <option value="pendiente">Pendiente</option>
-          </select>
-          
-          <select class="form-select" id="filter-my-patients">
-            <option value="all">Todos los pacientes</option>
-            <option value="mine">Mis pacientes</option>
-          </select>
-          
-          <button class="btn btn-outline" id="clear-followup-filters">
-            <i class="fas fa-times"></i> Limpiar
-          </button>
-        </div>
-      </div>
-      
-      <div id="followups-list">
-        <!-- Los seguimientos se cargarán aquí -->
-      </div>
-    `;
-  }
-  
-  setupFollowupsSearch();
-  await loadFollowupsList(userData);
-}
-
-function setupFollowupsSearch() {
-  const searchInput = document.getElementById('followups-search');
-  if (searchInput) {
-    searchInput.addEventListener('input', debounce(function() {
-      searchFollowups(this.value);
-    }, 300));
-  }
-  
-  const filterMyPatients = document.getElementById('filter-my-patients');
-  if (filterMyPatients) {
-    filterMyPatients.addEventListener('change', function() {
-      loadFollowupsList(currentUserData);
-    });
-  }
-  
-  const clearFilters = document.getElementById('clear-followup-filters');
-  if (clearFilters) {
-    clearFilters.addEventListener('click', function() {
-      document.getElementById('followups-search').value = '';
-      document.getElementById('filter-followup-status').value = '';
-      document.getElementById('filter-my-patients').value = 'all';
-      loadFollowupsList(currentUserData);
-    });
-  }
-}
-
-async function loadFollowupsList(userData, searchTerm = '') {
-  try {
-    const followupsList = document.getElementById('followups-list');
-    if (!followupsList) return;
-    
-    followupsList.innerHTML = '<div class="loading"><div class="spinner"></div> Cargando seguimientos...</div>';
-    
-    // Obtener filtros
-    const statusFilter = document.getElementById('filter-followup-status')?.value || '';
-    const myPatientsFilter = document.getElementById('filter-my-patients')?.value || 'all';
-    
-    // Construir query base
-    let query = db.collection('citas')
-      .orderBy('fecha', 'desc')
-      .limit(50);
-    
-    // Aplicar filtro de mis pacientes si está seleccionado
-    if (myPatientsFilter === 'mine') {
-      query = query.where('profesional_id', '==', userData.uid);
-    }
-    
-    const snapshot = await query.get();
-    
-    if (snapshot.empty) {
-      followupsList.innerHTML = `
-        <div class="card">
-          <p style="text-align: center; color: var(--gray-600);">
-            <i class="fas fa-clipboard-list" style="font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
-            No hay seguimientos programados en este momento.
-          </p>
-        </div>
-      `;
-      return;
-    }
-    
-    let html = '';
-    for (const doc of snapshot.docs) {
-      const data = doc.data();
-      
-      // Aplicar filtro de estado si está seleccionado
-      if (statusFilter && data.estado !== statusFilter) continue;
+      const professionalData = professionalDoc.exists ? professionalDoc.data() : null;
       
       // Obtener datos del paciente
       const patientDoc = await db.collection('pacientes').doc(data.paciente_id).get();
       const patientData = patientDoc.exists ? patientDoc.data() : null;
       
-      // Obtener datos del profesional
-      const professionalDoc = await db.collection('profesionales').doc(data.profesional_id).get();
-      const professionalData = professionalDoc.exists ? professionalDoc.data() : null;
-      
-      if (!patientData || !professionalData) continue;
-      
-      // Filtrar por búsqueda si hay término
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase();
-        const patientText = `${patientData.datos_personales?.nombre_completo} ${patientData.datos_personales?.rut}`.toLowerCase();
-        if (!patientText.includes(searchLower)) continue;
-      }
-      
-      const citaDate = data.fecha.toDate();
-      const isToday = citaDate.toDateString() === new Date().toDateString();
-      const isPast = citaDate < new Date();
+      const appointmentDate = data.fecha.toDate();
+      const isToday = appointmentDate.toDateString() === new Date().toDateString();
       
       html += `
-        <div class="card patient-card" data-followup-id="${doc.id}">
-          <div class="card-header">
-            <div>
-              <h3>${patientData.datos_personales?.nombre_completo || 'Paciente sin nombre'}</h3>
-              <p>RUT: ${patientData.datos_personales?.rut || 'Sin RUT'}</p>
-              <p>Profesional: ${professionalData.nombre} (${getProfessionName(professionalData.profesion)})</p>
-            </div>
-            <div style="text-align: right;">
-              <span class="status-badge status-${data.estado || 'programado'}">
-                ${data.estado || 'Programado'}
-              </span>
-              ${isToday ? '<div style="margin-top: 4px;"><span class="priority-indicator priority-alta">HOY</span></div>' : ''}
+        <div class="appointment-summary-item ${isToday ? 'today-appointment' : ''}">
+          <div class="appointment-time">
+            <div class="time">${appointmentDate.toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})}</div>
+            <div class="date">${appointmentDate.toLocaleDateString('es-CL')}</div>
+          </div>
+          <div class="appointment-details">
+            <div class="appointment-patient">${patientData?.datos_personales?.nombre_completo || 'Paciente sin nombre'}</div>
+            <div class="appointment-professional">${professionalData?.nombre || 'Profesional'} - ${getProfessionName(professionalData?.profesion)}</div>
+            <div class="appointment-type">${data.tipo_cita || 'Consulta general'}</div>
+            <div class="appointment-status">
+              <span class="status-badge status-${data.estado || 'programado'}">${data.estado || 'Programado'}</span>
             </div>
           </div>
-          <div class="patient-info">
-            <div><strong>Fecha:</strong> ${formatDate(data.fecha)}</div>
-            <div><strong>Tipo:</strong> ${data.tipo_cita || 'Consulta general'}</div>
-            <div><strong>Modalidad:</strong> ${data.modalidad || 'Presencial'}</div>
-            <div><strong>Duración:</strong> ${data.duracion_minutos || 60} minutos</div>
-            ${data.notas_previas ? `<div><strong>Notas:</strong> ${data.notas_previas}</div>` : ''}
-            ${data.ultima_atencion ? `<div><strong>Última atención:</strong> ${formatDate(data.ultima_atencion)}</div>` : ''}
-          </div>
-          <div class="card-actions" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gray-200);">
-            ${isPast ? `
-              <button class="btn btn-primary btn-sm" onclick="addFollowupNote('${doc.id}')">
-                <i class="fas fa-edit"></i> Registrar Atención
-              </button>
-            ` : `
-              <button class="btn btn-success btn-sm" onclick="startFollowup('${doc.id}')">
-                <i class="fas fa-play"></i> Iniciar Seguimiento
-              </button>
-            `}
-            <button class="btn btn-outline btn-sm" onclick="viewPatientHistory('${data.paciente_id}')">
-              <i class="fas fa-history"></i> Historial
+          <div class="appointment-actions">
+            <button class="btn btn-sm btn-outline" onclick="viewAppointment('${doc.id}')">
+              <i class="fas fa-eye"></i>
             </button>
-            <button class="btn btn-secondary btn-sm" onclick="rescheduleAppointment('${doc.id}')">
-              <i class="fas fa-calendar-alt"></i> Reagendar
+            <button class="btn btn-sm btn-secondary" onclick="editAppointment('${doc.id}')">
+              <i class="fas fa-edit"></i>
             </button>
           </div>
         </div>
       `;
     }
     
-    if (html === '') {
-      followupsList.innerHTML = `
-        <div class="card">
-          <p style="text-align: center; color: var(--gray-600);">
-            No se encontraron seguimientos con los criterios seleccionados.
-          </p>
-        </div>
-      `;
-    } else {
-      followupsList.innerHTML = html;
-    }
+    summaryContainer.innerHTML = html;
     
   } catch (error) {
-    console.error('Error loading followups:', error);
-    const followupsList = document.getElementById('followups-list');
-    if (followupsList) {
-      followupsList.innerHTML = '<p>Error al cargar los seguimientos.</p>';
-    }
+    console.error('Error loading appointments summary:', error);
+    document.getElementById('appointments-summary-list').innerHTML = '<p>Error al cargar el resumen de citas</p>';
   }
 }
 
-async function searchFollowups(searchTerm) {
-  await loadFollowupsList(currentUserData, searchTerm);
-}
-
-async function addFollowupNote(citaId) {
-  try {
-    const citaDoc = await db.collection('citas').doc(citaId).get();
-    if (!citaDoc.exists) {
-      showNotification('Cita no encontrada', 'error');
-      return;
-    }
-    
-    const citaData = citaDoc.data();
-    showFollowupNoteModal(citaId, citaData);
-    
-  } catch (error) {
-    console.error('Error loading followup note:', error);
-    showNotification('Error al cargar la cita', 'error');
-  }
-}
-
-async function startFollowup(citaId) {
-  try {
-    // Actualizar estado de la cita
-    await db.collection('citas').doc(citaId).update({
-      estado: 'en_curso',
-      fecha_inicio: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    
-    showNotification('Seguimiento iniciado', 'success');
-    loadFollowupsList(currentUserData);
-    
-  } catch (error) {
-    console.error('Error starting followup:', error);
-    showNotification('Error al iniciar el seguimiento', 'error');
-  }
-}
-
-async function rescheduleAppointment(citaId) {
-  // Función para reagendar cita - implementar según necesidades
-  showNotification('Función de reagendamiento en desarrollo', 'info');
-}
-// ================= ACTUALIZACIÓN DE FUNCIÓN SHOWPANEL =================
-
-// REEMPLAZA la función showPanel existente con esta versión actualizada:
-function showPanel(panelId, userData) {
-  document.querySelectorAll('.panel-content').forEach(panel => {
-    panel.classList.add('hidden');
-    panel.classList.remove('active');
-  });
-
-  const targetPanel = document.getElementById(panelId + '-panel');
-  if (targetPanel) {
-    targetPanel.classList.remove('hidden');
-    targetPanel.classList.add('active');
-
-    switch (panelId) {
-      case 'dashboard':
-        loadDashboard(userData);
-        break;
-      case 'requests':
-        loadRequestsPanel(userData);  // Nueva función
-        break;
-      case 'patients':
-        loadPatientsPanel(userData);  // Nueva función
-        break;
-      case 'calendar':
-        loadCalendarPanel(userData);  // Nueva función
-        break;
-      case 'followups':
-        loadFollowupsPanel(userData); // Nueva función
-        break;
-      case 'reports':
-        loadReportsPanel(userData);   // Nueva función
-        break;
-    }
-  }
-}
-
-// ================= FUNCIONES AUXILIARES ADICIONALES =================
-
-function showNewAppointmentModal() {
+function showAssignmentModal(requestId) {
   const modalHTML = `
-    <div class="modal-overlay" id="new-appointment-modal">
-      <div class="modal large-modal">
-        <button class="modal-close" onclick="closeModal('new-appointment-modal')">
+    <div class="modal-overlay" id="assignment-modal">
+      <div class="modal">
+        <button class="modal-close" onclick="closeModal('assignment-modal')">
           <i class="fas fa-times"></i>
         </button>
-        <h2>Nueva Cita</h2>
+        <h2>Asignar Solicitud a Profesional</h2>
         
-        <form id="new-appointment-form">
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Paciente *</label>
-              <select class="form-select" id="appointment-patient" required>
-                <option value="">Seleccionar paciente...</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Profesional *</label>
-              <select class="form-select" id="appointment-professional" required>
-                <option value="">Seleccionar profesional...</option>
-              </select>
-            </div>
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Fecha y hora *</label>
-              <input type="datetime-local" class="form-input" id="appointment-datetime" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Duración (minutos)</label>
-              <select class="form-select" id="appointment-duration">
-                <option value="30">30 minutos</option>
-                <option value="60" selected>60 minutos</option>
-                <option value="90">90 minutos</option>
-                <option value="120">120 minutos</option>
-              </select>
-            </div>
-          </div>
-          
+        <form id="assignment-form">
           <div class="form-group">
-            <label class="form-label">Tipo de cita *</label>
-            <select class="form-select" id="appointment-type" required>
-              <option value="">Seleccionar tipo...</option>
-              <option value="consulta_medica">Consulta médica</option>
-              <option value="sesion_psicologica">Sesión psicológica</option>
-              <option value="terapia_ocupacional">Terapia ocupacional</option>
-              <option value="seguimiento">Seguimiento</option>
-              <option value="evaluacion_inicial">Evaluación inicial</option>
+            <label class="form-label">Seleccionar Profesional *</label>
+            <select class="form-select" id="assign-professional" required>
+              <option value="">Seleccionar profesional...</option>
             </select>
           </div>
           
           <div class="form-group">
-            <label class="form-label">Modalidad</label>
-            <select class="form-select" id="appointment-modality">
-              <option value="presencial">Presencial</option>
-              <option value="virtual">Virtual</option>
-              <option value="telefonica">Telefónica</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">Notas</label>
-            <textarea class="form-textarea" id="appointment-notes" placeholder="Notas adicionales sobre la cita..."></textarea>
+            <label class="form-label">Notas de asignación</label>
+            <textarea class="form-textarea" id="assignment-notes" placeholder="Notas adicionales sobre la asignación..."></textarea>
           </div>
           
           <div class="modal-actions" style="margin-top: 24px;">
             <button type="submit" class="btn btn-primary">
-              <i class="fas fa-calendar-plus"></i> Agendar Cita
+              <i class="fas fa-user-check"></i> Asignar
             </button>
-            <button type="button" class="btn btn-outline" onclick="closeModal('new-appointment-modal')">
+            <button type="button" class="btn btn-outline" onclick="closeModal('assignment-modal')">
               Cancelar
             </button>
           </div>
@@ -2723,271 +2255,338 @@ function showNewAppointmentModal() {
   `;
   
   document.body.insertAdjacentHTML('beforeend', modalHTML);
-  document.getElementById('new-appointment-modal').style.display = 'flex';
+  document.getElementById('assignment-modal').style.display = 'flex';
   
-  // Cargar datos para los selects
-  loadAppointmentFormData();
+  // Cargar lista de profesionales
+  loadProfessionalsForAssignment();
   
   // Manejar envío del formulario
-  document.getElementById('new-appointment-form').addEventListener('submit', function(e) {
+  document.getElementById('assignment-form').addEventListener('submit', function(e) {
     e.preventDefault();
-    saveNewAppointment();
+    processAssignment(requestId);
   });
 }
 
-async function loadAppointmentFormData() {
+async function loadProfessionalsForAssignment() {
   try {
-    // Cargar pacientes activos
-    const patientsSnapshot = await db.collection('pacientes')
-      .where('estado_actual.activo', '==', true)
-      .limit(100)
-      .get();
+    const professionalSelect = document.getElementById('assign-professional');
+    if (!professionalSelect) return;
     
-    const patientSelect = document.getElementById('appointment-patient');
-    if (patientSelect) {
-      patientSelect.innerHTML = '<option value="">Seleccionar paciente...</option>';
-      patientsSnapshot.forEach(doc => {
-        const data = doc.data();
-        const option = document.createElement('option');
-        option.value = doc.id;
-        option.textContent = `${data.datos_personales?.nombre_completo || 'Sin nombre'} - ${data.datos_personales?.rut || 'Sin RUT'}`;
-        patientSelect.appendChild(option);
-      });
-    }
-    
-    // Cargar profesionales activos
     const professionalsSnapshot = await db.collection('profesionales')
       .where('configuracion_sistema.activo', '==', true)
-      .where('profesion', 'in', ['medico', 'psicologo', 'terapeuta'])
+      .where('profesion', 'in', ['medico', 'psicologo', 'terapeuta', 'asistente_social'])
       .get();
     
-    const professionalSelect = document.getElementById('appointment-professional');
-    if (professionalSelect) {
-      professionalSelect.innerHTML = '<option value="">Seleccionar profesional...</option>';
-      professionalsSnapshot.forEach(doc => {
-        const data = doc.data();
-        const option = document.createElement('option');
-        option.value = doc.id;
-        option.textContent = `${data.nombre} - ${getProfessionName(data.profesion)}`;
-        professionalSelect.appendChild(option);
-      });
-    }
+    professionalSelect.innerHTML = '<option value="">Seleccionar profesional...</option>';
+    professionalsSnapshot.forEach(doc => {
+      const data = doc.data();
+      const option = document.createElement('option');
+      option.value = doc.id;
+      option.textContent = `${data.nombre} - ${getProfessionName(data.profesion)}`;
+      professionalSelect.appendChild(option);
+    });
     
   } catch (error) {
-    console.error('Error loading appointment form data:', error);
+    console.error('Error loading professionals for assignment:', error);
   }
 }
 
-async function saveNewAppointment() {
+async function processAssignment(requestId) {
   try {
     showLoading(true);
     
-    const appointmentData = {
-      paciente_id: document.getElementById('appointment-patient').value,
-      profesional_id: document.getElementById('appointment-professional').value,
-      fecha: new Date(document.getElementById('appointment-datetime').value),
-      duracion_minutos: parseInt(document.getElementById('appointment-duration').value),
-      tipo_cita: document.getElementById('appointment-type').value,
-      modalidad: document.getElementById('appointment-modality').value,
-      notas_previas: document.getElementById('appointment-notes').value,
-      estado: 'programado',
-      creado_por: currentUserData.uid,
-      fecha_creacion: firebase.firestore.FieldValue.serverTimestamp()
-    };
+    const professionalId = document.getElementById('assign-professional').value;
+    const notes = document.getElementById('assignment-notes').value;
     
-    await db.collection('citas').add(appointmentData);
+    if (!professionalId) {
+      showNotification('Por favor selecciona un profesional', 'error');
+      return;
+    }
     
-    showNotification('Cita agendada correctamente', 'success');
-    closeModal('new-appointment-modal');
-    loadCalendarView();
-    loadTodayAppointments();
+    // Actualizar la solicitud
+    await db.collection('solicitudes_ingreso').doc(requestId).update({
+      'clasificacion.estado': 'asignada',
+      'clasificacion.fecha_asignacion': firebase.firestore.FieldValue.serverTimestamp(),
+      'clasificacion.profesional_asignado': professionalId,
+      'clasificacion.notas_asignacion': notes,
+      'clasificacion.asignado_por': currentUserData.uid
+    });
+    
+    showNotification('Solicitud asignada correctamente', 'success');
+    closeModal('assignment-modal');
+    loadRequestsPanel(currentUserData);
     
   } catch (error) {
-    console.error('Error saving appointment:', error);
-    showNotification('Error al agendar la cita', 'error');
+    console.error('Error processing assignment:', error);
+    showNotification('Error al asignar solicitud', 'error');
   } finally {
     showLoading(false);
   }
 }
+// ================= PARTE 7: GESTIÓN DE PACIENTES Y SEGUIMIENTOS =================
 
-function showDayAppointmentsModal(selectedDate, professionalId) {
-  const dateStr = selectedDate.toLocaleDateString('es-CL');
+async function loadPatientsPanel(userData) {
+  console.log('Loading patients panel for:', userData.nombre);
   
-  const modalHTML = `
-    <div class="modal-overlay" id="day-appointments-modal">
-      <div class="modal">
-        <button class="modal-close" onclick="closeModal('day-appointments-modal')">
-          <i class="fas fa-times"></i>
-        </button>
-        <h2>Citas del ${dateStr}</h2>
-        
-        <div id="day-appointments-content">
-          <div class="loading"><div class="spinner"></div> Cargando citas...</div>
-        </div>
-        
-        <div class="modal-actions" style="margin-top: 24px;">
-          <button class="btn btn-primary" onclick="addAppointmentToDay('${selectedDate.toISOString()}', '${professionalId}')">
-            <i class="fas fa-plus"></i> Agregar Cita
-          </button>
-          <button class="btn btn-outline" onclick="closeModal('day-appointments-modal')">Cerrar</button>
-        </div>
-      </div>
-    </div>
-  `;
-  
-  document.body.insertAdjacentHTML('beforeend', modalHTML);
-  document.getElementById('day-appointments-modal').style.display = 'flex';
-  
-  // Cargar citas del día
-  loadDayAppointments(selectedDate, professionalId);
-}
-
-async function loadDayAppointments(selectedDate, professionalId) {
   try {
-    const startOfDay = new Date(selectedDate);
-    startOfDay.setHours(0, 0, 0, 0);
+    const patientsList = document.getElementById('patients-list');
+    if (!patientsList) return;
     
-    const endOfDay = new Date(selectedDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    patientsList.innerHTML = '<div class="loading"><div class="spinner"></div> Cargando pacientes...</div>';
     
-    const appointmentsSnapshot = await db.collection('citas')
-      .where('profesional_id', '==', professionalId)
-      .where('fecha', '>=', startOfDay)
-      .where('fecha', '<=', endOfDay)
-      .orderBy('fecha', 'asc')
+    // Obtener pacientes activos
+    const patientsSnapshot = await db.collection('pacientes')
+      .where('estado_actual.activo', '==', true)
+      .orderBy('metadata.fecha_creacion', 'desc')
+      .limit(50)
       .get();
     
-    const content = document.getElementById('day-appointments-content');
-    if (!content) return;
-    
-    if (appointmentsSnapshot.empty) {
-      content.innerHTML = '<p style="text-align: center; color: var(--gray-600);">No hay citas programadas para este día</p>';
+    if (patientsSnapshot.empty) {
+      patientsList.innerHTML = `
+        <div class="card">
+          <p style="text-align: center; color: var(--gray-600);">
+            <i class="fas fa-users" style="font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
+            No hay pacientes registrados en el sistema.
+          </p>
+        </div>
+      `;
       return;
     }
     
     let html = '';
-    for (const doc of appointmentsSnapshot.docs) {
+    for (const doc of patientsSnapshot.docs) {
       const data = doc.data();
       
-      // Obtener datos del paciente
-      const patientDoc = await db.collection('pacientes').doc(data.paciente_id).get();
-      const patientData = patientDoc.exists ? patientDoc.data() : null;
+      // Obtener profesional asignado si existe
+      let professionalName = 'Sin asignar';
+      if (data.estado_actual?.profesional_asignado) {
+        try {
+          const profDoc = await db.collection('profesionales').doc(data.estado_actual.profesional_asignado).get();
+          if (profDoc.exists) {
+            professionalName = profDoc.data().nombre;
+          }
+        } catch (error) {
+          console.error('Error loading professional:', error);
+        }
+      }
+      
+      // Calcular última actividad
+      const lastActivity = data.historial_clinico && data.historial_clinico.length > 0 
+        ? data.historial_clinico[data.historial_clinico.length - 1].fecha
+        : data.metadata?.fecha_creacion;
       
       html += `
-        <div class="appointment-item-detailed">
-          <div class="appointment-time">
-            ${new Date(data.fecha.toDate()).toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})}
+        <div class="card patient-card" data-patient-id="${doc.id}">
+          <div class="card-header">
+            <div>
+              <h3>${data.datos_personales?.nombre_completo || 'Sin nombre'}</h3>
+              <p>RUT: ${data.datos_personales?.rut || 'Sin RUT'}</p>
+              <p>Edad: ${data.datos_personales?.edad || 'N/A'} años</p>
+            </div>
+            <div style="text-align: right;">
+              <span class="status-badge status-${data.estado_actual?.activo ? 'activo' : 'inactivo'}">
+                ${data.estado_actual?.activo ? 'Activo' : 'Inactivo'}
+              </span>
+              <div style="margin-top: 8px;">
+                <span class="priority-indicator priority-${data.estado_actual?.prioridad || 'media'}">
+                  ${data.estado_actual?.prioridad || 'MEDIA'}
+                </span>
+              </div>
+            </div>
           </div>
-          <div class="appointment-info">
-            <h4>${patientData?.datos_personales?.nombre_completo || 'Paciente sin nombre'}</h4>
-            <p>${data.tipo_cita || 'Consulta general'} - ${data.modalidad || 'Presencial'}</p>
-            <p>Duración: ${data.duracion_minutos || 60} minutos</p>
-            ${data.notas_previas ? `<p><em>${data.notas_previas}</em></p>` : ''}
+          <div class="patient-info">
+            <div><strong>Programa:</strong> ${data.estado_actual?.programa || 'No especificado'}</div>
+            <div><strong>Profesional asignado:</strong> ${professionalName}</div>
+            <div><strong>Región:</strong> ${data.datos_personales?.region || 'N/A'}</div>
+            <div><strong>Comuna:</strong> ${data.datos_personales?.comuna || 'N/A'}</div>
+            <div><strong>Última actividad:</strong> ${formatDate(lastActivity)}</div>
+            <div><strong>Teléfono:</strong> ${data.contacto?.telefono || 'Sin teléfono'}</div>
+            <div><strong>Email:</strong> ${data.contacto?.email || 'Sin email'}</div>
           </div>
-          <div class="appointment-actions">
-            <button class="btn btn-sm btn-outline" onclick="editAppointment('${doc.id}')">
-              <i class="fas fa-edit"></i>
+          <div class="card-actions" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gray-200);">
+            <button class="btn btn-primary btn-sm" onclick="viewPatientDetail('${doc.id}')">
+              <i class="fas fa-eye"></i> Ver Detalle
             </button>
-            <button class="btn btn-sm btn-danger" onclick="cancelAppointment('${doc.id}')">
-              <i class="fas fa-times"></i>
+            <button class="btn btn-secondary btn-sm" onclick="viewPatientHistory('${doc.id}')">
+              <i class="fas fa-history"></i> Historial
+            </button>
+            <button class="btn btn-success btn-sm" onclick="addFollowupNote('${doc.id}')">
+              <i class="fas fa-notes-medical"></i> Agregar Nota
+            </button>
+            <button class="btn btn-info btn-sm" onclick="scheduleAppointment('${doc.id}')">
+              <i class="fas fa-calendar-plus"></i> Agendar Cita
             </button>
           </div>
         </div>
       `;
     }
     
-    content.innerHTML = html;
+    patientsList.innerHTML = html;
     
   } catch (error) {
-    console.error('Error loading day appointments:', error);
-    const content = document.getElementById('day-appointments-content');
-    if (content) {
-      content.innerHTML = '<p>Error al cargar las citas del día</p>';
+    console.error('Error loading patients:', error);
+    const patientsList = document.getElementById('patients-list');
+    if (patientsList) {
+      patientsList.innerHTML = '<p>Error al cargar pacientes: ' + error.message + '</p>';
     }
   }
 }
 
-function addAppointmentToDay(dateISO, professionalId) {
-  closeModal('day-appointments-modal');
-  showNewAppointmentModal();
-  
-  // Pre-rellenar fecha y profesional
-  setTimeout(() => {
-    const datetimeInput = document.getElementById('appointment-datetime');
-    const professionalSelect = document.getElementById('appointment-professional');
-    
-    if (datetimeInput) {
-      const date = new Date(dateISO);
-      // Establecer hora por defecto (ej: 9:00 AM)
-      date.setHours(9, 0, 0, 0);
-      datetimeInput.value = date.toISOString().slice(0, 16);
-    }
-    
-    if (professionalSelect) {
-      professionalSelect.value = professionalId;
-    }
-  }, 100);
-}
-
-async function viewAppointment(appointmentId) {
+async function viewPatientDetail(patientId) {
   try {
-    const doc = await db.collection('citas').doc(appointmentId).get();
+    const doc = await db.collection('pacientes').doc(patientId).get();
     if (!doc.exists) {
-      showNotification('Cita no encontrada', 'error');
+      showNotification('Paciente no encontrado', 'error');
       return;
     }
     
     const data = doc.data();
-    // Mostrar modal con detalles de la cita
-    showNotification('Vista detallada de cita en desarrollo', 'info');
-    
+    showPatientDetailModal(patientId, data);
   } catch (error) {
-    console.error('Error viewing appointment:', error);
-    showNotification('Error al cargar la cita', 'error');
+    console.error('Error viewing patient detail:', error);
+    showNotification('Error al cargar detalle del paciente', 'error');
   }
 }
 
-async function editAppointment(appointmentId) {
-  showNotification('Edición de citas en desarrollo', 'info');
-}
-
-async function cancelAppointment(appointmentId) {
-  if (!confirm('¿Estás seguro de cancelar esta cita?')) return;
+function showPatientDetailModal(patientId, data) {
+  const modalHTML = `
+    <div class="modal-overlay" id="patient-detail-modal">
+      <div class="modal large-modal">
+        <button class="modal-close" onclick="closeModal('patient-detail-modal')">
+          <i class="fas fa-times"></i>
+        </button>
+        <h2>Detalle del Paciente</h2>
+        
+        <div class="patient-detail-content">
+          <div class="detail-section">
+            <h3>Información Personal</h3>
+            <div class="info-grid">
+              <div><strong>Nombre completo:</strong> ${data.datos_personales?.nombre_completo || 'N/A'}</div>
+              <div><strong>RUT:</strong> ${data.datos_personales?.rut || 'N/A'}</div>
+              <div><strong>Edad:</strong> ${data.datos_personales?.edad || 'N/A'} años</div>
+              <div><strong>Región:</strong> ${data.datos_personales?.region || 'N/A'}</div>
+              <div><strong>Comuna:</strong> ${data.datos_personales?.comuna || 'N/A'}</div>
+              <div><strong>Dirección:</strong> ${data.datos_personales?.direccion || 'N/A'}</div>
+            </div>
+          </div>
+          
+          <div class="detail-section">
+            <h3>Datos de Contacto</h3>
+            <div class="info-grid">
+              <div><strong>Teléfono:</strong> ${data.contacto?.telefono || 'N/A'}</div>
+              <div><strong>Email:</strong> ${data.contacto?.email || 'N/A'}</div>
+            </div>
+          </div>
+          
+          <div class="detail-section">
+            <h3>Estado Actual</h3>
+            <div class="info-grid">
+              <div><strong>Estado:</strong> <span class="status-badge status-${data.estado_actual?.activo ? 'activo' : 'inactivo'}">${data.estado_actual?.activo ? 'Activo' : 'Inactivo'}</span></div>
+              <div><strong>Programa:</strong> ${data.estado_actual?.programa || 'N/A'}</div>
+              <div><strong>Fecha de ingreso:</strong> ${formatDate(data.estado_actual?.fecha_ingreso)}</div>
+            </div>
+          </div>
+          
+          ${data.historial_clinico && data.historial_clinico.length > 0 ? `
+          <div class="detail-section">
+            <h3>Última Evaluación</h3>
+            <div class="info-grid">
+              ${data.historial_clinico[0].evaluacion_inicial ? `
+                <div><strong>Sustancias:</strong> ${data.historial_clinico[0].evaluacion_inicial.sustancias_consumo?.join(', ') || 'N/A'}</div>
+                <div><strong>Tiempo de consumo:</strong> ${data.historial_clinico[0].evaluacion_inicial.tiempo_consumo_meses || 'N/A'} meses</div>
+                <div><strong>Motivación:</strong> ${data.historial_clinico[0].evaluacion_inicial.motivacion_cambio || 'N/A'}/10</div>
+                <div><strong>Urgencia:</strong> ${data.historial_clinico[0].evaluacion_inicial.urgencia_declarada || 'N/A'}</div>
+              ` : ''}
+            </div>
+          </div>
+          ` : ''}
+        </div>
+        
+        <div class="modal-actions" style="margin-top: 24px;">
+          <button class="btn btn-success" onclick="addFollowupNote('${patientId}')">
+            <i class="fas fa-notes-medical"></i> Agregar Nota de Seguimiento
+          </button>
+          <button class="btn btn-secondary" onclick="viewPatientHistory('${patientId}')">
+            <i class="fas fa-history"></i> Ver Historial Completo
+          </button>
+          <button class="btn btn-info" onclick="generatePatientReport('${patientId}')">
+            <i class="fas fa-file-alt"></i> Generar Reporte
+          </button>
+          <button class="btn btn-outline" onclick="closeModal('patient-detail-modal')">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  `;
   
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  document.getElementById('patient-detail-modal').style.display = 'flex';
+}
+
+async function viewPatientHistory(patientId) {
   try {
-    await db.collection('citas').doc(appointmentId).update({
-      estado: 'cancelado',
-      fecha_cancelacion: firebase.firestore.FieldValue.serverTimestamp(),
-      cancelado_por: currentUserData.uid
-    });
+    const doc = await db.collection('pacientes').doc(patientId).get();
+    if (!doc.exists) {
+      showNotification('Paciente no encontrado', 'error');
+      return;
+    }
     
-    showNotification('Cita cancelada', 'success');
-    closeModal('day-appointments-modal');
-    loadCalendarView();
-    
+    const data = doc.data();
+    showPatientHistoryModal(patientId, data);
   } catch (error) {
-    console.error('Error canceling appointment:', error);
-    showNotification('Error al cancelar la cita', 'error');
+    console.error('Error viewing patient history:', error);
+    showNotification('Error al cargar historial del paciente', 'error');
   }
 }
 
-function showPatientHistoryModal(patientId, patientData) {
+function showPatientHistoryModal(patientId, data) {
+  const historial = data.historial_clinico || [];
+  
   const modalHTML = `
     <div class="modal-overlay" id="patient-history-modal">
       <div class="modal large-modal">
         <button class="modal-close" onclick="closeModal('patient-history-modal')">
           <i class="fas fa-times"></i>
         </button>
-        <h2>Historial Clínico</h2>
-        <h3>${patientData.datos_personales?.nombre_completo || 'Paciente sin nombre'}</h3>
+        <h2>Historial Clínico - ${data.datos_personales?.nombre_completo || 'Sin nombre'}</h2>
         
-        <div class="patient-history-content">
-          ${generateHistoryModalHTML(patientData.historial_clinico || [])}
+        <div class="history-timeline">
+          ${historial.length > 0 ? historial.map((entry, index) => `
+            <div class="timeline-item">
+              <div class="timeline-marker">
+                <i class="fas fa-${entry.tipo === 'ingreso_inicial' ? 'user-plus' : 
+                                   entry.tipo === 'seguimiento' ? 'notes-medical' : 
+                                   entry.tipo === 'cita' ? 'calendar-check' : 'file-medical'}"></i>
+              </div>
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  <h4>${entry.tipo?.replace('_', ' ').toUpperCase() || 'Registro'}</h4>
+                  <span class="timeline-date">${formatDate(entry.fecha)}</span>
+                </div>
+                <div class="timeline-body">
+                  ${entry.observaciones ? `<p><strong>Observaciones:</strong> ${entry.observaciones}</p>` : ''}
+                  ${entry.evaluacion_inicial ? `
+                    <div class="evaluation-details">
+                      <p><strong>Evaluación Inicial:</strong></p>
+                      <ul>
+                        ${entry.evaluacion_inicial.sustancias_consumo ? 
+                          `<li>Sustancias: ${entry.evaluacion_inicial.sustancias_consumo.join(', ')}</li>` : ''}
+                        ${entry.evaluacion_inicial.tiempo_consumo_meses ? 
+                          `<li>Tiempo de consumo: ${entry.evaluacion_inicial.tiempo_consumo_meses} meses</li>` : ''}
+                        ${entry.evaluacion_inicial.motivacion_cambio ? 
+                          `<li>Motivación al cambio: ${entry.evaluacion_inicial.motivacion_cambio}/10</li>` : ''}
+                      </ul>
+                    </div>
+                  ` : ''}
+                  ${entry.notas_seguimiento ? `<p><strong>Notas:</strong> ${entry.notas_seguimiento}</p>` : ''}
+                </div>
+              </div>
+            </div>
+          `).join('') : '<p style="text-align: center; color: var(--gray-600);">No hay registros en el historial</p>'}
         </div>
         
         <div class="modal-actions" style="margin-top: 24px;">
-          <button class="btn btn-primary" onclick="generatePatientReport('${patientId}', 'historial_atencion')">
-            <i class="fas fa-file-pdf"></i> Descargar Historial
+          <button class="btn btn-primary" onclick="addFollowupNote('${patientId}')">
+            <i class="fas fa-plus"></i> Agregar Nueva Nota
           </button>
           <button class="btn btn-outline" onclick="closeModal('patient-history-modal')">Cerrar</button>
         </div>
@@ -2999,91 +2598,988 @@ function showPatientHistoryModal(patientId, patientData) {
   document.getElementById('patient-history-modal').style.display = 'flex';
 }
 
-function generateHistoryModalHTML(historial) {
-  if (!historial || historial.length === 0) {
-    return '<p style="text-align: center; color: var(--gray-600);">No hay registros en el historial clínico.</p>';
-  }
-  
-  return historial.map(entry => `
-    <div class="history-entry">
-      <div class="history-header">
-        <span class="history-date">${formatDate(entry.fecha)}</span>
-        <span class="history-type">${entry.tipo || 'Consulta general'}</span>
+function addFollowupNote(patientId) {
+  const modalHTML = `
+    <div class="modal-overlay" id="followup-note-modal">
+      <div class="modal">
+        <button class="modal-close" onclick="closeModal('followup-note-modal')">
+          <i class="fas fa-times"></i>
+        </button>
+        <h2>Agregar Nota de Seguimiento</h2>
+        
+        <form id="followup-note-form">
+          <div class="form-group">
+            <label class="form-label">Tipo de registro *</label>
+            <select class="form-select" id="followup-type" required>
+              <option value="">Seleccionar tipo...</option>
+              <option value="seguimiento">Seguimiento general</option>
+              <option value="cita">Registro de cita</option>
+              <option value="evaluacion">Evaluación</option>
+              <option value="crisis">Intervención en crisis</option>
+              <option value="derivacion">Derivación</option>
+              <option value="alta">Alta del programa</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Notas y observaciones *</label>
+            <textarea class="form-textarea" id="followup-notes" rows="6" required
+                      placeholder="Describe la situación, intervenciones realizadas, evolución del paciente, plan de seguimiento, etc."></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Estado del paciente</label>
+            <select class="form-select" id="patient-status">
+              <option value="estable">Estable</option>
+              <option value="mejoria">En mejoría</option>
+              <option value="deterioro">En deterioro</option>
+              <option value="crisis">En crisis</option>
+              <option value="alta_voluntaria">Alta voluntaria</option>
+              <option value="abandono">Abandono de tratamiento</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Próxima cita programada</label>
+            <input type="datetime-local" class="form-input" id="next-appointment" min="2025-01-01T08:00">
+          </div>
+          
+          <div class="modal-actions" style="margin-top: 24px;">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i> Guardar Nota
+            </button>
+            <button type="button" class="btn btn-outline" onclick="closeModal('followup-note-modal')">
+              Cancelar
+            </button>
+          </div>
+        </form>
       </div>
-      ${entry.profesional_nombre ? `<div class="history-professional">Profesional: ${entry.profesional_nombre}</div>` : ''}
-      ${entry.observaciones ? `
-        <div class="history-section">
-          <strong>Observaciones:</strong>
-          <p>${entry.observaciones}</p>
-        </div>
-      ` : ''}
-      ${entry.diagnostico ? `
-        <div class="history-section">
-          <strong>Diagnóstico:</strong>
-          <p>${entry.diagnostico}</p>
-        </div>
-      ` : ''}
-      ${entry.tratamiento ? `
-        <div class="history-section">
-          <strong>Tratamiento:</strong>
-          <p>${entry.tratamiento}</p>
-        </div>
-      ` : ''}
-      ${entry.estado_paciente ? `
-        <div class="history-status">
-          Estado: <span class="status-badge status-${entry.estado_paciente}">${entry.estado_paciente}</span>
-        </div>
-      ` : ''}
     </div>
-  `).join('');
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  document.getElementById('followup-note-modal').style.display = 'flex';
+  
+  document.getElementById('followup-note-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    saveFollowupNote(patientId);
+  });
 }
 
-function showPatientReportPreview(patientId, patientData) {
+async function saveFollowupNote(patientId) {
+  try {
+    showLoading(true);
+    
+    const noteData = {
+      fecha: firebase.firestore.FieldValue.serverTimestamp(),
+      tipo: document.getElementById('followup-type').value,
+      profesional: currentUserData.uid,
+      notas_seguimiento: document.getElementById('followup-notes').value,
+      estado_paciente: document.getElementById('patient-status').value,
+      observaciones: `Nota de seguimiento registrada por ${currentUserData.nombre}`
+    };
+    
+    const nextAppointment = document.getElementById('next-appointment').value;
+    if (nextAppointment) {
+      noteData.proxima_cita = new Date(nextAppointment);
+    }
+    
+    // Agregar al historial del paciente
+    await db.collection('pacientes').doc(patientId).update({
+      historial_clinico: firebase.firestore.FieldValue.arrayUnion(noteData),
+      'metadata.ultima_actualizacion': firebase.firestore.FieldValue.serverTimestamp(),
+      'metadata.actualizado_por': currentUserData.uid
+    });
+    
+    showNotification('Nota de seguimiento agregada correctamente', 'success');
+    closeModal('followup-note-modal');
+    
+    // Recargar panel de pacientes si está visible
+    if (document.getElementById('patients-panel').classList.contains('active')) {
+      loadPatientsPanel(currentUserData);
+    }
+    
+  } catch (error) {
+    console.error('Error saving followup note:', error);
+    showNotification('Error al guardar la nota de seguimiento', 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function loadFollowupsPanel(userData) {
+  console.log('Loading followups panel for:', userData.nombre);
+  
+  try {
+    const followupsList = document.getElementById('followups-list');
+    if (!followupsList) return;
+    
+    followupsList.innerHTML = '<div class="loading"><div class="spinner"></div> Cargando seguimientos...</div>';
+    
+    // Obtener pacientes con sus historiales más recientes
+    const patientsSnapshot = await db.collection('pacientes')
+      .where('estado_actual.activo', '==', true)
+      .orderBy('metadata.ultima_actualizacion', 'desc')
+      .limit(50)
+      .get();
+    
+    if (patientsSnapshot.empty) {
+      followupsList.innerHTML = `
+        <div class="card">
+          <p style="text-align: center; color: var(--gray-600);">
+            <i class="fas fa-clipboard-list" style="font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
+            No hay seguimientos registrados.
+          </p>
+        </div>
+      `;
+      return;
+    }
+    
+    let html = '';
+    patientsSnapshot.forEach(doc => {
+      const data = doc.data();
+      const lastEntry = data.historial_clinico && data.historial_clinico.length > 0 
+        ? data.historial_clinico[data.historial_clinico.length - 1] 
+        : null;
+      
+      if (lastEntry) {
+        html += `
+          <div class="card followup-card">
+            <div class="card-header">
+              <div>
+                <h3>${data.datos_personales?.nombre_completo || 'Sin nombre'}</h3>
+                <p>RUT: ${data.datos_personales?.rut || 'Sin RUT'}</p>
+              </div>
+              <div style="text-align: right;">
+                <span class="followup-type">${lastEntry.tipo?.replace('_', ' ').toUpperCase()}</span>
+                <div style="margin-top: 4px;">
+                  <small style="color: var(--gray-600);">${formatDate(lastEntry.fecha)}</small>
+                </div>
+              </div>
+            </div>
+            <div class="followup-content">
+              <p><strong>Último registro:</strong> ${lastEntry.notas_seguimiento || lastEntry.observaciones || 'Sin notas'}</p>
+              ${lastEntry.estado_paciente ? `<p><strong>Estado:</strong> ${lastEntry.estado_paciente}</p>` : ''}
+              ${lastEntry.proxima_cita ? `<p><strong>Próxima cita:</strong> ${formatDate(lastEntry.proxima_cita)}</p>` : ''}
+            </div>
+            <div class="card-actions" style="margin-top: 12px;">
+              <button class="btn btn-primary btn-sm" onclick="addFollowupNote('${doc.id}')">
+                <i class="fas fa-plus"></i> Nueva Nota
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="viewPatientHistory('${doc.id}')">
+                <i class="fas fa-history"></i> Ver Historial
+              </button>
+            </div>
+          </div>
+        `;
+      }
+    });
+    
+    if (html === '') {
+      html = `
+        <div class="card">
+          <p style="text-align: center; color: var(--gray-600);">
+            No hay seguimientos recientes para mostrar.
+          </p>
+        </div>
+      `;
+    }
+    
+    followupsList.innerHTML = html;
+    
+  } catch (error) {
+    console.error('Error loading followups:', error);
+    const followupsList = document.getElementById('followups-list');
+    if (followupsList) {
+      followupsList.innerHTML = '<p>Error al cargar seguimientos: ' + error.message + '</p>';
+    }
+  }
+}
+// ================= PARTE 8: REPORTES Y ESTADÍSTICAS =================
+
+async function loadReportsPanel(userData) {
+  console.log('Loading reports panel for:', userData.nombre);
+  
+  const reportsContainer = document.getElementById('reports-panel');
+  if (!reportsContainer) return;
+  
+  // Verificar permisos
+  if (!userData.configuracion_sistema?.permisos?.includes('reportes') && 
+      userData.profesion !== 'admin' && userData.profesion !== 'coordinador') {
+    reportsContainer.innerHTML = `
+      <div class="card">
+        <p style="text-align: center; color: var(--gray-600);">
+          <i class="fas fa-lock" style="font-size: 24px; margin-bottom: 12px; display: block;"></i>
+          No tienes permisos para acceder a los reportes.
+        </p>
+      </div>
+    `;
+    return;
+  }
+  
+  // Cargar estadísticas y métricas
+  try {
+    const stats = await loadSystemStatistics();
+    
+    reportsContainer.innerHTML = `
+      <div class="panel-header">
+        <h1 class="panel-title">Reportes y Estadísticas</h1>
+        <p class="panel-subtitle">Métricas del sistema y reportes generales</p>
+      </div>
+      
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-users"></i></div>
+          <div class="stat-content">
+            <h3>${stats.totalPatients}</h3>
+            <p>Pacientes Activos</p>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-clipboard-list"></i></div>
+          <div class="stat-content">
+            <h3>${stats.pendingRequests}</h3>
+            <p>Solicitudes Pendientes</p>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+          <div class="stat-content">
+            <h3>${stats.criticalCases}</h3>
+            <p>Casos Críticos</p>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+          <div class="stat-content">
+            <h3>${stats.appointmentsToday}</h3>
+            <p>Citas Hoy</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="reports-section">
+        <h2>Generar Reportes</h2>
+        <div class="reports-grid">
+          <div class="report-card">
+            <h3>Reporte de Pacientes</h3>
+            <p>Lista completa de pacientes activos con sus datos básicos</p>
+            <button class="btn btn-primary" onclick="generatePatientsReport()">
+              <i class="fas fa-file-excel"></i> Generar Excel
+            </button>
+          </div>
+          
+          <div class="report-card">
+            <h3>Reporte de Solicitudes</h3>
+            <p>Historial de solicitudes de ingreso por período</p>
+            <button class="btn btn-primary" onclick="generateRequestsReport()">
+              <i class="fas fa-file-pdf"></i> Generar PDF
+            </button>
+          </div>
+          
+          <div class="report-card">
+            <h3>Estadísticas Regionales</h3>
+            <p>Distribución de casos por región y comuna</p>
+            <button class="btn btn-primary" onclick="generateRegionalReport()">
+              <i class="fas fa-chart-bar"></i> Ver Estadísticas
+            </button>
+          </div>
+          
+          <div class="report-card">
+            <h3>Reporte de Seguimientos</h3>
+            <p>Actividad de seguimiento por profesional</p>
+            <button class="btn btn-primary" onclick="generateFollowupsReport()">
+              <i class="fas fa-notes-medical"></i> Generar Reporte
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="monthly-stats">
+        <h2>Estadísticas del Mes - ${new Date().toLocaleDateString('es-CL', {month: 'long', year: 'numeric'})}</h2>
+        <div class="monthly-grid">
+          <div class="monthly-item">
+            <strong>Nuevas solicitudes:</strong> ${stats.monthlyRequests}
+          </div>
+          <div class="monthly-item">
+            <strong>Pacientes ingresados:</strong> ${stats.monthlyPatients}
+          </div>
+          <div class="monthly-item">
+            <strong>Seguimientos realizados:</strong> ${stats.monthlyFollowups}
+          </div>
+          <div class="monthly-item">
+            <strong>Citas programadas:</strong> ${stats.monthlyAppointments}
+          </div>
+        </div>
+      </div>
+    `;
+    
+  } catch (error) {
+    console.error('Error loading reports panel:', error);
+    reportsContainer.innerHTML = '<p>Error al cargar estadísticas: ' + error.message + '</p>';
+  }
+}
+
+async function loadSystemStatistics() {
+  try {
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+    
+    // Obtener estadísticas en paralelo
+    const [
+      totalPatientsSnapshot,
+      pendingRequestsSnapshot,
+      criticalCasesSnapshot,
+      appointmentsTodaySnapshot,
+      monthlyRequestsSnapshot,
+      monthlyPatientsSnapshot,
+      monthlyFollowupsSnapshot,
+      monthlyAppointmentsSnapshot
+    ] = await Promise.all([
+      db.collection('pacientes').where('estado_actual.activo', '==', true).get(),
+      db.collection('solicitudes_ingreso').where('clasificacion.estado', '==', 'pendiente').get(),
+      db.collection('solicitudes_ingreso').where('clasificacion.prioridad', '==', 'critica').where('clasificacion.estado', '==', 'pendiente').get(),
+      db.collection('citas').where('fecha', '>=', startOfDay).where('fecha', '<=', endOfDay).get(),
+      db.collection('solicitudes_ingreso').where('metadata.fecha_creacion', '>=', startOfMonth).get(),
+      db.collection('pacientes').where('metadata.fecha_creacion', '>=', startOfMonth).get(),
+      db.collection('pacientes').where('metadata.ultima_actualizacion', '>=', startOfMonth).get(),
+      db.collection('citas').where('fecha_creacion', '>=', startOfMonth).get()
+    ]);
+    
+    return {
+      totalPatients: totalPatientsSnapshot.size,
+      pendingRequests: pendingRequestsSnapshot.size,
+      criticalCases: criticalCasesSnapshot.size,
+      appointmentsToday: appointmentsTodaySnapshot.size,
+      monthlyRequests: monthlyRequestsSnapshot.size,
+      monthlyPatients: monthlyPatientsSnapshot.size,
+      monthlyFollowups: monthlyFollowupsSnapshot.size,
+      monthlyAppointments: monthlyAppointmentsSnapshot.size
+    };
+  } catch (error) {
+    console.error('Error loading statistics:', error);
+    return {
+      totalPatients: 0,
+      pendingRequests: 0,
+      criticalCases: 0,
+      appointmentsToday: 0,
+      monthlyRequests: 0,
+      monthlyPatients: 0,
+      monthlyFollowups: 0,
+      monthlyAppointments: 0
+    };
+  }
+}
+
+async function generatePatientsReport() {
+  try {
+    showLoading(true);
+    
+    const patientsSnapshot = await db.collection('pacientes')
+      .where('estado_actual.activo', '==', true)
+      .get();
+    
+    if (patientsSnapshot.empty) {
+      showNotification('No hay pacientes para generar el reporte', 'warning');
+      return;
+    }
+    
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Nombre,RUT,Edad,Región,Comuna,Teléfono,Email,Programa,Fecha Ingreso\n";
+    
+    patientsSnapshot.forEach(doc => {
+      const data = doc.data();
+      const row = [
+        `"${data.datos_personales?.nombre_completo || 'Sin nombre'}"`,
+        `"${data.datos_personales?.rut || 'Sin RUT'}"`,
+        data.datos_personales?.edad || 0,
+        `"${data.datos_personales?.region || 'N/A'}"`,
+        `"${data.datos_personales?.comuna || 'N/A'}"`,
+        `"${data.contacto?.telefono || 'Sin teléfono'}"`,
+        `"${data.contacto?.email || 'Sin email'}"`,
+        `"${data.estado_actual?.programa || 'N/A'}"`,
+        `"${formatDate(data.estado_actual?.fecha_ingreso)}"`
+      ].join(',');
+      
+      csvContent += row + "\n";
+    });
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `pacientes_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showNotification('Reporte de pacientes generado correctamente', 'success');
+    
+  } catch (error) {
+    console.error('Error generating patients report:', error);
+    showNotification('Error al generar el reporte de pacientes', 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function generateRequestsReport() {
+  try {
+    showLoading(true);
+    
+    const requestsSnapshot = await db.collection('solicitudes_ingreso')
+      .orderBy('metadata.fecha_creacion', 'desc')
+      .limit(1000)
+      .get();
+    
+    if (requestsSnapshot.empty) {
+      showNotification('No hay solicitudes para generar el reporte', 'warning');
+      return;
+    }
+    
+    // Crear contenido del reporte
+    let reportContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #2563eb; text-align: center;">Reporte de Solicitudes SENDA</h1>
+        <p style="text-align: center; color: #666;">Generado el ${new Date().toLocaleDateString('es-CL')}</p>
+        <hr style="margin: 30px 0;">
+        
+        <h2>Resumen Ejecutivo</h2>
+        <p>Total de solicitudes: <strong>${requestsSnapshot.size}</strong></p>
+        
+        <h2>Detalle de Solicitudes</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+          <thead>
+            <tr style="background-color: #f3f4f6;">
+              <th style="border: 1px solid #ddd; padding: 8px;">ID</th>
+              <th style="border: 1px solid #ddd; padding: 8px;">Fecha</th>
+              <th style="border: 1px solid #ddd; padding: 8px;">Tipo</th>
+              <th style="border: 1px solid #ddd; padding: 8px;">Estado</th>
+              <th style="border: 1px solid #ddd; padding: 8px;">Prioridad</th>
+              <th style="border: 1px solid #ddd; padding: 8px;">Región</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+    
+    requestsSnapshot.forEach(doc => {
+      const data = doc.data();
+      const tipo = data.datos_personales?.anonimo ? 'Anónimo' : 
+                   data.datos_personales?.solo_informacion ? 'Información' : 'Identificado';
+      
+      reportContent += `
+        <tr>
+          <td style="border: 1px solid #ddd; padding: 8px;">${doc.id.substring(0, 8).toUpperCase()}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${formatDate(data.metadata?.fecha_creacion)}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${tipo}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${data.clasificacion?.estado || 'N/A'}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${data.clasificacion?.prioridad || 'N/A'}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${data.datos_personales?.region || 'N/A'}</td>
+        </tr>
+      `;
+    });
+    
+    reportContent += `
+          </tbody>
+        </table>
+        
+        <div style="margin-top: 30px; padding: 20px; background-color: #f9fafb; border-radius: 8px;">
+          <p style="margin: 0; color: #666; font-size: 12px;">
+            Este reporte fue generado automáticamente por el Sistema SENDA el ${new Date().toLocaleString('es-CL')}.
+            Para más información, contacta al equipo de soporte técnico.
+          </p>
+        </div>
+      </div>
+    `;
+    
+    // Crear y descargar PDF (simulado con HTML)
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(reportContent);
+    printWindow.document.close();
+    printWindow.print();
+    
+    showNotification('Reporte de solicitudes generado correctamente', 'success');
+    
+  } catch (error) {
+    console.error('Error generating requests report:', error);
+    showNotification('Error al generar el reporte de solicitudes', 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function generateRegionalReport() {
+  try {
+    showLoading(true);
+    
+    const requestsSnapshot = await db.collection('solicitudes_ingreso').get();
+    const patientsSnapshot = await db.collection('pacientes').get();
+    
+    // Analizar distribución por región
+    const regionalStats = {};
+    
+    requestsSnapshot.forEach(doc => {
+      const region = doc.data().datos_personales?.region || 'Sin región';
+      if (!regionalStats[region]) {
+        regionalStats[region] = { solicitudes: 0, pacientes: 0 };
+      }
+      regionalStats[region].solicitudes++;
+    });
+    
+    patientsSnapshot.forEach(doc => {
+      const region = doc.data().datos_personales?.region || 'Sin región';
+      if (!regionalStats[region]) {
+        regionalStats[region] = { solicitudes: 0, pacientes: 0 };
+      }
+      regionalStats[region].pacientes++;
+    });
+    
+    showRegionalStatsModal(regionalStats);
+    
+  } catch (error) {
+    console.error('Error generating regional report:', error);
+    showNotification('Error al generar estadísticas regionales', 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+function showRegionalStatsModal(stats) {
+  const modalHTML = `
+    <div class="modal-overlay" id="regional-stats-modal">
+      <div class="modal large-modal">
+        <button class="modal-close" onclick="closeModal('regional-stats-modal')">
+          <i class="fas fa-times"></i>
+        </button>
+        <h2>Estadísticas Regionales</h2>
+        
+        <div class="regional-stats">
+          <table class="stats-table">
+            <thead>
+              <tr>
+                <th>Región</th>
+                <th>Solicitudes</th>
+                <th>Pacientes Activos</th>
+                <th>Conversión</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${Object.entries(stats).map(([region, data]) => `
+                <tr>
+                  <td><strong>${regionesChile[region]?.nombre || region}</strong></td>
+                  <td>${data.solicitudes}</td>
+                  <td>${data.pacientes}</td>
+                  <td>${data.solicitudes > 0 ? Math.round((data.pacientes / data.solicitudes) * 100) : 0}%</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="modal-actions" style="margin-top: 24px;">
+          <button class="btn btn-outline" onclick="closeModal('regional-stats-modal')">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  document.getElementById('regional-stats-modal').style.display = 'flex';
+}
+// ================= PARTE 9: FUNCIONES AUXILIARES Y UTILIDADES FINALES =================
+
+// Función para mostrar modal de asignación de profesionales
+async function showAssignmentModal(requestId) {
+  try {
+    // Obtener profesionales disponibles
+    const professionalsSnapshot = await db.collection('profesionales')
+      .where('configuracion_sistema.activo', '==', true)
+      .get();
+    
+    const modalHTML = `
+      <div class="modal-overlay" id="assignment-modal">
+        <div class="modal">
+          <button class="modal-close" onclick="closeModal('assignment-modal')">
+            <i class="fas fa-times"></i>
+          </button>
+          <h2>Asignar Profesional</h2>
+          
+          <form id="assignment-form">
+            <div class="form-group">
+              <label class="form-label">Seleccionar profesional *</label>
+              <select class="form-select" id="assigned-professional" required>
+                <option value="">Seleccionar profesional...</option>
+                ${professionalsSnapshot.docs.map(doc => {
+                  const data = doc.data();
+                  return `<option value="${doc.id}">${data.nombre} - ${getProfessionName(data.profesion)}</option>`;
+                }).join('')}
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Prioridad de asignación</label>
+              <select class="form-select" id="assignment-priority">
+                <option value="normal">Normal</option>
+                <option value="alta">Alta</option>
+                <option value="critica">Crítica</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Notas de asignación</label>
+              <textarea class="form-textarea" id="assignment-notes" 
+                        placeholder="Instrucciones especiales o comentarios..."></textarea>
+            </div>
+            
+            <div class="modal-actions" style="margin-top: 24px;">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-user-plus"></i> Asignar
+              </button>
+              <button type="button" class="btn btn-outline" onclick="closeModal('assignment-modal')">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    document.getElementById('assignment-modal').style.display = 'flex';
+    
+    document.getElementById('assignment-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      processAssignment(requestId);
+    });
+    
+  } catch (error) {
+    console.error('Error showing assignment modal:', error);
+    showNotification('Error al cargar modal de asignación', 'error');
+  }
+}
+
+async function processAssignment(requestId) {
+  try {
+    showLoading(true);
+    
+    const professionalId = document.getElementById('assigned-professional').value;
+    const priority = document.getElementById('assignment-priority').value;
+    const notes = document.getElementById('assignment-notes').value;
+    
+    if (!professionalId) {
+      showNotification('Selecciona un profesional', 'error');
+      return;
+    }
+    
+    // Actualizar solicitud con asignación
+    await db.collection('solicitudes_ingreso').doc(requestId).update({
+      'clasificacion.estado': 'asignada',
+      'clasificacion.profesional_asignado': professionalId,
+      'clasificacion.prioridad_asignacion': priority,
+      'clasificacion.fecha_asignacion': firebase.firestore.FieldValue.serverTimestamp(),
+      'clasificacion.notas_asignacion': notes,
+      'clasificacion.asignado_por': currentUserData.uid
+    });
+    
+    // Crear notificación para el profesional asignado
+    await db.collection('notificaciones').add({
+      destinatario: professionalId,
+      tipo: 'nueva_asignacion',
+      titulo: 'Nueva solicitud asignada',
+      mensaje: `Se te ha asignado una nueva solicitud con prioridad ${priority}`,
+      solicitud_id: requestId,
+      fecha: firebase.firestore.FieldValue.serverTimestamp(),
+      leida: false
+    });
+    
+    showNotification('Solicitud asignada correctamente', 'success');
+    closeModal('assignment-modal');
+    loadRequestsPanel(currentUserData);
+    
+  } catch (error) {
+    console.error('Error processing assignment:', error);
+    showNotification('Error al asignar la solicitud', 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+// Función para mostrar citas del día
+async function showDayAppointmentsModal(selectedDate, professionalId) {
+  try {
+    const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+    const endOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 23, 59, 59);
+    
+    const appointmentsSnapshot = await db.collection('citas')
+      .where('profesional_id', '==', professionalId)
+      .where('fecha', '>=', startOfDay)
+      .where('fecha', '<=', endOfDay)
+      .orderBy('fecha', 'asc')
+      .get();
+    
+    const modalHTML = `
+      <div class="modal-overlay" id="day-appointments-modal">
+        <div class="modal large-modal">
+          <button class="modal-close" onclick="closeModal('day-appointments-modal')">
+            <i class="fas fa-times"></i>
+          </button>
+          <h2>Citas del ${selectedDate.toLocaleDateString('es-CL')}</h2>
+          
+          <div class="day-appointments-list">
+            ${appointmentsSnapshot.empty ? 
+              '<p style="text-align: center; color: var(--gray-600);">No hay citas programadas para este día</p>' :
+              appointmentsSnapshot.docs.map(doc => {
+                const data = doc.data();
+                return `
+                  <div class="appointment-item-detail">
+                    <div class="appointment-time">
+                      ${new Date(data.fecha.toDate()).toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})}
+                    </div>
+                    <div class="appointment-info">
+                      <h4>Paciente: ${data.paciente_nombre || 'Cargando...'}</h4>
+                      <p>Tipo: ${data.tipo_cita || 'Consulta general'}</p>
+                      <p>Modalidad: ${data.modalidad || 'Presencial'}</p>
+                      <p>Duración: ${data.duracion_minutos || 60} minutos</p>
+                      ${data.notas_previas ? `<p>Notas: ${data.notas_previas}</p>` : ''}
+                    </div>
+                    <div class="appointment-actions">
+                      <button class="btn btn-sm btn-success" onclick="markAppointmentCompleted('${doc.id}')">
+                        <i class="fas fa-check"></i> Completar
+                      </button>
+                      <button class="btn btn-sm btn-warning" onclick="rescheduleAppointment('${doc.id}')">
+                        <i class="fas fa-clock"></i> Reagendar
+                      </button>
+                      <button class="btn btn-sm btn-danger" onclick="cancelAppointment('${doc.id}')">
+                        <i class="fas fa-times"></i> Cancelar
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('')
+            }
+          </div>
+          
+          <div class="modal-actions" style="margin-top: 24px;">
+            <button class="btn btn-primary" onclick="showNewAppointmentForDay('${selectedDate.toISOString()}', '${professionalId}')">
+              <i class="fas fa-plus"></i> Nueva Cita Este Día
+            </button>
+            <button class="btn btn-outline" onclick="closeModal('day-appointments-modal')">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    document.getElementById('day-appointments-modal').style.display = 'flex';
+    
+    // Cargar nombres de pacientes
+    loadPatientNamesForAppointments(appointmentsSnapshot.docs);
+    
+  } catch (error) {
+    console.error('Error showing day appointments:', error);
+    showNotification('Error al cargar citas del día', 'error');
+  }
+}
+
+async function loadPatientNamesForAppointments(appointmentDocs) {
+  for (const doc of appointmentDocs) {
+    const data = doc.data();
+    if (data.paciente_id) {
+      try {
+        const patientDoc = await db.collection('pacientes').doc(data.paciente_id).get();
+        if (patientDoc.exists) {
+          const patientData = patientDoc.data();
+          const appointmentElement = document.querySelector(`[data-appointment-id="${doc.id}"] .appointment-info h4`);
+          if (appointmentElement) {
+            appointmentElement.textContent = `Paciente: ${patientData.datos_personales?.nombre_completo || 'Sin nombre'}`;
+          }
+        }
+      } catch (error) {
+        console.error('Error loading patient name:', error);
+      }
+    }
+  }
+}
+
+// Funciones para manejar citas
+async function markAppointmentCompleted(appointmentId) {
+  if (!confirm('¿Marcar esta cita como completada?')) return;
+  
+  try {
+    await db.collection('citas').doc(appointmentId).update({
+      estado: 'completada',
+      fecha_completada: firebase.firestore.FieldValue.serverTimestamp(),
+      completada_por: currentUserData.uid
+    });
+    
+    showNotification('Cita marcada como completada', 'success');
+    closeModal('day-appointments-modal');
+    loadCalendarView();
+    
+  } catch (error) {
+    console.error('Error marking appointment as completed:', error);
+    showNotification('Error al completar la cita', 'error');
+  }
+}
+
+async function cancelAppointment(appointmentId) {
+  if (!confirm('¿Estás seguro de cancelar esta cita?')) return;
+  
+  try {
+    await db.collection('citas').doc(appointmentId).update({
+      estado: 'cancelada',
+      fecha_cancelacion: firebase.firestore.FieldValue.serverTimestamp(),
+      cancelada_por: currentUserData.uid
+    });
+    
+    showNotification('Cita cancelada correctamente', 'success');
+    closeModal('day-appointments-modal');
+    loadCalendarView();
+    
+  } catch (error) {
+    console.error('Error canceling appointment:', error);
+    showNotification('Error al cancelar la cita', 'error');
+  }
+}
+
+// Función para programar cita directamente para un paciente
+function scheduleAppointment(patientId) {
+  showNewAppointmentModal();
+  
+  // Pre-seleccionar el paciente
+  setTimeout(() => {
+    const patientSelect = document.getElementById('appointment-patient');
+    if (patientSelect) {
+      patientSelect.value = patientId;
+    }
+  }, 500);
+}
+
+// Función para generar reporte de paciente individual
+async function generatePatientReport(patientId) {
+  try {
+    showLoading(true);
+    
+    const patientDoc = await db.collection('pacientes').doc(patientId).get();
+    if (!patientDoc.exists) {
+      showNotification('Paciente no encontrado', 'error');
+      return;
+    }
+    
+    const patientData = patientDoc.data();
+    
+    // Obtener citas del paciente
+    const appointmentsSnapshot = await db.collection('citas')
+      .where('paciente_id', '==', patientId)
+      .orderBy('fecha', 'desc')
+      .get();
+    
+    const reportContent = generatePatientReportHTML(patientData, appointmentsSnapshot.docs);
+    showPatientReportModal(reportContent);
+    
+  } catch (error) {
+    console.error('Error generating patient report:', error);
+    showNotification('Error al generar reporte del paciente', 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+function generatePatientReportHTML(patientData, appointments) {
+  return `
+    <div class="patient-report">
+      <div class="report-header">
+        <h1>Reporte de Paciente</h1>
+        <h2>${patientData.datos_personales?.nombre_completo || 'Sin nombre'}</h2>
+        <p>RUT: ${patientData.datos_personales?.rut || 'Sin RUT'}</p>
+        <p>Generado el: ${new Date().toLocaleDateString('es-CL')}</p>
+      </div>
+      
+      <div class="report-section">
+        <h3>Información Personal</h3>
+        <table class="report-table">
+          <tr><td><strong>Edad:</strong></td><td>${patientData.datos_personales?.edad || 'N/A'} años</td></tr>
+          <tr><td><strong>Región:</strong></td><td>${patientData.datos_personales?.region || 'N/A'}</td></tr>
+          <tr><td><strong>Comuna:</strong></td><td>${patientData.datos_personales?.comuna || 'N/A'}</td></tr>
+          <tr><td><strong>Dirección:</strong></td><td>${patientData.datos_personales?.direccion || 'N/A'}</td></tr>
+          <tr><td><strong>Teléfono:</strong></td><td>${patientData.contacto?.telefono || 'N/A'}</td></tr>
+          <tr><td><strong>Email:</strong></td><td>${patientData.contacto?.email || 'N/A'}</td></tr>
+        </table>
+      </div>
+      
+      <div class="report-section">
+        <h3>Estado del Tratamiento</h3>
+        <table class="report-table">
+          <tr><td><strong>Estado:</strong></td><td>${patientData.estado_actual?.activo ? 'Activo' : 'Inactivo'}</td></tr>
+          <tr><td><strong>Programa:</strong></td><td>${patientData.estado_actual?.programa || 'N/A'}</td></tr>
+          <tr><td><strong>Fecha de ingreso:</strong></td><td>${formatDate(patientData.estado_actual?.fecha_ingreso)}</td></tr>
+        </table>
+      </div>
+      
+      ${patientData.historial_clinico && patientData.historial_clinico.length > 0 ? `
+      <div class="report-section">
+        <h3>Historial Clínico</h3>
+        ${patientData.historial_clinico.map(entry => `
+          <div class="history-entry">
+            <h4>${entry.tipo?.replace('_', ' ').toUpperCase()} - ${formatDate(entry.fecha)}</h4>
+            <p>${entry.observaciones || entry.notas_seguimiento || 'Sin observaciones'}</p>
+          </div>
+        `).join('')}
+      </div>
+      ` : ''}
+      
+      ${appointments.length > 0 ? `
+      <div class="report-section">
+        <h3>Historial de Citas</h3>
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Tipo</th>
+              <th>Estado</th>
+              <th>Modalidad</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${appointments.map(doc => {
+              const data = doc.data();
+              return `
+                <tr>
+                  <td>${formatDate(data.fecha)}</td>
+                  <td>${data.tipo_cita || 'Consulta'}</td>
+                  <td>${data.estado || 'Programada'}</td>
+                  <td>${data.modalidad || 'Presencial'}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function showPatientReportModal(reportContent) {
   const modalHTML = `
     <div class="modal-overlay" id="patient-report-preview-modal">
       <div class="modal large-modal">
         <button class="modal-close" onclick="closeModal('patient-report-preview-modal')">
           <i class="fas fa-times"></i>
         </button>
-        <h2>Vista Previa del Reporte</h2>
-        
-        <div class="report-preview-content">
-          <div class="report-header">
-            <h3>SENDA - Sistema de Gestión Integral</h3>
-            <h4>Ficha Clínica Completa</h4>
-            <p>Paciente: ${patientData.datos_personales?.nombre_completo || 'Sin nombre'}</p>
-          </div>
-          
-          <div class="report-section">
-            <h4>Información del Paciente</h4>
-            <div class="info-grid">
-              <div><strong>Nombre:</strong> ${patientData.datos_personales?.nombre_completo || 'N/A'}</div>
-              <div><strong>RUT:</strong> ${patientData.datos_personales?.rut || 'N/A'}</div>
-              <div><strong>Edad:</strong> ${patientData.datos_personales?.edad || 'N/A'} años</div>
-              <div><strong>Región:</strong> ${patientData.datos_personales?.region || 'N/A'}</div>
-              <div><strong>Teléfono:</strong> ${patientData.contacto?.telefono || 'N/A'}</div>
-              <div><strong>Email:</strong> ${patientData.contacto?.email || 'N/A'}</div>
-            </div>
-          </div>
-          
-          <div class="report-section">
-            <h4>Estado Actual</h4>
-            <p><strong>Estado:</strong> ${patientData.estado_actual?.activo ? 'Activo' : 'Inactivo'}</p>
-            <p><strong>Programa:</strong> ${patientData.estado_actual?.programa || 'Sin programa'}</p>
-            <p><strong>Fecha Ingreso:</strong> ${formatDate(patientData.estado_actual?.fecha_ingreso)}</p>
-          </div>
-          
-          <div class="report-section">
-            <h4>Historial Clínico (${patientData.historial_clinico?.length || 0} registros)</h4>
-            ${generateHistoryHTML(patientData.historial_clinico || [])}
-          </div>
+        <div class="modal-header">
+          <h2>Vista previa del reporte</h2>
+          <button class="btn btn-primary" onclick="printPatientReport()">
+            <i class="fas fa-print"></i> Imprimir
+          </button>
         </div>
         
-        <div class="modal-actions" style="margin-top: 24px;">
-          <button class="btn btn-primary" onclick="generatePatientReport('${patientId}', 'ficha_completa')">
-            <i class="fas fa-download"></i> Descargar PDF
-          </button>
-          <button class="btn btn-outline" onclick="closeModal('patient-report-preview-modal')">Cerrar</button>
+        <div class="report-preview" id="report-content">
+          ${reportContent}
         </div>
       </div>
     </div>
@@ -3093,42 +3589,301 @@ function showPatientReportPreview(patientId, patientData) {
   document.getElementById('patient-report-preview-modal').style.display = 'flex';
 }
 
-async function generateBulkReports() {
-  showNotification('Generación masiva de reportes en desarrollo', 'info');
+function printPatientReport() {
+  const reportContent = document.getElementById('report-content').innerHTML;
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Reporte de Paciente</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .report-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+          .report-table th, .report-table td { border: 1px solid #ddd; padding: 8px; }
+          .report-table th { background-color: #f5f5f5; }
+          .report-section { margin: 20px 0; }
+          .history-entry { margin: 10px 0; padding: 10px; border-left: 3px solid #2563eb; }
+        </style>
+      </head>
+      <body>
+        ${reportContent}
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.print();
 }
 
-async function exportStatisticsReport() {
-  showNotification('Exportación de estadísticas en desarrollo', 'info');
-}
-
-// Sobrescribir la función closeModal existente para manejar modales dinámicos
-const originalCloseModal = closeModal;
-function closeModal(modalId) {
-  const modal = document.getElementById(modalId);
-  if (modal) {
-    if (modalId === 'patient-modal' && !isDraftSaved) {
-      resetForm();
+// Función para obtener ubicación del usuario
+function getCurrentLocation() {
+  if (!navigator.geolocation) {
+    showNotification('La geolocalización no está soportada en este navegador', 'error');
+    return;
+  }
+  
+  showLoading(true);
+  navigator.geolocation.getCurrentPosition(
+    async function(position) {
+      try {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        
+        // Aquí podrías hacer una llamada a una API de geocodificación inversa
+        // Por simplicidad, solo mostramos las coordenadas
+        showNotification(`Ubicación obtenida: ${lat.toFixed(6)}, ${lng.toFixed(6)}`, 'success');
+        
+        // Buscar centros cercanos (simulado)
+        await loadNearbyClinics(lat, lng);
+        
+      } catch (error) {
+        console.error('Error processing location:', error);
+        showNotification('Error al procesar la ubicación', 'error');
+      } finally {
+        showLoading(false);
+      }
+    },
+    function(error) {
+      showLoading(false);
+      let errorMessage = 'Error al obtener la ubicación';
+      
+      switch(error.code) {
+        case error.PERMISSION_DENIED:
+          errorMessage = 'Permiso de geolocalización denegado';
+          break;
+        case error.POSITION_UNAVAILABLE:
+          errorMessage = 'Información de ubicación no disponible';
+          break;
+        case error.TIMEOUT:
+          errorMessage = 'Tiempo de espera agotado para obtener la ubicación';
+          break;
+      }
+      
+      showNotification(errorMessage, 'error');
     }
-    modal.style.display = 'none';
-    document.body.style.overflow = 'auto';
+  );
+}
+
+// Función para cargar centros cercanos
+async function loadNearbyClinics(lat = null, lng = null) {
+  try {
+    const centersList = document.getElementById('centers-list');
+    if (!centersList) return;
     
-    // Remover modales dinámicos del DOM
-    if (['request-detail-modal', 'patient-detail-modal', 'patient-history-modal', 
-         'patient-report-preview-modal', 'followup-note-modal', 'new-appointment-modal', 
-         'day-appointments-modal'].includes(modalId)) {
-      modal.remove();
+    // Simular centros SENDA (en un caso real, esto vendría de una base de datos)
+    const centers = [
+      {
+        name: 'Centro SENDA Santiago Centro',
+        address: 'Moneda 1180, Santiago, Región Metropolitana',
+        phone: '+56 2 2690 4000',
+        type: 'Ambulatorio',
+        distance: lat && lng ? '2.5 km' : null
+      },
+      {
+        name: 'Centro SENDA Maipú',
+        address: 'Av. Pajaritos 3201, Maipú, Región Metropolitana',
+        phone: '+56 2 2690 4100',
+        type: 'Residencial',
+        distance: lat && lng ? '8.3 km' : null
+      },
+      {
+        name: 'Centro SENDA Las Condes',
+        address: 'Av. Apoquindo 4499, Las Condes, Región Metropolitana',
+        phone: '+56 2 2690 4200',
+        type: 'Ambulatorio',
+        distance: lat && lng ? '12.1 km' : null
+      }
+    ];
+    
+    let html = '';
+    centers.forEach(center => {
+      html += `
+        <div class="center-card">
+          <h3>${center.name}</h3>
+          <p><i class="fas fa-map-marker-alt"></i> ${center.address}</p>
+          <p><i class="fas fa-phone"></i> ${center.phone}</p>
+          <p><i class="fas fa-hospital"></i> Tipo: ${center.type}</p>
+          ${center.distance ? `<p><i class="fas fa-route"></i> Distancia: ${center.distance}</p>` : ''}
+          <div class="center-actions">
+            <button class="btn btn-sm btn-primary" onclick="selectCenter('${center.name}')">
+              <i class="fas fa-check"></i> Seleccionar
+            </button>
+          </div>
+        </div>
+      `;
+    });
+    
+    centersList.innerHTML = html;
+    
+  } catch (error) {
+    console.error('Error loading centers:', error);
+    const centersList = document.getElementById('centers-list');
+    if (centersList) {
+      centersList.innerHTML = '<p>Error al cargar centros: ' + error.message + '</p>';
     }
   }
 }
 
-// ================= ACTUALIZACIONES A LOADREQUESTS =================
-
-// REEMPLAZA la función loadRequests existente con esta línea:
-async function loadRequests(userData) {
-  await loadRequestsPanel(userData);
+function selectCenter(centerName) {
+  const centerInput = document.getElementById('centro-preferencia');
+  if (centerInput) {
+    centerInput.value = centerName;
+  }
+  
+  showNotification(`Centro seleccionado: ${centerName}`, 'success');
+  closeModal('center-modal');
 }
 
-console.log('Funciones clínicas cargadas correctamente');
-console.log('SENDA Platform JavaScript loaded successfully');
-console.log('Sistema cargado - Todos los botones deberían funcionar correctamente');
-console.log('Funciones de debug disponibles en window.sendaApp');
+// Función para generar reporte de seguimientos
+async function generateFollowupsReport() {
+  try {
+    showLoading(true);
+    
+    const patientsSnapshot = await db.collection('pacientes')
+      .where('estado_actual.activo', '==', true)
+      .get();
+    
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Paciente,RUT,Último Seguimiento,Tipo,Profesional,Estado\n";
+    
+    for (const doc of patientsSnapshot.docs) {
+      const data = doc.data();
+      const lastEntry = data.historial_clinico && data.historial_clinico.length > 0 
+        ? data.historial_clinico[data.historial_clinico.length - 1] 
+        : null;
+      
+      if (lastEntry) {
+        // Obtener nombre del profesional
+        let professionalName = 'N/A';
+        if (lastEntry.profesional) {
+          try {
+            const profDoc = await db.collection('profesionales').doc(lastEntry.profesional).get();
+            if (profDoc.exists) {
+              professionalName = profDoc.data().nombre;
+            }
+          } catch (error) {
+            console.error('Error loading professional name:', error);
+          }
+        }
+        
+        const row = [
+          `"${data.datos_personales?.nombre_completo || 'Sin nombre'}"`,
+          `"${data.datos_personales?.rut || 'Sin RUT'}"`,
+          `"${formatDate(lastEntry.fecha)}"`,
+          `"${lastEntry.tipo || 'N/A'}"`,
+          `"${professionalName}"`,
+          `"${lastEntry.estado_paciente || 'N/A'}"`
+        ].join(',');
+        
+        csvContent += row + "\n";
+      }
+    }
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `seguimientos_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showNotification('Reporte de seguimientos generado correctamente', 'success');
+    
+  } catch (error) {
+    console.error('Error generating followups report:', error);
+    showNotification('Error al generar el reporte de seguimientos', 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+// Función para validar archivos adjuntos
+function validateFileUpload(fileInput, maxSize = 5 * 1024 * 1024) { // 5MB por defecto
+  const file = fileInput.files[0];
+  if (!file) return false;
+  
+  const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf', 'text/plain'];
+  
+  if (!allowedTypes.includes(file.type)) {
+    showNotification('Tipo de archivo no permitido. Solo se permiten imágenes, PDF y archivos de texto.', 'error');
+    fileInput.value = '';
+    return false;
+  }
+  
+  if (file.size > maxSize) {
+    showNotification(`El archivo es demasiado grande. Máximo permitido: ${maxSize / (1024 * 1024)}MB`, 'error');
+    fileInput.value = '';
+    return false;
+  }
+  
+  return true;
+}
+
+// Función para limpiar datos sensibles del localStorage al cerrar
+window.addEventListener('beforeunload', function() {
+  localStorage.removeItem('senda_draft');
+  // Limpiar otros datos sensibles si es necesario
+});
+
+// Función para manejar errores de red
+function handleNetworkError(error) {
+  console.error('Network error:', error);
+  
+  if (!navigator.onLine) {
+    showNotification('Sin conexión a internet. Verifica tu conexión.', 'error', 10000);
+  } else {
+    showNotification('Error de conexión. Intenta nuevamente.', 'error');
+  }
+}
+
+// Listener para estado de la conexión
+window.addEventListener('online', function() {
+  showNotification('Conexión restablecida', 'success', 3000);
+});
+
+window.addEventListener('offline', function() {
+  showNotification('Sin conexión a internet', 'warning', 10000);
+});
+
+// Función para exportar datos del sistema (solo admins)
+async function exportSystemData() {
+  if (currentUserData?.profesion !== 'admin') {
+    showNotification('Solo los administradores pueden exportar datos del sistema', 'error');
+    return;
+  }
+  
+  if (!confirm('¿Estás seguro de exportar todos los datos del sistema? Esta operación puede tomar varios minutos.')) {
+    return;
+  }
+  
+  try {
+    showLoading(true);
+    
+    // Exportar todas las colecciones principales
+    const collections = ['pacientes', 'solicitudes_ingreso', 'profesionales', 'citas'];
+    const exportData = {};
+    
+    for (const collection of collections) {
+      const snapshot = await db.collection(collection).get();
+      exportData[collection] = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+    }
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(dataBlob);
+    link.download = `senda_export_${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    
+    showNotification('Datos exportados correctamente', 'success');
+    
+  } catch (error) {
+    console.error('Error exporting data:', error);
+    showNotification('Error al exportar los datos del sistema', 'error');
+  } finally {
+    showLoading(false);
+  }
+}
