@@ -84,8 +84,8 @@
 
       <div class="features">
         <span>✓ Confidencial</span>
-        <span>✓ Disponible 24/7</span>
         <span>✓ Sin juicios</span>
+        <span>✓ Atención profesional</span>
       </div>
     </div>
   </main>
@@ -104,7 +104,7 @@
     </div>
   </footer>
 
-  <!-- Patient Registration Modal - COMPLETAMENTE REESTRUCTURADO EN 4 PASOS -->
+  <!-- Patient Registration Modal -->
   <div class="modal-overlay" id="patient-modal">
     <div class="modal large-modal">
       <button class="modal-close" data-close="patient-modal">
@@ -165,9 +165,9 @@
               <input type="number" class="form-input" id="patient-age" min="12" max="120" required>
             </div>
             <div class="form-group">
-              <label class="form-label">Región *</label>
-              <select class="form-select" id="patient-region" required>
-                <option value="">Seleccionar región...</option>
+              <label class="form-label">CESFAM más cercano *</label>
+              <select class="form-select" id="patient-cesfam" required>
+                <option value="">Seleccionar CESFAM...</option>
               </select>
             </div>
           </div>
@@ -226,17 +226,9 @@
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Comuna *</label>
-              <select class="form-select" id="patient-comuna" disabled required>
-                <option value="">Primero selecciona una región</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Dirección</label>
-              <input type="text" class="form-input" id="patient-address">
-            </div>
+          <div class="form-group">
+            <label class="form-label">Dirección</label>
+            <input type="text" class="form-input" id="patient-address">
           </div>
         </div>
 
@@ -360,16 +352,6 @@
               </label>
             </div>
           </div>
-
-          <div class="form-group">
-            <label class="form-label">Centro de preferencia</label>
-            <select class="form-select" id="centro-preferencia">
-              <option value="">Sin preferencia</option>
-              <option value="cesfam_la_florida">CESFAM La Florida</option>
-              <option value="cesfam_maipu">CESFAM Maipú</option>
-              <option value="cesfam_providencia">CESFAM Providencia</option>
-            </select>
-          </div>
         </div>
 
         <div class="form-navigation">
@@ -388,6 +370,61 @@
           <button type="submit" class="btn btn-success" id="submit-form" style="display: none;">
             <i class="fas fa-paper-plane"></i>
             Enviar Solicitud
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de Reingreso -->
+  <div class="modal-overlay" id="reentry-modal">
+    <div class="modal">
+      <button class="modal-close" data-close="reentry-modal">
+        <i class="fas fa-times"></i>
+      </button>
+      <h2>Reingreso al Programa SENDA</h2>
+      
+      <form id="reentry-form">
+        <div class="form-group">
+          <label class="form-label">Nombre Completo *</label>
+          <input type="text" class="form-input" id="reentry-name" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">RUT *</label>
+          <input type="text" class="form-input" id="reentry-rut" placeholder="12.345.678-9" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Teléfono *</label>
+          <input type="tel" class="form-input" id="reentry-phone" placeholder="+56 9 1234 5678" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Correo Electrónico *</label>
+          <input type="email" class="form-input" id="reentry-email" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">CESFAM de referencia *</label>
+          <select class="form-select" id="reentry-cesfam" required>
+            <option value="">Seleccionar CESFAM...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Motivo del reingreso *</label>
+          <textarea class="form-textarea" id="reentry-reason" required 
+                    placeholder="Describe el motivo por el cual solicitas reingresar al programa..."></textarea>
+        </div>
+
+        <div class="form-actions" style="margin-top: 24px;">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-redo"></i>
+            Solicitar Reingreso
+          </button>
+          <button type="button" class="btn btn-outline" onclick="closeModal('reentry-modal')">
+            Cancelar
           </button>
         </div>
       </form>
@@ -434,18 +471,6 @@
           <div class="nav-item" data-panel="reports">
             <i class="fas fa-file-medical-alt"></i>
             Reportes
-          </div>
-          <div class="nav-item" data-panel="centers" id="centers-nav" style="display: none;">
-            <i class="fas fa-hospital"></i>
-            Centros
-          </div>
-          <div class="nav-item" data-panel="users" id="users-nav" style="display: none;">
-            <i class="fas fa-user-cog"></i>
-            Usuarios
-          </div>
-          <div class="nav-item" data-panel="analytics" id="analytics-nav" style="display: none;">
-            <i class="fas fa-chart-bar"></i>
-            Analytics
           </div>
         </nav>
 
@@ -511,299 +536,64 @@
               </div>
             </div>
           </div>
-
-          <div class="dashboard-charts">
-            <div class="chart-container">
-              <h3>Casos por Prioridad</h3>
-              <canvas id="priority-chart"></canvas>
-            </div>
-            <div class="chart-container">
-              <h3>Tendencia Mensual</h3>
-              <canvas id="trend-chart"></canvas>
-            </div>
-          </div>
-
-          <div class="recent-activity">
-            <h3>Actividad Reciente</h3>
-            <div id="activity-list">
-              <!-- Se llenará dinámicamente -->
-            </div>
-          </div>
         </div>
 
         <!-- Requests Panel -->
         <div class="panel-content hidden" id="requests-panel">
           <div class="panel-header">
             <h1 class="panel-title">Gestión de Solicitudes</h1>
-            <p class="panel-subtitle">Revisa y gestiona las solicitudes pendientes</p>
-          </div>
-
-          <div class="filters-section">
-            <div class="filter-group">
-              <select class="form-select" id="filter-priority">
-                <option value="">Todas las prioridades</option>
-                <option value="critica">Crítica</option>
-                <option value="alta">Alta</option>
-                <option value="media">Media</option>
-                <option value="baja">Baja</option>
-              </select>
-              
-              <select class="form-select" id="filter-status">
-                <option value="">Todos los estados</option>
-                <option value="pendiente">Pendiente</option>
-                <option value="en_proceso">En proceso</option>
-                <option value="atendido">Atendido</option>
-              </select>
-
-              <input type="date" class="form-input" id="filter-date">
-              
-              <button class="btn btn-outline" id="clear-filters">
-                <i class="fas fa-times"></i>
-                Limpiar
-              </button>
-            </div>
+            <p class="panel-subtitle">Revisa y gestiona las solicitudes de tu CESFAM</p>
           </div>
 
           <div id="requests-list">
             <!-- Las solicitudes se cargarán aquí dinámicamente -->
           </div>
         </div>
-<!-- Agregar estos paneles después del requests-panel existente en el HTML -->
 
-<!-- Patients Panel -->
-<div class="panel-content hidden" id="patients-panel">
-  <!-- El contenido se cargará dinámicamente desde JavaScript -->
-</div>
-
-<!-- Calendar Panel -->
-<div class="panel-content hidden" id="calendar-panel">
-  <!-- El contenido se cargará dinámicamente desde JavaScript -->
-</div>
-
-<!-- Followups Panel -->
-<div class="panel-content hidden" id="followups-panel">
-  <!-- El contenido se cargará dinámicamente desde JavaScript -->
-</div>
-
-<!-- Reports Panel -->
-<div class="panel-content hidden" id="reports-panel">
-  <!-- El contenido se cargará dinámicamente desde JavaScript -->
-</div>
-
-<!-- Centers Panel (para coordinadores y admins) -->
-<div class="panel-content hidden" id="centers-panel">
-  <div class="panel-header">
-    <h1 class="panel-title">Gestión de Centros</h1>
-    <p class="panel-subtitle">Administra los centros de salud y sus configuraciones</p>
-  </div>
-  
-  <div class="search-section">
-    <div class="search-container">
-      <i class="fas fa-search search-icon"></i>
-      <input type="text" id="centers-search" class="search-input" placeholder="Buscar centro por nombre o región...">
-    </div>
-  </div>
-  
-  <div class="filters-section">
-    <div class="filter-group">
-      <select class="form-select" id="filter-center-type">
-        <option value="">Todos los tipos</option>
-        <option value="cesfam">CESFAM</option>
-        <option value="hospital">Hospital</option>
-        <option value="clinica">Clínica</option>
-        <option value="centro_senda">Centro SENDA</option>
-      </select>
-      
-      <select class="form-select" id="filter-center-region">
-        <option value="">Todas las regiones</option>
-        <!-- Las regiones se cargarán dinámicamente -->
-      </select>
-      
-      <button class="btn btn-primary" id="add-center">
-        <i class="fas fa-plus"></i> Agregar Centro
-      </button>
-    </div>
-  </div>
-  
-  <div id="centers-list">
-    <!-- Los centros se cargarán dinámicamente -->
-    <div class="loading"><div class="spinner"></div> Cargando centros...</div>
-  </div>
-</div>
-
-<!-- Users Panel (solo para admins) -->
-<div class="panel-content hidden" id="users-panel">
-  <div class="panel-header">
-    <h1 class="panel-title">Gestión de Usuarios</h1>
-    <p class="panel-subtitle">Administra profesionales y permisos del sistema</p>
-  </div>
-  
-  <div class="search-section">
-    <div class="search-container">
-      <i class="fas fa-search search-icon"></i>
-      <input type="text" id="users-search" class="search-input" placeholder="Buscar profesional por nombre o correo...">
-    </div>
-  </div>
-  
-  <div class="filters-section">
-    <div class="filter-group">
-      <select class="form-select" id="filter-user-profession">
-        <option value="">Todas las profesiones</option>
-        <option value="asistente_social">Asistente Social</option>
-        <option value="medico">Médico</option>
-        <option value="psicologo">Psicólogo</option>
-        <option value="terapeuta">Terapeuta Ocupacional</option>
-        <option value="coordinador">Coordinador Regional</option>
-        <option value="admin">Administrador</option>
-      </select>
-      
-      <select class="form-select" id="filter-user-status">
-        <option value="">Todos los estados</option>
-        <option value="activo">Activo</option>
-        <option value="inactivo">Inactivo</option>
-        <option value="pendiente">Pendiente</option>
-      </select>
-      
-      <button class="btn btn-primary" id="invite-user">
-        <i class="fas fa-user-plus"></i> Invitar Usuario
-      </button>
-    </div>
-  </div>
-  
-  <div id="users-list">
-    <!-- Los usuarios se cargarán dinámicamente -->
-    <div class="loading"><div class="spinner"></div> Cargando usuarios...</div>
-  </div>
-</div>
-
-<!-- Analytics Panel (para coordinadores y admins) -->
-<div class="panel-content hidden" id="analytics-panel">
-  <div class="panel-header">
-    <h1 class="panel-title">Analytics y Estadísticas</h1>
-    <p class="panel-subtitle">Análisis detallado de datos y métricas del sistema</p>
-  </div>
-  
-  <div class="analytics-controls">
-    <div class="filter-group">
-      <input type="date" class="form-input" id="analytics-date-from" placeholder="Desde">
-      <input type="date" class="form-input" id="analytics-date-to" placeholder="Hasta">
-      
-      <select class="form-select" id="analytics-period">
-        <option value="month">Último mes</option>
-        <option value="quarter">Último trimestre</option>
-        <option value="year">Último año</option>
-        <option value="custom">Período personalizado</option>
-      </select>
-      
-      <button class="btn btn-primary" id="generate-analytics">
-        <i class="fas fa-chart-bar"></i> Generar Análisis
-      </button>
-      
-      <button class="btn btn-secondary" id="export-analytics">
-        <i class="fas fa-download"></i> Exportar Datos
-      </button>
-    </div>
-  </div>
-  
-  <div class="analytics-summary">
-    <div class="metrics-grid">
-      <div class="metric-card">
-        <div class="metric-header">
-          <h3>Total Solicitudes</h3>
-          <i class="fas fa-inbox metric-icon"></i>
-        </div>
-        <div class="metric-value" id="analytics-total-requests">0</div>
-        <div class="metric-change" id="analytics-requests-change">
-          Cargando...
-        </div>
-      </div>
-      
-      <div class="metric-card">
-        <div class="metric-header">
-          <h3>Pacientes Activos</h3>
-          <i class="fas fa-users metric-icon"></i>
-        </div>
-        <div class="metric-value" id="analytics-active-patients">0</div>
-        <div class="metric-change" id="analytics-patients-change">
-          Cargando...
-        </div>
-      </div>
-      
-      <div class="metric-card">
-        <div class="metric-header">
-          <h3>Citas Realizadas</h3>
-          <i class="fas fa-calendar-check metric-icon"></i>
-        </div>
-        <div class="metric-value" id="analytics-completed-appointments">0</div>
-        <div class="metric-change" id="analytics-appointments-change">
-          Cargando...
-        </div>
-      </div>
-      
-      <div class="metric-card">
-        <div class="metric-header">
-          <h3>Tasa de Éxito</h3>
-          <i class="fas fa-trophy metric-icon"></i>
-        </div>
-        <div class="metric-value" id="analytics-success-rate">0%</div>
-        <div class="metric-change" id="analytics-success-change">
-          Cargando...
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <div class="analytics-charts">
-    <div class="chart-container">
-      <h3>Solicitudes por Mes</h3>
-      <canvas id="requests-by-month-chart"></canvas>
-    </div>
-    
-    <div class="chart-container">
-      <h3>Distribución por Sustancia</h3>
-      <canvas id="substances-distribution-chart"></canvas>
-    </div>
-    
-    <div class="chart-container">
-      <h3>Atenciones por Profesional</h3>
-      <canvas id="appointments-by-professional-chart"></canvas>
-    </div>
-    
-    <div class="chart-container">
-      <h3>Tendencia de Recuperación</h3>
-      <canvas id="recovery-trend-chart"></canvas>
-    </div>
-  </div>
-  
-  <div class="analytics-tables">
-    <div class="table-container">
-      <h3>Top 10 Centros por Atenciones</h3>
-      <div id="top-centers-table">
-        <!-- Tabla se cargará dinámicamente -->
-      </div>
-    </div>
-    
-    <div class="table-container">
-      <h3>Análisis por Región</h3>
-      <div id="regional-analysis-table">
-        <!-- Tabla se cargará dinámicamente -->
-      </div>
-    </div>
-  </div>
-</div>
-        <!-- Otros paneles se mantienen igual... -->
+        <!-- Patients Panel -->
         <div class="panel-content hidden" id="patients-panel">
           <div class="panel-header">
             <h1 class="panel-title">Gestión de Pacientes</h1>
-            <p class="panel-subtitle">Busca y gestiona información de pacientes</p>
+            <p class="panel-subtitle">Pacientes de tu CESFAM</p>
           </div>
+          <div id="patients-list"></div>
         </div>
 
+        <!-- Calendar Panel -->
         <div class="panel-content hidden" id="calendar-panel">
           <div class="panel-header">
             <h1 class="panel-title">Agenda</h1>
-            <p class="panel-subtitle">Gestiona tus citas y horarios</p>
+            <p class="panel-subtitle">Gestiona citas y horarios</p>
           </div>
+        </div>
+
+        <!-- Followups Panel -->
+        <div class="panel-content hidden" id="followups-panel">
+          <div class="panel-header">
+            <h1 class="panel-title">Seguimientos</h1>
+            <p class="panel-subtitle">Horarios de atención 08:00 - 16:30</p>
+          </div>
+          <div id="followups-schedule"></div>
+        </div>
+
+        <!-- Reports Panel -->
+        <div class="panel-content hidden" id="reports-panel">
+          <div class="panel-header">
+            <h1 class="panel-title">Reportes</h1>
+            <p class="panel-subtitle">Buscar y generar reportes de pacientes</p>
+          </div>
+          
+          <div class="search-section">
+            <div class="search-container">
+              <i class="fas fa-search search-icon"></i>
+              <input type="text" id="patient-search" class="search-input" placeholder="Buscar por RUT o nombre completo...">
+            </div>
+            <button class="btn btn-primary" id="search-patient-btn">
+              <i class="fas fa-search"></i> Buscar
+            </button>
+          </div>
+          
+          <div id="patient-results"></div>
         </div>
       </div>
     </div>
@@ -815,7 +605,7 @@
       <button class="modal-close" data-close="center-modal">
         <i class="fas fa-times"></i>
       </button>
-      <h2>Encontrar Centro de Salud</h2>
+      <h2>Encontrar CESFAM más cercano</h2>
       
       <div class="location-input">
         <div class="form-group">
@@ -860,13 +650,6 @@
             <label class="form-label">Contraseña</label>
             <input type="password" class="form-input" id="login-password" required>
           </div>
-          <div class="form-group">
-            <label class="checkbox-option">
-              <input type="checkbox" id="remember-me">
-              <span class="checkbox-custom"></span>
-              Recordar sesión
-            </label>
-          </div>
           <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px;">
             <i class="fas fa-sign-in-alt"></i>
             Iniciar Sesión
@@ -897,17 +680,12 @@
               <option value="medico">Médico</option>
               <option value="psicologo">Psicólogo</option>
               <option value="terapeuta">Terapeuta Ocupacional</option>
-              <option value="coordinador">Coordinador Regional</option>
-              <option value="admin">Administrador</option>
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Centro de Salud</label>
+            <label class="form-label">CESFAM</label>
             <select class="form-select" id="register-center" required>
-              <option value="">Seleccionar centro...</option>
-              <option value="cesfam_la_florida">CESFAM La Florida</option>
-              <option value="cesfam_maipu">CESFAM Maipú</option>
-              <option value="cesfam_providencia">CESFAM Providencia</option>
+              <option value="">Seleccionar CESFAM...</option>
             </select>
           </div>
           <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 16px;">
