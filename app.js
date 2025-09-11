@@ -259,7 +259,6 @@ function debounce(func, wait) {
     timeout = setTimeout(later, wait);
   };
 }
-
 // Initialize Application
 document.addEventListener('DOMContentLoaded', function() {
   console.log('SENDA Platform loading...');
@@ -333,6 +332,7 @@ function loadCommunesData(regionKey) {
     comunaSelect.disabled = false;
   }
 }
+
 function initializeEventListeners() {
   // Main action buttons
   const registerBtn = document.getElementById('register-patient');
@@ -555,6 +555,57 @@ function prevFormStep() {
   }
 }
 
+function setupFormValidation() {
+  const rutInput = document.getElementById('patient-rut');
+  if (rutInput) {
+    rutInput.addEventListener('input', function(e) {
+      e.target.value = formatRUT(e.target.value);
+    });
+
+    rutInput.addEventListener('blur', function(e) {
+      const rut = e.target.value.trim();
+      if (rut && !validateRUT(rut)) {
+        e.target.classList.add('error');
+        showNotification('El RUT ingresado no es válido', 'error');
+      } else {
+        e.target.classList.remove('error');
+      }
+    });
+  }
+
+  const phoneInputs = document.querySelectorAll('#patient-phone, #anonymous-phone');
+  phoneInputs.forEach(input => {
+    input.addEventListener('input', function(e) {
+      e.target.value = formatPhoneNumber(e.target.value);
+    });
+  });
+
+  const emailInputs = document.querySelectorAll('input[type="email"]');
+  emailInputs.forEach(input => {
+    input.addEventListener('blur', function(e) {
+      const email = e.target.value.trim();
+      if (email && !isValidEmail(email)) {
+        e.target.classList.add('error');
+        showNotification('Por favor ingresa un correo electrónico válido', 'error');
+      } else {
+        e.target.classList.remove('error');
+      }
+    });
+  });
+
+  const ageInput = document.getElementById('patient-age');
+  if (ageInput) {
+    ageInput.addEventListener('blur', function(e) {
+      const age = parseInt(e.target.value);
+      if (age && (age < 12 || age > 120)) {
+        e.target.classList.add('error');
+        showNotification('Por favor ingresa una edad válida (12-120 años)', 'error');
+      } else {
+        e.target.classList.remove('error');
+      }
+    });
+  }
+}
 function validateCurrentStep() {
   const currentStepElement = document.querySelector(`[data-step="${currentFormStep}"]`);
   const requiredFields = currentStepElement.querySelectorAll('[required]:not([style*="display: none"] [required])');
@@ -777,58 +828,6 @@ function restoreFormData() {
   document.querySelector(`[data-step="${currentFormStep}"]`)?.classList.add('active');
   
   updateFormProgress();
-}
-
-function setupFormValidation() {
-  const rutInput = document.getElementById('patient-rut');
-  if (rutInput) {
-    rutInput.addEventListener('input', function(e) {
-      e.target.value = formatRUT(e.target.value);
-    });
-
-    rutInput.addEventListener('blur', function(e) {
-      const rut = e.target.value.trim();
-      if (rut && !validateRUT(rut)) {
-        e.target.classList.add('error');
-        showNotification('El RUT ingresado no es válido', 'error');
-      } else {
-        e.target.classList.remove('error');
-      }
-    });
-  }
-
-  const phoneInputs = document.querySelectorAll('#patient-phone, #anonymous-phone');
-  phoneInputs.forEach(input => {
-    input.addEventListener('input', function(e) {
-      e.target.value = formatPhoneNumber(e.target.value);
-    });
-  });
-
-  const emailInputs = document.querySelectorAll('input[type="email"]');
-  emailInputs.forEach(input => {
-    input.addEventListener('blur', function(e) {
-      const email = e.target.value.trim();
-      if (email && !isValidEmail(email)) {
-        e.target.classList.add('error');
-        showNotification('Por favor ingresa un correo electrónico válido', 'error');
-      } else {
-        e.target.classList.remove('error');
-      }
-    });
-  });
-
-  const ageInput = document.getElementById('patient-age');
-  if (ageInput) {
-    ageInput.addEventListener('blur', function(e) {
-      const age = parseInt(e.target.value);
-      if (age && (age < 12 || age > 120)) {
-        e.target.classList.add('error');
-        showNotification('Por favor ingresa una edad válida (12-120 años)', 'error');
-      } else {
-        e.target.classList.remove('error');
-      }
-    });
-  }
 }
 
 function submitPatientForm() {
@@ -1084,25 +1083,44 @@ async function handleProfessionalLogin(e) {
   }
 }
 
+// FUNCIÓN CORREGIDA DE REGISTRO DE PROFESIONALES
 async function handleProfessionalRegistration(e) {
   e.preventDefault();
   showLoading(true);
   
+  // Verificar que todos los elementos existan antes de acceder a sus valores
+  const nameElement = document.getElementById('register-name');
+  const emailElement = document.getElementById('register-email');
+  const passwordElement = document.getElementById('register-password');
+  const professionElement = document.getElementById('register-profession');
+  const licenseElement = document.getElementById('register-license');
+  const centerElement = document.getElementById('register-center');
+
+  // Verificar que todos los elementos existan
+  if (!nameElement || !emailElement || !passwordElement || !professionElement) {
+    console.error('Elementos del formulario no encontrados');
+    showNotification('Error: Formulario no cargado correctamente', 'error');
+    showLoading(false);
+    return;
+  }
+
   const registrationData = {
-    name: document.getElementById('register-name').value.trim(),
-    email: document.getElementById('register-email').value.trim(),
-    password: document.getElementById('register-password').value,
-    profession: document.getElementById('register-profession').value,
-    license: document.getElementById('register-license').value.trim(),
-    center: document.getElementById('register-center').value
+    name: nameElement.value.trim(),
+    email: emailElement.value.trim(),
+    password: passwordElement.value,
+    profession: professionElement.value,
+    license: licenseElement ? licenseElement.value.trim() : '', // Verificación segura
+    center: centerElement ? centerElement.value : '' // Verificación segura
   };
 
-  if (!registrationData.name || !registrationData.email || !registrationData.password || !registrationData.profession || !registrationData.license) {
+  // Validaciones mejoradas
+  if (!registrationData.name || !registrationData.email || !registrationData.password || !registrationData.profession) {
     showNotification('Por favor completa todos los campos obligatorios', 'error');
     showLoading(false);
     return;
   }
 
+  // Validar email institucional @senda.cl
   if (!registrationData.email.endsWith('@senda.cl')) {
     showNotification('El correo debe ser institucional (@senda.cl)', 'error');
     showLoading(false);
@@ -1122,14 +1140,16 @@ async function handleProfessionalRegistration(e) {
   }
 
   try {
+    // Crear usuario en Firebase Auth
     const userCredential = await auth.createUserWithEmailAndPassword(registrationData.email, registrationData.password);
     const user = userCredential.user;
     
+    // Preparar datos del profesional para Firestore
     const professionalData = {
       nombre: registrationData.name,
       correo: registrationData.email,
       profesion: registrationData.profession,
-      licencia: registrationData.license,
+      licencia: registrationData.license || 'No especificada', // Valor por defecto
       id_centro_asignado: registrationData.center || null,
       configuracion_sistema: {
         rol: registrationData.profession,
@@ -1144,19 +1164,25 @@ async function handleProfessionalRegistration(e) {
       }
     };
 
+    // Guardar en Firestore
     await db.collection('profesionales').doc(user.uid).set(professionalData);
 
+    // Actualizar perfil de Firebase Auth con el nombre
     await user.updateProfile({
       displayName: registrationData.name
     });
 
     showNotification('Registro exitoso. Ahora puedes iniciar sesión.', 'success');
     
+    // Cambiar a la pestaña de login y prellenar el email
     const loginTab = document.querySelector('[data-tab="login"]');
     if (loginTab) loginTab.click();
     
-    document.getElementById('register-form').reset();
-    document.getElementById('login-email').value = registrationData.email;
+    const registerForm = document.getElementById('register-form');
+    if (registerForm) registerForm.reset();
+    
+    const loginEmailInput = document.getElementById('login-email');
+    if (loginEmailInput) loginEmailInput.value = registrationData.email;
     
   } catch (error) {
     console.error('Registration error:', error);
@@ -1184,7 +1210,6 @@ async function handleProfessionalRegistration(e) {
     showLoading(false);
   }
 }
-
 function getDefaultPermissions(profession) {
   const permissions = {
     'asistente_social': [
@@ -1305,19 +1330,140 @@ function showPanel(panelId, userData) {
 
 async function loadDashboard(userData) {
   console.log('Loading dashboard for:', userData.nombre);
+  
+  try {
+    // Cargar estadísticas del dashboard
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    // Contar solicitudes pendientes
+    const pendingRequests = await db.collection('solicitudes_ingreso')
+      .where('clasificacion.estado', '==', 'pendiente')
+      .get();
+    
+    // Contar casos críticos
+    const criticalCases = await db.collection('solicitudes_ingreso')
+      .where('clasificacion.prioridad', '==', 'critica')
+      .where('clasificacion.estado', '==', 'pendiente')
+      .get();
+    
+    // Actualizar métricas en el dashboard
+    const totalPatientsElement = document.getElementById('total-patients');
+    const pendingRequestsElement = document.getElementById('pending-requests');
+    const criticalCasesElement = document.getElementById('critical-cases');
+    
+    if (totalPatientsElement) totalPatientsElement.textContent = pendingRequests.size;
+    if (pendingRequestsElement) pendingRequestsElement.textContent = pendingRequests.size;
+    if (criticalCasesElement) criticalCasesElement.textContent = criticalCases.size;
+    
+  } catch (error) {
+    console.error('Error loading dashboard:', error);
+  }
 }
 
 async function loadRequests(userData) {
   console.log('Loading requests for:', userData.nombre);
+  
+  try {
+    const requestsList = document.getElementById('requests-list');
+    if (!requestsList) return;
+    
+    requestsList.innerHTML = '<div class="loading"><div class="spinner"></div> Cargando solicitudes...</div>';
+    
+    // Obtener solicitudes según el rol del usuario
+    let query = db.collection('solicitudes_ingreso')
+      .orderBy('metadata.fecha_creacion', 'desc')
+      .limit(20);
+    
+    const snapshot = await query.get();
+    
+    if (snapshot.empty) {
+      requestsList.innerHTML = '<p>No hay solicitudes disponibles.</p>';
+      return;
+    }
+    
+    let html = '';
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const priority = data.clasificacion?.prioridad || 'baja';
+      const estado = data.clasificacion?.estado || 'pendiente';
+      
+      html += `
+        <div class="card patient-card">
+          <div class="card-header">
+            <div>
+              <h3>Solicitud ${doc.id.substring(0, 8).toUpperCase()}</h3>
+              <p>Edad: ${data.datos_personales?.edad || 'N/A'} años</p>
+            </div>
+            <div>
+              <span class="priority-indicator priority-${priority}">${priority.toUpperCase()}</span>
+              <span class="status-badge status-${estado}">${estado}</span>
+            </div>
+          </div>
+          <div class="patient-info">
+            <div>Región: ${data.datos_personales?.region || 'N/A'}</div>
+            <div>Tipo: ${data.datos_personales?.anonimo ? 'Anónimo' : 'Identificado'}</div>
+            <div>Fecha: ${formatDate(data.metadata?.fecha_creacion)}</div>
+          </div>
+        </div>
+      `;
+    });
+    
+    requestsList.innerHTML = html;
+    
+  } catch (error) {
+    console.error('Error loading requests:', error);
+    const requestsList = document.getElementById('requests-list');
+    if (requestsList) {
+      requestsList.innerHTML = '<p>Error al cargar las solicitudes.</p>';
+    }
+  }
 }
 
 function startRealTimeListeners(userData) {
   console.log('Starting real-time listeners for:', userData.nombre);
+  
+  // Listener para nuevas solicitudes críticas
+  const unsubscribeCritical = db.collection('alertas_criticas')
+    .where('estado', '==', 'pendiente')
+    .onSnapshot(snapshot => {
+      snapshot.docChanges().forEach(change => {
+        if (change.type === 'added') {
+          const alertData = change.doc.data();
+          showNotification(
+            `Nueva alerta crítica: ${alertData.mensaje}`,
+            'error',
+            10000
+          );
+        }
+      });
+    });
+  
+  // Listener para nuevas solicitudes
+  const unsubscribeRequests = db.collection('solicitudes_ingreso')
+    .where('clasificacion.estado', '==', 'pendiente')
+    .onSnapshot(snapshot => {
+      const pendingCount = snapshot.size;
+      const badge = document.getElementById('requests-badge');
+      if (badge) {
+        badge.textContent = pendingCount;
+        badge.style.display = pendingCount > 0 ? 'inline' : 'none';
+      }
+    });
+  
+  // Guardar referencias para cleanup
+  window.sendaUnsubscribers = [unsubscribeCritical, unsubscribeRequests];
 }
 
 async function handleLogout() {
   if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
     try {
+      // Limpiar listeners en tiempo real
+      if (window.sendaUnsubscribers) {
+        window.sendaUnsubscribers.forEach(unsubscribe => unsubscribe());
+        window.sendaUnsubscribers = [];
+      }
+      
       await auth.signOut();
       currentUser = null;
       currentUserData = null;
@@ -1416,6 +1562,7 @@ function getCurrentLocation() {
   }
 }
 
+// Authentication State Observer
 auth.onAuthStateChanged(user => {
   currentUser = user;
   if (user) {
@@ -1434,6 +1581,7 @@ async function loadUserData(uid) {
   }
 }
 
+// Export functions for debugging
 window.sendaApp = {
   showNotification,
   showModal,
@@ -1443,7 +1591,19 @@ window.sendaApp = {
   getProfessionName,
   formData,
   currentUserData,
-  regionesChile
+  regionesChile,
+  // Funciones de prueba
+  testPatientForm: () => {
+    showModal('patient-modal');
+    updateFormProgress();
+  },
+  testProfessionalLogin: () => {
+    showModal('professional-modal');
+  },
+  getCurrentFormData: () => formData,
+  getCurrentUser: () => currentUserData
 };
 
 console.log('SENDA Platform JavaScript loaded successfully');
+console.log('Sistema cargado - Todos los botones deberían funcionar correctamente');
+console.log('Funciones de debug disponibles en window.sendaApp');
