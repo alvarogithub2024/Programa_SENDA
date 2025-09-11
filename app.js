@@ -627,31 +627,10 @@ function validateCurrentStep() {
   const currentStepElement = document.querySelector(`[data-step="${currentFormStep}"]`);
   const requiredFields = currentStepElement.querySelectorAll('[required]:not([style*="display: none"] [required])');
   let isValid = true;
-
-  // Si es reingreso, validamos solo los campos especiales
-  if (formData.isReentry) {
-    // Paso 1 único para reingreso
-    const motivo = document.getElementById('reentry-motivo')?.value;
-    const rut = document.getElementById('reentry-rut')?.value;
-    const correo = document.getElementById('reentry-email')?.value;
-    const telefono = document.getElementById('reentry-telefono')?.value;
-    if (!motivo || !rut || !correo || !telefono) {
-      showNotification('Por favor completa todos los campos de reingreso.', 'error');
-      return false;
-    }
-    if (!validateRUT(rut)) {
-      showNotification('El RUT ingresado no es válido', 'error');
-      return false;
-    }
-    if (!isValidEmail(correo)) {
-      showNotification('El email ingresado no es válido', 'error');
-      return false;
-    }
-    return true;
-  }
-
+  
   requiredFields.forEach(field => {
     if (field.offsetParent === null) return;
+    
     if (!field.value.trim()) {
       field.classList.add('error');
       isValid = false;
@@ -659,7 +638,7 @@ function validateCurrentStep() {
       field.classList.remove('error');
     }
   });
-
+  
   if (currentFormStep === 1) {
     isValid = validateStep1() && isValid;
   } else if (currentFormStep === 2) {
@@ -667,23 +646,23 @@ function validateCurrentStep() {
   } else if (currentFormStep === 3) {
     isValid = validateStep3() && isValid;
   }
-
+  
   if (!isValid) {
     showNotification('Por favor corrige los errores antes de continuar', 'error');
   }
-
+  
   return isValid;
 }
 
 function validateStep1() {
   const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked');
   const paraMi = document.querySelector('input[name="paraMi"]:checked');
-
+  
   if (!tipoSolicitud || !paraMi) {
     showNotification('Por favor completa todos los campos obligatorios', 'error');
     return false;
   }
-
+  
   if (tipoSolicitud.value === 'anonimo') {
     const phone = document.getElementById('anonymous-phone')?.value;
     if (!phone) {
@@ -691,7 +670,7 @@ function validateStep1() {
       return false;
     }
   }
-
+  
   if (tipoSolicitud.value === 'informacion') {
     const email = document.getElementById('info-email')?.value;
     if (!email || !isValidEmail(email)) {
@@ -699,26 +678,26 @@ function validateStep1() {
       return false;
     }
   }
-
+  
   return true;
 }
 
 function validateStep2() {
   if (formData.tipoSolicitud !== 'identificado') return true;
-
+  
   const rut = document.getElementById('patient-rut')?.value;
   const email = document.getElementById('patient-email')?.value;
-
+  
   if (rut && !validateRUT(rut)) {
     showNotification('El RUT ingresado no es válido', 'error');
     return false;
   }
-
+  
   if (email && !isValidEmail(email)) {
     showNotification('El email ingresado no es válido', 'error');
     return false;
   }
-
+  
   return true;
 }
 
@@ -730,34 +709,26 @@ function validateStep3() {
       return false;
     }
   }
-
+  
   return true;
 }
 
 function collectCurrentStepData() {
-  // Si es reingreso, recolectar solo esos campos
-  if (formData.isReentry) {
-    formData.reentryMotivo = document.getElementById('reentry-motivo').value;
-    formData.reentryRut = document.getElementById('reentry-rut').value;
-    formData.reentryEmail = document.getElementById('reentry-email').value;
-    formData.reentryTelefono = document.getElementById('reentry-telefono').value;
-    return;
-  }
   if (currentFormStep === 1) {
     formData.tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
     formData.edad = document.getElementById('patient-age').value;
     formData.region = document.getElementById('patient-region').value;
     formData.paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
-
+    
     if (formData.tipoSolicitud === 'anonimo') {
       formData.telefonoContacto = document.getElementById('anonymous-phone')?.value;
     }
-
+    
     if (formData.tipoSolicitud === 'informacion') {
       formData.emailInformacion = document.getElementById('info-email')?.value;
     }
   }
-
+  
   if (currentFormStep === 2 && formData.tipoSolicitud === 'identificado') {
     formData.nombre = document.getElementById('patient-name').value;
     formData.apellido = document.getElementById('patient-lastname').value;
@@ -767,7 +738,7 @@ function collectCurrentStepData() {
     formData.comuna = document.getElementById('patient-comuna').value;
     formData.direccion = document.getElementById('patient-address').value;
   }
-
+  
   if (currentFormStep === 3) {
     if (formData.tipoSolicitud !== 'informacion') {
       const sustancias = Array.from(document.querySelectorAll('input[name="sustancias"]:checked'))
@@ -778,7 +749,7 @@ function collectCurrentStepData() {
       formData.urgencia = document.querySelector('input[name="urgencia"]:checked')?.value;
     }
   }
-
+  
   if (currentFormStep === 4) {
     formData.razon = document.getElementById('patient-reason').value;
     formData.tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked')?.value;
@@ -788,7 +759,7 @@ function collectCurrentStepData() {
 
 function saveDraft(showMessage = true) {
   collectCurrentStepData();
-
+  
   const draftData = {
     ...formData,
     currentStep: currentFormStep,
@@ -796,10 +767,10 @@ function saveDraft(showMessage = true) {
     flowSteps: flowSteps,
     timestamp: new Date().toISOString()
   };
-
+  
   localStorage.setItem('senda_draft', JSON.stringify(draftData));
   isDraftSaved = true;
-
+  
   if (showMessage) {
     showNotification('Borrador guardado correctamente', 'success', 2000);
   }
@@ -811,7 +782,7 @@ function loadDraftIfExists() {
     try {
       const draftData = JSON.parse(draft);
       const draftAge = new Date() - new Date(draftData.timestamp);
-
+      
       if (draftAge < 24 * 60 * 60 * 1000) {
         const loadDraft = confirm('Se encontró un borrador guardado. ¿Deseas continuar donde lo dejaste?');
         if (loadDraft) {
@@ -835,19 +806,11 @@ function loadDraftIfExists() {
 }
 
 function restoreFormData() {
-  // Si es reingreso, restaurar solo esos campos
-  if (formData.isReentry) {
-    document.getElementById('reentry-motivo').value = formData.reentryMotivo || '';
-    document.getElementById('reentry-rut').value = formData.reentryRut || '';
-    document.getElementById('reentry-email').value = formData.reentryEmail || '';
-    document.getElementById('reentry-telefono').value = formData.reentryTelefono || '';
-    return;
-  }
-
   Object.keys(formData).forEach(key => {
     const element = document.getElementById(`patient-${key}`) || 
                    document.querySelector(`input[name="${key}"]`) ||
                    document.querySelector(`select[name="${key}"]`);
+    
     if (element && formData[key]) {
       if (element.type === 'radio' || element.type === 'checkbox') {
         if (Array.isArray(formData[key])) {
@@ -864,11 +827,11 @@ function restoreFormData() {
       }
     }
   });
-
+  
   if (formData.tipoSolicitud) {
     handleTipoSolicitudChange(formData.tipoSolicitud);
   }
-
+  
   if (formData.region) {
     loadCommunesData(formData.region);
     setTimeout(() => {
@@ -877,11 +840,48 @@ function restoreFormData() {
       }
     }, 100);
   }
-
+  
   document.querySelectorAll('.form-step').forEach(step => step.classList.remove('active'));
   document.querySelector(`[data-step="${currentFormStep}"]`)?.classList.add('active');
-
+  
   updateFormProgress();
+}
+
+function submitPatientForm() {
+  if (validateCurrentStep()) {
+    collectCurrentStepData();
+    handlePatientRegistration();
+  }
+}
+
+function resetForm() {
+  formData = {};
+  currentFormStep = 1;
+  currentStepIndex = 0;
+  flowSteps = [1];
+  isDraftSaved = false;
+  
+  const form = document.getElementById('patient-form');
+  if (form) {
+    form.reset();
+    
+    document.querySelectorAll('.form-step').forEach((step, index) => {
+      step.classList.toggle('active', index === 0);
+    });
+    
+    const phoneContainer = document.getElementById('anonymous-phone-container');
+    const emailContainer = document.getElementById('info-email-container');
+    if (phoneContainer) phoneContainer.style.display = 'none';
+    if (emailContainer) emailContainer.style.display = 'none';
+    
+    const comunaSelect = document.getElementById('patient-comuna');
+    if (comunaSelect) {
+      comunaSelect.innerHTML = '<option value="">Seleccionar comuna...</option>';
+      comunaSelect.disabled = true;
+    }
+    
+    updateFormProgress();
+  }
 }
 
 async function handlePatientRegistration(e) {
