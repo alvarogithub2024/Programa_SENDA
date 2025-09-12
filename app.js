@@ -827,7 +827,7 @@ function initializeEventListeners() {
   }
 }
 
-// FUNCIÓN MODIFICADA: Manejo del formulario de reingreso
+// NUEVA FUNCIÓN: Manejo del formulario de reingreso
 async function handleReentrySubmission(e) {
   e.preventDefault();
   showLoading(true);
@@ -842,28 +842,14 @@ async function handleReentrySubmission(e) {
       motivo_reingreso: document.getElementById('reentry-reason').value.trim()
     };
 
-    // Validaciones mejoradas
-    if (!reentryData.nombre_completo || !reentryData.rut || !reentryData.telefono || 
-        !reentryData.correo || !reentryData.cesfam || !reentryData.motivo_reingreso) {
-      showNotification('Todos los campos son obligatorios', 'error');
-      return;
-    }
-
-    // Validar RUT
+    // Validaciones
     if (!validateRUT(reentryData.rut)) {
       showNotification('El RUT ingresado no es válido', 'error');
       return;
     }
 
-    // Validar email
     if (!isValidEmail(reentryData.correo)) {
       showNotification('El correo electrónico no es válido', 'error');
-      return;
-    }
-
-    // Validar motivo (mínimo 10 caracteres)
-    if (reentryData.motivo_reingreso.length < 10) {
-      showNotification('El motivo debe tener al menos 10 caracteres', 'error');
       return;
     }
 
@@ -885,7 +871,7 @@ async function handleReentrySubmission(e) {
       motivo_reingreso: reentryData.motivo_reingreso,
       paciente_existente: !existingPatient.empty,
       estado: 'pendiente',
-      prioridad: 'alta',
+      prioridad: 'alta', // Los reingresos tienen prioridad alta
       fecha_solicitud: firebase.firestore.FieldValue.serverTimestamp(),
       metadata: {
         fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
@@ -902,7 +888,7 @@ async function handleReentrySubmission(e) {
 
   } catch (error) {
     console.error('Error submitting reentry:', error);
-    showNotification('Error al enviar la solicitud de reingreso: ' + error.message, 'error');
+    showNotification('Error al enviar la solicitud de reingreso', 'error');
   } finally {
     showLoading(false);
   }
@@ -1635,9 +1621,6 @@ async function handleProfessionalLogin(e) {
     const userCredential = await auth.signInWithEmailAndPassword(email, password);
     const user = userCredential.user;
     
-    // ESPERAR UN POCO ANTES DE BUSCAR EL DOCUMENTO
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
     const doc = await db.collection('profesionales').doc(user.uid).get();
     
     if (!doc.exists) {
@@ -1685,9 +1668,6 @@ async function handleProfessionalLogin(e) {
         break;
       case 'auth/user-disabled':
         errorMessage = 'Esta cuenta ha sido deshabilitada';
-        break;
-      case 'auth/network-request-failed':
-        errorMessage = 'Error de conexión. Verifica tu internet';
         break;
       default:
         errorMessage = `Error: ${error.message}`;
