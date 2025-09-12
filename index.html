@@ -105,7 +105,7 @@
     </div>
   </footer>
 
-  <!-- Patient Registration Modal - COMPLETAMENTE REESTRUCTURADO EN 4 PASOS -->
+  <!-- Patient Registration Modal -->
   <div class="modal-overlay" id="patient-modal">
     <div class="modal large-modal">
       <button class="modal-close" data-close="patient-modal">
@@ -166,9 +166,17 @@
               <input type="number" class="form-input" id="patient-age" min="12" max="120" required>
             </div>
             <div class="form-group">
-              <label class="form-label">Región *</label>
-              <select class="form-select" id="patient-region" required>
-                <option value="">Seleccionar región...</option>
+              <label class="form-label">CESFAM *</label>
+              <select class="form-select" id="patient-cesfam" required>
+                <option value="">Seleccionar CESFAM...</option>
+                <option value="CESFAM Alejandro del Río">CESFAM Alejandro del Río</option>
+                <option value="CESFAM Karol Wojtyla">CESFAM Karol Wojtyla</option>
+                <option value="CESFAM Laurita Vicuña">CESFAM Laurita Vicuña</option>
+                <option value="CESFAM Padre Manuel Villaseca">CESFAM Padre Manuel Villaseca</option>
+                <option value="CESFAM San Gerónimo">CESFAM San Gerónimo</option>
+                <option value="CESFAM Vista Hermosa">CESFAM Vista Hermosa</option>
+                <option value="CESFAM Bernardo Leighton">CESFAM Bernardo Leighton</option>
+                <option value="CESFAM Cardenal Raúl Silva Henriquez">CESFAM Cardenal Raúl Silva Henriquez</option>
               </select>
             </div>
           </div>
@@ -228,10 +236,11 @@
           </div>
 
           <div class="form-row">
-            <div class="form-group">
+            <!-- Comuna deshabilitada porque solo es Puente Alto -->
+            <div class="form-group" style="display:none">
               <label class="form-label">Comuna *</label>
               <select class="form-select" id="patient-comuna" disabled required>
-                <option value="">Primero selecciona una región</option>
+                <option value="">Puente Alto</option>
               </select>
             </div>
             <div class="form-group">
@@ -331,6 +340,79 @@
           </div>
         </div>
 
+        <!-- PASO 4: Información adicional -->
+        <div class="form-step" data-step="4">
+          <h3>Información adicional</h3>
+          <p class="step-description">Información complementaria para personalizar tu atención</p>
+        
+          <div class="form-group">
+            <label class="form-label">Cuéntanos tu situación (opcional)</label>
+            <textarea class="form-textarea" id="patient-reason" placeholder="Describe brevemente tu situación actual y qué tipo de ayuda necesitas..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">¿Has recibido tratamiento anteriormente?</label>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input type="radio" name="tratamientoPrevio" value="no">
+                <span class="radio-custom"></span>
+                No, es mi primera vez
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="tratamientoPrevio" value="si_senda">
+                <span class="radio-custom"></span>
+                Sí, en SENDA
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="tratamientoPrevio" value="si_otro">
+                <span class="radio-custom"></span>
+                Sí, en otro lugar
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Centro de preferencia</label>
+            <select class="form-select" id="centro-preferencia">
+              <option value="">Sin preferencia</option>
+              <option value="CESFAM Alejandro del Río">CESFAM Alejandro del Río</option>
+              <option value="CESFAM Karol Wojtyla">CESFAM Karol Wojtyla</option>
+              <option value="CESFAM Laurita Vicuña">CESFAM Laurita Vicuña</option>
+              <option value="CESFAM Padre Manuel Villaseca">CESFAM Padre Manuel Villaseca</option>
+              <option value="CESFAM San Gerónimo">CESFAM San Gerónimo</option>
+              <option value="CESFAM Vista Hermosa">CESFAM Vista Hermosa</option>
+              <option value="CESFAM Bernardo Leighton">CESFAM Bernardo Leighton</option>
+              <option value="CESFAM Cardenal Raúl Silva Henriquez">CESFAM Cardenal Raúl Silva Henriquez</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-navigation">
+          <button type="button" class="btn btn-outline" id="prev-step" style="display: none;">
+            <i class="fas fa-arrow-left"></i>
+            Anterior
+          </button>
+          <button type="button" class="btn btn-secondary" id="save-draft">
+            <i class="fas fa-save"></i>
+            Guardar borrador
+          </button>
+          <button type="button" class="btn btn-primary" id="next-step">
+            Siguiente
+            <i class="fas fa-arrow-right"></i>
+          </button>
+          <button type="submit" class="btn btn-success" id="submit-form" style="display: none;">
+            <i class="fas fa-paper-plane"></i>
+            Enviar Solicitud
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- El resto de los paneles y modales queda igual... -->
+  <script src="app.js"></script>
+</body>
+</html>
         <!-- PASO 4: Información adicional -->
         <div class="form-step" data-step="4">
           <h3>Información adicional</h3>
@@ -654,8 +736,6 @@
         <option value="medico">Médico</option>
         <option value="psicologo">Psicólogo</option>
         <option value="terapeuta">Terapeuta Ocupacional</option>
-        <option value="coordinador">Coordinador Regional</option>
-        <option value="admin">Administrador</option>
       </select>
       
       <select class="form-select" id="filter-user-status">
