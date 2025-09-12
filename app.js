@@ -1188,3 +1188,185 @@ $('filter-estado')?.addEventListener('change', filterCases);
 // Cargar datos iniciales del panel
 loadCesfamStats();
 loadProfessionalAppointments();
+// ==========================
+//  PARTE 4: EXPORTACIÓN DE REPORTES (EXCEL Y PDF)
+// ==========================
+
+// --- Librerías necesarias ---
+// Para Excel: SheetJS (xlsx.full.min.js)
+// Para PDF: jsPDF + autotable
+// Asegúrate de que estas librerías estén cargadas en tu index.html
+
+/**
+ * Exportar casos a Excel
+ */
+function exportCasesToExcel() {
+  if (!filteredCases || filteredCases.length === 0) {
+    showNotification('No hay casos para exportar', 'error');
+    return;
+  }
+
+  const data = filteredCases.map(caso => ({
+    Fecha: formatDate(caso.metadata?.fecha_creacion),
+    Nombre: caso.datos_personales?.nombre || 'Anónimo',
+    Edad: caso.datos_personales?.edad || 'N/A',
+    Comuna: caso.datos_personales?.comuna || 'N/A',
+    CESFAM: caso.datos_personales?.cesfam || 'No especificado',
+    Prioridad: caso.clasificacion?.prioridad || 'N/A',
+    Estado: caso.estado || 'pendiente',
+    Sustancias: (caso.evaluacion_inicial?.sustancias || []).join(', '),
+    Motivación: caso.evaluacion_inicial?.motivacion || '',
+    Urgencia: caso.evaluacion_inicial?.urgencia || '',
+    ProfesionalAsignado: caso.nombre_profesional || ''
+  }));
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(data);
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Casos');
+  XLSX.writeFile(wb, `Casos_SENDA_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+
+/**
+ * Exportar casos a PDF
+ */
+function exportCasesToPDF() {
+  if (!filteredCases || filteredCases.length === 0) {
+    showNotification('No hay casos para exportar', 'error');
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  const title = 'Reporte de Casos - SENDA';
+  doc.setFontSize(16);
+  doc.text(title, 14, 15);
+
+  const headers = [
+    ['Fecha', 'Nombre', 'Comuna', 'CESFAM', 'Prioridad', 'Estado']
+  ];
+
+  const rows = filteredCases.map(caso => [
+    formatDate(caso.metadata?.fecha_creacion),
+    caso.datos_personales?.nombre || 'Anónimo',
+    caso.datos_personales?.comuna || 'N/A',
+    caso.datos_personales?.cesfam || 'No especificado',
+    caso.clasificacion?.prioridad || 'N/A',
+    caso.estado || 'pendiente'
+  ]);
+
+  doc.autoTable({
+    head: headers,
+    body: rows,
+    startY: 25,
+    theme: 'grid',
+    styles: {
+      fontSize: 10,
+      cellPadding: 2
+    }
+  });
+
+  doc.save(`Casos_SENDA_${new Date().toISOString().split('T')[0]}.pdf`);
+}
+
+/**
+ * Exportar estadísticas CESFAM a Excel
+ */
+function exportCesfamStatsToExcel() {
+  const statsContainer = $('cesfam-stats');
+  if (!statsContainer || statsContainer.children.length === 0) {
+    showNotification('No hay estadísticas para exportar', 'error');
+    return;
+  }
+
+  const data = [];
+  statsContainer.querySelectorAll('.cesfam-stat-card').forEach(card => {
+    const name = card.querySelector('h4')?.textContent || 'Desconocido';
+    const total = card.querySelector('p:nth-of-type(1)')?.textContent.replace('Total casos: ', '') || '0';
+    const criticos = card.querySelector('p:nth-of-type(2)')?.textContent.replace('Casos críticos: ', '') || '0';
+
+    data.push({ CESFAM: name, Total: total, Criticos: criticos });
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(data);
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Estadisticas_CESFAM');
+  XLSX.writeFile(wb, `Estadisticas_CESFAM_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+
+/**
+ * Exportar agenda de citas a PDF
+ */
+async function exportAppointmentsToPDF() {
+  if (!currentUser) {
+    showNotification('Debes iniciar sesión como profesional', 'error');
+    return;
+  }
+
+  showLoading(true);
+
+  try {
+    const snapshot = await db.collection('citas')
+      .where('profesionalId', '==', currentUser.uid)
+      .orderBy('fecha', 'asc')
+      .get();
+
+    const appointments = snapshot.docs.map(doc => ({
+      fecha: formatDate(doc.data().fecha),
+      paciente: doc.data().pacienteNombre || 'Desconocido',
+      motivo: doc.data().motivo || '',
+      estado: doc.data().estado || 'pendiente'
+    }));
+
+    if (appointments.length === 0) {
+      showNotification('No hay citas para exportar', 'error');
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const title = `Agenda de Citas - ${currentUserData?.nombre || 'Profesional'}`;
+    doc.setFontSize(16);
+    doc.text(title, 14, 15);
+
+    const headers = [
+      ['Fecha', 'Paciente', 'Motivo', 'Estado']
+    ];
+
+    const rows = appointments.map(app => [app.fecha, app.paciente, app.motivo, app.estado]);
+
+    doc.autoTable({
+      head: headers,
+      body: rows,
+      startY: 25,
+      theme: 'striped',
+      styles: { fontSize: 10, cellPadding: 2 }
+    });
+
+    doc.save(`Agenda_Citas_${new Date().toISOString().split('T')[0]}.pdf`);
+  } catch (err) {
+    console.error('Error exportando citas:', err);
+    showNotification('Error al exportar la agenda', 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+// ==========================
+//  BOTONES DE EXPORTACIÓN
+// ==========================
+
+// Botones para exportar casos
+$('export-excel-btn')?.addEventListener('click', exportCasesToExcel);
+$('export-pdf-btn')?.addEventListener('click', exportCasesToPDF);
+
+// Botones para exportar estadísticas
+$('export-cesfam-excel-btn')?.addEventListener('click', exportCesfamStatsToExcel);
+
+// Botón para exportar agenda
+$('export-agenda-pdf-btn')?.addEventListener('click', exportAppointmentsToPDF);
+
+
