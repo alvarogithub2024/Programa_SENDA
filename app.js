@@ -16,74 +16,17 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Chilean Regions and Communes Data
-const regionesChile = {
-  "arica": {
-    nombre: "Arica y Parinacota",
-    comunas: ["Arica", "Camarones", "Putre", "General Lagos"]
-  },
-  "tarapaca": {
-    nombre: "Tarapacá",
-    comunas: ["Iquique", "Alto Hospicio", "Pozo Almonte", "Camiña", "Colchane", "Huara", "Pica"]
-  },
-  "antofagasta": {
-    nombre: "Antofagasta",
-    comunas: ["Antofagasta", "Mejillones", "Sierra Gorda", "Taltal", "Calama", "Ollagüe", "San Pedro de Atacama", "Tocopilla", "María Elena"]
-  },
-  "atacama": {
-    nombre: "Atacama",
-    comunas: ["Copiapó", "Caldera", "Tierra Amarilla", "Chañaral", "Diego de Almagro", "Vallenar", "Alto del Carmen", "Freirina", "Huasco"]
-  },
-  "coquimbo": {
-    nombre: "Coquimbo",
-    comunas: ["La Serena", "Coquimbo", "Andacollo", "La Higuera", "Paiguano", "Vicuña", "Illapel", "Canela", "Los Vilos", "Salamanca", "Ovalle", "Combarbalá", "Monte Patria", "Punitaqui", "Río Hurtado"]
-  },
-  "valparaiso": {
-    nombre: "Valparaíso",
-    comunas: ["Valparaíso", "Casablanca", "Concón", "Juan Fernández", "Puchuncaví", "Quintero", "Viña del Mar", "Isla de Pascua", "Los Andes", "Calle Larga", "Rinconada", "San Esteban", "La Ligua", "Cabildo", "Papudo", "Petorca", "Zapallar", "Hijuelas", "La Calera", "La Cruz", "Limache", "Nogales", "Olmué", "Quillota"]
-  },
-  "metropolitana": {
-    nombre: "Metropolitana de Santiago",
-    comunas: ["Cerrillos", "Cerro Navia", "Conchalí", "El Bosque", "Estación Central", "Huechuraba", "Independencia", "La Cisterna", "La Florida", "La Granja", "La Pintana", "La Reina", "Las Condes", "Lo Barnechea", "Lo Espejo", "Lo Prado", "Macul", "Maipú", "Ñuñoa", "Pedro Aguirre Cerda", "Peñalolén", "Providencia", "Pudahuel", "Quilicura", "Quinta Normal", "Recoleta", "Renca", "Santiago", "San Joaquín", "San Miguel", "San Ramón", "Vitacura", "Puente Alto", "Pirque", "San José de Maipo", "Colina", "Lampa", "Tiltil", "San Bernardo", "Buin", "Calera de Tango", "Paine", "Melipilla", "Alhué", "Curacaví", "María Pinto", "San Pedro", "Talagante", "El Monte", "Isla de Maipo", "Padre Hurtado", "Peñaflor"]
-  },
-  "ohiggins": {
-    nombre: "Libertador General Bernardo O'Higgins",
-    comunas: ["Rancagua", "Codegua", "Coinco", "Coltauco", "Doñihue", "Graneros", "Las Cabras", "Machalí", "Malloa", "Mostazal", "Olivar", "Peumo", "Pichidegua", "Quinta de Tilcoco", "Rengo", "Requínoa", "San Vicente", "Pichilemu", "La Estrella", "Litueche", "Marchihue", "Navidad", "Paredones", "San Fernando", "Chépica", "Chimbarongo", "Lolol", "Nancagua", "Palmilla", "Peralillo", "Placilla", "Pumanque", "Santa Cruz"]
-  },
-  "maule": {
-    nombre: "Maule",
-    comunas: ["Talca", "Constitución", "Curepto", "Empedrado", "Maule", "Pelarco", "Pencahue", "Río Claro", "San Clemente", "San Rafael", "Cauquenes", "Chanco", "Pelluhue", "Curicó", "Hualañé", "Licantén", "Molina", "Rauco", "Romeral", "Sagrada Familia", "Teno", "Vichuquén", "Linares", "Colbún", "Longaví", "Parral", "Retiro", "San Javier", "Villa Alegre", "Yerbas Buenas"]
-  },
-  "nuble": {
-    nombre: "Ñuble",
-    comunas: ["Chillán", "Bulnes", "Cobquecura", "Coelemu", "Coihueco", "Chillán Viejo", "El Carmen", "Ninhue", "Ñiquén", "Pemuco", "Pinto", "Portezuelo", "Quillón", "Quirihue", "Ránquil", "San Carlos", "San Fabián", "San Ignacio", "San Nicolás", "Treguaco", "Yungay"]
-  },
-  "biobio": {
-    nombre: "Biobío",
-    comunas: ["Concepción", "Coronel", "Chiguayante", "Florida", "Hualqui", "Lota", "Penco", "San Pedro de la Paz", "Santa Juana", "Talcahuano", "Tomé", "Hualpén", "Lebu", "Arauco", "Cañete", "Contulmo", "Curanilahue", "Los Álamos", "Tirúa", "Los Ángeles", "Antuco", "Cabrero", "Laja", "Mulchén", "Nacimiento", "Negrete", "Quilaco", "Quilleco", "San Rosendo", "Santa Bárbara", "Tucapel", "Yumbel", "Alto Biobío"]
-  },
-  "araucania": {
-    nombre: "La Araucanía",
-    comunas: ["Temuco", "Carahue", "Cunco", "Curarrehue", "Freire", "Galvarino", "Gorbea", "Lautaro", "Loncoche", "Melipeuco", "Nueva Imperial", "Padre Las Casas", "Perquenco", "Pitrufquén", "Pucón", "Saavedra", "Teodoro Schmidt", "Toltén", "Vilcún", "Villarrica", "Cholchol", "Angol", "Collipulli", "Curacautín", "Ercilla", "Lonquimay", "Los Sauces", "Lumaco", "Purén", "Renaico", "Traiguén", "Victoria"]
-  },
-  "losrios": {
-    nombre: "Los Ríos",
-    comunas: ["Valdivia", "Corral", "Lanco", "Los Lagos", "Máfil", "Mariquina", "Paillaco", "Panguipulli", "La Unión", "Futrono", "Lago Ranco", "Río Bueno"]
-  },
-  "loslagos": {
-    nombre: "Los Lagos",
-    comunas: ["Puerto Montt", "Calbuco", "Cochamó", "Fresia", "Frutillar", "Los Muermos", "Llanquihue", "Maullín", "Puerto Varas", "Castro", "Ancud", "Chonchi", "Curaco de Vélez", "Dalcahue", "Puqueldón", "Queilén", "Quellón", "Quemchi", "Quinchao", "Osorno", "Puerto Octay", "Purranque", "Puyehue", "Río Negro", "San Juan de la Costa", "San Pablo", "Chaitén", "Futaleufú", "Hualaihué", "Palena"]
-  },
-  "aysen": {
-    nombre: "Aysén del General Carlos Ibáñez del Campo",
-    comunas: ["Coyhaique", "Lago Verde", "Aysén", "Cisnes", "Guaitecas", "Cochrane", "O'Higgins", "Tortel", "Chile Chico", "Río Ibáñez"]
-  },
-  "magallanes": {
-    nombre: "Magallanes y de la Antártica Chilena",
-    comunas: ["Punta Arenas", "Laguna Blanca", "Río Verde", "San Gregorio", "Cabo de Hornos", "Antártica", "Porvenir", "Primavera", "Timaukel", "Natales", "Torres del Paine"]
-  }
-};
-
+// Lista de CESFAM de Puente Alto
+const cesfamPuenteAlto = [
+  "CESFAM Alejandro del Río",
+  "CESFAM Karol Wojtyla",
+  "CESFAM Laurita Vicuña",
+  "CESFAM Padre Manuel Villaseca",
+  "CESFAM San Gerónimo",
+  "CESFAM Vista Hermosa",
+  "CESFAM Bernardo Leighton",
+  "CESFAM Cardenal Raúl Silva Henriquez"
+  
 // Global Variables
 let currentUser = null;
 let currentUserData = null;
@@ -91,8 +34,8 @@ let currentFormStep = 1;
 let maxFormStep = 4;
 let formData = {};
 let isDraftSaved = false;
-let flowSteps = []; 
-let currentStepIndex = 0; 
+let flowSteps = [];
+let currentStepIndex = 0;
 
 // Variables para la agenda - NUEVAS PARA 2025
 let selectedProfessional = null;
@@ -273,6 +216,11 @@ function debounce(func, wait) {
   };
 }
 // ================= PARTE 2: INICIALIZACIÓN Y CONFIGURACIÓN DE EVENTOS =================
+
+// Cambiar el título principal de la página
+document.title = "PROGRAMA SENDA PUENTE ALTO";
+const mainTitle = document.getElementById('main-title');
+if (mainTitle) mainTitle.textContent = "PROGRAMA SENDA PUENTE ALTO-";
 
 // Initialize Application
 document.addEventListener('DOMContentLoaded', function() {
@@ -622,6 +570,20 @@ function setupFormValidation() {
   }
 }
 // ================= PARTE 3: VALIDACIÓN Y MANEJO DE FORMULARIOS =================
+
+// Función para cargar la lista de CESFAM en el formulario
+function loadCesfamData() {
+  const cesfamSelect = document.getElementById('patient-cesfam');
+  if (cesfamSelect) {
+    cesfamSelect.innerHTML = '<option value="">Seleccionar CESFAM...</option>';
+    cesfamPuenteAlto.forEach(cesfam => {
+      const option = document.createElement('option');
+      option.value = cesfam;
+      option.textContent = cesfam;
+      cesfamSelect.appendChild(option);
+    });
+  }
+}
 
 function validateCurrentStep() {
   const currentStepElement = document.querySelector(`[data-step="${currentFormStep}"]`);
@@ -1019,6 +981,82 @@ async function createCriticalCaseAlert(solicitudId, solicitudData) {
   }
 }
 // ================= PARTE 4: AUTENTICACIÓN DE PROFESIONALES =================
+
+// Estadísticas por CESFAM:
+async function generateCesfamReport() {
+  try {
+    showLoading(true);
+
+    const requestsSnapshot = await db.collection('solicitudes_ingreso').get();
+    const patientsSnapshot = await db.collection('pacientes').get();
+
+    // Analizar distribución por CESFAM
+    const cesfamStats = {};
+
+    cesfamPuenteAlto.forEach(c => cesfamStats[c] = { solicitudes: 0, pacientes: 0 });
+
+    requestsSnapshot.forEach(doc => {
+      const cesfam = doc.data().datos_personales?.cesfam || 'Sin CESFAM';
+      if (!cesfamStats[cesfam]) cesfamStats[cesfam] = { solicitudes: 0, pacientes: 0 };
+      cesfamStats[cesfam].solicitudes++;
+    });
+
+    patientsSnapshot.forEach(doc => {
+      const cesfam = doc.data().datos_personales?.cesfam || 'Sin CESFAM';
+      if (!cesfamStats[cesfam]) cesfamStats[cesfam] = { solicitudes: 0, pacientes: 0 };
+      cesfamStats[cesfam].pacientes++;
+    });
+
+    showCesfamStatsModal(cesfamStats);
+
+  } catch (error) {
+    console.error('Error generando estadísticas por CESFAM:', error);
+    showNotification('Error al generar estadísticas por CESFAM', 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+function showCesfamStatsModal(stats) {
+  const modalHTML = `
+    <div class="modal-overlay" id="cesfam-stats-modal">
+      <div class="modal large-modal">
+        <button class="modal-close" onclick="closeModal('cesfam-stats-modal')">
+          <i class="fas fa-times"></i>
+        </button>
+        <h2>Estadísticas por CESFAM</h2>
+        <div class="regional-stats">
+          <table class="stats-table">
+            <thead>
+              <tr>
+                <th>CESFAM</th>
+                <th>Solicitudes</th>
+                <th>Pacientes Activos</th>
+                <th>Conversión</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${Object.entries(stats).map(([cesfam, data]) => `
+                <tr>
+                  <td><strong>${cesfam}</strong></td>
+                  <td>${data.solicitudes}</td>
+                  <td>${data.pacientes}</td>
+                  <td>${data.solicitudes > 0 ? Math.round((data.pacientes / data.solicitudes) * 100) : 0}%</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-actions" style="margin-top: 24px;">
+          <button class="btn btn-outline" onclick="closeModal('cesfam-stats-modal')">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  document.getElementById('cesfam-stats-modal').style.display = 'flex';
+}
 
 async function handleProfessionalLogin(e) {
   e.preventDefault();
@@ -3887,3 +3925,7 @@ async function exportSystemData() {
     showLoading(false);
   }
 }
+window.addEventListener('DOMContentLoaded', () => {
+  loadCesfamData();
+  // ...carga otros datos iniciales
+});
