@@ -5015,4 +5015,3 @@ function editAppointment(appointmentId) {
 }
 
 console.log('SENDA System - All modules loaded successfully');
-
