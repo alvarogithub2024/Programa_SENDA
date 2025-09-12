@@ -568,7 +568,229 @@
             <!-- Las solicitudes se cargarán aquí dinámicamente -->
           </div>
         </div>
+<!-- Agregar estos paneles después del requests-panel existente en el HTML -->
 
+<!-- Patients Panel -->
+<div class="panel-content hidden" id="patients-panel">
+  <!-- El contenido se cargará dinámicamente desde JavaScript -->
+</div>
+
+<!-- Calendar Panel -->
+<div class="panel-content hidden" id="calendar-panel">
+  <!-- El contenido se cargará dinámicamente desde JavaScript -->
+</div>
+
+<!-- Followups Panel -->
+<div class="panel-content hidden" id="followups-panel">
+  <!-- El contenido se cargará dinámicamente desde JavaScript -->
+</div>
+
+<!-- Reports Panel -->
+<div class="panel-content hidden" id="reports-panel">
+  <!-- El contenido se cargará dinámicamente desde JavaScript -->
+</div>
+
+<!-- Centers Panel (para coordinadores y admins) -->
+<div class="panel-content hidden" id="centers-panel">
+  <div class="panel-header">
+    <h1 class="panel-title">Gestión de Centros</h1>
+    <p class="panel-subtitle">Administra los centros de salud y sus configuraciones</p>
+  </div>
+  
+  <div class="search-section">
+    <div class="search-container">
+      <i class="fas fa-search search-icon"></i>
+      <input type="text" id="centers-search" class="search-input" placeholder="Buscar centro por nombre o región...">
+    </div>
+  </div>
+  
+  <div class="filters-section">
+    <div class="filter-group">
+      <select class="form-select" id="filter-center-type">
+        <option value="">Todos los tipos</option>
+        <option value="cesfam">CESFAM</option>
+        <option value="hospital">Hospital</option>
+        <option value="clinica">Clínica</option>
+        <option value="centro_senda">Centro SENDA</option>
+      </select>
+      
+      <select class="form-select" id="filter-center-region">
+        <option value="">Todas las regiones</option>
+        <!-- Las regiones se cargarán dinámicamente -->
+      </select>
+      
+      <button class="btn btn-primary" id="add-center">
+        <i class="fas fa-plus"></i> Agregar Centro
+      </button>
+    </div>
+  </div>
+  
+  <div id="centers-list">
+    <!-- Los centros se cargarán dinámicamente -->
+    <div class="loading"><div class="spinner"></div> Cargando centros...</div>
+  </div>
+</div>
+
+<!-- Users Panel (solo para admins) -->
+<div class="panel-content hidden" id="users-panel">
+  <div class="panel-header">
+    <h1 class="panel-title">Gestión de Usuarios</h1>
+    <p class="panel-subtitle">Administra profesionales y permisos del sistema</p>
+  </div>
+  
+  <div class="search-section">
+    <div class="search-container">
+      <i class="fas fa-search search-icon"></i>
+      <input type="text" id="users-search" class="search-input" placeholder="Buscar profesional por nombre o correo...">
+    </div>
+  </div>
+  
+  <div class="filters-section">
+    <div class="filter-group">
+      <select class="form-select" id="filter-user-profession">
+        <option value="">Todas las profesiones</option>
+        <option value="asistente_social">Asistente Social</option>
+        <option value="medico">Médico</option>
+        <option value="psicologo">Psicólogo</option>
+        <option value="terapeuta">Terapeuta Ocupacional</option>
+        <option value="coordinador">Coordinador Regional</option>
+        <option value="admin">Administrador</option>
+      </select>
+      
+      <select class="form-select" id="filter-user-status">
+        <option value="">Todos los estados</option>
+        <option value="activo">Activo</option>
+        <option value="inactivo">Inactivo</option>
+        <option value="pendiente">Pendiente</option>
+      </select>
+      
+      <button class="btn btn-primary" id="invite-user">
+        <i class="fas fa-user-plus"></i> Invitar Usuario
+      </button>
+    </div>
+  </div>
+  
+  <div id="users-list">
+    <!-- Los usuarios se cargarán dinámicamente -->
+    <div class="loading"><div class="spinner"></div> Cargando usuarios...</div>
+  </div>
+</div>
+
+<!-- Analytics Panel (para coordinadores y admins) -->
+<div class="panel-content hidden" id="analytics-panel">
+  <div class="panel-header">
+    <h1 class="panel-title">Analytics y Estadísticas</h1>
+    <p class="panel-subtitle">Análisis detallado de datos y métricas del sistema</p>
+  </div>
+  
+  <div class="analytics-controls">
+    <div class="filter-group">
+      <input type="date" class="form-input" id="analytics-date-from" placeholder="Desde">
+      <input type="date" class="form-input" id="analytics-date-to" placeholder="Hasta">
+      
+      <select class="form-select" id="analytics-period">
+        <option value="month">Último mes</option>
+        <option value="quarter">Último trimestre</option>
+        <option value="year">Último año</option>
+        <option value="custom">Período personalizado</option>
+      </select>
+      
+      <button class="btn btn-primary" id="generate-analytics">
+        <i class="fas fa-chart-bar"></i> Generar Análisis
+      </button>
+      
+      <button class="btn btn-secondary" id="export-analytics">
+        <i class="fas fa-download"></i> Exportar Datos
+      </button>
+    </div>
+  </div>
+  
+  <div class="analytics-summary">
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-header">
+          <h3>Total Solicitudes</h3>
+          <i class="fas fa-inbox metric-icon"></i>
+        </div>
+        <div class="metric-value" id="analytics-total-requests">0</div>
+        <div class="metric-change" id="analytics-requests-change">
+          Cargando...
+        </div>
+      </div>
+      
+      <div class="metric-card">
+        <div class="metric-header">
+          <h3>Pacientes Activos</h3>
+          <i class="fas fa-users metric-icon"></i>
+        </div>
+        <div class="metric-value" id="analytics-active-patients">0</div>
+        <div class="metric-change" id="analytics-patients-change">
+          Cargando...
+        </div>
+      </div>
+      
+      <div class="metric-card">
+        <div class="metric-header">
+          <h3>Citas Realizadas</h3>
+          <i class="fas fa-calendar-check metric-icon"></i>
+        </div>
+        <div class="metric-value" id="analytics-completed-appointments">0</div>
+        <div class="metric-change" id="analytics-appointments-change">
+          Cargando...
+        </div>
+      </div>
+      
+      <div class="metric-card">
+        <div class="metric-header">
+          <h3>Tasa de Éxito</h3>
+          <i class="fas fa-trophy metric-icon"></i>
+        </div>
+        <div class="metric-value" id="analytics-success-rate">0%</div>
+        <div class="metric-change" id="analytics-success-change">
+          Cargando...
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="analytics-charts">
+    <div class="chart-container">
+      <h3>Solicitudes por Mes</h3>
+      <canvas id="requests-by-month-chart"></canvas>
+    </div>
+    
+    <div class="chart-container">
+      <h3>Distribución por Sustancia</h3>
+      <canvas id="substances-distribution-chart"></canvas>
+    </div>
+    
+    <div class="chart-container">
+      <h3>Atenciones por Profesional</h3>
+      <canvas id="appointments-by-professional-chart"></canvas>
+    </div>
+    
+    <div class="chart-container">
+      <h3>Tendencia de Recuperación</h3>
+      <canvas id="recovery-trend-chart"></canvas>
+    </div>
+  </div>
+  
+  <div class="analytics-tables">
+    <div class="table-container">
+      <h3>Top 10 Centros por Atenciones</h3>
+      <div id="top-centers-table">
+        <!-- Tabla se cargará dinámicamente -->
+      </div>
+    </div>
+    
+    <div class="table-container">
+      <h3>Análisis por Región</h3>
+      <div id="regional-analysis-table">
+        <!-- Tabla se cargará dinámicamente -->
+      </div>
+    </div>
+  </div>
+</div>
         <!-- Otros paneles se mantienen igual... -->
         <div class="panel-content hidden" id="patients-panel">
           <div class="panel-header">
