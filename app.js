@@ -120,8 +120,15 @@ console.log('🔧 También puedes usar debugSenda() para diagnóstico completo.'
 
 // ================= SENDA PUENTE ALTO - SISTEMA OPTIMIZADO COMPLETO =================
 // PARTE 1: Configuración, Variables Globales y Funciones Utilitarias
+// ================= INICIALIZACIÓN FIREBASE CORREGIDA =================
 
-// Firebase Configuration
+// Verificar que Firebase esté cargado
+if (typeof firebase === 'undefined') {
+  console.error('❌ Firebase SDK no cargado. Verifica que los scripts estén incluidos.');
+  alert('Error: Firebase no está disponible. Recarga la página.');
+}
+
+// Configuración Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
   authDomain: "senda-6d5c9.firebaseapp.com",
@@ -132,30 +139,46 @@ const firebaseConfig = {
   measurementId: "G-82DCLW5R2W"
 };
 
-// Initialize Firebase con manejo de errores mejorado
+// Variables globales de Firebase
 let auth, db;
-try {
-  if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-  }
-  auth = firebase.auth();
-  db = firebase.firestore();
-  
-  // Configurar persistencia offline
-  db.enablePersistence({
-    synchronizeTabs: true
-  }).catch((err) => {
-    if (err.code === 'failed-precondition') {
-      console.warn('Persistencia falló: múltiples tabs abiertas');
-    } else if (err.code === 'unimplemented') {
-      console.warn('Persistencia no soportada en este navegador');
+
+// Función de inicialización segura
+function initializeFirebase() {
+  try {
+    // Verificar si ya está inicializado
+    if (firebase.apps.length === 0) {
+      console.log('🔄 Inicializando Firebase...');
+      firebase.initializeApp(firebaseConfig);
+    } else {
+      console.log('✅ Firebase ya inicializado');
     }
-  });
-  
-  console.log('✅ Firebase inicializado correctamente');
-} catch (error) {
-  console.error('❌ Error inicializando Firebase:', error);
+    
+    // Asignar servicios
+    auth = firebase.auth();
+    db = firebase.firestore();
+    
+    // Configurar persistencia offline
+    if (db && typeof db.enablePersistence === 'function') {
+      db.enablePersistence({
+        synchronizeTabs: true
+      }).catch((err) => {
+        console.warn('⚠️ Persistencia offline no disponible:', err.code);
+      });
+    }
+    
+    console.log('✅ Firebase inicializado correctamente');
+    return true;
+    
+  } catch (error) {
+    console.error('❌ Error inicializando Firebase:', error);
+    alert('Error al conectar con Firebase: ' + error.message);
+    return false;
+  }
 }
+
+// Inicializar Firebase inmediatamente
+const firebaseInitialized = initializeFirebase();
+
 
 // Lista de CESFAM de Puente Alto
 const cesfamPuenteAlto = [
