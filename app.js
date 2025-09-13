@@ -1357,16 +1357,23 @@ function setupFormValidation() {
   }
 }
 
-function validateRequiredField(e) {
-  const field = e.target;
-  const value = field.value.trim();
-  
-  if (field.required && !value) {
-    field.classList.add('error');
-    showFieldError(field, 'Este campo es obligatorio');
-  } else {
-    field.classList.remove('error');
-    clearFieldError(field);
+function validateFormInputs() {
+  try {
+    // Validación inicial de formularios si es necesaria
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+      const inputs = form.querySelectorAll('input[required], select[required], textarea[required]');
+      inputs.forEach(input => {
+        input.addEventListener('invalid', (e) => {
+          e.preventDefault();
+          showFieldError(input, 'Este campo es obligatorio');
+        });
+      });
+    });
+    
+    console.log('✅ Validación de formularios inicializada');
+  } catch (error) {
+    console.error('❌ Error en validación de formularios:', error);
   }
 }
 
