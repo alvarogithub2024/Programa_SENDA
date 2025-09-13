@@ -7,12 +7,13 @@ const firebaseConfig = {
   projectId: "senda-6d5c9",
   storageBucket: "senda-6d5c9.firebasestorage.app",
   messagingSenderId: "1090028669785",
-  appId: "1:1090028669785:web:d4e1c1b9945fc2fddc1a48",
-  measurementId: "G-82DCLW5R2W"
+  appId: "1:1090028669785:web:d
 };
 
 // Inicializar Firebase
 firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
 // Inicializar servicios de Firebase
 const db = firebase.firestore();
