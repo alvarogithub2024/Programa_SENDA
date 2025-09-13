@@ -2329,7 +2329,7 @@ async function handleReentrySubmit(e) {
   } finally {
     toggleSubmitButton(submitBtn, false);
   }
-
+}
 // ================= GESTIÓN DE ALERTAS CRÍTICAS =================
 
 async function createCriticalAlert(solicitudData, solicitudId) {
@@ -2348,7 +2348,6 @@ async function createCriticalAlert(solicitudData, solicitudId) {
         sustancias: solicitudData.sustancias,
         urgencia: solicitudData.urgencia,
         motivacion: solicitudData.motivacion
-      }
     };
     
     await db.collection('alertas_criticas').add(alertData);
