@@ -2722,3 +2722,54 @@ window.closeModal = closeModal;
 window.loadSolicitudes = loadSolicitudes;
 
 console.log('SENDA Puente Alto - Sistema completamente cargado');
+
+// FUNCIÓN DE DEBUG TEMPORAL - Agregar al final de app.js
+async function debugSolicitudes() {
+  console.log('🔍 INICIANDO DEBUG DE SOLICITUDES...');
+  
+  try {
+    // 1. Verificar autenticación
+    const user = firebase.auth().currentUser;
+    console.log('👤 Usuario autenticado:', user ? user.email : 'NO AUTENTICADO');
+    
+    // 2. Verificar datos del usuario actual
+    console.log('📋 currentUserData:', currentUserData);
+    
+    // 3. Hacer consulta simple a solicitudes
+    console.log('🔍 Consultando TODAS las solicitudes...');
+    const allSolicitudes = await db.collection('solicitudes_ingreso').get();
+    console.log('📊 Total solicitudes en DB:', allSolicitudes.size);
+    
+    if (allSolicitudes.size > 0) {
+      allSolicitudes.forEach(doc => {
+        const data = doc.data();
+        console.log('📄 Solicitud ID:', doc.id);
+        console.log('🏥 CESFAM:', data.cesfam);
+        console.log('📅 Fecha:', data.fechaCreacion);
+        console.log('---');
+      });
+    }
+    
+    // 4. Si hay currentUserData, hacer consulta filtrada
+    if (currentUserData && currentUserData.cesfam) {
+      console.log('🔍 Consultando solicitudes para CESFAM:', currentUserData.cesfam);
+      const filteredSolicitudes = await db.collection('solicitudes_ingreso')
+        .where('cesfam', '==', currentUserData.cesfam)
+        .get();
+      console.log('📊 Solicitudes filtradas:', filteredSolicitudes.size);
+    }
+    
+    // 5. Verificar contenedor HTML
+    const container = document.getElementById('requests-container');
+    console.log('🎯 Contenedor encontrado:', container ? 'SÍ' : 'NO');
+    
+  } catch (error) {
+    console.error('❌ Error en debug:', error);
+  }
+}
+
+// Ejecutar debug automáticamente
+setTimeout(debugSolicitudes, 3000);
+
+// También puedes ejecutarlo manualmente en la consola del navegador:
+window.debugSolicitudes = debugSolicitudes;
