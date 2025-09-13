@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>PROGRAMA SENDA PUENTE ALTO</title>
+  <title>SENDA - Sistema de Gestión Integral</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="styles.css">
@@ -12,23 +12,23 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <!-- Contenedor de notificaciones -->
-  <div id="notifications"></div>
-  
   <!-- Loading Overlay -->
-  <div id="loading-overlay" class="loading-overlay hidden">
+  <div class="loading-overlay hidden" id="loading-overlay">
     <div class="loading-spinner">
       <div class="spinner"></div>
       <p>Cargando...</p>
     </div>
   </div>
 
+  <!-- Notifications Container -->
+  <div id="notifications" style="position: fixed; top: 20px; right: 20px; z-index: 10001;"></div>
+
   <!-- Header -->
   <header class="header">
     <div class="header-content">
       <div class="logo">
         <i class="fas fa-heartbeat"></i>
-        <span>SENDA</span>
+        <span id="main-title">SENDA</span>
       </div>
       <div class="header-actions">
         <button class="btn btn-outline" id="find-center">
@@ -46,7 +46,7 @@
   <!-- Main Content -->
   <main class="main-content">
     <div class="hero-card">
-      <h1 id="main-title">Programa SENDA<br>PUENTE ALTO</h1>
+      <h1>Programa SENDA<br>PUENTE ALTO</h1>
       <p class="subtitle">Tu recuperación comienza aquí</p>
       
       <p class="description">
@@ -110,7 +110,7 @@
         Sitio Oficial SENDA
       </a>
       <p style="margin-top: 16px; font-size: 14px; color: var(--gray-400);">
-        Sistema interno para profesionales del Programa SENDA Puente Alto
+        Sistema interno para profesionales del Programa SENDA
       </p>
     </div>
   </footer>
@@ -156,14 +156,14 @@
             </div>
           </div>
 
-          <!-- Campo de teléfono para anónimos -->
+          <!-- Campo de teléfono para anónimos (oculto por defecto) -->
           <div class="form-group" id="anonymous-phone-container" style="display: none;">
             <label class="form-label">Teléfono de contacto *</label>
             <input type="tel" class="form-input" id="anonymous-phone" placeholder="+56 9 1234 5678">
             <small style="color: var(--gray-600);">Tu número será utilizado únicamente para contactarte sobre tu solicitud</small>
           </div>
 
-          <!-- Campo de email para solo información -->
+          <!-- Campo de email para solo información (oculto por defecto) -->
           <div class="form-group" id="info-email-container" style="display: none;">
             <label class="form-label">Email para recibir información *</label>
             <input type="email" class="form-input" id="info-email" placeholder="tu@email.com">
@@ -179,14 +179,7 @@
               <label class="form-label">CESFAM *</label>
               <select class="form-select" id="patient-cesfam" required>
                 <option value="">Seleccionar CESFAM...</option>
-                <option value="CESFAM Alejandro del Río">CESFAM Alejandro del Río</option>
-                <option value="CESFAM Karol Wojtyla">CESFAM Karol Wojtyla</option>
-                <option value="CESFAM Laurita Vicuña">CESFAM Laurita Vicuña</option>
-                <option value="CESFAM Padre Manuel Villaseca">CESFAM Padre Manuel Villaseca</option>
-                <option value="CESFAM San Gerónimo">CESFAM San Gerónimo</option>
-                <option value="CESFAM Vista Hermosa">CESFAM Vista Hermosa</option>
-                <option value="CESFAM Bernardo Leighton">CESFAM Bernardo Leighton</option>
-                <option value="CESFAM Cardenal Raúl Silva Henriquez">CESFAM Cardenal Raúl Silva Henriquez</option>
+                <!-- Las opciones se cargarán dinámicamente desde JavaScript -->
               </select>
             </div>
           </div>
@@ -213,7 +206,7 @@
           </div>
         </div>
 
-        <!-- PASO 2: Datos de contacto -->
+        <!-- PASO 2: Datos de contacto (SOLO para identificados) -->
         <div class="form-step" data-step="2">
           <h3>Datos de contacto</h3>
           <p class="step-description">Esta información nos permitirá contactarte directamente</p>
@@ -376,14 +369,7 @@
             <label class="form-label">Centro de preferencia</label>
             <select class="form-select" id="centro-preferencia">
               <option value="">Sin preferencia</option>
-              <option value="CESFAM Alejandro del Río">CESFAM Alejandro del Río</option>
-              <option value="CESFAM Karol Wojtyla">CESFAM Karol Wojtyla</option>
-              <option value="CESFAM Laurita Vicuña">CESFAM Laurita Vicuña</option>
-              <option value="CESFAM Padre Manuel Villaseca">CESFAM Padre Manuel Villaseca</option>
-              <option value="CESFAM San Gerónimo">CESFAM San Gerónimo</option>
-              <option value="CESFAM Vista Hermosa">CESFAM Vista Hermosa</option>
-              <option value="CESFAM Bernardo Leighton">CESFAM Bernardo Leighton</option>
-              <option value="CESFAM Cardenal Raúl Silva Henriquez">CESFAM Cardenal Raúl Silva Henriquez</option>
+              <!-- Las opciones se cargarán dinámicamente -->
             </select>
           </div>
         </div>
@@ -585,19 +571,22 @@
           </div>
         </div>
 
-        <!-- Otros Paneles -->
+        <!-- Patients Panel -->
         <div class="panel-content hidden" id="patients-panel">
           <!-- El contenido se cargará dinámicamente desde JavaScript -->
         </div>
 
+        <!-- Calendar Panel -->
         <div class="panel-content hidden" id="calendar-panel">
           <!-- El contenido se cargará dinámicamente desde JavaScript -->
         </div>
 
+        <!-- Followups Panel -->
         <div class="panel-content hidden" id="followups-panel">
           <!-- El contenido se cargará dinámicamente desde JavaScript -->
         </div>
 
+        <!-- Reports Panel -->
         <div class="panel-content hidden" id="reports-panel">
           <!-- El contenido se cargará dinámicamente desde JavaScript -->
         </div>
@@ -650,7 +639,7 @@
         <form id="login-form">
           <div class="form-group">
             <label class="form-label">Correo Electrónico</label>
-            <input type="email" class="form-input" id="login-email" placeholder="nombre@senda.cl" required>
+            <input type="email" class="form-input" id="login-email" required>
           </div>
           <div class="form-group">
             <label class="form-label">Contraseña</label>
@@ -679,7 +668,7 @@
           </div>
           <div class="form-group">
             <label class="form-label">Correo Electrónico</label>
-            <input type="email" class="form-input" id="register-email" placeholder="nombre@senda.cl" required>
+            <input type="email" class="form-input" id="register-email" required>
           </div>
           <div class="form-group">
             <label class="form-label">Contraseña</label>
@@ -698,17 +687,14 @@
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">CESFAM Asignado</label>
+            <label class="form-label">Número de Licencia</label>
+            <input type="text" class="form-input" id="register-license" placeholder="Número de registro profesional">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Centro de Salud</label>
             <select class="form-select" id="register-center">
-              <option value="">Seleccionar CESFAM...</option>
-              <option value="CESFAM Alejandro del Río">CESFAM Alejandro del Río</option>
-              <option value="CESFAM Karol Wojtyla">CESFAM Karol Wojtyla</option>
-              <option value="CESFAM Laurita Vicuña">CESFAM Laurita Vicuña</option>
-              <option value="CESFAM Padre Manuel Villaseca">CESFAM Padre Manuel Villaseca</option>
-              <option value="CESFAM San Gerónimo">CESFAM San Gerónimo</option>
-              <option value="CESFAM Vista Hermosa">CESFAM Vista Hermosa</option>
-              <option value="CESFAM Bernardo Leighton">CESFAM Bernardo Leighton</option>
-              <option value="CESFAM Cardenal Raúl Silva Henriquez">CESFAM Cardenal Raúl Silva Henriquez</option>
+              <option value="">Seleccionar centro...</option>
+              <!-- Las opciones se cargarán dinámicamente -->
             </select>
           </div>
           <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 16px;">
