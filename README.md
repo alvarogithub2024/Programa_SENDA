@@ -12,8 +12,6 @@ Este sistema está enfocado exclusivamente en los 8 CESFAM de Puente Alto, centr
 - CESFAM Dr. Bernardo Leighton
 - CESFAM Dr. Alejandro del Río (Filial)
 
-Todos los formularios, reportes y vistas reemplazan la noción de "Región" o "Comuna" por "CESFAM de Puente Alto".
-
 ## Objetivo
 
 SENDA busca mitigar el impacto social y sanitario del consumo de alcohol y otras drogas en niños, niñas, adolescentes, hombres, mujeres y colectivos de las diversidades sexo/genéricas, para mejorar el bienestar y la calidad de vida en las personas y comunidades, articulando la gestión en los CESFAM de Puente Alto.
