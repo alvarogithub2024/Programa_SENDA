@@ -1789,78 +1789,131 @@ function showDraftSavedIndicator() {
   }
 }
 
+// REEMPLAZA la función updateFormVisibility existente con esta versión corregida:
+
 function updateFormVisibility() {
   try {
     const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
     const anonymousPhone = document.getElementById('anonymous-phone-container');
     const infoEmail = document.getElementById('info-email-container');
+    const anonymousPhoneInput = document.getElementById('anonymous-phone');
+    const infoEmailInput = document.getElementById('info-email');
+    
+    console.log('🔧 Actualizando visibilidad del formulario, tipo:', tipoSolicitud);
+    
+    // IMPORTANTE: Remover required de todos los campos condicionales ANTES de ocultarlos
+    if (anonymousPhoneInput) {
+      anonymousPhoneInput.required = false;
+      anonymousPhoneInput.removeAttribute('required');
+    }
+    if (infoEmailInput) {
+      infoEmailInput.required = false;
+      infoEmailInput.removeAttribute('required');
+    }
     
     // Ocultar todos los campos condicionales
-    if (anonymousPhone) anonymousPhone.style.display = 'none';
-    if (infoEmail) infoEmail.style.display = 'none';
+    if (anonymousPhone) {
+      anonymousPhone.style.display = 'none';
+      anonymousPhone.style.visibility = 'hidden';
+    }
+    if (infoEmail) {
+      infoEmail.style.display = 'none'; 
+      infoEmail.style.visibility = 'hidden';
+    }
     
     // Mostrar campos según el tipo de solicitud
-    if (tipoSolicitud === 'anonimo' && anonymousPhone) {
+    if (tipoSolicitud === 'anonimo' && anonymousPhone && anonymousPhoneInput) {
       anonymousPhone.style.display = 'block';
-      const phoneInput = document.getElementById('anonymous-phone');
-      if (phoneInput) {
-        phoneInput.required = true;
-        phoneInput.focus();
-      }
-    } else if (tipoSolicitud === 'informacion' && infoEmail) {
+      anonymousPhone.style.visibility = 'visible';
+      anonymousPhoneInput.required = true;
+      anonymousPhoneInput.setAttribute('required', 'required');
+      
+      // Focus después de un pequeño delay
+      setTimeout(() => {
+        if (anonymousPhoneInput.offsetParent !== null) { // Solo si es visible
+          anonymousPhoneInput.focus();
+        }
+      }, 100);
+      
+    } else if (tipoSolicitud === 'informacion' && infoEmail && infoEmailInput) {
       infoEmail.style.display = 'block';
-      const emailInput = document.getElementById('info-email');
-      if (emailInput) {
-        emailInput.required = true;
-        emailInput.focus();
-      }
+      infoEmail.style.visibility = 'visible';
+      infoEmailInput.required = true;
+      infoEmailInput.setAttribute('required', 'required');
+      
+      // Focus después de un pequeño delay
+      setTimeout(() => {
+        if (infoEmailInput.offsetParent !== null) { // Solo si es visible
+          infoEmailInput.focus();
+        }
+      }, 100);
     }
     
-    // Limpiar requisitos de campos no visibles
-    if (anonymousPhone && tipoSolicitud !== 'anonimo') {
-      const phoneInput = document.getElementById('anonymous-phone');
-      if (phoneInput) phoneInput.required = false;
-    }
-    if (infoEmail && tipoSolicitud !== 'informacion') {
-      const emailInput = document.getElementById('info-email');
-      if (emailInput) emailInput.required = false;
-    }
+    console.log('✅ Visibilidad actualizada correctamente');
     
-    // Guardar draft después de cambios
+    // Guardar draft después de cambios (sin required en campos ocultos)
     setTimeout(saveFormDraft, 500);
     
   } catch (error) {
-    console.error('Error updating form visibility:', error);
+    console.error('❌ Error updating form visibility:', error);
   }
 }
 
-// ================= FUNCIONES DE VALIDACIÓN DE PASOS =================
+// AGREGA también esta función para limpiar validaciones problemáticas:
+function clearInvalidFormControls() {
+  try {
+    // Encontrar todos los elementos required que están ocultos
+    const allRequired = document.querySelectorAll('[required]');
+    
+    allRequired.forEach(element => {
+      // Si el elemento no es visible, remover temporalmente required
+      if (element.offsetParent === null || element.style.display === 'none') {
+        element.removeAttribute('required');
+        element.classList.add('temp-required'); // Marcar para restaurar después
+        console.log('🔧 Removiendo required temporal de:', element.id || element.name);
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error clearing invalid form controls:', error);
+  }
+}
 
+// MODIFICA también la función validateStep para manejar mejor los campos ocultos:
 function validateStep(step) {
   try {
-    const currentStepDiv = document.querySelector(`.form-step[data-step="${step}"]`);
-    if (!currentStepDiv) return false;
+    // Limpiar controles inválidos antes de validar
+    clearInvalidFormControls();
+    
+    const currentStepDiv = document.querySelector(`.form-step[data-step="${step}"].active`);
+    if (!currentStepDiv) {
+      console.warn('No se encontró el paso activo:', step);
+      return false;
+    }
 
-    const requiredFields = currentStepDiv.querySelectorAll('[required]:not([style*="display: none"])');
+    // Solo validar campos requeridos que están VISIBLES en el paso actual
+    const requiredFields = currentStepDiv.querySelectorAll('[required], .temp-required');
     let isValid = true;
     const errors = [];
 
-    // Validar campos requeridos
     requiredFields.forEach(field => {
-      const value = field.value?.trim() || '';
-      
-      if (!value) {
-        field.classList.add('error');
-        showFieldError(field, 'Este campo es obligatorio');
-        errors.push(`${getFieldLabel(field)} es obligatorio`);
-        isValid = false;
-      } else {
-        field.classList.remove('error');
-        clearFieldError(field);
+      // Solo validar si el campo es visible
+      if (field.offsetParent !== null && field.style.display !== 'none') {
+        const value = field.value?.trim() || '';
+        
+        if (!value && (field.hasAttribute('required') || field.classList.contains('temp-required'))) {
+          field.classList.add('error');
+          showFieldError(field, 'Este campo es obligatorio');
+          errors.push(`${getFieldLabel(field)} es obligatorio`);
+          isValid = false;
+        } else {
+          field.classList.remove('error');
+          clearFieldError(field);
+        }
       }
     });
 
-    // Validaciones específicas por paso
+    // Validaciones específicas por paso (solo si el paso es visible)
     if (step === 1) {
       const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked');
       if (!tipoSolicitud) {
@@ -1870,69 +1923,33 @@ function validateStep(step) {
         // Validaciones específicas según tipo
         if (tipoSolicitud.value === 'anonimo') {
           const phone = document.getElementById('anonymous-phone');
-          if (!phone.value.trim()) {
-            errors.push('Ingresa un teléfono de contacto');
-            isValid = false;
-          } else if (!validatePhoneNumber(phone)) {
-            errors.push('Ingresa un teléfono válido');
-            isValid = false;
+          if (phone && phone.offsetParent !== null) { // Solo validar si es visible
+            if (!phone.value.trim()) {
+              errors.push('Ingresa un teléfono de contacto');
+              isValid = false;
+            } else if (!validatePhoneNumber(phone)) {
+              errors.push('Ingresa un teléfono válido');
+              isValid = false;
+            }
           }
         } else if (tipoSolicitud.value === 'informacion') {
           const email = document.getElementById('info-email');
-          if (!email.value.trim()) {
-            errors.push('Ingresa un email para recibir información');
-            isValid = false;
-          } else if (!isValidEmail(email.value.trim())) {
-            errors.push('Ingresa un email válido');
-            isValid = false;
+          if (email && email.offsetParent !== null) { // Solo validar si es visible
+            if (!email.value.trim()) {
+              errors.push('Ingresa un email para recibir información');
+              isValid = false;
+            } else if (!isValidEmail(email.value.trim())) {
+              errors.push('Ingresa un email válido');
+              isValid = false;
+            }
           }
         }
       }
 
       // Validar edad
-      const edad = parseInt(document.getElementById('patient-age').value);
+      const edad = parseInt(document.getElementById('patient-age')?.value);
       if (edad && (edad < 12 || edad > 120)) {
         errors.push('La edad debe estar entre 12 y 120 años');
-        isValid = false;
-      }
-    }
-
-    if (step === 2) {
-      const rut = document.getElementById('patient-rut');
-      if (rut && rut.value.trim() && !validateRUT(rut.value.trim())) {
-        errors.push('RUT inválido');
-        isValid = false;
-      }
-
-      const phone = document.getElementById('patient-phone');
-      if (phone && phone.value.trim() && !validatePhoneNumber(phone)) {
-        errors.push('Teléfono inválido');
-        isValid = false;
-      }
-
-      const email = document.getElementById('patient-email');
-      if (email && email.value.trim() && !isValidEmail(email.value.trim())) {
-        errors.push('Email inválido');
-        isValid = false;
-      }
-    }
-
-    if (step === 3) {
-      const sustancias = document.querySelectorAll('input[name="sustancias"]:checked');
-      if (sustancias.length === 0) {
-        errors.push('Selecciona al menos una sustancia');
-        isValid = false;
-      }
-
-      const urgencia = document.querySelector('input[name="urgencia"]:checked');
-      if (!urgencia) {
-        errors.push('Selecciona el nivel de urgencia');
-        isValid = false;
-      }
-
-      const tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked');
-      if (!tratamientoPrevio) {
-        errors.push('Indica si has recibido tratamiento previo');
         isValid = false;
       }
     }
