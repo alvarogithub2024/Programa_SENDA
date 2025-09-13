@@ -2329,7 +2329,6 @@ async function handleReentrySubmit(e) {
   } finally {
     toggleSubmitButton(submitBtn, false);
   }
-}
 
 // ================= GESTIÓN DE ALERTAS CRÍTICAS =================
 
