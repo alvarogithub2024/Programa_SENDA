@@ -6,10 +6,72 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="styles.css">
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- En el <head> del archivo público -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<script>
+// Configuración de Firebase (DEBE ser la misma que en app.js)
+const firebaseConfig = {
+  apiKey: "AIzaSyAQJ4nOlFAaVkrWFgX7S15Q6JzALdON8xo",
+  authDomain: "senda-puente-alto.firebaseapp.com",
+  projectId: "senda-puente-alto",
+  storageBucket: "senda-puente-alto.appspot.com",
+  messagingSenderId: "123456789012",
+  appId: "1:123456789012:web:abcdef123456789"
+};
+
+// Inicializar Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// Función para enviar solicitud desde formulario público
+async function enviarSolicitudPublica(formData) {
+  try {
+    console.log('📤 Enviando solicitud desde formulario público...');
+    
+    const solicitudData = {
+      tipoSolicitud: formData.tipoSolicitud,
+      nombre: formData.nombre || '',
+      apellidos: formData.apellidos || '',
+      rut: formData.rut || '',
+      edad: parseInt(formData.edad) || null,
+      telefono: formData.telefono || '',
+      email: formData.email || '',
+      cesfam: formData.cesfam || '',
+      sustancias: formData.sustancias || [],
+      descripcion: formData.descripcion || '',
+      urgencia: formData.urgencia || 'normal',
+      
+      // Metadatos
+      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+      estado: 'pendiente',
+      origen: 'web_publica',
+      prioridad: calcularPrioridad(formData)
+    };
+    
+    // Guardar en Firestore
+    const docRef = await db.collection('solicitudes_ingreso').add(solicitudData);
+    console.log('✅ Solicitud guardada con ID:', docRef.id);
+    
+    return { success: true, id: docRef.id };
+    
+  } catch (error) {
+    console.error('❌ Error enviando solicitud:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+function calcularPrioridad(data) {
+  if (data.urgencia === 'inmediata' || data.edad < 18) {
+    return 'critica';
+  } else if (data.urgencia === 'urgente') {
+    return 'alta';
+  } else {
+    return 'media';
+  }
+}
+</script>
 </head>
 <body>
   <!-- Notifications Container -->
