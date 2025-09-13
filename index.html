@@ -1,263 +1,158 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>SENDA - Sistema de Gestión Integral</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="styles.css">
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
-  <!-- Header -->
-  <header class="header">
-    <div class="header-content">
-      <div class="logo">
-        <i class="fas fa-heartbeat"></i>
-        <span>SENDA</span>
-      </div>
-      <div class="header-actions">
-        <button class="btn btn-outline" id="find-center">
-          <i class="fas fa-map-marker-alt"></i>
-          Encontrar Centro
-        </button>
-        <button class="btn btn-professional" id="login-professional">
-          <i class="fas fa-user-md"></i>
-          Acceso Profesional
-        </button>
-      </div>
+<!-- Modal de Reingreso de Paciente -->
+<div class="modal-overlay" id="reentry-modal" style="display: none;">
+  <div class="modal large-modal">
+    <button class="modal-close" onclick="closeModal('reentry-modal')">
+      <i class="fas fa-times"></i>
+    </button>
+    <h2>
+      <i class="fas fa-redo"></i>
+      Reingreso al Programa SENDA
+    </h2>
+    
+    <div class="alert alert-info">
+      <i class="fas fa-info-circle"></i>
+      Este formulario es para pacientes que ya han participado en el programa SENDA y desean volver a ingresar.
     </div>
-  </header>
 
-  <!-- Main Content -->
-  <main class="main-content">
-    <div class="hero-card">
-      <h1>Programa SENDA</h1>
-<br>PUENTE ALTO</br>
-      <p class="subtitle">Tu recuperación comienza aquí</p>
-      
-      <p class="description">
-        Un espacio seguro y confidencial para solicitar ayuda cuando estés listo. 
-        SENDA busca mitigar el impacto social y sanitario de los consumos de alcohol y otras drogas, 
-        mejorando el bienestar y la calidad de vida en las personas y comunidades.
-      </p>
-
-      <div class="stats-grid">
-        <div class="stat-item">
-          <span class="stat-number">1,250+</span>
-          <span class="stat-label">Pacientes Atendidos</span>
+    <form id="reentry-form" class="form-container">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nombre del Paciente *</label>
+          <input type="text" class="form-input" id="reentry-name" required 
+                 placeholder="Nombre completo del paciente">
         </div>
-        <div class="stat-item">
-          <span class="stat-number">48</span>
-          <span class="stat-label">Profesionales Activos</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-number">95%</span>
-          <span class="stat-label">Satisfacción</span>
+        <div class="form-group">
+          <label class="form-label">RUT del Paciente *</label>
+          <input type="text" class="form-input" id="reentry-rut" required 
+                 placeholder="12.345.678-9" maxlength="12">
         </div>
       </div>
 
-      <div class="btn-group">
-        <button class="btn btn-primary" id="register-patient">
-          <i class="fas fa-user-plus"></i>
-          Solicitar Ayuda
+      <div class="form-group">
+        <label class="form-label">CESFAM de Referencia *</label>
+        <select class="form-select" id="reentry-cesfam" required>
+          <option value="">Seleccionar CESFAM...</option>
+          <option value="CESFAM Alejandro del Río">CESFAM Alejandro del Río</option>
+          <option value="CESFAM Karol Wojtyla">CESFAM Karol Wojtyla</option>
+          <option value="CESFAM Laurita Vicuña">CESFAM Laurita Vicuña</option>
+          <option value="CESFAM Padre Manuel Villaseca">CESFAM Padre Manuel Villaseca</option>
+          <option value="CESFAM San Gerónimo">CESFAM San Gerónimo</option>
+          <option value="CESFAM Vista Hermosa">CESFAM Vista Hermosa</option>
+          <option value="CESFAM Bernardo Leighton">CESFAM Bernardo Leighton</option>
+          <option value="CESFAM Cardenal Raúl Silva Henriquez">CESFAM Cardenal Raúl Silva Henriquez</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Motivo del Reingreso *</label>
+        <textarea class="form-textarea" id="reentry-reason" required 
+                  placeholder="Describa detalladamente el motivo por el cual el paciente solicita reingresar al programa..."
+                  rows="5" maxlength="1000"></textarea>
+        <small class="form-help">Máximo 1000 caracteres</small>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Fecha de Último Egreso (aproximada)</label>
+          <input type="date" class="form-input" id="reentry-last-exit">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipo de Egreso Anterior</label>
+          <select class="form-select" id="reentry-exit-type">
+            <option value="">No especificado</option>
+            <option value="alta_terapeutica">Alta Terapéutica</option>
+            <option value="abandono">Abandono</option>
+            <option value="derivacion">Derivación</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Contacto del Solicitante</label>
+        <input type="tel" class="form-input" id="reentry-contact" 
+               placeholder="+56 9 1234 5678">
+        <small class="form-help">Teléfono de quien solicita el reingreso (familiar, paciente, etc.)</small>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Observaciones Adicionales</label>
+        <textarea class="form-textarea" id="reentry-observations" 
+                  placeholder="Información adicional relevante..."
+                  rows="3" maxlength="500"></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('reentry-modal')">
+          <i class="fas fa-times"></i>
+          Cancelar
         </button>
-        <button class="btn btn-secondary" id="reentry-program">
-          <i class="fas fa-redo"></i>
-          Reingresar al Programa
-        </button>
-        <button class="btn btn-outline" id="about-program">
-          <i class="fas fa-info-circle"></i>
-          Sobre el Programa
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save"></i>
+          Registrar Reingreso
         </button>
       </div>
+    </form>
+  </div>
+</div>
 
-      <div class="emergency-info">
-        <p class="emergency-title">¿Necesitas ayuda inmediata?</p>
-        <div class="emergency-numbers">
-          <span>🚨 Emergencias: 131</span>
-          <span>📞 SENDA: 1412 (gratuito)</span>
-        </div>
-      </div>
+<!-- Estilos adicionales para el formulario de reingreso -->
+<style>
+.alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-      <div class="features">
-        <span>✓ Confidencial</span>
-        <span>✓ Disponible 24/7</span>
-        <span>✓ Sin juicios</span>
-      </div>
-    </div>
-  </main>
+.alert-info {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+}
 
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="footer-content">
-      <p>Para más información oficial sobre SENDA:</p>
-      <a href="https://www.senda.gob.cl" target="_blank" class="footer-link">
-        <i class="fas fa-globe"></i>
-        Sitio Oficial SENDA
-      </a>
-      <p style="margin-top: 16px; font-size: 14px; color: var(--gray-400);">
-        Sistema interno para profesionales del Programa SENDA
-      </p>
-    </div>
-  </footer>
+.form-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--gray-300);
+  border-radius: 8px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+}
 
-  <!-- Patient Registration Modal -->
-  <div class="modal-overlay" id="patient-modal">
-    <div class="modal large-modal">
-      <button class="modal-close" data-close="patient-modal">
-        <i class="fas fa-times"></i>
-      </button>
-      <h2>Solicitud de Ayuda - Confidencial</h2>
-      
-      <div class="form-progress">
-        <div class="progress-bar">
-          <div class="progress-fill" id="form-progress"></div>
-        </div>
-        <span class="progress-text" id="progress-text">Paso 1 de 4</span>
-      </div>
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(15, 76, 117, 0.1);
+}
 
-      <form id="patient-form" class="multi-step-form">
-        <!-- PASO 1: Tipo de solicitud y datos básicos -->
-        <div class="form-step active" data-step="1">
-          <h3>Tipo de solicitud</h3>
-          
-          <div class="form-group">
-            <label class="form-label">¿Cómo te gustaría proceder? *</label>
-            <div class="radio-group">
-              <label class="radio-option">
-                <input type="radio" name="tipoSolicitud" value="anonimo" required>
-                <span class="radio-custom"></span>
-                Mantenerme anónimo por ahora
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="tipoSolicitud" value="identificado" required>
-                <span class="radio-custom"></span>
-                Proporcionar mis datos para contacto directo
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="tipoSolicitud" value="informacion" required>
-                <span class="radio-custom"></span>
-                Solo necesito información sobre el programa
-              </label>
-            </div>
-          </div>
+.form-help {
+  color: var(--gray-500);
+  font-size: 14px;
+  margin-top: 4px;
+  display: block;
+}
 
-          <!-- Campo de teléfono para anónimos (oculto por defecto) -->
-          <div class="form-group" id="anonymous-phone-container" style="display: none;">
-            <label class="form-label">Teléfono de contacto *</label>
-            <input type="tel" class="form-input" id="anonymous-phone" placeholder="+56 9 1234 5678">
-            <small style="color: var(--gray-600);">Tu número será utilizado únicamente para contactarte sobre tu solicitud</small>
-          </div>
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--gray-200);
+}
 
-          <!-- Campo de email para solo información (oculto por defecto) -->
-          <div class="form-group" id="info-email-container" style="display: none;">
-            <label class="form-label">Email para recibir información *</label>
-            <input type="email" class="form-input" id="info-email" placeholder="tu@email.com">
-            <small style="color: var(--gray-600);">Te enviaremos información completa sobre el programa SENDA</small>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Tu edad *</label>
-              <input type="number" class="form-input" id="patient-age" min="12" max="120" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">CESFAM *</label>
-              <select class="form-select" id="patient-cesfam" required>
-                <option value="">Seleccionar CESFAM...</option>
-                <option value="CESFAM Alejandro del Río">CESFAM Alejandro del Río</option>
-                <option value="CESFAM Karol Wojtyla">CESFAM Karol Wojtyla</option>
-                <option value="CESFAM Laurita Vicuña">CESFAM Laurita Vicuña</option>
-                <option value="CESFAM Padre Manuel Villaseca">CESFAM Padre Manuel Villaseca</option>
-                <option value="CESFAM San Gerónimo">CESFAM San Gerónimo</option>
-                <option value="CESFAM Vista Hermosa">CESFAM Vista Hermosa</option>
-                <option value="CESFAM Bernardo Leighton">CESFAM Bernardo Leighton</option>
-                <option value="CESFAM Cardenal Raúl Silva Henriquez">CESFAM Cardenal Raúl Silva Henriquez</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">¿Para quién solicitas ayuda? *</label>
-            <div class="radio-group">
-              <label class="radio-option">
-                <input type="radio" name="paraMi" value="mi_mismo" required>
-                <span class="radio-custom"></span>
-                Para mí mismo/a
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="paraMi" value="familiar" required>
-                <span class="radio-custom"></span>
-                Para un familiar
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="paraMi" value="amigo" required>
-                <span class="radio-custom"></span>
-                Para un amigo/a
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <!-- PASO 2: Datos de contacto (SOLO para identificados) -->
-        <div class="form-step" data-step="2">
-          <h3>Datos de contacto</h3>
-          <p class="step-description">Esta información nos permitirá contactarte directamente</p>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Nombre *</label>
-              <input type="text" class="form-input" id="patient-name" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Apellidos *</label>
-              <input type="text" class="form-input" id="patient-lastname" required>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">RUT *</label>
-            <input type="text" class="form-input" id="patient-rut" placeholder="12.345.678-9" required>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Teléfono *</label>
-              <input type="tel" class="form-input" id="patient-phone" placeholder="+56 9 1234 5678" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Email</label>
-              <input type="email" class="form-input" id="patient-email">
-            </div>
-          </div>
-
-          <div class="form-row">
-            <!-- Comuna deshabilitada porque solo es Puente Alto -->
-            <div class="form-group" style="display:none">
-              <label class="form-label">Comuna *</label>
-              <select class="form-select" id="patient-comuna" disabled required>
-                <option value="">Puente Alto</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Dirección</label>
-              <input type="text" class="form-input" id="patient-address">
-            </div>
-          </div>
-        </div>
-
-        <!-- PASO 3: Evaluación inicial -->
-        <div class="form-step" data-step="3">
-          <h3>Evaluación inicial</h3>
-          <p class="step-description">Esta información nos ayuda a brindarte la mejor atención</p>
-
-          <div class="form-group">
-            <label class="form-label">Tipo de sustancia principal *</label>
-            <div class="checkbox-group">
-              <label class="checkbox-option">
-                <input type="checkbox" name="sustancias" value="alcohol">
-                <span class="checkbox-custom"></span>
+.reentry-indicator {
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+</style>
