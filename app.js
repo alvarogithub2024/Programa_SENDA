@@ -7,7 +7,8 @@ const firebaseConfig = {
   projectId: "senda-6d5c9",
   storageBucket: "senda-6d5c9.firebasestorage.app",
   messagingSenderId: "1090028669785",
-  appId: "1:1090028669785:web:d
+  appId: "1:1090028669785:web:d4e1c1b9945fc2fddc1a48",
+  measurementId: "G-82DCLW5R2W"
 };
 
 // Inicializar Firebase
