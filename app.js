@@ -123,13 +123,13 @@ console.log('🔧 También puedes usar debugSenda() para diagnóstico completo.'
 
 // Firebase Configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDBV0LI1Cz_uWLtsdIN6q5U3v87BkB1SVs",
-  authDomain: "senda-d4660.firebaseapp.com",
-  projectId: "senda-d4660",
-  storageBucket: "senda-d4660.firebasestorage.app",
-  messagingSenderId: "261946600338",
-  appId: "1:261946600338:web:d83280f361696695196f4b",
-  measurementId: "G-JFRFL36FQK"
+  apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
+  authDomain: "senda-6d5c9.firebaseapp.com",
+  projectId: "senda-6d5c9",
+  storageBucket: "senda-6d5c9.firebasestorage.app",
+  messagingSenderId: "1090028669785",
+  appId: "1:1090028669785:web:d4e1c1b9945fc2fddc1a48",
+  measurementId: "G-82DCLW5R2W"
 };
 
 // Initialize Firebase con manejo de errores mejorado
