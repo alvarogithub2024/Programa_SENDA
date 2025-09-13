@@ -1,5 +1,5 @@
 // ================= SENDA PUENTE ALTO - SISTEMA OPTIMIZADO COMPLETO =================
-// PARTE 1 COMPLETA: Configuración, Inicialización y Funciones Utilitarias
+// PARTE 1: Configuración, Variables Globales y Funciones Utilitarias
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -12,186 +12,30 @@ const firebaseConfig = {
   measurementId: "G-82DCLW5R2W"
 };
 
-// Variables globales para Firebase
-let auth, db, firebaseApp;
-
-// Función para inicializar Firebase de forma segura
-function initializeFirebaseSafely() {
-  try {
-    console.log('🔄 Iniciando inicialización de Firebase...');
-    
-    // Verificar que Firebase SDK esté cargado
-    if (typeof firebase === 'undefined') {
-      throw new Error('Firebase SDK no está cargado. Verifica que los scripts estén incluidos.');
-    }
-    
-    console.log('✅ Firebase SDK detectado');
-    console.log('Apps existentes:', firebase.apps ? firebase.apps.length : 0);
-    
-    // Inicializar solo si no existe ya
-    if (!firebase.apps || firebase.apps.length === 0) {
-      console.log('🆕 Inicializando nueva app de Firebase...');
-      firebaseApp = firebase.initializeApp(firebaseConfig);
-    } else {
-      console.log('♻️ Usando app de Firebase existente...');
-      firebaseApp = firebase.app();
-    }
-    
-    // Verificar que la app se inicializó correctamente
-    if (!firebaseApp) {
-      throw new Error('No se pudo obtener la instancia de Firebase App');
-    }
-    
-    console.log('✅ Firebase App inicializada:', firebaseApp.name);
-    
-    // Inicializar Auth
-    try {
-      auth = firebase.auth(firebaseApp);
-      console.log('✅ Firebase Auth inicializado');
-    } catch (authError) {
-      console.error('❌ Error inicializando Auth:', authError);
-      throw authError;
-    }
-    
-    // Inicializar Firestore
-    try {
-      db = firebase.firestore(firebaseApp);
-      console.log('✅ Firestore inicializado');
-      
-      // Configurar persistencia offline con manejo de errores
-      db.enablePersistence({
-        synchronizeTabs: true
-      }).then(() => {
-        console.log('✅ Persistencia offline habilitada');
-      }).catch((err) => {
-        console.warn('⚠️ Persistencia offline falló:', err.code);
-        if (err.code === 'failed-precondition') {
-          console.warn('Múltiples tabs abiertas, persistencia deshabilitada');
-        } else if (err.code === 'unimplemented') {
-          console.warn('Persistencia no soportada en este navegador');
-        }
-      });
-      
-    } catch (firestoreError) {
-      console.error('❌ Error inicializando Firestore:', firestoreError);
-      throw firestoreError;
-    }
-    
-    // Test de conexión básico
-    testFirebaseConnection();
-    
-    console.log('🎉 Firebase inicializado completamente');
-    return true;
-    
-  } catch (error) {
-    console.error('❌ Error crítico inicializando Firebase:', error);
-    console.error('Detalles del error:', {
-      name: error.name,
-      message: error.message,
-      code: error.code,
-      stack: error.stack
-    });
-    
-    // Mostrar error al usuario
-    showNotificationSafe('Error crítico: No se pudo conectar con Firebase. Recarga la página.', 'error');
-    return false;
+// Initialize Firebase con manejo de errores mejorado
+let auth, db;
+try {
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
   }
-}
-
-// Función de test de conexión
-async function testFirebaseConnection() {
-  try {
-    console.log('🧪 Probando conexión básica...');
-    
-    // Test 1: Verificar que las instancias existen
-    if (!auth) {
-      throw new Error('Auth no está inicializado');
-    }
-    if (!db) {
-      throw new Error('Firestore no está inicializado');
-    }
-    
-    console.log('✅ Instancias de Firebase verificadas');
-    
-    // Test 2: Probar escritura simple (solo si las reglas lo permiten)
-    try {
-      const testRef = db.collection('test_connection');
-      const testDoc = await testRef.add({
-        test: true,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        userAgent: navigator.userAgent.substring(0, 100)
-      });
-      
-      console.log('✅ Test de escritura exitoso:', testDoc.id);
-      
-      // Limpiar documento de test
-      await testDoc.delete();
-      console.log('✅ Documento de test eliminado');
-      
-    } catch (writeError) {
-      console.warn('⚠️ Test de escritura falló (puede ser normal):', writeError.code);
-      // No es crítico si falla, puede ser por reglas de seguridad
-    }
-    
-  } catch (testError) {
-    console.error('❌ Test de conexión falló:', testError);
-    throw testError;
-  }
-}
-
-// Función segura para mostrar notificaciones (por si el sistema aún no está listo)
-function showNotificationSafe(message, type = 'info') {
-  try {
-    if (typeof showNotification === 'function') {
-      showNotification(message, type);
-    } else {
-      console.log(`[${type.toUpperCase()}] ${message}`);
-      alert(`${type.toUpperCase()}: ${message}`);
-    }
-  } catch (error) {
-    console.error('Error mostrando notificación:', error);
-    alert(message);
-  }
-}
-
-// Función para verificar el estado de Firebase
-function getFirebaseStatus() {
-  return {
-    sdkLoaded: typeof firebase !== 'undefined',
-    appInitialized: !!firebaseApp,
-    authReady: !!auth,
-    firestoreReady: !!db,
-    appsCount: firebase.apps ? firebase.apps.length : 0
-  };
-}
-
-// Función global para debugging
-window.debugFirebase = function() {
-  console.log('🔍 ESTADO DE FIREBASE:');
-  const status = getFirebaseStatus();
-  console.table(status);
+  auth = firebase.auth();
+  db = firebase.firestore();
   
-  if (status.firestoreReady) {
-    console.log('Probando conexión...');
-    testFirebaseConnection().catch(console.error);
-  }
+  // Configurar persistencia offline
+  db.enablePersistence({
+    synchronizeTabs: true
+  }).catch((err) => {
+    if (err.code === 'failed-precondition') {
+      console.warn('Persistencia falló: múltiples tabs abiertas');
+    } else if (err.code === 'unimplemented') {
+      console.warn('Persistencia no soportada en este navegador');
+    }
+  });
   
-  return status;
-};
-
-// Inicialización diferida de Firebase
-function initializeFirebaseWhenReady() {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      setTimeout(initializeFirebaseSafely, 100);
-    });
-  } else {
-    setTimeout(initializeFirebaseSafely, 100);
-  }
+  console.log('✅ Firebase inicializado correctamente');
+} catch (error) {
+  console.error('❌ Error inicializando Firebase:', error);
 }
-
-// Ejecutar inicialización
-initializeFirebaseWhenReady();
 
 // Lista de CESFAM de Puente Alto
 const cesfamPuenteAlto = [
@@ -716,32 +560,14 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeApp() {
   try {
     // Verificar dependencias críticas
-    if (typeof firebase === 'undefined') {
+    if (!firebase) {
       throw new Error('Firebase SDK no cargado');
     }
     
-    // Esperar a que Firebase esté listo
-    const checkFirebaseReady = () => {
-      if (!auth || !db) {
-        console.log('Esperando inicialización de Firebase...');
-        setTimeout(checkFirebaseReady, 100);
-        return;
-      }
-      
-      console.log('Firebase listo, continuando inicialización...');
-      continueAppInitialization();
-    };
-    
-    checkFirebaseReady();
-    
-  } catch (error) {
-    console.error('❌ Error inicializando app:', error);
-    showNotification('Error al cargar el sistema: ' + error.message, 'error');
-  }
-}
+    if (!auth || !db) {
+      throw new Error('Firebase no está inicializado correctamente');
+    }
 
-function continueAppInitialization() {
-  try {
     // Configurar título y elementos básicos
     document.title = "PROGRAMA SENDA PUENTE ALTO";
     const mainTitle = document.getElementById('main-title');
@@ -770,8 +596,8 @@ function continueAppInitialization() {
     showNotification('Sistema SENDA cargado correctamente', 'success', 2000);
     
   } catch (error) {
-    console.error('❌ Error en inicialización:', error);
-    showNotification('Error al inicializar componentes: ' + error.message, 'error');
+    console.error('❌ Error inicializando app:', error);
+    showNotification('Error al cargar el sistema: ' + error.message, 'error');
   }
 }
 
@@ -787,45 +613,258 @@ function handleUnhandledRejection(event) {
   if (APP_CONFIG.DEBUG_MODE) {
     showNotification(`Error async: ${event.reason.message || event.reason}`, 'error');
   }
-  
-  // Intentar reinicializar si es un error de Firebase
-  if (event.reason && event.reason.code === 'app/no-app' || 
-      (event.reason.message && event.reason.message.includes('NO_APP'))) {
-    console.log('🔄 Intentando reinicializar Firebase...');
-    setTimeout(() => {
-      initializeFirebaseSafely();
-    }, 1000);
+}
+
+// ================= GESTIÓN DE EVENTOS Y AUTENTICACIÓN =================
+
+function initializeEventListeners() {
+  try {
+    // Elementos principales
+    const loginProfessionalBtn = document.getElementById('login-professional');
+    const logoutBtn = document.getElementById('logout-btn');
+    const registerPatientBtn = document.getElementById('register-patient');
+    const reentryProgramBtn = document.getElementById('reentry-program');
+    const aboutProgramBtn = document.getElementById('about-program');
+    
+    // Elementos de búsqueda
+    const searchSolicitudes = document.getElementById('search-solicitudes');
+    const searchSeguimiento = document.getElementById('search-seguimiento');
+    const searchPacientesRut = document.getElementById('search-pacientes-rut');
+    const buscarPacienteBtn = document.getElementById('buscar-paciente-btn');
+    
+    // Elementos de filtros
+    const priorityFilter = document.getElementById('priority-filter');
+    const dateFilter = document.getElementById('date-filter');
+    
+    // Elementos de calendario
+    const prevMonthBtn = document.getElementById('prev-month');
+    const nextMonthBtn = document.getElementById('next-month');
+    const nuevaCitaBtn = document.getElementById('nueva-cita-btn');
+
+    // Event listeners principales
+    if (loginProfessionalBtn) {
+      loginProfessionalBtn.addEventListener('click', () => {
+        if (APP_CONFIG.DEBUG_MODE) console.log('🔧 Abriendo modal de login');
+        showModal('login-modal');
+      });
+    }
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', handleLogout);
+    }
+
+    if (registerPatientBtn) {
+      registerPatientBtn.addEventListener('click', () => {
+        if (APP_CONFIG.DEBUG_MODE) console.log('🔧 Abriendo modal de registro de paciente');
+        showModal('patient-modal');
+      });
+    }
+
+    if (reentryProgramBtn) {
+      reentryProgramBtn.addEventListener('click', () => {
+        if (APP_CONFIG.DEBUG_MODE) console.log('🔧 Abriendo modal de reingreso');
+        showModal('reentry-modal');
+      });
+    }
+
+    if (aboutProgramBtn) {
+      aboutProgramBtn.addEventListener('click', showAboutProgram);
+    }
+
+    // Búsquedas con debounce
+    if (searchSolicitudes) {
+      searchSolicitudes.addEventListener('input', debounce(filterSolicitudes, 300));
+    }
+
+    if (searchSeguimiento) {
+      searchSeguimiento.addEventListener('input', debounce(filterSeguimiento, 300));
+    }
+
+    if (buscarPacienteBtn) {
+      buscarPacienteBtn.addEventListener('click', buscarPacientePorRUT);
+    }
+
+    if (searchPacientesRut) {
+      searchPacientesRut.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          buscarPacientePorRUT();
+        }
+      });
+      
+      // Formatear RUT mientras se escribe
+      searchPacientesRut.addEventListener('input', (e) => {
+        e.target.value = formatRUT(e.target.value);
+      });
+    }
+
+    // Filtros
+    if (priorityFilter) {
+      priorityFilter.addEventListener('change', filterSolicitudes);
+    }
+
+    if (dateFilter) {
+      dateFilter.addEventListener('change', filterSolicitudes);
+    }
+
+    // Navegación de calendario
+    if (prevMonthBtn) {
+      prevMonthBtn.addEventListener('click', () => {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+        renderCalendar();
+      });
+    }
+
+    if (nextMonthBtn) {
+      nextMonthBtn.addEventListener('click', () => {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+        renderCalendar();
+      });
+    }
+
+    if (nuevaCitaBtn) {
+      nuevaCitaBtn.addEventListener('click', () => createNuevaCitaModal());
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', handleKeyboardShortcuts);
+    
+    console.log('✅ Event listeners inicializados correctamente');
+  } catch (error) {
+    console.error('❌ Error inicializando event listeners:', error);
   }
 }
 
-// Manejo global de errores de Firebase
-window.addEventListener('unhandledrejection', (event) => {
-  if (event.reason && event.reason.message && 
-      (event.reason.message.includes('Firebase') || 
-       event.reason.message.includes('firestore') ||
-       event.reason.code)) {
-    
-    console.error('❌ Error no manejado de Firebase:', event.reason);
-    
-    // Intentar reinicializar si es un error de app no encontrada
-    if (event.reason.code === 'app/no-app' || 
-        event.reason.message.includes('NO_APP')) {
-      console.log('🔄 Intentando reinicializar Firebase...');
-      setTimeout(() => {
-        initializeFirebaseSafely();
-      }, 1000);
+function handleKeyboardShortcuts(e) {
+  try {
+    // Ctrl/Cmd + K para búsqueda rápida
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      const searchInput = document.getElementById('search-solicitudes');
+      if (searchInput && searchInput.style.display !== 'none') {
+        searchInput.focus();
+      }
     }
+    
+    // Escape para cerrar modales
+    if (e.key === 'Escape') {
+      const openModal = document.querySelector('.modal-overlay[style*="flex"]');
+      if (openModal) {
+        closeModal(openModal.id);
+      }
+    }
+  } catch (error) {
+    console.error('Error handling keyboard shortcuts:', error);
   }
-});
+}
 
-console.log('🚀 Sistema de inicialización cargado');
-console.log('📱 Versión: 1.0');
-console.log('🏥 CESFAM: Configuración dinámica');
-console.log('🔧 Debug mode:', APP_CONFIG.DEBUG_MODE ? 'Activado' : 'Desactivado');
+function onAuthStateChanged(user) {
+  try {
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log('🔧 Estado de autenticación cambió:', user ? user.email : 'No autenticado');
+    }
+    
+    if (user) {
+      currentUser = user;
+      loadUserData();
+    } else {
+      currentUser = null;
+      currentUserData = null;
+      clearUserCache();
+      showPublicContent();
+    }
+  } catch (error) {
+    console.error('❌ Error en cambio de estado de autenticación:', error);
+    showNotification('Error en autenticación', 'error');
+  }
+}
 
-// ================= FIN DE LA PARTE 1 =================
-// ================= PARTE 2 COMPLETA: FORMULARIOS Y VALIDACIONES =================
-// Versión corregida con flujo simplificado según tipo de solicitud
+function clearUserCache() {
+  try {
+    // Limpiar datos en memoria
+    solicitudesData = [];
+    pacientesData = [];
+    citasData = [];
+    professionalsList = [];
+    
+    // Limpiar cache
+    dataCache.clear();
+    
+    // Limpiar contenedores
+    const containers = [
+      'requests-container',
+      'patients-grid',
+      'appointments-list',
+      'upcoming-appointments-grid',
+      'patients-timeline'
+    ];
+    
+    containers.forEach(containerId => {
+      const container = document.getElementById(containerId);
+      if (container) {
+        container.innerHTML = '';
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error clearing user cache:', error);
+  }
+}
+
+async function loadUserData() {
+  try {
+    showLoading(true, 'Cargando datos del usuario...');
+    
+    if (!currentUser) {
+      throw new Error('Usuario no autenticado');
+    }
+
+    // Intentar cargar desde cache primero
+    const cacheKey = `user_${currentUser.uid}`;
+    const cachedData = getCachedData(cacheKey);
+    
+    if (cachedData) {
+      currentUserData = cachedData;
+      showProfessionalContent();
+      await loadInitialData();
+      return;
+    }
+
+    // Cargar desde Firestore con reintentos
+    const userData = await retryOperation(async () => {
+      const userDoc = await db.collection('profesionales').doc(currentUser.uid).get();
+      
+      if (!userDoc.exists) {
+        throw new Error('No se encontraron datos del profesional');
+      }
+      
+      return userDoc.data();
+    });
+    
+    currentUserData = userData;
+    setCachedData(cacheKey, userData);
+    
+    showProfessionalContent();
+    await loadInitialData();
+    
+  } catch (error) {
+    console.error('❌ Error cargando datos del usuario:', error);
+    
+    if (error.code === 'permission-denied') {
+      showNotification('Sin permisos para acceder a los datos', 'error');
+    } else if (error.message.includes('No se encontraron datos')) {
+      showNotification('Perfil de profesional no encontrado. Contacta al administrador.', 'error');
+    } else {
+      showNotification('Error al cargar datos del usuario: ' + error.message, 'error');
+    }
+    
+    await handleLogout();
+  } finally {
+    showLoading(false);
+  }
+}
+// ================= PARTE 2: FORMULARIOS Y VALIDACIONES =================
+// Continuación desde la PARTE 1
 
 async function loadInitialData() {
   try {
@@ -856,7 +895,7 @@ async function loadInitialData() {
     await Promise.allSettled(loadPromises);
     
   } catch (error) {
-    console.error('Error cargando datos iniciales:', error);
+    console.error('❌ Error cargando datos iniciales:', error);
   }
 }
 
@@ -903,9 +942,9 @@ function showPublicContent() {
     if (professionalHeader) professionalHeader.style.display = 'none';
     if (loginBtn) loginBtn.style.display = 'flex';
     
-    console.log('Mostrando contenido público');
+    console.log('📄 Mostrando contenido público');
   } catch (error) {
-    console.error('Error mostrando contenido público:', error);
+    console.error('❌ Error mostrando contenido público:', error);
   }
 }
 
@@ -926,9 +965,9 @@ function showProfessionalContent() {
       updateProfessionalInfo();
     }
     
-    console.log('Mostrando contenido profesional');
+    console.log('👨‍⚕️ Mostrando contenido profesional');
   } catch (error) {
-    console.error('Error mostrando contenido profesional:', error);
+    console.error('❌ Error mostrando contenido profesional:', error);
   }
 }
 
@@ -1026,9 +1065,9 @@ function setupModalControls() {
       registerForm.addEventListener('submit', handleRegister);
     }
     
-    console.log('Controles de modal configurados');
+    console.log('✅ Controles de modal configurados');
   } catch (error) {
-    console.error('Error configurando controles de modal:', error);
+    console.error('❌ Error configurando controles de modal:', error);
   }
 }
 
@@ -1065,7 +1104,7 @@ async function handleLogin(e) {
     e.target.reset();
     
   } catch (error) {
-    console.error('Error en login:', error);
+    console.error('❌ Error en login:', error);
     
     let message = 'Error al iniciar sesión';
     
@@ -1180,7 +1219,7 @@ async function handleRegister(e) {
     e.target.reset();
     
   } catch (error) {
-    console.error('Error en registro:', error);
+    console.error('❌ Error en registro:', error);
     
     let message = 'Error al crear la cuenta';
     
@@ -1244,7 +1283,7 @@ async function handleLogout() {
     showNotification('Sesión cerrada correctamente', 'info');
     
   } catch (error) {
-    console.error('Error al cerrar sesión:', error);
+    console.error('❌ Error al cerrar sesión:', error);
     showNotification('Error al cerrar sesión', 'error');
   } finally {
     showLoading(false);
@@ -1328,9 +1367,9 @@ function setupFormValidation() {
       input.addEventListener('input', clearFieldErrorOnInput);
     });
 
-    console.log('Validación de formularios configurada');
+    console.log('✅ Validación de formularios configurada');
   } catch (error) {
-    console.error('Error configurando validación de formularios:', error);
+    console.error('❌ Error configurando validación de formularios:', error);
   }
 }
 
@@ -1405,15 +1444,6 @@ function validatePhoneNumber(input) {
   return isValid;
 }
 
-// Nueva función para validar teléfonos como string
-function validatePhoneNumberString(phone) {
-  if (!phone) return false;
-  const cleaned = phone.replace(/\D/g, '');
-  return cleaned.length >= 8 && cleaned.length <= 12;
-}
-
-// ================= FORMULARIO MULTI-STEP MEJORADO =================
-
 function setupMultiStepForm() {
   try {
     const form = document.getElementById('patient-form');
@@ -1427,19 +1457,6 @@ function setupMultiStepForm() {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         const currentStep = parseInt(btn.id.split('-')[2]);
-        
-        // Lógica especial para el paso 1
-        if (currentStep === 1) {
-          const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
-          
-          if (tipoSolicitud === 'informacion') {
-            // Para solo información, enviar directamente
-            handlePatientFormSubmitSimplified();
-            return;
-          }
-        }
-        
-        // Para otros pasos, validar y continuar
         if (validateStep(currentStep)) {
           goToStep(currentStep + 1);
         }
@@ -1450,16 +1467,7 @@ function setupMultiStepForm() {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         const currentStep = parseInt(btn.id.split('-')[2]);
-        
-        // Lógica especial para navegación hacia atrás
-        const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
-        
-        if (currentStep === 3 && tipoSolicitud === 'anonimo') {
-          // Si es anónimo y está en paso 3, regresar al paso 1
-          goToStep(1);
-        } else {
-          goToStep(currentStep - 1);
-        }
+        goToStep(currentStep - 1);
       });
     });
 
@@ -1495,9 +1503,9 @@ function setupMultiStepForm() {
     // Configurar autoguardado (draft)
     setupAutoSave();
 
-    console.log('Formulario multi-step configurado con flujo simplificado');
+    console.log('✅ Formulario multi-step configurado');
   } catch (error) {
-    console.error('Error configurando formulario multi-step:', error);
+    console.error('❌ Error configurando formulario multi-step:', error);
   }
 }
 
@@ -1661,8 +1669,6 @@ function showDraftSavedIndicator() {
   }
 }
 
-// ================= VISIBILIDAD Y NAVEGACIÓN DEL FORMULARIO =================
-
 function updateFormVisibility() {
   try {
     const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
@@ -1673,45 +1679,29 @@ function updateFormVisibility() {
     if (anonymousPhone) anonymousPhone.style.display = 'none';
     if (infoEmail) infoEmail.style.display = 'none';
     
-    // Actualizar botón "Siguiente" del paso 1
-    const nextBtn = document.getElementById('next-step-1');
-    
-    if (tipoSolicitud === 'anonimo') {
-      if (anonymousPhone) {
-        anonymousPhone.style.display = 'block';
-        const phoneInput = document.getElementById('anonymous-phone');
-        if (phoneInput) {
-          phoneInput.required = true;
-          phoneInput.focus();
-        }
+    // Mostrar campos según el tipo de solicitud
+    if (tipoSolicitud === 'anonimo' && anonymousPhone) {
+      anonymousPhone.style.display = 'block';
+      const phoneInput = document.getElementById('anonymous-phone');
+      if (phoneInput) {
+        phoneInput.required = true;
+        phoneInput.focus();
       }
-      if (nextBtn) nextBtn.textContent = 'Siguiente';
-      
-    } else if (tipoSolicitud === 'informacion') {
-      if (infoEmail) {
-        infoEmail.style.display = 'block';
-        const emailInput = document.getElementById('info-email');
-        if (emailInput) {
-          emailInput.required = true;
-          emailInput.focus();
-        }
+    } else if (tipoSolicitud === 'informacion' && infoEmail) {
+      infoEmail.style.display = 'block';
+      const emailInput = document.getElementById('info-email');
+      if (emailInput) {
+        emailInput.required = true;
+        emailInput.focus();
       }
-      // Cambiar botón a "Enviar" para solo información
-      if (nextBtn) {
-        nextBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar Solicitud';
-        nextBtn.style.background = 'var(--success-green)';
-      }
-      
-    } else if (tipoSolicitud === 'identificado') {
-      if (nextBtn) nextBtn.textContent = 'Siguiente';
     }
     
     // Limpiar requisitos de campos no visibles
-    if (tipoSolicitud !== 'anonimo') {
+    if (anonymousPhone && tipoSolicitud !== 'anonimo') {
       const phoneInput = document.getElementById('anonymous-phone');
       if (phoneInput) phoneInput.required = false;
     }
-    if (tipoSolicitud !== 'informacion') {
+    if (infoEmail && tipoSolicitud !== 'informacion') {
       const emailInput = document.getElementById('info-email');
       if (emailInput) emailInput.required = false;
     }
@@ -1724,29 +1714,133 @@ function updateFormVisibility() {
   }
 }
 
-// Función goToStep con flujo simplificado
+// ================= FUNCIONES DE VALIDACIÓN DE PASOS =================
+
+function validateStep(step) {
+  try {
+    const currentStepDiv = document.querySelector(`.form-step[data-step="${step}"]`);
+    if (!currentStepDiv) return false;
+
+    const requiredFields = currentStepDiv.querySelectorAll('[required]:not([style*="display: none"])');
+    let isValid = true;
+    const errors = [];
+
+    // Validar campos requeridos
+    requiredFields.forEach(field => {
+      const value = field.value?.trim() || '';
+      
+      if (!value) {
+        field.classList.add('error');
+        showFieldError(field, 'Este campo es obligatorio');
+        errors.push(`${getFieldLabel(field)} es obligatorio`);
+        isValid = false;
+      } else {
+        field.classList.remove('error');
+        clearFieldError(field);
+      }
+    });
+
+    // Validaciones específicas por paso
+    if (step === 1) {
+      const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked');
+      if (!tipoSolicitud) {
+        errors.push('Selecciona un tipo de solicitud');
+        isValid = false;
+      } else {
+        // Validaciones específicas según tipo
+        if (tipoSolicitud.value === 'anonimo') {
+          const phone = document.getElementById('anonymous-phone');
+          if (!phone.value.trim()) {
+            errors.push('Ingresa un teléfono de contacto');
+            isValid = false;
+          } else if (!validatePhoneNumber(phone)) {
+            errors.push('Ingresa un teléfono válido');
+            isValid = false;
+          }
+        } else if (tipoSolicitud.value === 'informacion') {
+          const email = document.getElementById('info-email');
+          if (!email.value.trim()) {
+            errors.push('Ingresa un email para recibir información');
+            isValid = false;
+          } else if (!isValidEmail(email.value.trim())) {
+            errors.push('Ingresa un email válido');
+            isValid = false;
+          }
+        }
+      }
+
+      // Validar edad
+      const edad = parseInt(document.getElementById('patient-age').value);
+      if (edad && (edad < 12 || edad > 120)) {
+        errors.push('La edad debe estar entre 12 y 120 años');
+        isValid = false;
+      }
+    }
+
+    if (step === 2) {
+      const rut = document.getElementById('patient-rut');
+      if (rut && rut.value.trim() && !validateRUT(rut.value.trim())) {
+        errors.push('RUT inválido');
+        isValid = false;
+      }
+
+      const phone = document.getElementById('patient-phone');
+      if (phone && phone.value.trim() && !validatePhoneNumber(phone)) {
+        errors.push('Teléfono inválido');
+        isValid = false;
+      }
+
+      const email = document.getElementById('patient-email');
+      if (email && email.value.trim() && !isValidEmail(email.value.trim())) {
+        errors.push('Email inválido');
+        isValid = false;
+      }
+    }
+
+    if (step === 3) {
+      const sustancias = document.querySelectorAll('input[name="sustancias"]:checked');
+      if (sustancias.length === 0) {
+        errors.push('Selecciona al menos una sustancia');
+        isValid = false;
+      }
+
+      const urgencia = document.querySelector('input[name="urgencia"]:checked');
+      if (!urgencia) {
+        errors.push('Selecciona el nivel de urgencia');
+        isValid = false;
+      }
+
+      const tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked');
+      if (!tratamientoPrevio) {
+        errors.push('Indica si has recibido tratamiento previo');
+        isValid = false;
+      }
+    }
+
+    // Mostrar errores si los hay
+    if (errors.length > 0) {
+      showNotification(errors.join('\n'), 'warning', 5000);
+    }
+
+    return isValid;
+  } catch (error) {
+    console.error('Error validating step:', error);
+    return false;
+  }
+}
+
+function getFieldLabel(field) {
+  try {
+    const label = field.closest('.form-group')?.querySelector('label');
+    return label ? label.textContent.replace('*', '').trim() : 'Campo';
+  } catch (error) {
+    return 'Campo';
+  }
+}
+
 function goToStep(step) {
   try {
     if (step < 1 || step > maxFormStep) return;
-
-    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
-    
-    // LÓGICA DE SALTOS SEGÚN TIPO DE SOLICITUD
-    if (tipoSolicitud === 'informacion') {
-      // SOLO INFORMACIÓN: Solo paso 1, saltar directamente al envío
-      if (step > 1) {
-        // Si intenta ir más allá del paso 1, enviar directamente
-        handlePatientFormSubmitSimplified();
-        return;
-      }
-    } else if (tipoSolicitud === 'anonimo') {
-      // ANÓNIMO: Pasos 1, 3, 4 (saltar paso 2)
-      if (step === 2) {
-        goToStep(3); // Saltar el paso 2
-        return;
-      }
-    }
-    // IDENTIFICADO: Todos los pasos 1, 2, 3, 4
 
     // Ocultar todos los pasos
     document.querySelectorAll('.form-step').forEach(stepDiv => {
@@ -1767,288 +1861,229 @@ function goToStep(step) {
       }, 100);
     }
 
-    // Actualizar barra de progreso según el tipo de solicitud
-    updateProgressBar(step, tipoSolicitud);
+    // Actualizar barra de progreso
+    const progressFill = document.getElementById('form-progress');
+    const progressText = document.getElementById('progress-text');
+    
+    if (progressFill) {
+      const progressPercentage = (step / maxFormStep) * 100;
+      progressFill.style.width = `${progressPercentage}%`;
+    }
+    
+    if (progressText) {
+      progressText.textContent = `Paso ${step} de ${maxFormStep}`;
+    }
 
     currentFormStep = step;
+
+    // Lógica especial para saltar paso 2 si no es identificado
+    if (step === 2) {
+      const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+      if (tipoSolicitud !== 'identificado') {
+        goToStep(3);
+        return;
+      }
+    }
 
     // Guardar progreso en draft
     saveFormDraft();
 
     if (APP_CONFIG.DEBUG_MODE) {
-      console.log(`Navegando a paso ${step} para tipo: ${tipoSolicitud}`);
+      console.log(`🔧 Navegando a paso ${step}`);
     }
   } catch (error) {
     console.error('Error going to step:', error);
   }
 }
 
-// Nueva función para actualizar la barra de progreso según el tipo
-function updateProgressBar(step, tipoSolicitud) {
-  const progressFill = document.getElementById('form-progress');
-  const progressText = document.getElementById('progress-text');
-  
-  if (!progressFill || !progressText) return;
-  
-  let totalSteps, progressPercentage, stepText;
-  
-  if (tipoSolicitud === 'informacion') {
-    // Solo información: 1 paso
-    totalSteps = 1;
-    progressPercentage = 100;
-    stepText = 'Completado';
-  } else if (tipoSolicitud === 'anonimo') {
-    // Anónimo: 3 pasos (1, 3, 4)
-    const stepMapping = { 1: 1, 3: 2, 4: 3 };
-    totalSteps = 3;
-    const currentMappedStep = stepMapping[step] || step;
-    progressPercentage = (currentMappedStep / totalSteps) * 100;
-    stepText = `Paso ${currentMappedStep} de ${totalSteps}`;
-  } else {
-    // Identificado: 4 pasos completos
-    totalSteps = 4;
-    progressPercentage = (step / totalSteps) * 100;
-    stepText = `Paso ${step} de ${totalSteps}`;
-  }
-  
-  progressFill.style.width = `${progressPercentage}%`;
-  progressText.textContent = stepText;
-}
+// ================= MANEJO DE FORMULARIOS PRINCIPALES =================
 
-// ================= VALIDACIÓN DE PASOS =================
-
-function validateStep(step) {
+// Función collectFormData CORREGIDA
+function collectFormData() {
   try {
     const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
     
-    if (step === 1) {
-      // Validar tipo de solicitud
-      if (!tipoSolicitud) {
-        showNotification('Selecciona un tipo de solicitud', 'warning');
-        return false;
-      }
-      
-      // Validar campos según tipo
-      if (tipoSolicitud === 'anonimo') {
-        const phone = document.getElementById('anonymous-phone')?.value?.trim();
-        if (!phone) {
-          showNotification('Ingresa un teléfono de contacto', 'warning');
-          return false;
-        }
-        if (!validatePhoneNumberString(phone)) {
-          showNotification('Ingresa un teléfono válido', 'warning');
-          return false;
-        }
-      } else if (tipoSolicitud === 'informacion') {
-        const email = document.getElementById('info-email')?.value?.trim();
-        if (!email) {
-          showNotification('Ingresa un email para recibir información', 'warning');
-          return false;
-        }
-        if (!isValidEmail(email)) {
-          showNotification('Ingresa un email válido', 'warning');
-          return false;
-        }
-      }
-      
-      // Validar campos básicos (solo si no es solo información)
-      if (tipoSolicitud !== 'informacion') {
-        const edad = document.getElementById('patient-age')?.value;
-        const cesfam = document.getElementById('patient-cesfam')?.value;
-        const paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
-        
-        if (!edad || !cesfam || !paraMi) {
-          showNotification('Completa todos los campos obligatorios', 'warning');
-          return false;
-        }
-        
-        if (parseInt(edad) < 12 || parseInt(edad) > 120) {
-          showNotification('La edad debe estar entre 12 y 120 años', 'warning');
-          return false;
-        }
-      }
-      
-      return true;
+    if (!tipoSolicitud) {
+      throw new Error('Tipo de solicitud no seleccionado');
     }
     
-    if (step === 2) {
-      // Solo validar si es identificado
-      if (tipoSolicitud === 'identificado') {
-        const nombre = document.getElementById('patient-name')?.value?.trim();
-        const apellidos = document.getElementById('patient-lastname')?.value?.trim();
-        const rut = document.getElementById('patient-rut')?.value?.trim();
-        const telefono = document.getElementById('patient-phone')?.value?.trim();
-        
-        if (!nombre || !apellidos || !rut || !telefono) {
-          showNotification('Completa todos los datos personales', 'warning');
-          return false;
-        }
-        
-        if (!validateRUT(rut)) {
-          showNotification('RUT inválido', 'warning');
-          return false;
-        }
-        
-        if (!validatePhoneNumberString(telefono)) {
-          showNotification('Teléfono inválido', 'warning');
-          return false;
-        }
-      }
-      return true;
-    }
+    console.log('Tipo de solicitud:', tipoSolicitud);
     
-    if (step === 3) {
-      // Solo validar si no es solo información
-      if (tipoSolicitud !== 'informacion') {
-        const sustancias = document.querySelectorAll('input[name="sustancias"]:checked');
-        if (sustancias.length === 0) {
-          showNotification('Selecciona al menos una sustancia', 'warning');
-          return false;
-        }
-        
-        const urgencia = document.querySelector('input[name="urgencia"]:checked');
-        if (!urgencia) {
-          showNotification('Selecciona el nivel de urgencia', 'warning');
-          return false;
-        }
-        
-        const tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked');
-        if (!tratamientoPrevio) {
-          showNotification('Indica si has recibido tratamiento previo', 'warning');
-          return false;
-        }
-      }
-      return true;
+    const solicitudData = {
+      tipoSolicitud,
+      edad: parseInt(document.getElementById('patient-age')?.value) || null,
+      cesfam: document.getElementById('patient-cesfam')?.value || '',
+      paraMi: document.querySelector('input[name="paraMi"]:checked')?.value || '',
+      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+      estado: 'pendiente',
+      origen: 'web_publica',
+      version: '1.0'
+    };
+
+    // Datos de evaluación (solo si existen)
+    const sustanciasChecked = document.querySelectorAll('input[name="sustancias"]:checked');
+    if (sustanciasChecked.length > 0) {
+      solicitudData.sustancias = Array.from(sustanciasChecked).map(cb => cb.value);
     }
+
+    const tiempoConsumo = document.getElementById('tiempo-consumo')?.value;
+    if (tiempoConsumo) {
+      solicitudData.tiempoConsumo = tiempoConsumo;
+    }
+
+    const urgencia = document.querySelector('input[name="urgencia"]:checked')?.value;
+    if (urgencia) {
+      solicitudData.urgencia = urgencia;
+    }
+
+    const tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked')?.value;
+    if (tratamientoPrevio) {
+      solicitudData.tratamientoPrevio = tratamientoPrevio;
+    }
+
+    const descripcion = document.getElementById('patient-description')?.value?.trim();
+    if (descripcion) {
+      solicitudData.descripcion = descripcion;
+    }
+
+    const motivacion = document.getElementById('motivacion-range')?.value;
+    if (motivacion) {
+      solicitudData.motivacion = parseInt(motivacion);
+    }
+
+    // Datos específicos según tipo de solicitud
+    if (tipoSolicitud === 'identificado') {
+      const nombre = document.getElementById('patient-name')?.value?.trim();
+      const apellidos = document.getElementById('patient-lastname')?.value?.trim();
+      const rut = document.getElementById('patient-rut')?.value?.trim();
+      const telefono = document.getElementById('patient-phone')?.value?.trim();
+      const email = document.getElementById('patient-email')?.value?.trim();
+      const direccion = document.getElementById('patient-address')?.value?.trim();
+
+      if (nombre) solicitudData.nombre = nombre;
+      if (apellidos) solicitudData.apellidos = apellidos;
+      if (rut) solicitudData.rut = formatRUT(rut);
+      if (telefono) solicitudData.telefono = formatPhoneNumber(telefono);
+      if (email) solicitudData.email = email;
+      if (direccion) solicitudData.direccion = direccion;
+      
+    } else if (tipoSolicitud === 'anonimo') {
+      const telefono = document.getElementById('anonymous-phone')?.value?.trim();
+      if (telefono) {
+        solicitudData.telefono = formatPhoneNumber(telefono);
+      }
+      solicitudData.identificador = `ANONIMO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+    } else if (tipoSolicitud === 'informacion') {
+      const email = document.getElementById('info-email')?.value?.trim();
+      if (email) {
+        solicitudData.email = email;
+      }
+      solicitudData.identificador = `INFO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+
+    console.log('Datos recopilados exitosamente:', solicitudData);
+    return solicitudData;
     
-    return true;
   } catch (error) {
-    console.error('Error validating step:', error);
-    return false;
+    console.error('Error recopilando datos del formulario:', error);
+    throw new Error('Error recopilando datos del formulario: ' + error.message);
   }
 }
 
-function getFieldLabel(field) {
-  try {
-    const label = field.closest('.form-group')?.querySelector('label');
-    return label ? label.textContent.replace('*', '').trim() : 'Campo';
-  } catch (error) {
-    return 'Campo';
-  }
-}
-
-// ================= MANEJO DE ENVÍO DE FORMULARIOS =================
-
-// Función simplificada para envío directo (solo información)
-async function handlePatientFormSubmitSimplified() {
-  console.log('Enviando solicitud de solo información...');
-  
-  const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
-  
-  if (tipoSolicitud === 'informacion') {
-    const email = document.getElementById('info-email')?.value?.trim();
-    
-    if (!email) {
-      showNotification('Ingresa un email para recibir información', 'warning');
-      return;
-    }
-    
-    if (!isValidEmail(email)) {
-      showNotification('Ingresa un email válido', 'warning');
-      return;
-    }
-    
-    try {
-      const solicitudData = {
-        tipoSolicitud: 'informacion',
-        email: email,
-        fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
-        estado: 'pendiente',
-        origen: 'web_publica',
-        prioridad: 'baja',
-        identificador: `INFO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      };
-      
-      const docRef = await db.collection('solicitudes_ingreso').add(solicitudData);
-      console.log('Solicitud de información enviada:', docRef.id);
-      
-      closeModal('patient-modal');
-      resetForm();
-      showNotification('Solicitud de información enviada. Te contactaremos por email.', 'success', 5000);
-      
-    } catch (error) {
-      console.error('Error enviando solicitud de información:', error);
-      showNotification('Error al enviar solicitud: ' + error.message, 'error');
-    }
-  }
-}
-
-// Función principal de envío del formulario
+// Función handlePatientFormSubmit CORREGIDA
 async function handlePatientFormSubmit(e) {
   e.preventDefault();
-  console.log('Iniciando envío de solicitud...');
+  console.log('🔄 Iniciando envío de solicitud...');
   
-  const submitBtn = document.getElementById('submit-form');
   const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
-  
-  // Si es solo información, usar la función simplificada
-  if (tipoSolicitud === 'informacion') {
-    return handlePatientFormSubmitSimplified();
-  }
+  const submitBtn = document.getElementById('submit-form');
   
   try {
     toggleSubmitButton(submitBtn, true);
     
-    // Validar según el tipo
-    if (!validateFinalForm(tipoSolicitud)) {
+    // Validación básica mejorada
+    if (!tipoSolicitud) {
+      showNotification('Selecciona un tipo de solicitud', 'warning');
       return;
     }
+
+    // Validar campos específicos según tipo de solicitud
+    if (tipoSolicitud === 'anonimo') {
+      const phone = document.getElementById('anonymous-phone')?.value?.trim();
+      if (!phone) {
+        showNotification('Ingresa un teléfono de contacto', 'warning');
+        return;
+      }
+    } else if (tipoSolicitud === 'informacion') {
+      const email = document.getElementById('info-email')?.value?.trim();
+      if (!email) {
+        showNotification('Ingresa un email para recibir información', 'warning');
+        return;
+      }
+    }
+
+    // Validar campos básicos
+    const edad = document.getElementById('patient-age')?.value;
+    const cesfam = document.getElementById('patient-cesfam')?.value;
+    const paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
     
-    // Recopilar datos
-    const solicitudData = collectFormDataByType(tipoSolicitud);
-    console.log('Datos recopilados:', solicitudData);
+    if (!edad || !cesfam || !paraMi) {
+      showNotification('Completa todos los campos obligatorios', 'warning');
+      return;
+    }
+
+    // Recopilar datos del formulario
+    const solicitudData = collectFormData();
+    console.log('📋 Datos recopilados:', solicitudData);
     
     // Calcular prioridad
     solicitudData.prioridad = calculatePriority(solicitudData);
-    console.log('Prioridad calculada:', solicitudData.prioridad);
+    console.log('⚡ Prioridad calculada:', solicitudData.prioridad);
     
     // Verificar conexión a Firebase
     if (!db) {
       throw new Error('No hay conexión a Firebase');
     }
     
-    // Guardar en Firebase
-    const docRef = await retryOperation(async () => {
-      return await db.collection('solicitudes_ingreso').add(solicitudData);
-    });
+    console.log('💾 Guardando en Firestore...');
     
-    console.log('Solicitud guardada con ID:', docRef.id);
+    // Guardar en Firestore con manejo de errores detallado
+    const docRef = await db.collection('solicitudes_ingreso').add(solicitudData);
+    console.log('✅ Solicitud guardada con ID:', docRef.id);
     
-    // Crear alerta crítica si es necesario
+    // Si es crítica, crear alerta
     if (solicitudData.prioridad === 'critica') {
       try {
         await createCriticalAlert(solicitudData, docRef.id);
-        console.log('Alerta crítica creada');
+        console.log('🚨 Alerta crítica creada');
       } catch (alertError) {
-        console.warn('Error creando alerta crítica:', alertError);
+        console.warn('⚠️ Error creando alerta crítica:', alertError);
+        // No fallar la solicitud principal por esto
       }
     }
     
-    // Limpiar y cerrar
+    // Limpiar draft guardado
     localStorage.removeItem('senda_form_draft');
+    
     closeModal('patient-modal');
     resetForm();
     
-    // Mensaje de éxito
-    const successMessage = tipoSolicitud === 'anonimo' 
-      ? 'Solicitud anónima enviada. Te contactaremos al número proporcionado.'
-      : 'Solicitud enviada correctamente. Te contactaremos pronto.';
+    // Mensaje de éxito personalizado según tipo
+    let successMessage = 'Solicitud enviada correctamente. ';
+    if (tipoSolicitud === 'anonimo') {
+      successMessage += 'Te contactaremos al número proporcionado.';
+    } else if (tipoSolicitud === 'informacion') {
+      successMessage += 'Te enviaremos la información por email.';
+    } else {
+      successMessage += 'Te contactaremos pronto para coordinar una cita.';
+    }
     
     showNotification(successMessage, 'success', 6000);
-    console.log('Proceso completado exitosamente');
+    console.log('🎉 Proceso completado exitosamente');
     
   } catch (error) {
-    console.error('Error enviando solicitud:', error);
+    console.error('❌ Error enviando solicitud:', error);
     
     let errorMessage = 'Error al enviar la solicitud: ';
     if (error.code === 'permission-denied') {
@@ -2056,7 +2091,7 @@ async function handlePatientFormSubmit(e) {
     } else if (error.code === 'network-request-failed') {
       errorMessage += 'Problema de conexión. Verifica tu internet.';
     } else {
-      errorMessage += error.message || 'Intenta nuevamente.';
+      errorMessage += error.message || 'Intenta nuevamente en unos momentos.';
     }
     
     showNotification(errorMessage, 'error', 8000);
@@ -2065,97 +2100,10 @@ async function handlePatientFormSubmit(e) {
   }
 }
 
-// Función para validar el formulario final
-function validateFinalForm(tipoSolicitud) {
-  if (tipoSolicitud === 'anonimo') {
-    const phone = document.getElementById('anonymous-phone')?.value?.trim();
-    const edad = document.getElementById('patient-age')?.value;
-    const cesfam = document.getElementById('patient-cesfam')?.value;
-    const sustancias = document.querySelectorAll('input[name="sustancias"]:checked');
-    
-    if (!phone || !edad || !cesfam || sustancias.length === 0) {
-      showNotification('Completa todos los campos obligatorios', 'warning');
-      return false;
-    }
-  } else if (tipoSolicitud === 'identificado') {
-    // Validar todos los campos
-    const requiredFields = [
-      'patient-name', 'patient-lastname', 'patient-rut', 'patient-phone',
-      'patient-age', 'patient-cesfam'
-    ];
-    
-    for (const fieldId of requiredFields) {
-      const field = document.getElementById(fieldId);
-      if (!field?.value?.trim()) {
-        showNotification('Completa todos los campos obligatorios', 'warning');
-        return false;
-      }
-    }
-    
-    const sustancias = document.querySelectorAll('input[name="sustancias"]:checked');
-    if (sustancias.length === 0) {
-      showNotification('Selecciona al menos una sustancia', 'warning');
-      return false;
-    }
-  }
-  
-  return true;
-}
-
-// Función para recopilar datos según el tipo
-function collectFormDataByType(tipoSolicitud) {
-  const baseData = {
-    tipoSolicitud,
-    fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
-    estado: 'pendiente',
-    origen: 'web_publica',
-    version: '1.0'
-  };
-  
-  if (tipoSolicitud === 'anonimo') {
-    return {
-      ...baseData,
-      telefono: formatPhoneNumber(document.getElementById('anonymous-phone').value),
-      edad: parseInt(document.getElementById('patient-age').value),
-      cesfam: document.getElementById('patient-cesfam').value,
-      paraMi: document.querySelector('input[name="paraMi"]:checked')?.value,
-      sustancias: Array.from(document.querySelectorAll('input[name="sustancias"]:checked')).map(cb => cb.value),
-      tiempoConsumo: document.getElementById('tiempo-consumo')?.value,
-      urgencia: document.querySelector('input[name="urgencia"]:checked')?.value,
-      tratamientoPrevio: document.querySelector('input[name="tratamientoPrevio"]:checked')?.value,
-      descripcion: document.getElementById('patient-description')?.value?.trim(),
-      motivacion: parseInt(document.getElementById('motivacion-range')?.value),
-      identificador: `ANONIMO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    };
-  } else if (tipoSolicitud === 'identificado') {
-    return {
-      ...baseData,
-      nombre: document.getElementById('patient-name').value.trim(),
-      apellidos: document.getElementById('patient-lastname').value.trim(),
-      rut: formatRUT(document.getElementById('patient-rut').value),
-      telefono: formatPhoneNumber(document.getElementById('patient-phone').value),
-      email: document.getElementById('patient-email')?.value?.trim(),
-      direccion: document.getElementById('patient-address')?.value?.trim(),
-      edad: parseInt(document.getElementById('patient-age').value),
-      cesfam: document.getElementById('patient-cesfam').value,
-      paraMi: document.querySelector('input[name="paraMi"]:checked')?.value,
-      sustancias: Array.from(document.querySelectorAll('input[name="sustancias"]:checked')).map(cb => cb.value),
-      tiempoConsumo: document.getElementById('tiempo-consumo')?.value,
-      urgencia: document.querySelector('input[name="urgencia"]:checked')?.value,
-      tratamientoPrevio: document.querySelector('input[name="tratamientoPrevio"]:checked')?.value,
-      descripcion: document.getElementById('patient-description')?.value?.trim(),
-      motivacion: parseInt(document.getElementById('motivacion-range')?.value)
-    };
-  }
-  
-  return baseData;
-}
-
-// ================= FORMULARIO DE REINGRESO =================
-
+// Función handleReentrySubmit CORREGIDA
 async function handleReentrySubmit(e) {
   e.preventDefault();
-  console.log('Iniciando envío de reingreso...');
+  console.log('🔄 Iniciando envío de reingreso...');
   
   const formData = {
     nombre: document.getElementById('reentry-name')?.value?.trim() || '',
@@ -2165,7 +2113,7 @@ async function handleReentrySubmit(e) {
     telefono: document.getElementById('reentry-phone')?.value?.trim() || ''
   };
   
-  console.log('Datos del reingreso:', formData);
+  console.log('📋 Datos del reingreso:', formData);
   
   const submitBtn = e.target.querySelector('button[type="submit"]');
   
@@ -2205,7 +2153,7 @@ async function handleReentrySubmit(e) {
       throw new Error('No hay conexión a Firebase');
     }
     
-    console.log('Verificando reingresos existentes...');
+    console.log('🔍 Verificando reingresos existentes...');
     
     // Verificar si ya existe una solicitud de reingreso pendiente (más flexible)
     const rutFormatted = formatRUT(formData.rut);
@@ -2220,7 +2168,7 @@ async function handleReentrySubmit(e) {
         return;
       }
     } catch (queryError) {
-      console.warn('Error verificando reingresos existentes:', queryError);
+      console.warn('⚠️ Error verificando reingresos existentes:', queryError);
       // Continuar de todas formas si es solo un problema de consulta
     }
     
@@ -2238,17 +2186,17 @@ async function handleReentrySubmit(e) {
       version: '1.0'
     };
 
-    console.log('Guardando reingreso en Firestore...');
+    console.log('💾 Guardando reingreso en Firestore...');
     const docRef = await db.collection('reingresos').add(reingresoData);
-    console.log('Reingreso guardado con ID:', docRef.id);
+    console.log('✅ Reingreso guardado con ID:', docRef.id);
     
     closeModal('reentry-modal');
     e.target.reset();
     showNotification('Solicitud de reingreso enviada correctamente. Te contactaremos pronto.', 'success', 5000);
-    console.log('Reingreso completado exitosamente');
+    console.log('🎉 Reingreso completado exitosamente');
     
   } catch (error) {
-    console.error('Error enviando reingreso:', error);
+    console.error('❌ Error enviando reingreso:', error);
     
     let errorMessage = 'Error al enviar la solicitud de reingreso: ';
     if (error.code === 'permission-denied') {
@@ -2289,10 +2237,10 @@ async function createCriticalAlert(solicitudData, solicitudId) {
     await db.collection('alertas_criticas').add(alertData);
     
     if (APP_CONFIG.DEBUG_MODE) {
-      console.log('Alerta crítica creada para solicitud:', solicitudId);
+      console.log('🚨 Alerta crítica creada para solicitud:', solicitudId);
     }
   } catch (error) {
-    console.error('Error creando alerta crítica:', error);
+    console.error('❌ Error creando alerta crítica:', error);
     // No fallar la solicitud principal por esto
   }
 }
@@ -2328,23 +2276,16 @@ function resetForm() {
       form.querySelectorAll('.field-error').forEach(error => {
         error.remove();
       });
-      
-      // Resetear botón del paso 1
-      const nextBtn = document.getElementById('next-step-1');
-      if (nextBtn) {
-        nextBtn.textContent = 'Siguiente';
-        nextBtn.style.background = '';
-      }
     }
     
     isDraftSaved = false;
     localStorage.removeItem('senda_form_draft');
     
     if (APP_CONFIG.DEBUG_MODE) {
-      console.log('Formulario reseteado');
+      console.log('🔧 Formulario reseteado');
     }
   } catch (error) {
-    console.error('Error reseteando formulario:', error);
+    console.error('❌ Error reseteando formulario:', error);
   }
 }
 // ================= PARTE 3 FINAL: GESTIÓN DE DATOS Y FUNCIONES AUXILIARES =================
