@@ -87,7 +87,7 @@ function closeModal(modalId) {
     if (['request-detail-modal', 'patient-detail-modal', 'patient-history-modal', 
          'patient-report-preview-modal', 'followup-note-modal', 'new-appointment-modal', 
          'day-appointments-modal', 'assignment-modal', 'regional-stats-modal',
-         'cesfam-stats-modal'].includes(modalId)) {
+         'cesfam-stats-modal', 'reentry-modal', 'patient-search-modal'].includes(modalId)) {
       modal.remove();
     }
   }
@@ -181,6 +181,43 @@ function formatDate(timestamp) {
   });
 }
 
+function formatDateOnly(timestamp) {
+  if (!timestamp) return 'N/A';
+  
+  let date;
+  if (timestamp.toDate) {
+    date = timestamp.toDate();
+  } else if (timestamp instanceof Date) {
+    date = timestamp;
+  } else {
+    date = new Date(timestamp);
+  }
+  
+  return date.toLocaleDateString('es-CL', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+}
+
+function formatTimeOnly(timestamp) {
+  if (!timestamp) return 'N/A';
+  
+  let date;
+  if (timestamp.toDate) {
+    date = timestamp.toDate();
+  } else if (timestamp instanceof Date) {
+    date = timestamp;
+  } else {
+    date = new Date(timestamp);
+  }
+  
+  return date.toLocaleTimeString('es-CL', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
 function calculatePriority(evaluationData) {
   let score = 0;
   
@@ -230,13 +267,41 @@ function initializeApp() {
     const mainTitle = document.getElementById('main-title');
     if (mainTitle) mainTitle.textContent = "PROGRAMA SENDA PUENTE ALTO";
 
+    // Crear overlay de loading si no existe
+    if (!document.getElementById('loading-overlay')) {
+      const loadingOverlay = document.createElement('div');
+      loadingOverlay.id = 'loading-overlay';
+      loadingOverlay.className = 'loading-overlay hidden';
+      loadingOverlay.innerHTML = `
+        <div class="loading-spinner">
+          <div class="spinner"></div>
+          <p>Cargando...</p>
+        </div>
+      `;
+      document.body.appendChild(loadingOverlay);
+    }
+
+    // Crear contenedor de notificaciones si no existe
+    if (!document.getElementById('notifications')) {
+      const notificationsContainer = document.createElement('div');
+      notificationsContainer.id = 'notifications';
+      notificationsContainer.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        pointer-events: none;
+      `;
+      document.body.appendChild(notificationsContainer);
+    }
+
     initializeEventListeners();
     setupFormValidation();
     setupMultiStepForm();
     setupModalControls();
     setupTabFunctionality();
     loadDraftIfExists();
-    loadCesfamData(); // Cambiado de loadRegionsData
+    loadCesfamData();
     setupEmailValidation();
     
     console.log('SENDA Platform initialized successfully');
@@ -268,7 +333,6 @@ function setupEmailValidation() {
   }
 }
 
-// FUNCIÓN CORREGIDA - Cargar CESFAM en lugar de regiones
 function loadCesfamData() {
   const cesfamSelect = document.getElementById('patient-cesfam');
   if (cesfamSelect) {
@@ -320,16 +384,10 @@ function initializeEventListeners() {
     });
   }
 
+  // EVENTO REINGRESO ACTUALIZADO
   if (reentryBtn) {
     reentryBtn.addEventListener('click', () => {
-      formData = { isReentry: true };
-      currentFormStep = 1;
-      currentStepIndex = 0;
-      flowSteps = [1];
-      isDraftSaved = false;
-      showModal('patient-modal');
-      updateFormProgress();
-      showNotification('Formulario de reingreso activado', 'info');
+      showReentryModal();
     });
   }
 
@@ -360,141 +418,77 @@ function initializeEventListeners() {
   }
 }
 
-function setupModalControls() {
-  document.querySelectorAll('[data-close]').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-      const modalId = e.target.closest('[data-close]').dataset.close;
-      closeModal(modalId);
-    });
-  });
-}
+// ================= FUNCIÓN DE REINGRESO =================
 
-function setupTabFunctionality() {
-  document.querySelectorAll('.tab-button').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const tabGroup = btn.closest('.tabs');
-      const targetTab = btn.dataset.tab;
-      
-      if (tabGroup) {
-        tabGroup.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-        tabGroup.parentElement.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+function showReentryModal() {
+  const modalHTML = `
+    <div class="modal-overlay" id="reentry-modal">
+      <div class="modal">
+        <button class="modal-close" onclick="closeModal('reentry-modal')">
+          <i class="fas fa-times"></i>
+        </button>
+        <h2>Solicitud de Reingreso</h2>
+        <p style="margin-bottom: 24px; color: var(--gray-600);">
+          Complete los siguientes datos para solicitar su reingreso al programa SENDA.
+        </p>
         
-        btn.classList.add('active');
-        const tabContent = document.getElementById(targetTab + '-tab');
-        if (tabContent) {
-          tabContent.classList.add('active');
-        }
-      }
-    });
-  });
-}
-
-function setupMultiStepForm() {
-  const motivacionSlider = document.getElementById('motivacion');
-  const motivacionValue = document.getElementById('motivacion-value');
+        <form id="reentry-form">
+          <div class="form-group">
+            <label class="form-label">Nombre Completo *</label>
+            <input type="text" class="form-input" id="reentry-name" required>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">RUT *</label>
+            <input type="text" class="form-input" id="reentry-rut" placeholder="12.345.678-9" required>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">CESFAM *</label>
+            <select class="form-select" id="reentry-cesfam" required>
+              <option value="">Seleccionar CESFAM...</option>
+              ${cesfamPuenteAlto.map(cesfam => `<option value="${cesfam}">${cesfam}</option>`).join('')}
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Teléfono de Contacto *</label>
+            <input type="tel" class="form-input" id="reentry-phone" placeholder="+56 9 1234 5678" required>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-input" id="reentry-email" placeholder="correo@email.com">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Motivo del Reingreso *</label>
+            <textarea class="form-textarea" id="reentry-reason" placeholder="Explique brevemente el motivo de su solicitud de reingreso..." required></textarea>
+          </div>
+          
+          <div class="form-navigation" style="margin-top: 24px;">
+            <button type="button" class="btn btn-outline" onclick="closeModal('reentry-modal')">
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-success">
+              <i class="fas fa-paper-plane"></i>
+              Enviar Solicitud
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
   
-  if (motivacionSlider && motivacionValue) {
-    motivacionSlider.addEventListener('input', function() {
-      motivacionValue.textContent = this.value;
-    });
-  }
-
-  const tipoSolicitudInputs = document.querySelectorAll('input[name="tipoSolicitud"]');
-  tipoSolicitudInputs.forEach(input => {
-    input.addEventListener('change', function() {
-      const tipoSolicitud = this.value;
-      handleTipoSolicitudChange(tipoSolicitud);
-    });
-  });
-}
-
-function handleTipoSolicitudChange(tipoSolicitud) {
-  const phoneContainer = document.getElementById('anonymous-phone-container');
-  const emailContainer = document.getElementById('info-email-container');
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  document.getElementById('reentry-modal').style.display = 'flex';
   
-  if (phoneContainer) phoneContainer.style.display = 'none';
-  if (emailContainer) emailContainer.style.display = 'none';
-  
-  switch(tipoSolicitud) {
-    case 'anonimo':
-      flowSteps = [1, 3, 4];
-      if (phoneContainer) phoneContainer.style.display = 'block';
-      break;
-      
-    case 'identificado':
-      flowSteps = [1, 2, 3, 4];
-      break;
-      
-    case 'informacion':
-      flowSteps = [1];
-      if (emailContainer) emailContainer.style.display = 'block';
-      break;
-  }
-  
-  updateFormProgress();
-}
-
-function updateFormProgress() {
-  const progressFill = document.getElementById('form-progress');
-  const progressText = document.getElementById('progress-text');
-  
-  const totalSteps = flowSteps.length;
-  const currentStepInFlow = currentStepIndex + 1;
-  const progress = (currentStepInFlow / totalSteps) * 100;
-  
-  if (progressFill) progressFill.style.width = progress + '%';
-  if (progressText) progressText.textContent = `Paso ${currentStepInFlow} de ${totalSteps}`;
-  
-  const prevBtn = document.getElementById('prev-step');
-  const nextBtn = document.getElementById('next-step');
-  const submitBtn = document.getElementById('submit-form');
-  
-  if (prevBtn) prevBtn.style.display = currentStepIndex > 0 ? 'block' : 'none';
-  if (nextBtn) nextBtn.style.display = currentStepIndex < flowSteps.length - 1 ? 'block' : 'none';
-  if (submitBtn) submitBtn.style.display = currentStepIndex === flowSteps.length - 1 ? 'block' : 'none';
-}
-
-function nextFormStep() {
-  if (validateCurrentStep()) {
-    collectCurrentStepData();
-    
-    if (currentStepIndex < flowSteps.length - 1) {
-      const currentStepNumber = flowSteps[currentStepIndex];
-      document.querySelector(`[data-step="${currentStepNumber}"]`).classList.remove('active');
-      
-      currentStepIndex++;
-      const nextStepNumber = flowSteps[currentStepIndex];
-      currentFormStep = nextStepNumber;
-      
-      document.querySelector(`[data-step="${nextStepNumber}"]`).classList.add('active');
-      updateFormProgress();
-      
-      saveDraft(false);
-    }
-  }
-}
-
-function prevFormStep() {
-  if (currentStepIndex > 0) {
-    const currentStepNumber = flowSteps[currentStepIndex];
-    document.querySelector(`[data-step="${currentStepNumber}"]`).classList.remove('active');
-    
-    currentStepIndex--;
-    const prevStepNumber = flowSteps[currentStepIndex];
-    currentFormStep = prevStepNumber;
-    
-    document.querySelector(`[data-step="${prevStepNumber}"]`).classList.add('active');
-    updateFormProgress();
-  }
-}
-
-function setupFormValidation() {
-  const rutInput = document.getElementById('patient-rut');
+  // Configurar validación de RUT
+  const rutInput = document.getElementById('reentry-rut');
   if (rutInput) {
     rutInput.addEventListener('input', function(e) {
       e.target.value = formatRUT(e.target.value);
     });
-
     rutInput.addEventListener('blur', function(e) {
       const rut = e.target.value.trim();
       if (rut && !validateRUT(rut)) {
@@ -505,423 +499,95 @@ function setupFormValidation() {
       }
     });
   }
-
-  const phoneInputs = document.querySelectorAll('#patient-phone, #anonymous-phone');
-  phoneInputs.forEach(input => {
-    input.addEventListener('input', function(e) {
+  
+  // Configurar formateo de teléfono
+  const phoneInput = document.getElementById('reentry-phone');
+  if (phoneInput) {
+    phoneInput.addEventListener('input', function(e) {
       e.target.value = formatPhoneNumber(e.target.value);
     });
-  });
-
-  const emailInputs = document.querySelectorAll('input[type="email"]');
-  emailInputs.forEach(input => {
-    input.addEventListener('blur', function(e) {
-      const email = e.target.value.trim();
-      if (email && !isValidEmail(email)) {
-        e.target.classList.add('error');
-        showNotification('Por favor ingresa un correo electrónico válido', 'error');
-      } else {
-        e.target.classList.remove('error');
-      }
-    });
-  });
-
-  const ageInput = document.getElementById('patient-age');
-  if (ageInput) {
-    ageInput.addEventListener('blur', function(e) {
-      const age = parseInt(e.target.value);
-      if (age && (age < 12 || age > 120)) {
-        e.target.classList.add('error');
-        showNotification('Por favor ingresa una edad válida (12-120 años)', 'error');
-      } else {
-        e.target.classList.remove('error');
-      }
-    });
   }
+  
+  // Manejar envío del formulario
+  document.getElementById('reentry-form').addEventListener('submit', handleReentrySubmission);
 }
 
-// ================= VALIDACIÓN Y MANEJO DE FORMULARIOS =================
-
-function validateCurrentStep() {
-  const currentStepElement = document.querySelector(`[data-step="${currentFormStep}"]`);
-  const requiredFields = currentStepElement.querySelectorAll('[required]:not([style*="display: none"] [required])');
-  let isValid = true;
+async function handleReentrySubmission(e) {
+  e.preventDefault();
   
-  requiredFields.forEach(field => {
-    if (field.offsetParent === null) return;
-    
-    if (!field.value.trim()) {
-      field.classList.add('error');
-      isValid = false;
-    } else {
-      field.classList.remove('error');
-    }
-  });
+  const name = document.getElementById('reentry-name').value.trim();
+  const rut = document.getElementById('reentry-rut').value.trim();
+  const cesfam = document.getElementById('reentry-cesfam').value;
+  const phone = document.getElementById('reentry-phone').value.trim();
+  const email = document.getElementById('reentry-email').value.trim();
+  const reason = document.getElementById('reentry-reason').value.trim();
   
-  if (currentFormStep === 1) {
-    isValid = validateStep1() && isValid;
-  } else if (currentFormStep === 2) {
-    isValid = validateStep2() && isValid;
-  } else if (currentFormStep === 3) {
-    isValid = validateStep3() && isValid;
+  // Validaciones
+  if (!name || !rut || !cesfam || !phone || !reason) {
+    showNotification('Por favor complete todos los campos obligatorios', 'error');
+    return;
   }
   
-  if (!isValid) {
-    showNotification('Por favor corrige los errores antes de continuar', 'error');
-  }
-  
-  return isValid;
-}
-
-function validateStep1() {
-  const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked');
-  const paraMi = document.querySelector('input[name="paraMi"]:checked');
-  
-  if (!tipoSolicitud || !paraMi) {
-    showNotification('Por favor completa todos los campos obligatorios', 'error');
-    return false;
-  }
-  
-  if (tipoSolicitud.value === 'anonimo') {
-    const phone = document.getElementById('anonymous-phone')?.value;
-    if (!phone) {
-      showNotification('Por favor ingresa un teléfono de contacto', 'error');
-      return false;
-    }
-  }
-  
-  if (tipoSolicitud.value === 'informacion') {
-    const email = document.getElementById('info-email')?.value;
-    if (!email || !isValidEmail(email)) {
-      showNotification('Por favor ingresa un email válido', 'error');
-      return false;
-    }
-  }
-  
-  return true;
-}
-
-function validateStep2() {
-  if (formData.tipoSolicitud !== 'identificado') return true;
-  
-  const rut = document.getElementById('patient-rut')?.value;
-  const email = document.getElementById('patient-email')?.value;
-  
-  if (rut && !validateRUT(rut)) {
+  if (!validateRUT(rut)) {
     showNotification('El RUT ingresado no es válido', 'error');
-    return false;
+    return;
   }
   
   if (email && !isValidEmail(email)) {
     showNotification('El email ingresado no es válido', 'error');
-    return false;
+    return;
   }
-  
-  return true;
-}
-
-function validateStep3() {
-  if (formData.tipoSolicitud !== 'informacion') {
-    const sustancias = document.querySelectorAll('input[name="sustancias"]:checked');
-    if (sustancias.length === 0) {
-      showNotification('Por favor selecciona al menos una sustancia', 'error');
-      return false;
-    }
-  }
-  
-  return true;
-}
-
-function collectCurrentStepData() {
-  if (currentFormStep === 1) {
-    formData.tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
-    formData.edad = document.getElementById('patient-age').value;
-    formData.cesfam = document.getElementById('patient-cesfam')?.value; // Cambiado de región
-    formData.paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
-    
-    if (formData.tipoSolicitud === 'anonimo') {
-      formData.telefonoContacto = document.getElementById('anonymous-phone')?.value;
-    }
-    
-    if (formData.tipoSolicitud === 'informacion') {
-      formData.emailInformacion = document.getElementById('info-email')?.value;
-    }
-  }
-  
-  if (currentFormStep === 2 && formData.tipoSolicitud === 'identificado') {
-    formData.nombre = document.getElementById('patient-name').value;
-    formData.apellido = document.getElementById('patient-lastname').value;
-    formData.rut = document.getElementById('patient-rut').value;
-    formData.telefono = document.getElementById('patient-phone').value;
-    formData.email = document.getElementById('patient-email').value;
-    formData.direccion = document.getElementById('patient-address').value;
-  }
-  
-  if (currentFormStep === 3) {
-    if (formData.tipoSolicitud !== 'informacion') {
-      const sustancias = Array.from(document.querySelectorAll('input[name="sustancias"]:checked'))
-        .map(cb => cb.value);
-      formData.sustancias = sustancias;
-      formData.tiempoConsumo = document.getElementById('tiempo-consumo').value;
-      formData.motivacion = document.getElementById('motivacion').value;
-      formData.urgencia = document.querySelector('input[name="urgencia"]:checked')?.value;
-    }
-  }
-  
-  if (currentFormStep === 4) {
-    formData.razon = document.getElementById('patient-reason').value;
-    formData.tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked')?.value;
-    formData.centroPreferencia = document.getElementById('centro-preferencia').value;
-  }
-}
-
-function saveDraft(showMessage = true) {
-  collectCurrentStepData();
-  
-  const draftData = {
-    ...formData,
-    currentStep: currentFormStep,
-    currentStepIndex: currentStepIndex,
-    flowSteps: flowSteps,
-    timestamp: new Date().toISOString()
-  };
-  
-  localStorage.setItem('senda_draft', JSON.stringify(draftData));
-  isDraftSaved = true;
-  
-  if (showMessage) {
-    showNotification('Borrador guardado correctamente', 'success', 2000);
-  }
-}
-
-function loadDraftIfExists() {
-  const draft = localStorage.getItem('senda_draft');
-  if (draft) {
-    try {
-      const draftData = JSON.parse(draft);
-      const draftAge = new Date() - new Date(draftData.timestamp);
-      
-      if (draftAge < 24 * 60 * 60 * 1000) {
-        const loadDraft = confirm('Se encontró un borrador guardado. ¿Deseas continuar donde lo dejaste?');
-        if (loadDraft) {
-          formData = draftData;
-          currentFormStep = draftData.currentStep || 1;
-          currentStepIndex = draftData.currentStepIndex || 0;
-          flowSteps = draftData.flowSteps || [1];
-          restoreFormData();
-          isDraftSaved = true;
-        } else {
-          localStorage.removeItem('senda_draft');
-        }
-      } else {
-        localStorage.removeItem('senda_draft');
-      }
-    } catch (error) {
-      console.error('Error loading draft:', error);
-      localStorage.removeItem('senda_draft');
-    }
-  }
-}
-
-function restoreFormData() {
-  Object.keys(formData).forEach(key => {
-    const element = document.getElementById(`patient-${key}`) || 
-                   document.querySelector(`input[name="${key}"]`) ||
-                   document.querySelector(`select[name="${key}"]`);
-    
-    if (element && formData[key]) {
-      if (element.type === 'radio' || element.type === 'checkbox') {
-        if (Array.isArray(formData[key])) {
-          formData[key].forEach(value => {
-            const checkbox = document.querySelector(`input[name="${key}"][value="${value}"]`);
-            if (checkbox) checkbox.checked = true;
-          });
-        } else {
-          const radio = document.querySelector(`input[name="${key}"][value="${formData[key]}"]`);
-          if (radio) radio.checked = true;
-        }
-      } else {
-        element.value = formData[key];
-      }
-    }
-  });
-  
-  if (formData.tipoSolicitud) {
-    handleTipoSolicitudChange(formData.tipoSolicitud);
-  }
-  
-  document.querySelectorAll('.form-step').forEach(step => step.classList.remove('active'));
-  document.querySelector(`[data-step="${currentFormStep}"]`)?.classList.add('active');
-  
-  updateFormProgress();
-}
-
-function submitPatientForm() {
-  if (validateCurrentStep()) {
-    collectCurrentStepData();
-    handlePatientRegistration();
-  }
-}
-
-function resetForm() {
-  formData = {};
-  currentFormStep = 1;
-  currentStepIndex = 0;
-  flowSteps = [1];
-  isDraftSaved = false;
-  
-  const form = document.getElementById('patient-form');
-  if (form) {
-    form.reset();
-    
-    document.querySelectorAll('.form-step').forEach((step, index) => {
-      step.classList.toggle('active', index === 0);
-    });
-    
-    const phoneContainer = document.getElementById('anonymous-phone-container');
-    const emailContainer = document.getElementById('info-email-container');
-    if (phoneContainer) phoneContainer.style.display = 'none';
-    if (emailContainer) emailContainer.style.display = 'none';
-    
-    updateFormProgress();
-  }
-}
-
-async function handlePatientRegistration(e) {
-  if (e) e.preventDefault();
-  
-  showLoading(true);
   
   try {
-    const prioridad = calculatePriority(formData);
+    showLoading(true);
     
-    const solicitudData = {
-      clasificacion: {
-        tipo: formData.isReentry ? 'reingreso' : 'ingreso_voluntario',
-        estado: 'pendiente',
-        prioridad: prioridad,
-        categoria_riesgo: prioridad === 'critica' ? 'extremo' : 
-                         prioridad === 'alta' ? 'alto' : 
-                         prioridad === 'media' ? 'moderado' : 'bajo'
-      },
-      
+    // Crear solicitud de reingreso en Firebase
+    const reentryData = {
+      tipo_solicitud: 'reingreso',
       datos_personales: {
-        anonimo: formData.tipoSolicitud === 'anonimo',
-        solo_informacion: formData.tipoSolicitud === 'informacion',
-        edad: parseInt(formData.edad),
-        genero: 'no_especificado',
-        cesfam: formData.cesfam || 'sin_especificar', // Cambiado de región
-        situacion_laboral: 'no_especificada',
-        para_quien: formData.paraMi
+        nombre_completo: name,
+        rut: rut,
+        cesfam: cesfam
       },
-      
-      datos_contacto: {},
-      
-      evaluacion_inicial: formData.tipoSolicitud !== 'informacion' ? {
-        sustancias_consumo: formData.sustancias || [],
-        tiempo_consumo_meses: parseInt(formData.tiempoConsumo) || 0,
-        motivacion_cambio: parseInt(formData.motivacion) || 5,
-        urgencia_declarada: formData.urgencia || 'no_especificada',
-        tratamiento_previo: formData.tratamientoPrevio || 'no',
-        descripcion_situacion: formData.razon || ''
-      } : null,
-      
-      derivacion: {
-        id_centro_preferido: formData.centroPreferencia || null,
-        fecha_solicitud: firebase.firestore.FieldValue.serverTimestamp()
+      datos_contacto: {
+        telefono_principal: phone,
+        email: email || null
       },
-      
+      reingreso: {
+        motivo: reason,
+        fecha_solicitud: firebase.firestore.FieldValue.serverTimestamp(),
+        estado: 'pendiente'
+      },
+      clasificacion: {
+        tipo: 'reingreso',
+        estado: 'pendiente',
+        prioridad: 'media',
+        categoria_riesgo: 'moderado'
+      },
       metadata: {
         fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
+        canal_ingreso: 'web_reingreso',
         ip_origen: 'anonimizada',
-        dispositivo_usado: navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop',
-        canal_ingreso: 'web_publica'
+        dispositivo_usado: navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop'
       }
     };
     
-    if (formData.tipoSolicitud === 'identificado') {
-      solicitudData.datos_contacto = {
-        telefono_principal: formData.telefono,
-        email: formData.email,
-        direccion: formData.direccion,
-        nombre_completo: `${formData.nombre} ${formData.apellido}`,
-        rut: formData.rut
-      };
-    } else if (formData.tipoSolicitud === 'anonimo') {
-      solicitudData.datos_contacto = {
-        telefono_principal: formData.telefonoContacto,
-        es_anonimo: true
-      };
-    } else if (formData.tipoSolicitud === 'informacion') {
-      solicitudData.datos_contacto = {
-        email: formData.emailInformacion,
-        solo_informacion: true
-      };
-    }
-
-    const docRef = await db.collection('solicitudes_ingreso').add(solicitudData);
+    const docRef = await db.collection('solicitudes_ingreso').add(reentryData);
     
-    if (prioridad === 'critica') {
-      await createCriticalCaseAlert(docRef.id, solicitudData);
-    }
+    showNotification('Solicitud de reingreso enviada correctamente. Se le contactará pronto.', 'success', 6000);
+    closeModal('reentry-modal');
     
-    localStorage.removeItem('senda_draft');
-    isDraftSaved = false;
-    
-    showSuccessMessage(docRef.id, formData.tipoSolicitud);
-    
-    closeModal('patient-modal');
-    resetForm();
+    console.log('Reentry request created:', docRef.id);
     
   } catch (error) {
-    console.error('Error submitting patient registration:', error);
-    showNotification('Error al enviar la solicitud. Por favor intenta nuevamente.', 'error');
+    console.error('Error submitting reentry request:', error);
+    showNotification('Error al enviar la solicitud de reingreso. Intente nuevamente.', 'error');
   } finally {
     showLoading(false);
   }
 }
 
-function showSuccessMessage(solicitudId, tipoSolicitud) {
-  const trackingCode = solicitudId.substring(0, 8).toUpperCase();
-  
-  if (tipoSolicitud === 'anonimo') {
-    showNotification(
-      `Solicitud enviada exitosamente. Tu código de seguimiento es: ${trackingCode}. Te contactaremos al teléfono proporcionado.`,
-      'success',
-      8000
-    );
-  } else if (tipoSolicitud === 'informacion') {
-    showNotification(
-      `Solicitud enviada exitosamente. Te enviaremos información del programa al email proporcionado.`,
-      'success',
-      6000
-    );
-  } else {
-    showNotification(
-      'Solicitud enviada exitosamente. Te contactaremos pronto al teléfono o email proporcionado.',
-      'success',
-      6000
-    );
-  }
-}
-
-async function createCriticalCaseAlert(solicitudId, solicitudData) {
-  try {
-    await db.collection('alertas_criticas').add({
-      id_solicitud: solicitudId,
-      tipo_alerta: 'caso_critico_nuevo',
-      prioridad: 'maxima',
-      mensaje: `Nuevo caso crítico: ${solicitudData.datos_personales.edad} años, urgencia ${solicitudData.evaluacion_inicial?.urgencia_declarada}`,
-      fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
-      estado: 'pendiente',
-      notificado: false
-    });
-  } catch (error) {
-    console.error('Error creating critical alert:', error);
-  }
-}
-
-// ================= AUTENTICACIÓN DE PROFESIONALES =================
+// ================= AUTENTICACIÓN DE PROFESIONALES ACTUALIZADA =================
 
 async function handleProfessionalLogin(e) {
   e.preventDefault();
@@ -946,6 +612,7 @@ async function handleProfessionalLogin(e) {
     const userCredential = await auth.signInWithEmailAndPassword(email, password);
     const user = userCredential.user;
     
+    // CONSULTAR DATOS DEL PROFESIONAL EN FIREBASE
     const doc = await db.collection('profesionales').doc(user.uid).get();
     
     if (!doc.exists) {
@@ -964,8 +631,10 @@ async function handleProfessionalLogin(e) {
       return;
     }
     
+    // GUARDAR DATOS DEL USUARIO LOGUEADO
     currentUserData = { uid: user.uid, ...userData };
     
+    // Actualizar última actividad
     await db.collection('profesionales').doc(user.uid).update({
       'metadata.ultima_actividad': firebase.firestore.FieldValue.serverTimestamp()
     });
@@ -1060,12 +729,13 @@ async function handleProfessionalRegistration(e) {
     const userCredential = await auth.createUserWithEmailAndPassword(registrationData.email, registrationData.password);
     const user = userCredential.user;
     
+    // GUARDAR DATOS DEL PROFESIONAL EN FIREBASE
     const professionalData = {
       nombre: registrationData.name,
       correo: registrationData.email,
       profesion: registrationData.profession,
       licencia: registrationData.license || 'No especificada',
-      id_centro_asignado: registrationData.center || null,
+      cesfam_asignado: registrationData.center || null, // CAMPO CESFAM
       configuracion_sistema: {
         rol: registrationData.profession,
         permisos: getDefaultPermissions(registrationData.profession),
@@ -1172,6 +842,7 @@ function getDefaultPermissions(profession) {
   
   return permissions[profession] || ['ver_casos'];
 }
+// ================= PANEL DE GESTIÓN Y DASHBOARD =================
 
 function showProfessionalPanel(userData) {
   showModal('panel-modal');
@@ -1219,83 +890,6 @@ function setupPanelNavigation(userData) {
   });
 }
 
-async function handleLogout() {
-  if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
-    try {
-      if (window.sendaUnsubscribers) {
-        window.sendaUnsubscribers.forEach(unsubscribe => unsubscribe());
-        window.sendaUnsubscribers = [];
-      }
-      
-      await auth.signOut();
-      currentUser = null;
-      currentUserData = null;
-      closeModal('panel-modal');
-      showNotification('Sesión cerrada correctamente', 'success');
-      
-      document.getElementById('login-form')?.reset();
-      document.getElementById('register-form')?.reset();
-      document.querySelector('[data-tab="login"]')?.click();
-      
-    } catch (error) {
-      console.error('Logout error:', error);
-      showNotification('Error al cerrar sesión: ' + error.message, 'error');
-    }
-  }
-}
-
-auth.onAuthStateChanged(user => {
-  currentUser = user;
-  if (user) {
-    loadUserData(user.uid);
-  }
-});
-
-async function loadUserData(uid) {
-  try {
-    const doc = await db.collection('profesionales').doc(uid).get();
-    if (doc.exists) {
-      currentUserData = { uid, ...doc.data() };
-    }
-  } catch (error) {
-    console.error('Error loading user data:', error);
-  }
-}
-
-function startRealTimeListeners(userData) {
-  console.log('Starting real-time listeners for:', userData.nombre);
-  
-  const unsubscribeCritical = db.collection('alertas_criticas')
-    .where('estado', '==', 'pendiente')
-    .onSnapshot(snapshot => {
-      snapshot.docChanges().forEach(change => {
-        if (change.type === 'added') {
-          const alertData = change.doc.data();
-          showNotification(
-            `Nueva alerta crítica: ${alertData.mensaje}`,
-            'error',
-            10000
-          );
-        }
-      });
-    });
-  
-  const unsubscribeRequests = db.collection('solicitudes_ingreso')
-    .where('clasificacion.estado', '==', 'pendiente')
-    .onSnapshot(snapshot => {
-      const pendingCount = snapshot.size;
-      const badge = document.getElementById('requests-badge');
-      if (badge) {
-        badge.textContent = pendingCount;
-        badge.style.display = pendingCount > 0 ? 'inline' : 'none';
-      }
-    });
-  
-  window.sendaUnsubscribers = [unsubscribeCritical, unsubscribeRequests];
-}
-
-// ================= PANEL DE GESTIÓN Y DASHBOARD =================
-
 function showPanel(panelId, userData) {
   document.querySelectorAll('.panel-content').forEach(panel => {
     panel.classList.add('hidden');
@@ -1335,35 +929,66 @@ async function loadDashboard(userData) {
   
   try {
     const today = new Date();
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
     
-    const pendingRequests = await db.collection('solicitudes_ingreso')
+    // FILTRAR POR CESFAM DEL PROFESIONAL
+    let baseQuery = db.collection('solicitudes_ingreso');
+    if (userData.cesfam_asignado && userData.profesion !== 'admin') {
+      baseQuery = baseQuery.where('datos_personales.cesfam', '==', userData.cesfam_asignado);
+    }
+    
+    const pendingRequests = await baseQuery
       .where('clasificacion.estado', '==', 'pendiente')
       .get();
     
-    const criticalCases = await db.collection('solicitudes_ingreso')
+    const criticalCases = await baseQuery
       .where('clasificacion.prioridad', '==', 'critica')
       .where('clasificacion.estado', '==', 'pendiente')
       .get();
     
-    const activePatients = await db.collection('pacientes')
-      .where('estado_actual.activo', '==', true)
+    // Pacientes activos (filtrar por CESFAM)
+    let patientsQuery = db.collection('pacientes').where('estado_actual.activo', '==', true);
+    if (userData.cesfam_asignado && userData.profesion !== 'admin') {
+      patientsQuery = patientsQuery.where('datos_personales.cesfam', '==', userData.cesfam_asignado);
+    }
+    const activePatients = await patientsQuery.get();
+    
+    // Citas de hoy para este profesional
+    const todayAppointments = await db.collection('citas')
+      .where('fecha', '>=', startOfDay)
+      .where('fecha', '<=', endOfDay)
+      .where('profesional_id', '==', userData.uid)
       .get();
     
     const totalPatientsElement = document.getElementById('total-patients');
     const pendingRequestsElement = document.getElementById('pending-requests');
     const criticalCasesElement = document.getElementById('critical-cases');
+    const todayAppointmentsElement = document.getElementById('today-appointments');
     
     if (totalPatientsElement) totalPatientsElement.textContent = activePatients.size;
     if (pendingRequestsElement) pendingRequestsElement.textContent = pendingRequests.size;
     if (criticalCasesElement) criticalCasesElement.textContent = criticalCases.size;
+    if (todayAppointmentsElement) todayAppointmentsElement.textContent = todayAppointments.size;
+    
+    // Próxima cita
+    if (todayAppointments.size > 0) {
+      const nextAppointment = todayAppointments.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .sort((a, b) => a.fecha.toDate() - b.fecha.toDate())[0];
+      
+      const nextAppointmentElement = document.getElementById('next-appointment');
+      if (nextAppointmentElement) {
+        nextAppointmentElement.textContent = formatTimeOnly(nextAppointment.fecha);
+      }
+    }
     
   } catch (error) {
     console.error('Error loading dashboard:', error);
   }
 }
 
-// ================= FUNCIONES SIMPLIFICADAS PARA SOLICITUDES =================
+// ================= SOLICITUDES CON FILTRADO POR CESFAM =================
 
 async function loadRequestsPanel(userData) {
   console.log('Loading requests panel for:', userData.nombre);
@@ -1389,9 +1014,14 @@ async function loadRequestsPanel(userData) {
     
     requestsList.innerHTML = '<div class="loading"><div class="spinner"></div> Cargando solicitudes...</div>';
     
-    let query = db.collection('solicitudes_ingreso')
-      .orderBy('metadata.fecha_creacion', 'desc')
-      .limit(100);
+    // FILTRAR SOLICITUDES POR CESFAM
+    let query = db.collection('solicitudes_ingreso');
+    
+    if (userData.cesfam_asignado && userData.profesion !== 'admin') {
+      query = query.where('datos_personales.cesfam', '==', userData.cesfam_asignado);
+    }
+    
+    query = query.orderBy('metadata.fecha_creacion', 'desc').limit(100);
     
     const snapshot = await query.get();
     
@@ -1414,31 +1044,38 @@ async function loadRequestsPanel(userData) {
       const estado = data.clasificacion?.estado || 'pendiente';
       const isAnonymous = data.datos_personales?.anonimo || false;
       const isInfoOnly = data.datos_personales?.solo_informacion || false;
+      const isReentry = data.tipo_solicitud === 'reingreso';
       
       html += `
         <div class="card patient-card" data-request-id="${doc.id}">
           <div class="card-header">
             <div>
-              <h3>Solicitud ${doc.id.substring(0, 8).toUpperCase()}</h3>
+              <h3>
+                ${isReentry ? '<i class="fas fa-redo" style="color: var(--warning-orange);"></i> ' : ''}
+                Solicitud ${doc.id.substring(0, 8).toUpperCase()}
+              </h3>
               <p>
                 ${isInfoOnly ? 'Solo información' : 
                   isAnonymous ? 'Solicitud anónima' : 
+                  isReentry ? data.datos_personales?.nombre_completo || 'Reingreso' :
                   (data.datos_contacto?.nombre_completo || 'Sin nombre')}
               </p>
-              <p>Edad: ${data.datos_personales?.edad || 'N/A'} años</p>
+              ${!isReentry ? `<p>Edad: ${data.datos_personales?.edad || 'N/A'} años</p>` : ''}
             </div>
             <div style="text-align: right;">
               <span class="priority-indicator priority-${priority}">${priority.toUpperCase()}</span>
               <div style="margin-top: 8px;">
                 <span class="status-badge status-${estado}">${estado}</span>
               </div>
+              ${isReentry ? '<div style="margin-top: 4px; font-size: 12px; color: var(--warning-orange);">REINGRESO</div>' : ''}
             </div>
           </div>
           <div class="patient-info">
             <div><strong>CESFAM:</strong> ${data.datos_personales?.cesfam || 'N/A'}</div>
-            <div><strong>Tipo:</strong> ${isAnonymous ? 'Anónimo' : 'Identificado'}</div>
-            <div><strong>Fecha:</strong> ${formatDate(data.metadata?.fecha_creacion)}</div>
-            <div><strong>Para:</strong> ${data.datos_personales?.para_quien || 'N/A'}</div>
+            <div><strong>Tipo:</strong> ${isReentry ? 'Reingreso' : isAnonymous ? 'Anónimo' : 'Identificado'}</div>
+            <div><strong>Fecha:</strong> ${formatDate(data.metadata?.fecha_creacion || data.reingreso?.fecha_solicitud)}</div>
+            ${!isReentry ? `<div><strong>Para:</strong> ${data.datos_personales?.para_quien || 'N/A'}</div>` : ''}
+            ${isReentry ? `<div><strong>RUT:</strong> ${data.datos_personales?.rut || 'N/A'}</div>` : ''}
             ${data.evaluacion_inicial?.sustancias_consumo ? 
               `<div><strong>Sustancias:</strong> ${data.evaluacion_inicial.sustancias_consumo.join(', ')}</div>` : ''}
             ${data.evaluacion_inicial?.urgencia_declarada ? 
@@ -1478,209 +1115,7 @@ async function loadRequestsPanel(userData) {
   }
 }
 
-// Funciones básicas para manejar solicitudes
-async function reviewRequest(requestId) {
-  try {
-    const doc = await db.collection('solicitudes_ingreso').doc(requestId).get();
-    if (!doc.exists) {
-      showNotification('Solicitud no encontrada', 'error');
-      return;
-    }
-    
-    const data = doc.data();
-    showRequestDetailModal(requestId, data);
-  } catch (error) {
-    console.error('Error reviewing request:', error);
-    showNotification('Error al cargar la solicitud', 'error');
-  }
-}
-
-function showRequestDetailModal(requestId, data) {
-  const isAnonymous = data.datos_personales?.anonimo || false;
-  const isInfoOnly = data.datos_personales?.solo_informacion || false;
-  
-  const modalHTML = `
-    <div class="modal-overlay" id="request-detail-modal">
-      <div class="modal large-modal">
-        <button class="modal-close" onclick="closeModal('request-detail-modal')">
-          <i class="fas fa-times"></i>
-        </button>
-        <h2>Detalle de Solicitud ${requestId.substring(0, 8).toUpperCase()}</h2>
-        
-        <div class="request-detail-content">
-          <div class="detail-section">
-            <h3>Información Personal</h3>
-            <div class="info-grid">
-              ${!isAnonymous && data.datos_contacto?.nombre_completo ? 
-                `<div><strong>Nombre:</strong> ${data.datos_contacto.nombre_completo}</div>` : ''}
-              ${!isAnonymous && data.datos_contacto?.rut ? 
-                `<div><strong>RUT:</strong> ${data.datos_contacto.rut}</div>` : ''}
-              <div><strong>Edad:</strong> ${data.datos_personales?.edad || 'N/A'} años</div>
-              <div><strong>CESFAM:</strong> ${data.datos_personales?.cesfam || 'N/A'}</div>
-              <div><strong>Para quien:</strong> ${data.datos_personales?.para_quien || 'N/A'}</div>
-              <div><strong>Tipo:</strong> ${isInfoOnly ? 'Solo información' : isAnonymous ? 'Anónimo' : 'Identificado'}</div>
-            </div>
-          </div>
-          
-          <div class="detail-section">
-            <h3>Datos de Contacto</h3>
-            <div class="info-grid">
-              ${data.datos_contacto?.telefono_principal ? 
-                `<div><strong>Teléfono:</strong> ${data.datos_contacto.telefono_principal}</div>` : ''}
-              ${data.datos_contacto?.email ? 
-                `<div><strong>Email:</strong> ${data.datos_contacto.email}</div>` : ''}
-              ${data.datos_contacto?.direccion ? 
-                `<div><strong>Dirección:</strong> ${data.datos_contacto.direccion}</div>` : ''}
-            </div>
-          </div>
-          
-          ${data.evaluacion_inicial ? `
-          <div class="detail-section">
-            <h3>Evaluación Inicial</h3>
-            <div class="info-grid">
-              ${data.evaluacion_inicial.sustancias_consumo ? 
-                `<div><strong>Sustancias:</strong> ${data.evaluacion_inicial.sustancias_consumo.join(', ')}</div>` : ''}
-              ${data.evaluacion_inicial.tiempo_consumo_meses ? 
-                `<div><strong>Tiempo de consumo:</strong> ${data.evaluacion_inicial.tiempo_consumo_meses} meses</div>` : ''}
-              ${data.evaluacion_inicial.motivacion_cambio ? 
-                `<div><strong>Motivación al cambio:</strong> ${data.evaluacion_inicial.motivacion_cambio}/10</div>` : ''}
-              ${data.evaluacion_inicial.urgencia_declarada ? 
-                `<div><strong>Urgencia:</strong> ${data.evaluacion_inicial.urgencia_declarada}</div>` : ''}
-              ${data.evaluacion_inicial.tratamiento_previo ? 
-                `<div><strong>Tratamiento previo:</strong> ${data.evaluacion_inicial.tratamiento_previo}</div>` : ''}
-            </div>
-            ${data.evaluacion_inicial.descripcion_situacion ? `
-            <div style="margin-top: 12px;">
-              <strong>Descripción de la situación:</strong>
-              <p style="margin-top: 8px; padding: 12px; background: var(--gray-50); border-radius: 4px;">
-                ${data.evaluacion_inicial.descripcion_situacion}
-              </p>
-            </div>
-            ` : ''}
-          </div>
-          ` : ''}
-          
-          <div class="detail-section">
-            <h3>Estado de la Solicitud</h3>
-            <div class="info-grid">
-              <div><strong>Estado:</strong> <span class="status-badge status-${data.clasificacion?.estado || 'pendiente'}">${data.clasificacion?.estado || 'pendiente'}</span></div>
-              <div><strong>Prioridad:</strong> <span class="priority-indicator priority-${data.clasificacion?.prioridad || 'baja'}">${data.clasificacion?.prioridad || 'baja'}</span></div>
-              <div><strong>Fecha solicitud:</strong> ${formatDate(data.metadata?.fecha_creacion)}</div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="modal-actions" style="margin-top: 24px;">
-          ${!isInfoOnly && data.clasificacion?.estado === 'pendiente' ? `
-          <button class="btn btn-success" onclick="acceptRequest('${requestId}'); closeModal('request-detail-modal');">
-            <i class="fas fa-check"></i> Aceptar Solicitud
-          </button>
-          ` : ''}
-          ${isInfoOnly && data.clasificacion?.estado === 'pendiente' ? `
-          <button class="btn btn-success" onclick="sendInformation('${requestId}'); closeModal('request-detail-modal');">
-            <i class="fas fa-envelope"></i> Enviar Información
-          </button>
-          ` : ''}
-          <button class="btn btn-outline" onclick="closeModal('request-detail-modal')">Cerrar</button>
-        </div>
-      </div>
-    </div>
-  `;
-  
-  document.body.insertAdjacentHTML('beforeend', modalHTML);
-  document.getElementById('request-detail-modal').style.display = 'flex';
-}
-
-async function acceptRequest(requestId) {
-  if (!confirm('¿Estás seguro de aceptar esta solicitud?')) return;
-  
-  try {
-    showLoading(true);
-    
-    await db.collection('solicitudes_ingreso').doc(requestId).update({
-      'clasificacion.estado': 'aceptada',
-      'clasificacion.fecha_aceptacion': firebase.firestore.FieldValue.serverTimestamp(),
-      'clasificacion.profesional_asignado': currentUserData.uid
-    });
-    
-    const solicitud = await db.collection('solicitudes_ingreso').doc(requestId).get();
-    const data = solicitud.data();
-    
-    if (!data.datos_personales.anonimo && !data.datos_personales.solo_informacion) {
-      await createPatientRecord(requestId, data);
-    }
-    
-    showNotification('Solicitud aceptada correctamente', 'success');
-    loadRequestsPanel(currentUserData);
-    
-  } catch (error) {
-    console.error('Error accepting request:', error);
-    showNotification('Error al aceptar la solicitud', 'error');
-  } finally {
-    showLoading(false);
-  }
-}
-
-async function sendInformation(requestId) {
-  if (!confirm('¿Enviar información del programa al email proporcionado?')) return;
-  
-  try {
-    showLoading(true);
-    
-    await db.collection('solicitudes_ingreso').doc(requestId).update({
-      'clasificacion.estado': 'informacion_enviada',
-      'clasificacion.fecha_respuesta': firebase.firestore.FieldValue.serverTimestamp(),
-      'clasificacion.profesional_responsable': currentUserData.uid
-    });
-    
-    showNotification('Información enviada correctamente', 'success');
-    loadRequestsPanel(currentUserData);
-    
-  } catch (error) {
-    console.error('Error sending information:', error);
-    showNotification('Error al enviar información', 'error');
-  } finally {
-    showLoading(false);
-  }
-}
-
-async function createPatientRecord(solicitudId, solicitudData) {
-  const patientData = {
-    solicitud_origen: solicitudId,
-    datos_personales: {
-      nombre_completo: solicitudData.datos_contacto?.nombre_completo || '',
-      rut: solicitudData.datos_contacto?.rut || '',
-      edad: solicitudData.datos_personales?.edad || 0,
-      cesfam: solicitudData.datos_personales?.cesfam || '',
-      direccion: solicitudData.datos_contacto?.direccion || ''
-    },
-    contacto: {
-      telefono: solicitudData.datos_contacto?.telefono_principal || '',
-      email: solicitudData.datos_contacto?.email || ''
-    },
-    historial_clinico: [{
-      fecha: firebase.firestore.FieldValue.serverTimestamp(),
-      tipo: 'ingreso_inicial',
-      profesional: currentUserData.uid,
-      evaluacion_inicial: solicitudData.evaluacion_inicial || {},
-      observaciones: 'Paciente ingresado desde solicitud web'
-    }],
-    estado_actual: {
-      activo: true,
-      programa: 'ambulatorio',
-      profesional_asignado: null,
-      fecha_ingreso: firebase.firestore.FieldValue.serverTimestamp()
-    },
-    metadata: {
-      fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
-      creado_por: currentUserData.uid
-    }
-  };
-  
-  await db.collection('pacientes').add(patientData);
-}
-
-// ================= FUNCIONES BÁSICAS PARA PACIENTES =================
+// ================= GESTIÓN DE PACIENTES CON FILTRADO POR CESFAM =================
 
 async function loadPatientsPanel(userData) {
   const patientsList = document.getElementById('patients-list');
@@ -1690,13 +1125,24 @@ async function loadPatientsPanel(userData) {
     <div class="panel-header">
       <h1 class="panel-title">Gestión de Pacientes</h1>
       <p class="panel-subtitle">Lista de pacientes activos en el sistema</p>
+      <div style="margin-top: 16px;">
+        <button class="btn btn-primary" onclick="showPatientSearchModal()">
+          <i class="fas fa-search"></i> Buscar Paciente por RUT
+        </button>
+      </div>
     </div>
     <div class="loading"><div class="spinner"></div> Cargando pacientes...</div>
   `;
   
   try {
-    const patientsSnapshot = await db.collection('pacientes')
-      .where('estado_actual.activo', '==', true)
+    // FILTRAR PACIENTES POR CESFAM DEL PROFESIONAL
+    let patientsQuery = db.collection('pacientes').where('estado_actual.activo', '==', true);
+    
+    if (userData.cesfam_asignado && userData.profesion !== 'admin') {
+      patientsQuery = patientsQuery.where('datos_personales.cesfam', '==', userData.cesfam_asignado);
+    }
+    
+    const patientsSnapshot = await patientsQuery
       .orderBy('metadata.fecha_creacion', 'desc')
       .limit(50)
       .get();
@@ -1706,11 +1152,16 @@ async function loadPatientsPanel(userData) {
         <div class="panel-header">
           <h1 class="panel-title">Gestión de Pacientes</h1>
           <p class="panel-subtitle">Lista de pacientes activos en el sistema</p>
+          <div style="margin-top: 16px;">
+            <button class="btn btn-primary" onclick="showPatientSearchModal()">
+              <i class="fas fa-search"></i> Buscar Paciente por RUT
+            </button>
+          </div>
         </div>
         <div class="card">
           <p style="text-align: center; color: var(--gray-600);">
             <i class="fas fa-users" style="font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
-            No hay pacientes registrados en el sistema.
+            No hay pacientes registrados en el sistema para su CESFAM.
           </p>
         </div>
       `;
@@ -1721,6 +1172,11 @@ async function loadPatientsPanel(userData) {
       <div class="panel-header">
         <h1 class="panel-title">Gestión de Pacientes</h1>
         <p class="panel-subtitle">Lista de pacientes activos en el sistema</p>
+        <div style="margin-top: 16px;">
+          <button class="btn btn-primary" onclick="showPatientSearchModal()">
+            <i class="fas fa-search"></i> Buscar Paciente por RUT
+          </button>
+        </div>
       </div>
     `;
     
@@ -1747,6 +1203,8 @@ async function loadPatientsPanel(userData) {
             <div><strong>Teléfono:</strong> ${data.contacto?.telefono || 'Sin teléfono'}</div>
             <div><strong>Email:</strong> ${data.contacto?.email || 'Sin email'}</div>
             <div><strong>Fecha ingreso:</strong> ${formatDate(data.estado_actual?.fecha_ingreso)}</div>
+            ${data.estado_actual?.profesional_asignado ? 
+              `<div><strong>Profesional asignado:</strong> ${data.estado_actual.profesional_asignado}</div>` : ''}
           </div>
           <div class="card-actions" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gray-200);">
             <button class="btn btn-primary btn-sm" onclick="viewPatientDetail('${doc.id}')">
@@ -1754,6 +1212,9 @@ async function loadPatientsPanel(userData) {
             </button>
             <button class="btn btn-success btn-sm" onclick="addFollowupNote('${doc.id}')">
               <i class="fas fa-notes-medical"></i> Agregar Nota
+            </button>
+            <button class="btn btn-outline btn-sm" onclick="scheduleAppointment('${doc.id}')">
+              <i class="fas fa-calendar-plus"></i> Agendar Cita
             </button>
           </div>
         </div>
@@ -1768,22 +1229,223 @@ async function loadPatientsPanel(userData) {
       <div class="panel-header">
         <h1 class="panel-title">Gestión de Pacientes</h1>
         <p class="panel-subtitle">Lista de pacientes activos en el sistema</p>
+        <div style="margin-top: 16px;">
+          <button class="btn btn-primary" onclick="showPatientSearchModal()">
+            <i class="fas fa-search"></i> Buscar Paciente por RUT
+          </button>
+        </div>
       </div>
       <p>Error al cargar pacientes: ${error.message}</p>
     `;
   }
 }
 
-// Funciones básicas para pacientes
-async function viewPatientDetail(patientId) {
-  showNotification('Función de detalle de paciente en desarrollo', 'info');
+// ================= BÚSQUEDA DE PACIENTES POR RUT =================
+
+function showPatientSearchModal() {
+  const modalHTML = `
+    <div class="modal-overlay" id="patient-search-modal">
+      <div class="modal">
+        <button class="modal-close" onclick="closeModal('patient-search-modal')">
+          <i class="fas fa-times"></i>
+        </button>
+        <h2>Buscar Paciente por RUT</h2>
+        <p style="margin-bottom: 24px; color: var(--gray-600);">
+          Ingrese el RUT del paciente para buscar su información y ficha clínica.
+        </p>
+        
+        <div class="form-group">
+          <label class="form-label">RUT del Paciente</label>
+          <input type="text" class="form-input" id="search-patient-rut" placeholder="12.345.678-9" autocomplete="off">
+          <small style="color: var(--gray-600);">Ingrese el RUT completo con puntos y guión</small>
+        </div>
+        
+        <div class="form-navigation" style="margin-top: 24px;">
+          <button type="button" class="btn btn-outline" onclick="closeModal('patient-search-modal')">
+            Cancelar
+          </button>
+          <button type="button" class="btn btn-primary" onclick="searchPatientByRut()">
+            <i class="fas fa-search"></i>
+            Buscar Paciente
+          </button>
+        </div>
+        
+        <div id="search-results" style="margin-top: 24px; display: none;">
+          <!-- Resultados de búsqueda aparecerán aquí -->
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  document.getElementById('patient-search-modal').style.display = 'flex';
+  
+  // Configurar validación de RUT
+  const rutInput = document.getElementById('search-patient-rut');
+  if (rutInput) {
+    rutInput.focus();
+    rutInput.addEventListener('input', function(e) {
+      e.target.value = formatRUT(e.target.value);
+    });
+    
+    rutInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        searchPatientByRut();
+      }
+    });
+  }
 }
 
-async function addFollowupNote(patientId) {
-  showNotification('Función de seguimiento en desarrollo', 'info');
+async function searchPatientByRut() {
+  const rutInput = document.getElementById('search-patient-rut');
+  const resultsDiv = document.getElementById('search-results');
+  
+  if (!rutInput || !resultsDiv) return;
+  
+  const rut = rutInput.value.trim();
+  
+  if (!rut) {
+    showNotification('Por favor ingrese un RUT para buscar', 'warning');
+    return;
+  }
+  
+  if (!validateRUT(rut)) {
+    showNotification('El RUT ingresado no es válido', 'error');
+    return;
+  }
+  
+  try {
+    resultsDiv.style.display = 'block';
+    resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div> Buscando paciente...</div>';
+    
+    // Buscar en pacientes activos
+    const patientsQuery = await db.collection('pacientes')
+      .where('datos_personales.rut', '==', rut)
+      .get();
+    
+    // Buscar en solicitudes de ingreso
+    const requestsQuery = await db.collection('solicitudes_ingreso')
+      .where('datos_contacto.rut', '==', rut)
+      .get();
+    
+    if (patientsQuery.empty && requestsQuery.empty) {
+      resultsDiv.innerHTML = `
+        <div class="card" style="text-align: center; padding: 32px;">
+          <i class="fas fa-user-slash" style="font-size: 48px; color: var(--gray-400); margin-bottom: 16px;"></i>
+          <h3 style="color: var(--gray-600); margin-bottom: 8px;">Paciente no encontrado</h3>
+          <p style="color: var(--gray-500);">No se encontró ningún paciente con el RUT ${rut}</p>
+        </div>
+      `;
+      return;
+    }
+    
+    let html = '<div style="border-top: 1px solid var(--gray-200); padding-top: 24px;">';
+    
+    // Mostrar pacientes encontrados
+    if (!patientsQuery.empty) {
+      html += '<h3 style="color: var(--primary-blue); margin-bottom: 16px;">Paciente Registrado</h3>';
+      
+      patientsQuery.forEach(doc => {
+        const data = doc.data();
+        html += `
+          <div class="card patient-card" style="margin-bottom: 16px;">
+            <div class="card-header">
+              <div>
+                <h4>${data.datos_personales?.nombre_completo || 'Sin nombre'}</h4>
+                <p>RUT: ${data.datos_personales?.rut}</p>
+                <p>Edad: ${data.datos_personales?.edad || 'N/A'} años</p>
+              </div>
+              <div style="text-align: right;">
+                <span class="status-badge status-${data.estado_actual?.activo ? 'activo' : 'inactivo'}">
+                  ${data.estado_actual?.activo ? 'Activo' : 'Inactivo'}
+                </span>
+              </div>
+            </div>
+            <div class="patient-info">
+              <div><strong>CESFAM:</strong> ${data.datos_personales?.cesfam || 'N/A'}</div>
+              <div><strong>Programa:</strong> ${data.estado_actual?.programa || 'No especificado'}</div>
+              <div><strong>Teléfono:</strong> ${data.contacto?.telefono || 'Sin teléfono'}</div>
+              <div><strong>Email:</strong> ${data.contacto?.email || 'Sin email'}</div>
+              <div><strong>Fecha ingreso:</strong> ${formatDate(data.estado_actual?.fecha_ingreso)}</div>
+              <div><strong>Dirección:</strong> ${data.datos_personales?.direccion || 'Sin dirección'}</div>
+            </div>
+            <div style="margin-top: 16px;">
+              <button class="btn btn-primary btn-sm" onclick="viewPatientDetail('${doc.id}'); closeModal('patient-search-modal');">
+                <i class="fas fa-eye"></i> Ver Ficha Completa
+              </button>
+              <button class="btn btn-success btn-sm" onclick="addFollowupNote('${doc.id}'); closeModal('patient-search-modal');">
+                <i class="fas fa-notes-medical"></i> Agregar Seguimiento
+              </button>
+            </div>
+          </div>
+        `;
+      });
+    }
+    
+    // Mostrar solicitudes encontradas
+    if (!requestsQuery.empty) {
+      html += '<h3 style="color: var(--warning-orange); margin-bottom: 16px; margin-top: 24px;">Solicitudes de Ingreso</h3>';
+      
+      requestsQuery.forEach(doc => {
+        const data = doc.data();
+        const isReentry = data.tipo_solicitud === 'reingreso';
+        
+        html += `
+          <div class="card patient-card" style="margin-bottom: 16px; border-left: 4px solid var(--warning-orange);">
+            <div class="card-header">
+              <div>
+                <h4>
+                  ${isReentry ? '<i class="fas fa-redo"></i> ' : ''}
+                  ${isReentry ? data.datos_personales?.nombre_completo : data.datos_contacto?.nombre_completo || 'Solicitud anónima'}
+                </h4>
+                <p>Solicitud: ${doc.id.substring(0, 8).toUpperCase()}</p>
+                <p>Estado: ${data.clasificacion?.estado || 'pendiente'}</p>
+              </div>
+              <div style="text-align: right;">
+                <span class="priority-indicator priority-${data.clasificacion?.prioridad || 'baja'}">
+                  ${(data.clasificacion?.prioridad || 'baja').toUpperCase()}
+                </span>
+              </div>
+            </div>
+            <div class="patient-info">
+              <div><strong>CESFAM:</strong> ${data.datos_personales?.cesfam || 'N/A'}</div>
+              <div><strong>Tipo:</strong> ${isReentry ? 'Reingreso' : 'Solicitud inicial'}</div>
+              <div><strong>Fecha:</strong> ${formatDate(data.metadata?.fecha_creacion || data.reingreso?.fecha_solicitud)}</div>
+              <div><strong>Teléfono:</strong> ${data.datos_contacto?.telefono_principal || 'Sin teléfono'}</div>
+              ${data.datos_contacto?.email ? `<div><strong>Email:</strong> ${data.datos_contacto.email}</div>` : ''}
+              ${isReentry && data.reingreso?.motivo ? `<div><strong>Motivo reingreso:</strong> ${data.reingreso.motivo}</div>` : ''}
+            </div>
+            <div style="margin-top: 16px;">
+              <button class="btn btn-primary btn-sm" onclick="reviewRequest('${doc.id}'); closeModal('patient-search-modal');">
+                <i class="fas fa-eye"></i> Ver Solicitud Completa
+              </button>
+              ${data.clasificacion?.estado === 'pendiente' ? `
+              <button class="btn btn-success btn-sm" onclick="acceptRequest('${doc.id}'); closeModal('patient-search-modal');">
+                <i class="fas fa-check"></i> Aceptar Solicitud
+              </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      });
+    }
+    
+    html += '</div>';
+    resultsDiv.innerHTML = html;
+    
+  } catch (error) {
+    console.error('Error searching patient:', error);
+    resultsDiv.innerHTML = `
+      <div class="card" style="text-align: center; padding: 32px;">
+        <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: var(--danger-red); margin-bottom: 16px;"></i>
+        <h3 style="color: var(--danger-red); margin-bottom: 8px;">Error en la búsqueda</h3>
+        <p style="color: var(--gray-600);">Ocurrió un error al buscar el paciente: ${error.message}</p>
+      </div>
+    `;
+  }
 }
 
-// ================= FUNCIONES BÁSICAS PARA OTROS PANELES =================
+// ================= AGENDA Y CITAS =================
 
 async function loadCalendarPanel(userData) {
   const calendarPanel = document.getElementById('calendar-panel');
@@ -1792,16 +1454,299 @@ async function loadCalendarPanel(userData) {
   calendarPanel.innerHTML = `
     <div class="panel-header">
       <h1 class="panel-title">Agenda</h1>
-      <p class="panel-subtitle">Gestión de citas y calendario</p>
+      <p class="panel-subtitle">Gestión de citas y horarios</p>
+      <div style="margin-top: 16px;">
+        <button class="btn btn-primary" onclick="showNewAppointmentModal()">
+          <i class="fas fa-calendar-plus"></i> Nueva Cita
+        </button>
+        <button class="btn btn-outline" onclick="showAvailableProfessionals()">
+          <i class="fas fa-users"></i> Ver Disponibilidad
+        </button>
+      </div>
     </div>
-    <div class="card">
-      <p style="text-align: center; color: var(--gray-600);">
-        <i class="fas fa-calendar" style="font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
-        Funcionalidad de agenda en desarrollo
-      </p>
+    <div class="loading"><div class="spinner"></div> Cargando agenda...</div>
+  `;
+  
+  try {
+    // Cargar citas del profesional para los próximos 7 días
+    const today = new Date();
+    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    
+    const appointmentsQuery = await db.collection('citas')
+      .where('profesional_id', '==', userData.uid)
+      .where('fecha', '>=', today)
+      .where('fecha', '<=', nextWeek)
+      .orderBy('fecha', 'asc')
+      .get();
+    
+    let html = `
+      <div class="panel-header">
+        <h1 class="panel-title">Agenda</h1>
+        <p class="panel-subtitle">Gestión de citas y horarios</p>
+        <div style="margin-top: 16px;">
+          <button class="btn btn-primary" onclick="showNewAppointmentModal()">
+            <i class="fas fa-calendar-plus"></i> Nueva Cita
+          </button>
+          <button class="btn btn-outline" onclick="showAvailableProfessionals()">
+            <i class="fas fa-users"></i> Ver Disponibilidad
+          </button>
+        </div>
+      </div>
+      
+      <div class="calendar-section">
+        <h2>Próximas Citas (7 días)</h2>
+    `;
+    
+    if (appointmentsQuery.empty) {
+      html += `
+        <div class="card">
+          <p style="text-align: center; color: var(--gray-600);">
+            <i class="fas fa-calendar" style="font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
+            No tienes citas agendadas para los próximos 7 días.
+          </p>
+        </div>
+      `;
+    } else {
+      // Agrupar citas por día
+      const appointmentsByDay = {};
+      
+      appointmentsQuery.forEach(doc => {
+        const data = doc.data();
+        const dateKey = formatDateOnly(data.fecha);
+        
+        if (!appointmentsByDay[dateKey]) {
+          appointmentsByDay[dateKey] = [];
+        }
+        appointmentsByDay[dateKey].push({ id: doc.id, ...data });
+      });
+      
+      // Mostrar citas agrupadas por día
+      Object.keys(appointmentsByDay).forEach(dateKey => {
+        const appointments = appointmentsByDay[dateKey];
+        
+        html += `
+          <div class="day-section" style="margin-bottom: 24px;">
+            <h3 style="color: var(--primary-blue); margin-bottom: 12px; border-bottom: 2px solid var(--gray-200); padding-bottom: 8px;">
+              ${dateKey} (${appointments.length} citas)
+            </h3>
+            <div class="appointments-grid" style="display: grid; gap: 12px;">
+        `;
+        
+        appointments.forEach(appointment => {
+          html += `
+            <div class="card appointment-card" style="border-left: 4px solid var(--success-green);">
+              <div class="card-header">
+                <div>
+                  <h4>${appointment.paciente_nombre || 'Paciente sin nombre'}</h4>
+                  <p><i class="fas fa-clock"></i> ${formatTimeOnly(appointment.fecha)}</p>
+                </div>
+                <div style="text-align: right;">
+                  <span class="status-badge status-${appointment.estado || 'programada'}">
+                    ${appointment.estado || 'Programada'}
+                  </span>
+                </div>
+              </div>
+              <div class="appointment-info" style="margin-top: 12px;">
+                <div><strong>Tipo:</strong> ${appointment.tipo_cita || 'Consulta general'}</div>
+                <div><strong>Paciente ID:</strong> ${appointment.paciente_id || 'N/A'}</div>
+                ${appointment.observaciones ? `<div><strong>Observaciones:</strong> ${appointment.observaciones}</div>` : ''}
+              </div>
+              <div style="margin-top: 12px;">
+                <button class="btn btn-success btn-sm" onclick="startAppointment('${appointment.id}')">
+                  <i class="fas fa-play"></i> Iniciar Atención
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="editAppointment('${appointment.id}')">
+                  <i class="fas fa-edit"></i> Editar
+                </button>
+                <button class="btn btn-danger btn-sm" onclick="cancelAppointment('${appointment.id}')">
+                  <i class="fas fa-times"></i> Cancelar
+                </button>
+              </div>
+            </div>
+          `;
+        });
+        
+        html += '</div></div>';
+      });
+    }
+    
+    html += '</div>';
+    calendarPanel.innerHTML = html;
+    
+  } catch (error) {
+    console.error('Error loading calendar:', error);
+    calendarPanel.innerHTML = `
+      <div class="panel-header">
+        <h1 class="panel-title">Agenda</h1>
+        <p class="panel-subtitle">Error al cargar la agenda</p>
+      </div>
+      <p>Error: ${error.message}</p>
+    `;
+  }
+}
+
+async function scheduleAppointment(patientId) {
+  try {
+    const patientDoc = await db.collection('pacientes').doc(patientId).get();
+    if (!patientDoc.exists) {
+      showNotification('Paciente no encontrado', 'error');
+      return;
+    }
+    
+    const patientData = patientDoc.data();
+    showNewAppointmentModal(patientId, patientData.datos_personales?.nombre_completo);
+    
+  } catch (error) {
+    console.error('Error scheduling appointment:', error);
+    showNotification('Error al programar cita', 'error');
+  }
+}
+
+function showNewAppointmentModal(preselectedPatientId = null, preselectedPatientName = null) {
+  const modalHTML = `
+    <div class="modal-overlay" id="new-appointment-modal">
+      <div class="modal">
+        <button class="modal-close" onclick="closeModal('new-appointment-modal')">
+          <i class="fas fa-times"></i>
+        </button>
+        <h2>Nueva Cita</h2>
+        
+        <form id="new-appointment-form">
+          <div class="form-group">
+            <label class="form-label">Paciente *</label>
+            <input type="text" class="form-input" id="appointment-patient-name" 
+                   value="${preselectedPatientName || ''}" 
+                   placeholder="Nombre del paciente" required 
+                   ${preselectedPatientId ? 'readonly' : ''}>
+            <input type="hidden" id="appointment-patient-id" value="${preselectedPatientId || ''}">
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Fecha *</label>
+              <input type="date" class="form-input" id="appointment-date" required 
+                     min="${new Date().toISOString().split('T')[0]}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Hora *</label>
+              <input type="time" class="form-input" id="appointment-time" required>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Tipo de Cita *</label>
+            <select class="form-select" id="appointment-type" required>
+              <option value="">Seleccionar tipo...</option>
+              <option value="consulta_inicial">Consulta Inicial</option>
+              <option value="seguimiento">Seguimiento</option>
+              <option value="evaluacion">Evaluación</option>
+              <option value="terapia">Sesión de Terapia</option>
+              <option value="control">Control</option>
+              <option value="urgencia">Urgencia</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Observaciones</label>
+            <textarea class="form-textarea" id="appointment-observations" 
+                      placeholder="Observaciones adicionales sobre la cita..."></textarea>
+          </div>
+          
+          <div class="form-navigation" style="margin-top: 24px;">
+            <button type="button" class="btn btn-outline" onclick="closeModal('new-appointment-modal')">
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-success">
+              <i class="fas fa-calendar-plus"></i>
+              Agendar Cita
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  document.getElementById('new-appointment-modal').style.display = 'flex';
+  
+  // Configurar fecha mínima (hoy)
+  const dateInput = document.getElementById('appointment-date');
+  if (dateInput) {
+    const today = new Date();
+    const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+    dateInput.value = tomorrow.toISOString().split('T')[0];
+  }
+  
+  // Manejar envío del formulario
+  document.getElementById('new-appointment-form').addEventListener('submit', handleNewAppointment);
 }
+
+async function handleNewAppointment(e) {
+  e.preventDefault();
+  
+  const patientName = document.getElementById('appointment-patient-name').value.trim();
+  const patientId = document.getElementById('appointment-patient-id').value;
+  const date = document.getElementById('appointment-date').value;
+  const time = document.getElementById('appointment-time').value;
+  const type = document.getElementById('appointment-type').value;
+  const observations = document.getElementById('appointment-observations').value.trim();
+  
+  if (!patientName || !date || !time || !type) {
+    showNotification('Por favor complete todos los campos obligatorios', 'error');
+    return;
+  }
+  
+  try {
+    showLoading(true);
+    
+    // Combinar fecha y hora
+    const appointmentDateTime = new Date(`${date}T${time}`);
+    
+    // Verificar que no haya conflictos de horario
+    const conflictQuery = await db.collection('citas')
+      .where('profesional_id', '==', currentUserData.uid)
+      .where('fecha', '==', appointmentDateTime)
+      .where('estado', '!=', 'cancelada')
+      .get();
+    
+    if (!conflictQuery.empty) {
+      showNotification('Ya tienes una cita agendada a esta hora', 'error');
+      showLoading(false);
+      return;
+    }
+    
+    // Crear la cita
+    const appointmentData = {
+      paciente_id: patientId || null,
+      paciente_nombre: patientName,
+      profesional_id: currentUserData.uid,
+      profesional_nombre: currentUserData.nombre,
+      fecha: appointmentDateTime,
+      tipo_cita: type,
+      estado: 'programada',
+      observaciones: observations || null,
+      metadata: {
+        fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
+        creado_por: currentUserData.uid,
+        cesfam: currentUserData.cesfam_asignado || null
+      }
+    };
+    
+    await db.collection('citas').add(appointmentData);
+    
+    showNotification('Cita agendada correctamente', 'success');
+    closeModal('new-appointment-modal');
+    loadCalendarPanel(currentUserData); // Recargar agenda
+    
+  } catch (error) {
+    console.error('Error creating appointment:', error);
+    showNotification('Error al agendar la cita', 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+// ================= SEGUIMIENTOS =================
 
 async function loadFollowupsPanel(userData) {
   const followupsPanel = document.getElementById('followups-panel');
@@ -1812,389 +1757,382 @@ async function loadFollowupsPanel(userData) {
       <h1 class="panel-title">Seguimientos</h1>
       <p class="panel-subtitle">Historial de seguimientos de pacientes</p>
     </div>
-    <div class="card">
-      <p style="text-align: center; color: var(--gray-600);">
-        <i class="fas fa-clipboard-list" style="font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
-        Funcionalidad de seguimientos en desarrollo
-      </p>
-    </div>
+    <div class="loading"><div class="spinner"></div> Cargando seguimientos...</div>
   `;
-}
-
-async function loadReportsPanel(userData) {
-  const reportsPanel = document.getElementById('reports-panel');
-  if (!reportsPanel) return;
-  
-  if (!userData.configuracion_sistema?.permisos?.includes('reportes') && 
-      userData.profesion !== 'admin' && userData.profesion !== 'coordinador') {
-    reportsPanel.innerHTML = `
-      <div class="panel-header">
-        <h1 class="panel-title">Reportes</h1>
-        <p class="panel-subtitle">Generación de reportes y estadísticas</p>
-      </div>
-      <div class="card">
-        <p style="text-align: center; color: var(--gray-600);">
-          <i class="fas fa-lock" style="font-size: 24px; margin-bottom: 12px; display: block;"></i>
-          No tienes permisos para acceder a los reportes.
-        </p>
-      </div>
-    `;
-    return;
-  }
   
   try {
-    const stats = await loadSystemStatistics();
+    // Cargar seguimientos del profesional
+    const followupsQuery = await db.collection('seguimientos')
+      .where('profesional_id', '==', userData.uid)
+      .orderBy('fecha_creacion', 'desc')
+      .limit(50)
+      .get();
     
-    reportsPanel.innerHTML = `
+    if (followupsQuery.empty) {
+      followupsPanel.innerHTML = `
+        <div class="panel-header">
+          <h1 class="panel-title">Seguimientos</h1>
+          <p class="panel-subtitle">Historial de seguimientos de pacientes</p>
+        </div>
+        <div class="card">
+          <p style="text-align: center; color: var(--gray-600);">
+            <i class="fas fa-clipboard-list" style="font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
+            No hay seguimientos registrados.
+          </p>
+        </div>
+      `;
+      return;
+    }
+    
+    let html = `
       <div class="panel-header">
-        <h1 class="panel-title">Reportes y Estadísticas</h1>
-        <p class="panel-subtitle">Métricas del sistema y reportes generales</p>
-      </div>
-      
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon"><i class="fas fa-users"></i></div>
-          <div class="stat-content">
-            <h3>${stats.totalPatients}</h3>
-            <p>Pacientes Activos</p>
-          </div>
-        </div>
-        
-        <div class="stat-card">
-          <div class="stat-icon"><i class="fas fa-clipboard-list"></i></div>
-          <div class="stat-content">
-            <h3>${stats.pendingRequests}</h3>
-            <p>Solicitudes Pendientes</p>
-          </div>
-        </div>
-        
-        <div class="stat-card">
-          <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
-          <div class="stat-content">
-            <h3>${stats.criticalCases}</h3>
-            <p>Casos Críticos</p>
-          </div>
-        </div>
-        
-        <div class="stat-card">
-          <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
-          <div class="stat-content">
-            <h3>${stats.appointmentsToday}</h3>
-            <p>Citas Hoy</p>
-          </div>
-        </div>
-      </div>
-      
-      <div class="reports-section">
-        <h2>Generar Reportes</h2>
-        <div class="reports-grid">
-          <div class="report-card">
-            <h3>Estadísticas por CESFAM</h3>
-            <p>Distribución de casos por CESFAM de Puente Alto</p>
-            <button class="btn btn-primary" onclick="generateCesfamReport()">
-              <i class="fas fa-chart-bar"></i> Ver Estadísticas
-            </button>
-          </div>
-          
-          <div class="report-card">
-            <h3>Reporte de Pacientes</h3>
-            <p>Lista completa de pacientes activos</p>
-            <button class="btn btn-primary" onclick="generatePatientsReport()">
-              <i class="fas fa-file-excel"></i> Generar Excel
-            </button>
-          </div>
-          
-          <div class="report-card">
-            <h3>Reporte de Solicitudes</h3>
-            <p>Historial de solicitudes de ingreso</p>
-            <button class="btn btn-primary" onclick="generateRequestsReport()">
-              <i class="fas fa-file-pdf"></i> Generar PDF
-            </button>
-          </div>
-        </div>
+        <h1 class="panel-title">Seguimientos</h1>
+        <p class="panel-subtitle">Historial de seguimientos de pacientes</p>
       </div>
     `;
     
+    followupsQuery.forEach(doc => {
+      const data = doc.data();
+      
+      html += `
+        <div class="card followup-card" style="margin-bottom: 16px;">
+          <div class="card-header">
+            <div>
+              <h4>${data.paciente_nombre || 'Paciente sin nombre'}</h4>
+              <p>Fecha: ${formatDate(data.fecha_creacion)}</p>
+              <p>Tipo: ${data.tipo_seguimiento || 'General'}</p>
+            </div>
+            <div style="text-align: right;">
+              <span class="status-badge status-${data.estado || 'completado'}">
+                ${data.estado || 'Completado'}
+              </span>
+            </div>
+          </div>
+          <div class="followup-content" style="margin: 16px 0;">
+            <div><strong>Resumen:</strong></div>
+            <p style="margin: 8px 0; padding: 12px; background: var(--gray-50); border-radius: 8px;">
+              ${data.observaciones || 'Sin observaciones registradas'}
+            </p>
+            ${data.proxima_cita ? `
+            <div style="margin-top: 12px;">
+              <strong>Próxima cita:</strong> ${formatDate(data.proxima_cita)}
+            </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    });
+    
+    followupsPanel.innerHTML = html;
+    
   } catch (error) {
-    console.error('Error loading reports panel:', error);
-    reportsPanel.innerHTML = `
+    console.error('Error loading followups:', error);
+    followupsPanel.innerHTML = `
       <div class="panel-header">
-        <h1 class="panel-title">Reportes</h1>
-        <p class="panel-subtitle">Error al cargar estadísticas</p>
+        <h1 class="panel-title">Seguimientos</h1>
+        <p class="panel-subtitle">Error al cargar seguimientos</p>
       </div>
       <p>Error: ${error.message}</p>
     `;
   }
 }
 
-async function loadSystemStatistics() {
+async function addFollowupNote(patientId) {
   try {
-    const today = new Date();
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+    const patientDoc = await db.collection('pacientes').doc(patientId).get();
+    if (!patientDoc.exists) {
+      showNotification('Paciente no encontrado', 'error');
+      return;
+    }
     
-    const [
-      totalPatientsSnapshot,
-      pendingRequestsSnapshot,
-      criticalCasesSnapshot,
-      appointmentsTodaySnapshot
-    ] = await Promise.all([
-      db.collection('pacientes').where('estado_actual.activo', '==', true).get(),
-      db.collection('solicitudes_ingreso').where('clasificacion.estado', '==', 'pendiente').get(),
-      db.collection('solicitudes_ingreso').where('clasificacion.prioridad', '==', 'critica').where('clasificacion.estado', '==', 'pendiente').get(),
-      db.collection('citas').where('fecha', '>=', startOfDay).where('fecha', '<=', endOfDay).get()
-    ]);
+    const patientData = patientDoc.data();
+    showFollowupModal(patientId, patientData.datos_personales?.nombre_completo);
     
-    return {
-      totalPatients: totalPatientsSnapshot.size,
-      pendingRequests: pendingRequestsSnapshot.size,
-      criticalCases: criticalCasesSnapshot.size,
-      appointmentsToday: appointmentsTodaySnapshot.size
-    };
   } catch (error) {
-    console.error('Error loading statistics:', error);
-    return {
-      totalPatients: 0,
-      pendingRequests: 0,
-      criticalCases: 0,
-      appointmentsToday: 0
-    };
+    console.error('Error adding followup note:', error);
+    showNotification('Error al abrir formulario de seguimiento', 'error');
   }
 }
 
-// ================= FUNCIONES DE REPORTES SIMPLIFICADAS =================
+function showFollowupModal(patientId, patientName) {
+  const modalHTML = `
+    <div class="modal-overlay" id="followup-note-modal">
+      <div class="modal">
+        <button class="modal-close" onclick="closeModal('followup-note-modal')">
+          <i class="fas fa-times"></i>
+        </button>
+        <h2>Registro de Seguimiento</h2>
+        <p style="margin-bottom: 24px; color: var(--gray-600);">
+          Paciente: <strong>${patientName}</strong>
+        </p>
+        
+        <form id="followup-form">
+          <div class="form-group">
+            <label class="form-label">Tipo de Seguimiento *</label>
+            <select class="form-select" id="followup-type" required>
+              <option value="">Seleccionar tipo...</option>
+              <option value="consulta">Consulta de seguimiento</option>
+              <option value="crisis">Manejo de crisis</option>
+              <option value="adherencia">Control de adherencia</option>
+              <option value="familiar">Intervención familiar</option>
+              <option value="social">Seguimiento social</option>
+              <option value="medico">Seguimiento médico</option>
+              <option value="psicologico">Seguimiento psicológico</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Observaciones del Seguimiento *</label>
+            <textarea class="form-textarea" id="followup-observations" required
+                      placeholder="Describe la situación actual del paciente, avances, dificultades y recomendaciones..."></textarea>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Estado del Paciente</label>
+              <select class="form-select" id="followup-patient-status">
+                <option value="estable">Estable</option>
+                <option value="mejorando">Mejorando</option>
+                <option value="preocupante">Preocupante</option>
+                <option value="crisis">En crisis</option>
+                <option value="alta">Listo para alta</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Próxima Cita</label>
+              <input type="date" class="form-input" id="followup-next-appointment"
+                     min="${new Date().toISOString().split('T')[0]}">
+            </div>
+          </div>
+          
+          <div class="form-navigation" style="margin-top: 24px;">
+            <button type="button" class="btn btn-outline" onclick="closeModal('followup-note-modal')">
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-success">
+              <i class="fas fa-save"></i>
+              Guardar Seguimiento
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  document.getElementById('followup-note-modal').style.display = 'flex';
+  
+  // Manejar envío del formulario
+  document.getElementById('followup-form').addEventListener('submit', (e) => {
+    handleFollowupSubmission(e, patientId, patientName);
+  });
+}
 
-async function generateCesfamReport() {
+async function handleFollowupSubmission(e, patientId, patientName) {
+  e.preventDefault();
+  
+  const type = document.getElementById('followup-type').value;
+  const observations = document.getElementById('followup-observations').value.trim();
+  const status = document.getElementById('followup-patient-status').value;
+  const nextAppointment = document.getElementById('followup-next-appointment').value;
+  
+  if (!type || !observations) {
+    showNotification('Por favor complete todos los campos obligatorios', 'error');
+    return;
+  }
+  
   try {
     showLoading(true);
-
-    const requestsSnapshot = await db.collection('solicitudes_ingreso').get();
-    const patientsSnapshot = await db.collection('pacientes').get();
-
-    const cesfamStats = {};
-
-    cesfamPuenteAlto.forEach(c => cesfamStats[c] = { solicitudes: 0, pacientes: 0 });
-
-    requestsSnapshot.forEach(doc => {
-      const cesfam = doc.data().datos_personales?.cesfam || 'Sin CESFAM';
-      if (!cesfamStats[cesfam]) cesfamStats[cesfam] = { solicitudes: 0, pacientes: 0 };
-      cesfamStats[cesfam].solicitudes++;
+    
+    // Crear registro de seguimiento
+    const followupData = {
+      paciente_id: patientId,
+      paciente_nombre: patientName,
+      profesional_id: currentUserData.uid,
+      profesional_nombre: currentUserData.nombre,
+      tipo_seguimiento: type,
+      observaciones: observations,
+      estado_paciente: status,
+      proxima_cita: nextAppointment ? new Date(nextAppointment) : null,
+      fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
+      metadata: {
+        cesfam: currentUserData.cesfam_asignado || null,
+        profesion: currentUserData.profesion
+      }
+    };
+    
+    await db.collection('seguimientos').add(followupData);
+    
+    // Actualizar historial clínico del paciente
+    await db.collection('pacientes').doc(patientId).update({
+      'historial_clinico': firebase.firestore.FieldValue.arrayUnion({
+        fecha: firebase.firestore.FieldValue.serverTimestamp(),
+        tipo: 'seguimiento',
+        profesional: currentUserData.uid,
+        profesional_nombre: currentUserData.nombre,
+        observaciones: observations,
+        tipo_seguimiento: type,
+        estado_paciente: status
+      }),
+      'estado_actual.ultima_atencion': firebase.firestore.FieldValue.serverTimestamp(),
+      'estado_actual.estado': status
     });
-
-    patientsSnapshot.forEach(doc => {
-      const cesfam = doc.data().datos_personales?.cesfam || 'Sin CESFAM';
-      if (!cesfamStats[cesfam]) cesfamStats[cesfam] = { solicitudes: 0, pacientes: 0 };
-      cesfamStats[cesfam].pacientes++;
-    });
-
-    showCesfamStatsModal(cesfamStats);
-
+    
+    showNotification('Seguimiento registrado correctamente', 'success');
+    closeModal('followup-note-modal');
+    
+    // Recargar panel si estamos en seguimientos
+    const followupsPanel = document.getElementById('followups-panel');
+    if (followupsPanel && followupsPanel.classList.contains('active')) {
+      loadFollowupsPanel(currentUserData);
+    }
+    
   } catch (error) {
-    console.error('Error generando estadísticas por CESFAM:', error);
-    showNotification('Error al generar estadísticas por CESFAM', 'error');
+    console.error('Error saving followup:', error);
+    showNotification('Error al guardar el seguimiento', 'error');
   } finally {
     showLoading(false);
   }
 }
 
-function showCesfamStatsModal(stats) {
+// ================= OTRAS FUNCIONES AUXILIARES =================
+
+async function viewPatientDetail(patientId) {
+  try {
+    const patientDoc = await db.collection('pacientes').doc(patientId).get();
+    if (!patientDoc.exists) {
+      showNotification('Paciente no encontrado', 'error');
+      return;
+    }
+    
+    const patientData = patientDoc.data();
+    
+    // Cargar seguimientos del paciente
+    const followupsQuery = await db.collection('seguimientos')
+      .where('paciente_id', '==', patientId)
+      .orderBy('fecha_creacion', 'desc')
+      .limit(10)
+      .get();
+    
+    showPatientDetailModal(patientId, patientData, followupsQuery.docs);
+    
+  } catch (error) {
+    console.error('Error viewing patient detail:', error);
+    showNotification('Error al cargar detalle del paciente', 'error');
+  }
+}
+
+function showPatientDetailModal(patientId, data, followups) {
   const modalHTML = `
-    <div class="modal-overlay" id="cesfam-stats-modal">
+    <div class="modal-overlay" id="patient-detail-modal">
       <div class="modal large-modal">
-        <button class="modal-close" onclick="closeModal('cesfam-stats-modal')">
+        <button class="modal-close" onclick="closeModal('patient-detail-modal')">
           <i class="fas fa-times"></i>
         </button>
-        <h2>Estadísticas por CESFAM - Puente Alto</h2>
-        <div class="regional-stats">
-          <table class="stats-table">
-            <thead>
-              <tr>
-                <th>CESFAM</th>
-                <th>Solicitudes</th>
-                <th>Pacientes Activos</th>
-                <th>Conversión</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${Object.entries(stats).map(([cesfam, data]) => `
-                <tr>
-                  <td><strong>${cesfam}</strong></td>
-                  <td>${data.solicitudes}</td>
-                  <td>${data.pacientes}</td>
-                  <td>${data.solicitudes > 0 ? Math.round((data.pacientes / data.solicitudes) * 100) : 0}%</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
+        <h2>Ficha Clínica - ${data.datos_personales?.nombre_completo || 'Sin nombre'}</h2>
+        
+        <div class="patient-detail-content">
+          <div class="detail-section">
+            <h3>Información Personal</h3>
+            <div class="info-grid">
+              <div><strong>Nombre:</strong> ${data.datos_personales?.nombre_completo || 'N/A'}</div>
+              <div><strong>RUT:</strong> ${data.datos_personales?.rut || 'N/A'}</div>
+              <div><strong>Edad:</strong> ${data.datos_personales?.edad || 'N/A'} años</div>
+              <div><strong>CESFAM:</strong> ${data.datos_personales?.cesfam || 'N/A'}</div>
+              <div><strong>Dirección:</strong> ${data.datos_personales?.direccion || 'N/A'}</div>
+              <div><strong>Teléfono:</strong> ${data.contacto?.telefono || 'N/A'}</div>
+              <div><strong>Email:</strong> ${data.contacto?.email || 'N/A'}</div>
+            </div>
+          </div>
+          
+          <div class="detail-section">
+            <h3>Estado Actual</h3>
+            <div class="info-grid">
+              <div><strong>Estado:</strong> <span class="status-badge status-${data.estado_actual?.activo ? 'activo' : 'inactivo'}">${data.estado_actual?.activo ? 'Activo' : 'Inactivo'}</span></div>
+              <div><strong>Programa:</strong> ${data.estado_actual?.programa || 'N/A'}</div>
+              <div><strong>Fecha ingreso:</strong> ${formatDate(data.estado_actual?.fecha_ingreso)}</div>
+              <div><strong>Última atención:</strong> ${formatDate(data.estado_actual?.ultima_atencion)}</div>
+              ${data.estado_actual?.profesional_asignado ? `<div><strong>Profesional asignado:</strong> ${data.estado_actual.profesional_asignado}</div>` : ''}
+              ${data.estado_actual?.estado ? `<div><strong>Estado del paciente:</strong> ${data.estado_actual.estado}</div>` : ''}
+            </div>
+          </div>
+          
+          <div class="detail-section">
+            <h3>Últimos Seguimientos</h3>
+            ${followups.length > 0 ? followups.map(doc => {
+              const followup = doc.data();
+              return `
+                <div style="border: 1px solid var(--gray-200); border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <strong>${followup.tipo_seguimiento || 'Seguimiento'}</strong>
+                    <span style="color: var(--gray-600); font-size: 14px;">${formatDate(followup.fecha_creacion)}</span>
+                  </div>
+                  <p style="margin: 8px 0; color: var(--gray-700);">${followup.observaciones || 'Sin observaciones'}</p>
+                  <div style="font-size: 14px; color: var(--gray-600);">
+                    Por: ${followup.profesional_nombre || 'Profesional'}
+                    ${followup.estado_paciente ? ` | Estado: ${followup.estado_paciente}` : ''}
+                  </div>
+                </div>
+              `;
+            }).join('') : '<p style="color: var(--gray-600); text-align: center;">No hay seguimientos registrados</p>'}
+          </div>
         </div>
+        
         <div class="modal-actions" style="margin-top: 24px;">
-          <button class="btn btn-outline" onclick="closeModal('cesfam-stats-modal')">Cerrar</button>
+          <button class="btn btn-success" onclick="addFollowupNote('${patientId}'); closeModal('patient-detail-modal');">
+            <i class="fas fa-notes-medical"></i> Agregar Seguimiento
+          </button>
+          <button class="btn btn-outline" onclick="scheduleAppointment('${patientId}'); closeModal('patient-detail-modal');">
+            <i class="fas fa-calendar-plus"></i> Agendar Cita
+          </button>
+          <button class="btn btn-outline" onclick="closeModal('patient-detail-modal')">Cerrar</button>
         </div>
       </div>
     </div>
   `;
-
+  
   document.body.insertAdjacentHTML('beforeend', modalHTML);
-  document.getElementById('cesfam-stats-modal').style.display = 'flex';
+  document.getElementById('patient-detail-modal').style.display = 'flex';
 }
 
-async function generatePatientsReport() {
-  try {
-    showLoading(true);
-    
-    const patientsSnapshot = await db.collection('pacientes')
-      .where('estado_actual.activo', '==', true)
-      .get();
-    
-    if (patientsSnapshot.empty) {
-      showNotification('No hay pacientes para generar el reporte', 'warning');
-      return;
-    }
-    
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Nombre,RUT,Edad,CESFAM,Teléfono,Email,Programa,Fecha Ingreso\n";
-    
-    patientsSnapshot.forEach(doc => {
-      const data = doc.data();
-      const row = [
-        `"${data.datos_personales?.nombre_completo || 'Sin nombre'}"`,
-        `"${data.datos_personales?.rut || 'Sin RUT'}"`,
-        data.datos_personales?.edad || 0,
-        `"${data.datos_personales?.cesfam || 'N/A'}"`,
-        `"${data.contacto?.telefono || 'Sin teléfono'}"`,
-        `"${data.contacto?.email || 'Sin email'}"`,
-        `"${data.estado_actual?.programa || 'N/A'}"`,
-        `"${formatDate(data.estado_actual?.fecha_ingreso)}"`
-      ].join(',');
-      
-      csvContent += row + "\n";
+// ================= FUNCIONES RESTANTES DE LA PRIMERA PARTE =================
+
+function setupFormValidation() {
+  const rutInput = document.getElementById('patient-rut');
+  if (rutInput) {
+    rutInput.addEventListener('input', function(e) {
+      e.target.value = formatRUT(e.target.value);
     });
-    
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `pacientes_puente_alto_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    showNotification('Reporte de pacientes generado correctamente', 'success');
-    
-  } catch (error) {
-    console.error('Error generating patients report:', error);
-    showNotification('Error al generar el reporte de pacientes', 'error');
-  } finally {
-    showLoading(false);
-  }
-}
 
-async function generateRequestsReport() {
-  showNotification('Función de reporte de solicitudes en desarrollo', 'info');
-}
-
-// ================= FUNCIONES AUXILIARES =================
-
-function getCurrentLocation() {
-  if (!navigator.geolocation) {
-    showNotification('La geolocalización no está soportada en este navegador', 'error');
-    return;
-  }
-  
-  showLoading(true);
-  navigator.geolocation.getCurrentPosition(
-    async function(position) {
-      try {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        
-        showNotification(`Ubicación obtenida: ${lat.toFixed(6)}, ${lng.toFixed(6)}`, 'success');
-        await loadNearbyClinics(lat, lng);
-        
-      } catch (error) {
-        console.error('Error processing location:', error);
-        showNotification('Error al procesar la ubicación', 'error');
-      } finally {
-        showLoading(false);
+    rutInput.addEventListener('blur', function(e) {
+      const rut = e.target.value.trim();
+      if (rut && !validateRUT(rut)) {
+        e.target.classList.add('error');
+        showNotification('El RUT ingresado no es válido', 'error');
+      } else {
+        e.target.classList.remove('error');
       }
-    },
-    function(error) {
-      showLoading(false);
-      let errorMessage = 'Error al obtener la ubicación';
-      
-      switch(error.code) {
-        case error.PERMISSION_DENIED:
-          errorMessage = 'Permiso de geolocalización denegado';
-          break;
-        case error.POSITION_UNAVAILABLE:
-          errorMessage = 'Información de ubicación no disponible';
-          break;
-        case error.TIMEOUT:
-          errorMessage = 'Tiempo de espera agotado para obtener la ubicación';
-          break;
-      }
-      
-      showNotification(errorMessage, 'error');
-    }
-  );
-}
-
-async function loadNearbyClinics(lat = null, lng = null) {
-  try {
-    const centersList = document.getElementById('centers-list');
-    if (!centersList) return;
-    
-    let html = '<h3>CESFAM de Puente Alto</h3>';
-    cesfamPuenteAlto.forEach(cesfam => {
-      html += `
-        <div class="center-card">
-          <h3>${cesfam}</h3>
-          <p><i class="fas fa-map-marker-alt"></i> Puente Alto, Región Metropolitana</p>
-          <p><i class="fas fa-hospital"></i> Centro de Salud Familiar</p>
-          <div class="center-actions">
-            <button class="btn btn-sm btn-primary" onclick="selectCenter('${cesfam}')">
-              <i class="fas fa-check"></i> Seleccionar
-            </button>
-          </div>
-        </div>
-      `;
     });
-    
-    centersList.innerHTML = html;
-    
-  } catch (error) {
-    console.error('Error loading centers:', error);
-    const centersList = document.getElementById('centers-list');
-    if (centersList) {
-      centersList.innerHTML = '<p>Error al cargar centros: ' + error.message + '</p>';
-    }
   }
-}
 
-function selectCenter(centerName) {
-  const centerInput = document.getElementById('centro-preferencia');
-  if (centerInput) {
-    centerInput.value = centerName;
-  }
-  
-  showNotification(`Centro seleccionado: ${centerName}`, 'success');
-  closeModal('center-modal');
-}
+  const phoneInputs = document.querySelectorAll('#patient-phone, #anonymous-phone');
+  phoneInputs.forEach(input => {
+    input.addEventListener('input', function(e) {
+      e.target.value = formatPhoneNumber(e.target.value);
+    });
+  });
 
-// ================= LIMPIEZA Y LISTENERS FINALES =================
+  const emailInputs = document.querySelectorAll('input[type="email"]');
+  emailInputs.forEach(input => {
+    input.addEventListener('blur', function(e) {
+      const email = e.target.value.trim();
+      if (email && !isValidEmail(email)) {
+        e.target.classList.add('error');
+        showNotification('Por favor ingresa un correo electrónico válido', 'error');
+      } else {
+        e.target.classList.remove('error');
+      }
+    });
+  });
 
-window.addEventListener('beforeunload', function() {
-  localStorage.removeItem('senda_draft');
-});
-
-window.addEventListener('online', function() {
-  showNotification('Conexión restablecida', 'success', 3000);
-});
-
-window.addEventListener('offline', function() {
-  showNotification('Sin conexión a internet', 'warning', 10000);
-});
-
-// Cargar CESFAM al inicializar
-window.addEventListener('DOMContentLoaded', () => {
-  loadCesfamData();
-});
+  const ageInput = document.getElementById('patient-age');
