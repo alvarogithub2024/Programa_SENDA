@@ -3964,5 +3964,3 @@ console.log('🎉 SENDA PUENTE ALTO - Sistema cargado completamente');
 console.log('📱 Versión: 1.0');
 console.log('🏥 CESFAM: Configuración dinámica');
 console.log('🔧 Debug mode:', APP_CONFIG.DEBUG_MODE ? 'Activado' : 'Desactivado');
-
-// ================= FIN DEL ARCHIVO APP.JS =================
