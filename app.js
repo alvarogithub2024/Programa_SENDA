@@ -1,125 +1,5 @@
-// ================= CÓDIGO DE DEBUG TEMPORAL =================
-// Agrega esto al INICIO de tu app.js, después de la inicialización de Firebase
-
-// 1. Debug de Firebase
-console.log('🔍 VERIFICANDO FIREBASE...');
-console.log('Firebase apps:', firebase.apps.length);
-console.log('Auth disponible:', !!firebase.auth);
-console.log('Firestore disponible:', !!firebase.firestore);
-
-// 2. Probar conexión inmediata
-firebase.firestore().enableNetwork().then(() => {
-  console.log('✅ Red de Firestore habilitada');
-}).catch(error => {
-  console.error('❌ Error de red Firestore:', error);
-});
-
-// 3. Interceptar errores de formulario
-document.addEventListener('invalid', (e) => {
-  console.error('❌ Campo inválido:', e.target.id, e.target.validationMessage);
-  e.preventDefault();
-}, true);
-
-// 4. Debug de modales
-const originalShowModal = window.showModal || showModal;
-window.showModal = function(modalId) {
-  console.log('🔧 Abriendo modal:', modalId);
-  return originalShowModal(modalId);
-};
-
-// 5. Debug de notificaciones
-const originalShowNotification = window.showNotification || showNotification;
-window.showNotification = function(message, type, duration) {
-  console.log(`📢 Notification [${type}]:`, message);
-  return originalShowNotification(message, type, duration);
-};
-
-// 6. Test rápido de Firebase
-window.testFirebaseConnection = async function() {
-  try {
-    console.log('🧪 Probando conexión a Firebase...');
-    
-    const testDoc = await firebase.firestore().collection('test_connection').add({
-      test: true,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      userAgent: navigator.userAgent
-    });
-    
-    console.log('✅ Conexión exitosa, documento ID:', testDoc.id);
-    
-    // Limpiar
-    await testDoc.delete();
-    console.log('✅ Documento de prueba eliminado');
-    
-    return true;
-  } catch (error) {
-    console.error('❌ Error de conexión:', error);
-    console.error('Código:', error.code);
-    console.error('Mensaje:', error.message);
-    return false;
-  }
-};
-
-// 7. Test del formulario
-window.testFormData = function() {
-  const form = document.getElementById('patient-form');
-  if (!form) {
-    console.error('❌ Formulario no encontrado');
-    return;
-  }
-  
-  console.log('🔍 Verificando formulario...');
-  
-  // Verificar campos básicos
-  const campos = [
-    'patient-age',
-    'patient-cesfam', 
-    'anonymous-phone',
-    'info-email'
-  ];
-  
-  campos.forEach(id => {
-    const elemento = document.getElementById(id);
-    console.log(`${id}:`, {
-      existe: !!elemento,
-      visible: elemento ? elemento.offsetParent !== null : false,
-      requerido: elemento ? elemento.required : false,
-      valor: elemento ? elemento.value : null
-    });
-  });
-  
-  // Verificar radio buttons
-  const tipoSolicitud = document.querySelectorAll('input[name="tipoSolicitud"]');
-  const paraMi = document.querySelectorAll('input[name="paraMi"]');
-  
-  console.log('Radio buttons:');
-  console.log('- tipoSolicitud:', tipoSolicitud.length, 'encontrados');
-  console.log('- paraMi:', paraMi.length, 'encontrados');
-  
-  // Verificar seleccionados
-  const tipoSeleccionado = document.querySelector('input[name="tipoSolicitud"]:checked');
-  const paraMiSeleccionado = document.querySelector('input[name="paraMi"]:checked');
-  
-  console.log('Seleccionados:');
-  console.log('- tipoSolicitud:', tipoSeleccionado ? tipoSeleccionado.value : 'ninguno');
-  console.log('- paraMi:', paraMiSeleccionado ? paraMiSeleccionado.value : 'ninguno');
-};
-
-// 8. Auto-ejecutar tests después de cargar
-setTimeout(() => {
-  console.log('🚀 Ejecutando tests automáticos...');
-  testFirebaseConnection();
-  testFormData();
-}, 3000);
-
-console.log('🔧 Debug code cargado. Usa testFirebaseConnection() y testFormData() en la consola.');
-console.log('🔧 También puedes usar debugSenda() para diagnóstico completo.');
-
-
-
-
 // ================= SENDA PUENTE ALTO - SISTEMA OPTIMIZADO COMPLETO =================
-// PARTE 1: Configuración, Variables Globales y Funciones Utilitarias
+// PARTE 1 COMPLETA: Configuración, Inicialización y Funciones Utilitarias
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -132,30 +12,186 @@ const firebaseConfig = {
   measurementId: "G-82DCLW5R2W"
 };
 
-// Initialize Firebase con manejo de errores mejorado
-let auth, db;
-try {
-  if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-  }
-  auth = firebase.auth();
-  db = firebase.firestore();
-  
-  // Configurar persistencia offline
-  db.enablePersistence({
-    synchronizeTabs: true
-  }).catch((err) => {
-    if (err.code === 'failed-precondition') {
-      console.warn('Persistencia falló: múltiples tabs abiertas');
-    } else if (err.code === 'unimplemented') {
-      console.warn('Persistencia no soportada en este navegador');
+// Variables globales para Firebase
+let auth, db, firebaseApp;
+
+// Función para inicializar Firebase de forma segura
+function initializeFirebaseSafely() {
+  try {
+    console.log('🔄 Iniciando inicialización de Firebase...');
+    
+    // Verificar que Firebase SDK esté cargado
+    if (typeof firebase === 'undefined') {
+      throw new Error('Firebase SDK no está cargado. Verifica que los scripts estén incluidos.');
     }
-  });
-  
-  console.log('✅ Firebase inicializado correctamente');
-} catch (error) {
-  console.error('❌ Error inicializando Firebase:', error);
+    
+    console.log('✅ Firebase SDK detectado');
+    console.log('Apps existentes:', firebase.apps ? firebase.apps.length : 0);
+    
+    // Inicializar solo si no existe ya
+    if (!firebase.apps || firebase.apps.length === 0) {
+      console.log('🆕 Inicializando nueva app de Firebase...');
+      firebaseApp = firebase.initializeApp(firebaseConfig);
+    } else {
+      console.log('♻️ Usando app de Firebase existente...');
+      firebaseApp = firebase.app();
+    }
+    
+    // Verificar que la app se inicializó correctamente
+    if (!firebaseApp) {
+      throw new Error('No se pudo obtener la instancia de Firebase App');
+    }
+    
+    console.log('✅ Firebase App inicializada:', firebaseApp.name);
+    
+    // Inicializar Auth
+    try {
+      auth = firebase.auth(firebaseApp);
+      console.log('✅ Firebase Auth inicializado');
+    } catch (authError) {
+      console.error('❌ Error inicializando Auth:', authError);
+      throw authError;
+    }
+    
+    // Inicializar Firestore
+    try {
+      db = firebase.firestore(firebaseApp);
+      console.log('✅ Firestore inicializado');
+      
+      // Configurar persistencia offline con manejo de errores
+      db.enablePersistence({
+        synchronizeTabs: true
+      }).then(() => {
+        console.log('✅ Persistencia offline habilitada');
+      }).catch((err) => {
+        console.warn('⚠️ Persistencia offline falló:', err.code);
+        if (err.code === 'failed-precondition') {
+          console.warn('Múltiples tabs abiertas, persistencia deshabilitada');
+        } else if (err.code === 'unimplemented') {
+          console.warn('Persistencia no soportada en este navegador');
+        }
+      });
+      
+    } catch (firestoreError) {
+      console.error('❌ Error inicializando Firestore:', firestoreError);
+      throw firestoreError;
+    }
+    
+    // Test de conexión básico
+    testFirebaseConnection();
+    
+    console.log('🎉 Firebase inicializado completamente');
+    return true;
+    
+  } catch (error) {
+    console.error('❌ Error crítico inicializando Firebase:', error);
+    console.error('Detalles del error:', {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
+    
+    // Mostrar error al usuario
+    showNotificationSafe('Error crítico: No se pudo conectar con Firebase. Recarga la página.', 'error');
+    return false;
+  }
 }
+
+// Función de test de conexión
+async function testFirebaseConnection() {
+  try {
+    console.log('🧪 Probando conexión básica...');
+    
+    // Test 1: Verificar que las instancias existen
+    if (!auth) {
+      throw new Error('Auth no está inicializado');
+    }
+    if (!db) {
+      throw new Error('Firestore no está inicializado');
+    }
+    
+    console.log('✅ Instancias de Firebase verificadas');
+    
+    // Test 2: Probar escritura simple (solo si las reglas lo permiten)
+    try {
+      const testRef = db.collection('test_connection');
+      const testDoc = await testRef.add({
+        test: true,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        userAgent: navigator.userAgent.substring(0, 100)
+      });
+      
+      console.log('✅ Test de escritura exitoso:', testDoc.id);
+      
+      // Limpiar documento de test
+      await testDoc.delete();
+      console.log('✅ Documento de test eliminado');
+      
+    } catch (writeError) {
+      console.warn('⚠️ Test de escritura falló (puede ser normal):', writeError.code);
+      // No es crítico si falla, puede ser por reglas de seguridad
+    }
+    
+  } catch (testError) {
+    console.error('❌ Test de conexión falló:', testError);
+    throw testError;
+  }
+}
+
+// Función segura para mostrar notificaciones (por si el sistema aún no está listo)
+function showNotificationSafe(message, type = 'info') {
+  try {
+    if (typeof showNotification === 'function') {
+      showNotification(message, type);
+    } else {
+      console.log(`[${type.toUpperCase()}] ${message}`);
+      alert(`${type.toUpperCase()}: ${message}`);
+    }
+  } catch (error) {
+    console.error('Error mostrando notificación:', error);
+    alert(message);
+  }
+}
+
+// Función para verificar el estado de Firebase
+function getFirebaseStatus() {
+  return {
+    sdkLoaded: typeof firebase !== 'undefined',
+    appInitialized: !!firebaseApp,
+    authReady: !!auth,
+    firestoreReady: !!db,
+    appsCount: firebase.apps ? firebase.apps.length : 0
+  };
+}
+
+// Función global para debugging
+window.debugFirebase = function() {
+  console.log('🔍 ESTADO DE FIREBASE:');
+  const status = getFirebaseStatus();
+  console.table(status);
+  
+  if (status.firestoreReady) {
+    console.log('Probando conexión...');
+    testFirebaseConnection().catch(console.error);
+  }
+  
+  return status;
+};
+
+// Inicialización diferida de Firebase
+function initializeFirebaseWhenReady() {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(initializeFirebaseSafely, 100);
+    });
+  } else {
+    setTimeout(initializeFirebaseSafely, 100);
+  }
+}
+
+// Ejecutar inicialización
+initializeFirebaseWhenReady();
 
 // Lista de CESFAM de Puente Alto
 const cesfamPuenteAlto = [
@@ -680,14 +716,32 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeApp() {
   try {
     // Verificar dependencias críticas
-    if (!firebase) {
+    if (typeof firebase === 'undefined') {
       throw new Error('Firebase SDK no cargado');
     }
     
-    if (!auth || !db) {
-      throw new Error('Firebase no está inicializado correctamente');
-    }
+    // Esperar a que Firebase esté listo
+    const checkFirebaseReady = () => {
+      if (!auth || !db) {
+        console.log('Esperando inicialización de Firebase...');
+        setTimeout(checkFirebaseReady, 100);
+        return;
+      }
+      
+      console.log('Firebase listo, continuando inicialización...');
+      continueAppInitialization();
+    };
+    
+    checkFirebaseReady();
+    
+  } catch (error) {
+    console.error('❌ Error inicializando app:', error);
+    showNotification('Error al cargar el sistema: ' + error.message, 'error');
+  }
+}
 
+function continueAppInitialization() {
+  try {
     // Configurar título y elementos básicos
     document.title = "PROGRAMA SENDA PUENTE ALTO";
     const mainTitle = document.getElementById('main-title');
@@ -716,8 +770,8 @@ function initializeApp() {
     showNotification('Sistema SENDA cargado correctamente', 'success', 2000);
     
   } catch (error) {
-    console.error('❌ Error inicializando app:', error);
-    showNotification('Error al cargar el sistema: ' + error.message, 'error');
+    console.error('❌ Error en inicialización:', error);
+    showNotification('Error al inicializar componentes: ' + error.message, 'error');
   }
 }
 
@@ -733,256 +787,43 @@ function handleUnhandledRejection(event) {
   if (APP_CONFIG.DEBUG_MODE) {
     showNotification(`Error async: ${event.reason.message || event.reason}`, 'error');
   }
-}
-
-// ================= GESTIÓN DE EVENTOS Y AUTENTICACIÓN =================
-
-function initializeEventListeners() {
-  try {
-    // Elementos principales
-    const loginProfessionalBtn = document.getElementById('login-professional');
-    const logoutBtn = document.getElementById('logout-btn');
-    const registerPatientBtn = document.getElementById('register-patient');
-    const reentryProgramBtn = document.getElementById('reentry-program');
-    const aboutProgramBtn = document.getElementById('about-program');
-    
-    // Elementos de búsqueda
-    const searchSolicitudes = document.getElementById('search-solicitudes');
-    const searchSeguimiento = document.getElementById('search-seguimiento');
-    const searchPacientesRut = document.getElementById('search-pacientes-rut');
-    const buscarPacienteBtn = document.getElementById('buscar-paciente-btn');
-    
-    // Elementos de filtros
-    const priorityFilter = document.getElementById('priority-filter');
-    const dateFilter = document.getElementById('date-filter');
-    
-    // Elementos de calendario
-    const prevMonthBtn = document.getElementById('prev-month');
-    const nextMonthBtn = document.getElementById('next-month');
-    const nuevaCitaBtn = document.getElementById('nueva-cita-btn');
-
-    // Event listeners principales
-    if (loginProfessionalBtn) {
-      loginProfessionalBtn.addEventListener('click', () => {
-        if (APP_CONFIG.DEBUG_MODE) console.log('🔧 Abriendo modal de login');
-        showModal('login-modal');
-      });
-    }
-
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', handleLogout);
-    }
-
-    if (registerPatientBtn) {
-      registerPatientBtn.addEventListener('click', () => {
-        if (APP_CONFIG.DEBUG_MODE) console.log('🔧 Abriendo modal de registro de paciente');
-        showModal('patient-modal');
-      });
-    }
-
-    if (reentryProgramBtn) {
-      reentryProgramBtn.addEventListener('click', () => {
-        if (APP_CONFIG.DEBUG_MODE) console.log('🔧 Abriendo modal de reingreso');
-        showModal('reentry-modal');
-      });
-    }
-
-    if (aboutProgramBtn) {
-      aboutProgramBtn.addEventListener('click', showAboutProgram);
-    }
-
-    // Búsquedas con debounce
-    if (searchSolicitudes) {
-      searchSolicitudes.addEventListener('input', debounce(filterSolicitudes, 300));
-    }
-
-    if (searchSeguimiento) {
-      searchSeguimiento.addEventListener('input', debounce(filterSeguimiento, 300));
-    }
-
-    if (buscarPacienteBtn) {
-      buscarPacienteBtn.addEventListener('click', buscarPacientePorRUT);
-    }
-
-    if (searchPacientesRut) {
-      searchPacientesRut.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          buscarPacientePorRUT();
-        }
-      });
-      
-      // Formatear RUT mientras se escribe
-      searchPacientesRut.addEventListener('input', (e) => {
-        e.target.value = formatRUT(e.target.value);
-      });
-    }
-
-    // Filtros
-    if (priorityFilter) {
-      priorityFilter.addEventListener('change', filterSolicitudes);
-    }
-
-    if (dateFilter) {
-      dateFilter.addEventListener('change', filterSolicitudes);
-    }
-
-    // Navegación de calendario
-    if (prevMonthBtn) {
-      prevMonthBtn.addEventListener('click', () => {
-        currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
-        renderCalendar();
-      });
-    }
-
-    if (nextMonthBtn) {
-      nextMonthBtn.addEventListener('click', () => {
-        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
-        renderCalendar();
-      });
-    }
-
-    if (nuevaCitaBtn) {
-      nuevaCitaBtn.addEventListener('click', () => createNuevaCitaModal());
-    }
-
-    // Keyboard shortcuts
-    document.addEventListener('keydown', handleKeyboardShortcuts);
-    
-    console.log('✅ Event listeners inicializados correctamente');
-  } catch (error) {
-    console.error('❌ Error inicializando event listeners:', error);
+  
+  // Intentar reinicializar si es un error de Firebase
+  if (event.reason && event.reason.code === 'app/no-app' || 
+      (event.reason.message && event.reason.message.includes('NO_APP'))) {
+    console.log('🔄 Intentando reinicializar Firebase...');
+    setTimeout(() => {
+      initializeFirebaseSafely();
+    }, 1000);
   }
 }
 
-function handleKeyboardShortcuts(e) {
-  try {
-    // Ctrl/Cmd + K para búsqueda rápida
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-      e.preventDefault();
-      const searchInput = document.getElementById('search-solicitudes');
-      if (searchInput && searchInput.style.display !== 'none') {
-        searchInput.focus();
-      }
-    }
+// Manejo global de errores de Firebase
+window.addEventListener('unhandledrejection', (event) => {
+  if (event.reason && event.reason.message && 
+      (event.reason.message.includes('Firebase') || 
+       event.reason.message.includes('firestore') ||
+       event.reason.code)) {
     
-    // Escape para cerrar modales
-    if (e.key === 'Escape') {
-      const openModal = document.querySelector('.modal-overlay[style*="flex"]');
-      if (openModal) {
-        closeModal(openModal.id);
-      }
+    console.error('❌ Error no manejado de Firebase:', event.reason);
+    
+    // Intentar reinicializar si es un error de app no encontrada
+    if (event.reason.code === 'app/no-app' || 
+        event.reason.message.includes('NO_APP')) {
+      console.log('🔄 Intentando reinicializar Firebase...');
+      setTimeout(() => {
+        initializeFirebaseSafely();
+      }, 1000);
     }
-  } catch (error) {
-    console.error('Error handling keyboard shortcuts:', error);
   }
-}
+});
 
-function onAuthStateChanged(user) {
-  try {
-    if (APP_CONFIG.DEBUG_MODE) {
-      console.log('🔧 Estado de autenticación cambió:', user ? user.email : 'No autenticado');
-    }
-    
-    if (user) {
-      currentUser = user;
-      loadUserData();
-    } else {
-      currentUser = null;
-      currentUserData = null;
-      clearUserCache();
-      showPublicContent();
-    }
-  } catch (error) {
-    console.error('❌ Error en cambio de estado de autenticación:', error);
-    showNotification('Error en autenticación', 'error');
-  }
-}
+console.log('🚀 Sistema de inicialización cargado');
+console.log('📱 Versión: 1.0');
+console.log('🏥 CESFAM: Configuración dinámica');
+console.log('🔧 Debug mode:', APP_CONFIG.DEBUG_MODE ? 'Activado' : 'Desactivado');
 
-function clearUserCache() {
-  try {
-    // Limpiar datos en memoria
-    solicitudesData = [];
-    pacientesData = [];
-    citasData = [];
-    professionalsList = [];
-    
-    // Limpiar cache
-    dataCache.clear();
-    
-    // Limpiar contenedores
-    const containers = [
-      'requests-container',
-      'patients-grid',
-      'appointments-list',
-      'upcoming-appointments-grid',
-      'patients-timeline'
-    ];
-    
-    containers.forEach(containerId => {
-      const container = document.getElementById(containerId);
-      if (container) {
-        container.innerHTML = '';
-      }
-    });
-    
-  } catch (error) {
-    console.error('Error clearing user cache:', error);
-  }
-}
-
-async function loadUserData() {
-  try {
-    showLoading(true, 'Cargando datos del usuario...');
-    
-    if (!currentUser) {
-      throw new Error('Usuario no autenticado');
-    }
-
-    // Intentar cargar desde cache primero
-    const cacheKey = `user_${currentUser.uid}`;
-    const cachedData = getCachedData(cacheKey);
-    
-    if (cachedData) {
-      currentUserData = cachedData;
-      showProfessionalContent();
-      await loadInitialData();
-      return;
-    }
-
-    // Cargar desde Firestore con reintentos
-    const userData = await retryOperation(async () => {
-      const userDoc = await db.collection('profesionales').doc(currentUser.uid).get();
-      
-      if (!userDoc.exists) {
-        throw new Error('No se encontraron datos del profesional');
-      }
-      
-      return userDoc.data();
-    });
-    
-    currentUserData = userData;
-    setCachedData(cacheKey, userData);
-    
-    showProfessionalContent();
-    await loadInitialData();
-    
-  } catch (error) {
-    console.error('❌ Error cargando datos del usuario:', error);
-    
-    if (error.code === 'permission-denied') {
-      showNotification('Sin permisos para acceder a los datos', 'error');
-    } else if (error.message.includes('No se encontraron datos')) {
-      showNotification('Perfil de profesional no encontrado. Contacta al administrador.', 'error');
-    } else {
-      showNotification('Error al cargar datos del usuario: ' + error.message, 'error');
-    }
-    
-    await handleLogout();
-  } finally {
-    showLoading(false);
-  }
-}
+// ================= FIN DE LA PARTE 1 =================
 // ================= PARTE 2 COMPLETA: FORMULARIOS Y VALIDACIONES =================
 // Versión corregida con flujo simplificado según tipo de solicitud
 
