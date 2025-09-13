@@ -6,10 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="styles.css">
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <!-- Loading Overlay -->
@@ -19,9 +15,6 @@
       <p>Cargando...</p>
     </div>
   </div>
-
-  <!-- Notifications Container -->
-  <div id="notifications" style="position: fixed; top: 20px; right: 20px; z-index: 10001;"></div>
 
   <!-- Header -->
   <header class="header">
@@ -179,7 +172,6 @@
               <label class="form-label">CESFAM *</label>
               <select class="form-select" id="patient-cesfam" required>
                 <option value="">Seleccionar CESFAM...</option>
-                <!-- Las opciones se cargarán dinámicamente desde JavaScript -->
               </select>
             </div>
           </div>
@@ -369,7 +361,6 @@
             <label class="form-label">Centro de preferencia</label>
             <select class="form-select" id="centro-preferencia">
               <option value="">Sin preferencia</option>
-              <!-- Las opciones se cargarán dinámicamente -->
             </select>
           </div>
         </div>
@@ -412,11 +403,7 @@
         </div>
 
         <nav class="nav-menu">
-          <div class="nav-item active" data-panel="dashboard">
-            <i class="fas fa-chart-line"></i>
-            Dashboard
-          </div>
-          <div class="nav-item" data-panel="requests">
+          <div class="nav-item active" data-panel="requests">
             <i class="fas fa-inbox"></i>
             Solicitudes
             <span class="badge" id="requests-badge">0</span>
@@ -437,18 +424,6 @@
             <i class="fas fa-file-medical-alt"></i>
             Reportes
           </div>
-          <div class="nav-item" data-panel="centers" id="centers-nav" style="display: none;">
-            <i class="fas fa-hospital"></i>
-            Centros
-          </div>
-          <div class="nav-item" data-panel="users" id="users-nav" style="display: none;">
-            <i class="fas fa-user-cog"></i>
-            Usuarios
-          </div>
-          <div class="nav-item" data-panel="analytics" id="analytics-nav" style="display: none;">
-            <i class="fas fa-chart-bar"></i>
-            Analytics
-          </div>
         </nav>
 
         <div class="sidebar-footer">
@@ -461,109 +436,11 @@
 
       <!-- Main Panel -->
       <div class="main-panel">
-        <!-- Dashboard Panel -->
-        <div class="panel-content active" id="dashboard-panel">
-          <div class="panel-header">
-            <h1 class="panel-title">Dashboard</h1>
-            <p class="panel-subtitle">Resumen general de actividades</p>
-          </div>
-
-          <div class="metrics-grid">
-            <div class="metric-card">
-              <div class="metric-header">
-                <h3>Pacientes Activos</h3>
-                <i class="fas fa-users metric-icon"></i>
-              </div>
-              <div class="metric-value" id="total-patients">0</div>
-              <div class="metric-change positive">
-                <i class="fas fa-arrow-up"></i> +12% desde el mes pasado
-              </div>
-            </div>
-
-            <div class="metric-card">
-              <div class="metric-header">
-                <h3>Citas Hoy</h3>
-                <i class="fas fa-calendar metric-icon"></i>
-              </div>
-              <div class="metric-value" id="today-appointments">0</div>
-              <div class="metric-detail">
-                Próxima cita: <span id="next-appointment">--:--</span>
-              </div>
-            </div>
-
-            <div class="metric-card">
-              <div class="metric-header">
-                <h3>Solicitudes Pendientes</h3>
-                <i class="fas fa-clock metric-icon"></i>
-              </div>
-              <div class="metric-value" id="pending-requests">0</div>
-              <div class="metric-change negative">
-                Requieren atención inmediata
-              </div>
-            </div>
-
-            <div class="metric-card">
-              <div class="metric-header">
-                <h3>Casos Críticos</h3>
-                <i class="fas fa-exclamation-triangle metric-icon"></i>
-              </div>
-              <div class="metric-value critical" id="critical-cases">0</div>
-              <div class="metric-detail">
-                Última alerta: <span id="last-alert">N/A</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="dashboard-charts">
-            <div class="chart-container">
-              <h3>Casos por Prioridad</h3>
-              <canvas id="priority-chart"></canvas>
-            </div>
-            <div class="chart-container">
-              <h3>Tendencia Mensual</h3>
-              <canvas id="trend-chart"></canvas>
-            </div>
-          </div>
-
-          <div class="recent-activity">
-            <h3>Actividad Reciente</h3>
-            <div id="activity-list">
-              <!-- Se llenará dinámicamente -->
-            </div>
-          </div>
-        </div>
-
         <!-- Requests Panel -->
-        <div class="panel-content hidden" id="requests-panel">
+        <div class="panel-content active" id="requests-panel">
           <div class="panel-header">
             <h1 class="panel-title">Gestión de Solicitudes</h1>
             <p class="panel-subtitle">Revisa y gestiona las solicitudes pendientes</p>
-          </div>
-
-          <div class="filters-section">
-            <div class="filter-group">
-              <select class="form-select" id="filter-priority">
-                <option value="">Todas las prioridades</option>
-                <option value="critica">Crítica</option>
-                <option value="alta">Alta</option>
-                <option value="media">Media</option>
-                <option value="baja">Baja</option>
-              </select>
-              
-              <select class="form-select" id="filter-status">
-                <option value="">Todos los estados</option>
-                <option value="pendiente">Pendiente</option>
-                <option value="en_proceso">En proceso</option>
-                <option value="atendido">Atendido</option>
-              </select>
-
-              <input type="date" class="form-input" id="filter-date">
-              
-              <button class="btn btn-outline" id="clear-filters">
-                <i class="fas fa-times"></i>
-                Limpiar
-              </button>
-            </div>
           </div>
 
           <div id="requests-list">
@@ -590,31 +467,6 @@
         <div class="panel-content hidden" id="reports-panel">
           <!-- El contenido se cargará dinámicamente desde JavaScript -->
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Center Finder Modal -->
-  <div class="modal-overlay" id="center-modal">
-    <div class="modal">
-      <button class="modal-close" data-close="center-modal">
-        <i class="fas fa-times"></i>
-      </button>
-      <h2>Encontrar Centro de Salud</h2>
-      
-      <div class="location-input">
-        <div class="form-group">
-          <label class="form-label">Tu ubicación</label>
-          <input type="text" class="form-input" id="location-input" placeholder="Ingresa tu dirección o permite geolocalización">
-          <button class="btn btn-outline" id="use-location">
-            <i class="fas fa-location-arrow"></i>
-            Usar mi ubicación
-          </button>
-        </div>
-      </div>
-
-      <div id="centers-list">
-        <!-- Lista de centros se cargará dinámicamente -->
       </div>
     </div>
   </div>
@@ -686,17 +538,6 @@
               <option value="admin">Administrador</option>
             </select>
           </div>
-          <div class="form-group">
-            <label class="form-label">Número de Licencia</label>
-            <input type="text" class="form-input" id="register-license" placeholder="Número de registro profesional">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Centro de Salud</label>
-            <select class="form-select" id="register-center">
-              <option value="">Seleccionar centro...</option>
-              <!-- Las opciones se cargarán dinámicamente -->
-            </select>
-          </div>
           <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 16px;">
             <i class="fas fa-user-plus"></i>
             Registrarse
@@ -706,6 +547,12 @@
     </div>
   </div>
 
- <script src="app.js"></script>
+  <!-- Firebase Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+
+  <!-- App Script -->
+  <script src="app.js"></script>
 </body>
 </html>
