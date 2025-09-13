@@ -38,18 +38,12 @@ let isDraftSaved = false;
 const cesfamPuenteAlto = [
   'CESFAM Alejandro del Río',
   'CESFAM Cardenal Raúl Silva Henríquez',
-  'CESFAM Cordillera Andina',
-  'CESFAM Dr. Steeger',
-  'CESFAM El Volcán',
-  'CESFAM Gabriela Mistral',
-  'CESFAM Karol Wojtyla',
-  'CESFAM La Obra',
+  'CESFAM Karol Wojtyla,
+  'CESFAM Bernardo Leigthon,
+  'CESFAM Vista Hermosa,
+  'CESFAM Laurita Vicuña,
   'CESFAM Padre Manuel Villaseca',
-  'CESFAM Puente Alto',
   'CESFAM San Gerónimo',
-  'CESFAM San Luis',
-  'CESFAM Santa Julia',
-  'CESFAM Sostenes Fernández'
 ];
 
 const sustanciasData = [
