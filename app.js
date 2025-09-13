@@ -2347,7 +2347,6 @@ function resetForm() {
     console.error('Error reseteando formulario:', error);
   }
 }
-}
 // ================= PARTE 3 FINAL: GESTIÓN DE DATOS Y FUNCIONES AUXILIARES =================
 // Continuación desde la PARTE 2
 
