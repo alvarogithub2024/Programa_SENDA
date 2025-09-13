@@ -4389,6 +4389,7 @@ if (document.readyState === 'loading') {
   initializeApp();
 }
 
+// Registro de service worker para PWA (opcional) - CORREGIDO
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
@@ -4396,3 +4397,40 @@ if ('serviceWorker' in navigator) {
         if (APP_CONFIG.DEBUG_MODE) {
           console.log('✅ Service Worker registrado:', registration.scope);
         }
+      })
+      .catch(error => {
+        if (APP_CONFIG.DEBUG_MODE) {
+          console.log('❌ Error registrando Service Worker:', error);
+        }
+      });
+  });
+}
+
+// Event listeners globales para PWA
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  window.deferredPrompt = e;
+});
+
+// Manejo de errores no capturados
+window.addEventListener('error', (e) => {
+  if (APP_CONFIG.DEBUG_MODE) {
+    console.error('❌ Error no capturado:', e.error);
+  }
+});
+
+// Verificar conectividad
+window.addEventListener('online', () => {
+  showNotification('Conexión restaurada', 'success', 2000);
+});
+
+window.addEventListener('offline', () => {
+  showNotification('Sin conexión a internet', 'warning', 5000);
+});
+
+console.log('🎉 SENDA PUENTE ALTO - Sistema cargado completamente');
+console.log('📱 Versión: 1.0');
+console.log('🏥 CESFAM: Configuración dinámica');
+console.log('🔧 Debug mode:', APP_CONFIG.DEBUG_MODE ? 'Activado' : 'Desactivado');
+
+// ================= FIN DEL ARCHIVO APP.JS =================
