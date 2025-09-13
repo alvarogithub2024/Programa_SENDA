@@ -1506,23 +1506,6 @@ function renderCalendar() {
     const dayElement = document.createElement('div');
     dayElement.className = 'calendar-day';
     
-    const isCurrentMonth = currentDate.getMonth() === month;
-    const isToday = currentDate.toDateString() === today.toDateString();
-    const isPast = currentDate < today.setHours(0, 0, 0, 0);
-    
-    if (!isCurrentMonth) {
-      dayElement.classList.add('other-month');
-    }
-    
-    if (isToday) {
-      dayElement.classList.add('today');
-    }
-    
-    if (isPast && isCurrentMonth) {
-      dayElement.style.opacity = '0.5';
-      dayElement.style.pointerEvents = 'none';
-    }
-    
     dayElement.innerHTML = `
       <div class="calendar-day-number">${currentDate.getDate()}</div>
       <div class="calendar-appointments" id="appointments-${currentDate.toISOString().split('T')[0]}"></div>
@@ -1772,17 +1755,6 @@ function renderUpcomingAppointments(appointmentsSnapshot) {
     `;
   }).join('');
 }
-
-function openSeguimientoForm(appointmentId) {
-  // Crear modal de seguimiento
-  const seguimientoModal = `
-    <div class="modal-overlay" id="seguimiento-modal">
-      <div class="modal large-modal">
-        <button class="modal-close" onclick="closeModal('seguimiento-modal')">
-          <i class="fas fa-times"></i>
-        </button>
-        <h2>Registro de Seguimiento</h2>
-        
         <form id="seguimiento-form">
           <input type="hidden" id="appointment-id" value="${appointmentId}">
           
@@ -1876,11 +1848,6 @@ async function handleSeguimientoSubmit(e) {
     
     // Guardar seguimiento
     await db.collection('seguimientos').add(formData);
-    
-    // Actualizar estado de la cita
-    await db.collection('citas').doc(appointmentId).update({
-      estado: formData.estadoPaciente === 'asistio' ? 'completado' : formData.estadoPaciente,
-      ultimoSeguimiento: firebase.firestore.FieldValue.serverTimestamp()
     });
     
     // Si hay próxima cita, crearla
@@ -1917,7 +1884,6 @@ async function handleSeguimientoSubmit(e) {
   }
 }
 
-// ================= FUNCIONES DE AGENDA =================
 
 function showAgendaModal(solicitudId) {
   // Crear modal de agenda
@@ -1991,12 +1957,6 @@ function showAgendaModal(solicitudId) {
   setupAgendaForm();
 }
 
-function setupAgendaForm() {
-  const tipoProfesionalSelect = document.getElementById('tipo-profesional');
-  const profesionalSelect = document.getElementById('profesional-asignado');
-  const fechaCitaInput = document.getElementById('fecha-cita');
-  const horaCitaSelect = document.getElementById('hora-cita');
-  
   // Load professionals when type changes
   tipoProfesionalSelect.addEventListener('change', async () => {
     const tipo = tipoProfesionalSelect.value;
@@ -2600,15 +2560,6 @@ function setupAgendaPacienteForm() {
       return;
     }
     
-    try {
-      const professionalsSnapshot = await db.collection('profesionales')
-        .where('profession', '==', tipo)
-        .where('cesfam', '==', currentUserData.cesfam)
-        .where('activo', '==', true)
-        .get();
-      
-      profesionalSelect.innerHTML = '<option value="">Seleccionar profesional...</option>';
-      
       professionalsSnapshot.forEach(doc => {
         const prof = doc.data();
         const option = document.createElement('option');
