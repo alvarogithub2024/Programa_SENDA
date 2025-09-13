@@ -16,7 +16,7 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Lista de CESFAM de Puente Alto - CORREGIDA
+// Lista de CESFAM de Puente Alto
 const cesfamPuenteAlto = [
   "CESFAM Alejandro del Río",
   "CESFAM Karol Wojtyla", 
@@ -345,6 +345,7 @@ function loadCesfamData() {
     });
   }
 }
+// Continúa desde la PARTE 1...
 
 function initializeEventListeners() {
   // Botones principales
@@ -587,7 +588,7 @@ async function handleReentrySubmission(e) {
   }
 }
 
-// ================= AUTENTICACIÓN DE PROFESIONALES ACTUALIZADA =================
+// ================= AUTENTICACIÓN DE PROFESIONALES =================
 
 async function handleProfessionalLogin(e) {
   e.preventDefault();
@@ -681,7 +682,6 @@ async function handleProfessionalRegistration(e) {
   const emailElement = document.getElementById('register-email');
   const passwordElement = document.getElementById('register-password');
   const professionElement = document.getElementById('register-profession');
-  const licenseElement = document.getElementById('register-license');
   const centerElement = document.getElementById('register-center');
 
   if (!nameElement || !emailElement || !passwordElement || !professionElement) {
@@ -696,7 +696,6 @@ async function handleProfessionalRegistration(e) {
     email: emailElement.value.trim(),
     password: passwordElement.value,
     profession: professionElement.value,
-    license: licenseElement ? licenseElement.value.trim() : '',
     center: centerElement ? centerElement.value : ''
   };
 
@@ -734,7 +733,6 @@ async function handleProfessionalRegistration(e) {
       nombre: registrationData.name,
       correo: registrationData.email,
       profesion: registrationData.profession,
-      licencia: registrationData.license || 'No especificada',
       cesfam_asignado: registrationData.center || null, // CAMPO CESFAM
       configuracion_sistema: {
         rol: registrationData.profession,
@@ -842,6 +840,8 @@ function getDefaultPermissions(profession) {
   
   return permissions[profession] || ['ver_casos'];
 }
+// Continúa desde la PARTE 2...
+
 // ================= PANEL DE GESTIÓN Y DASHBOARD =================
 
 function showProfessionalPanel(userData) {
@@ -1118,10 +1118,10 @@ async function loadRequestsPanel(userData) {
 // ================= GESTIÓN DE PACIENTES CON FILTRADO POR CESFAM =================
 
 async function loadPatientsPanel(userData) {
-  const patientsList = document.getElementById('patients-list');
-  if (!patientsList) return;
+  const patientsPanel = document.getElementById('patients-panel');
+  if (!patientsPanel) return;
   
-  patientsList.innerHTML = `
+  patientsPanel.innerHTML = `
     <div class="panel-header">
       <h1 class="panel-title">Gestión de Pacientes</h1>
       <p class="panel-subtitle">Lista de pacientes activos en el sistema</p>
@@ -1148,7 +1148,7 @@ async function loadPatientsPanel(userData) {
       .get();
     
     if (patientsSnapshot.empty) {
-      patientsList.innerHTML = `
+      patientsPanel.innerHTML = `
         <div class="panel-header">
           <h1 class="panel-title">Gestión de Pacientes</h1>
           <p class="panel-subtitle">Lista de pacientes activos en el sistema</p>
@@ -1221,11 +1221,11 @@ async function loadPatientsPanel(userData) {
       `;
     });
     
-    patientsList.innerHTML = html;
+    patientsPanel.innerHTML = html;
     
   } catch (error) {
     console.error('Error loading patients:', error);
-    patientsList.innerHTML = `
+    patientsPanel.innerHTML = `
       <div class="panel-header">
         <h1 class="panel-title">Gestión de Pacientes</h1>
         <p class="panel-subtitle">Lista de pacientes activos en el sistema</p>
@@ -1444,6 +1444,7 @@ async function searchPatientByRut() {
     `;
   }
 }
+// Continúa desde la PARTE 3...
 
 // ================= AGENDA Y CITAS =================
 
@@ -1995,7 +1996,52 @@ async function handleFollowupSubmission(e, patientId, patientName) {
   }
 }
 
-// ================= OTRAS FUNCIONES AUXILIARES =================
+// ================= FUNCIONES AUXILIARES DE AGENDA =================
+
+async function startAppointment(appointmentId) {
+  try {
+    await db.collection('citas').doc(appointmentId).update({
+      estado: 'en_curso',
+      hora_inicio: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    showNotification('Atención iniciada', 'success');
+    loadCalendarPanel(currentUserData);
+    
+  } catch (error) {
+    console.error('Error starting appointment:', error);
+    showNotification('Error al iniciar la atención', 'error');
+  }
+}
+
+async function editAppointment(appointmentId) {
+  showNotification('Función de edición de citas en desarrollo', 'info');
+}
+
+async function cancelAppointment(appointmentId) {
+  if (!confirm('¿Estás seguro de cancelar esta cita?')) return;
+  
+  try {
+    await db.collection('citas').doc(appointmentId).update({
+      estado: 'cancelada',
+      fecha_cancelacion: firebase.firestore.FieldValue.serverTimestamp(),
+      cancelado_por: currentUserData.uid
+    });
+    
+    showNotification('Cita cancelada correctamente', 'success');
+    loadCalendarPanel(currentUserData);
+    
+  } catch (error) {
+    console.error('Error canceling appointment:', error);
+    showNotification('Error al cancelar la cita', 'error');
+  }
+}
+
+function showAvailableProfessionals() {
+  showNotification('Función de disponibilidad de profesionales en desarrollo', 'info');
+}
+
+// ================= VER DETALLE DE PACIENTES =================
 
 async function viewPatientDetail(patientId) {
   try {
@@ -2094,8 +2140,9 @@ function showPatientDetailModal(patientId, data, followups) {
   document.body.insertAdjacentHTML('beforeend', modalHTML);
   document.getElementById('patient-detail-modal').style.display = 'flex';
 }
+// Continúa desde la PARTE 4...
 
-// ================= FUNCIONES RESTANTES DE LA PRIMERA PARTE =================
+// ================= FUNCIONES DE FORMULARIOS Y VALIDACIONES =================
 
 function setupFormValidation() {
   const rutInput = document.getElementById('patient-rut');
@@ -2136,9 +2183,18 @@ function setupFormValidation() {
   });
 
   const ageInput = document.getElementById('patient-age');
-// Completar las funciones restantes que faltaban en el archivo anterior
-
-// ================= FUNCIONES AUXILIARES ADICIONALES =================
+  if (ageInput) {
+    ageInput.addEventListener('blur', function(e) {
+      const age = parseInt(e.target.value);
+      if (age && (age < 12 || age > 120)) {
+        e.target.classList.add('error');
+        showNotification('Por favor ingresa una edad válida (12-120 años)', 'error');
+      } else {
+        e.target.classList.remove('error');
+      }
+    });
+  }
+}
 
 function setupModalControls() {
   document.addEventListener('click', function(e) {
@@ -2275,58 +2331,6 @@ function prevFormStep() {
     if (prevStepElement) prevStepElement.classList.add('active');
     
     updateFormProgress();
-  }
-}
-
-function setupFormValidation() {
-  const rutInput = document.getElementById('patient-rut');
-  if (rutInput) {
-    rutInput.addEventListener('input', function(e) {
-      e.target.value = formatRUT(e.target.value);
-    });
-
-    rutInput.addEventListener('blur', function(e) {
-      const rut = e.target.value.trim();
-      if (rut && !validateRUT(rut)) {
-        e.target.classList.add('error');
-        showNotification('El RUT ingresado no es válido', 'error');
-      } else {
-        e.target.classList.remove('error');
-      }
-    });
-  }
-
-  const phoneInputs = document.querySelectorAll('#patient-phone, #anonymous-phone');
-  phoneInputs.forEach(input => {
-    input.addEventListener('input', function(e) {
-      e.target.value = formatPhoneNumber(e.target.value);
-    });
-  });
-
-  const emailInputs = document.querySelectorAll('input[type="email"]');
-  emailInputs.forEach(input => {
-    input.addEventListener('blur', function(e) {
-      const email = e.target.value.trim();
-      if (email && !isValidEmail(email)) {
-        e.target.classList.add('error');
-        showNotification('Por favor ingresa un correo electrónico válido', 'error');
-      } else {
-        e.target.classList.remove('error');
-      }
-    });
-  });
-
-  const ageInput = document.getElementById('patient-age');
-  if (ageInput) {
-    ageInput.addEventListener('blur', function(e) {
-      const age = parseInt(e.target.value);
-      if (age && (age < 12 || age > 120)) {
-        e.target.classList.add('error');
-        showNotification('Por favor ingresa una edad válida (12-120 años)', 'error');
-      } else {
-        e.target.classList.remove('error');
-      }
-    });
   }
 }
 
@@ -2580,6 +2584,106 @@ function resetForm() {
   }
 }
 
+// ================= MANEJO DE SOLICITUDES Y REGISTROS =================
+
+async function handlePatientRegistration(e) {
+  if (e) e.preventDefault();
+  
+  try {
+    showLoading(true);
+    collectCurrentStepData();
+    
+    // Crear estructura de datos para Firebase
+    const solicitudData = {
+      datos_personales: {
+        edad: parseInt(formData.edad) || 0,
+        cesfam: formData.cesfam || '',
+        para_quien: formData.paraMi || '',
+        anonimo: formData.tipoSolicitud === 'anonimo',
+        solo_informacion: formData.tipoSolicitud === 'informacion'
+      },
+      datos_contacto: {},
+      evaluacion_inicial: {},
+      clasificacion: {
+        estado: 'pendiente',
+        prioridad: 'baja',
+        categoria_riesgo: 'bajo'
+      },
+      metadata: {
+        fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
+        canal_ingreso: 'web_publica',
+        ip_origen: 'anonimizada',
+        dispositivo_usado: navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop'
+      }
+    };
+    
+    // Datos de contacto según tipo de solicitud
+    if (formData.tipoSolicitud === 'identificado') {
+      solicitudData.datos_contacto = {
+        nombre_completo: `${formData.nombre || ''} ${formData.apellido || ''}`.trim(),
+        rut: formData.rut || '',
+        telefono_principal: formData.telefono || '',
+        email: formData.email || '',
+        direccion: formData.direccion || ''
+      };
+    } else if (formData.tipoSolicitud === 'anonimo') {
+      solicitudData.datos_contacto.telefono_principal = formData.telefonoContacto || '';
+    } else if (formData.tipoSolicitud === 'informacion') {
+      solicitudData.datos_contacto.email = formData.emailInformacion || '';
+    }
+    
+    // Evaluación inicial (solo para solicitudes no informativas)
+    if (formData.tipoSolicitud !== 'informacion') {
+      solicitudData.evaluacion_inicial = {
+        sustancias_consumo: formData.sustancias || [],
+        tiempo_consumo_meses: parseInt(formData.tiempoConsumo) || 0,
+        motivacion_cambio: parseInt(formData.motivacion) || 5,
+        urgencia_declarada: formData.urgencia || 'baja',
+        tratamiento_previo: formData.tratamientoPrevio || 'no',
+        descripcion_situacion: formData.razon || '',
+        centro_preferencia: formData.centroPreferencia || ''
+      };
+      
+      // Calcular prioridad automáticamente
+      const prioridad = calculatePriority({
+        sustancias: formData.sustancias,
+        edad: parseInt(formData.edad),
+        tiempoConsumo: parseInt(formData.tiempoConsumo),
+        urgencia: formData.urgencia,
+        motivacion: parseInt(formData.motivacion),
+        tratamientoPrevio: formData.tratamientoPrevio,
+        razon: formData.razon
+      });
+      
+      solicitudData.clasificacion.prioridad = prioridad;
+      solicitudData.clasificacion.categoria_riesgo = prioridad === 'critica' ? 'alto' : prioridad === 'alta' ? 'moderado' : 'bajo';
+    }
+    
+    // Guardar en Firebase
+    const docRef = await db.collection('solicitudes_ingreso').add(solicitudData);
+    
+    // Limpiar formulario
+    localStorage.removeItem('senda_draft');
+    resetForm();
+    closeModal('patient-modal');
+    
+    // Mostrar mensaje de éxito
+    if (formData.tipoSolicitud === 'informacion') {
+      showNotification('Solicitud de información enviada correctamente. Te contactaremos pronto.', 'success', 6000);
+    } else {
+      showNotification('Solicitud de ingreso enviada correctamente. Un profesional la revisará pronto.', 'success', 6000);
+    }
+    
+    console.log('Solicitud creada con ID:', docRef.id);
+    
+  } catch (error) {
+    console.error('Error al registrar solicitud:', error);
+    showNotification('Error al enviar la solicitud. Por favor intenta nuevamente.', 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
 // ================= FUNCIONES DE SOLICITUDES AUXILIARES =================
 
 async function reviewRequest(requestId) {
@@ -2690,4 +2794,665 @@ function showRequestDetailModal(requestId, data) {
           </div>
         </div>
         
-        <div class="
+        <div class="modal-actions" style="margin-top: 24px;">
+          ${!isInfoOnly && data.clasificacion?.estado === 'pendiente' ? `
+          <button class="btn btn-success" onclick="acceptRequest('${requestId}'); closeModal('request-detail-modal');">
+            <i class="fas fa-check"></i> Aceptar Solicitud
+          </button>
+          ` : ''}
+          ${isInfoOnly && data.clasificacion?.estado === 'pendiente' ? `
+          <button class="btn btn-success" onclick="sendInformation('${requestId}'); closeModal('request-detail-modal');">
+            <i class="fas fa-envelope"></i> Enviar Información
+          </button>
+          ` : ''}
+          <button class="btn btn-outline" onclick="closeModal('request-detail-modal')">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  document.getElementById('request-detail-modal').style.display = 'flex';
+}
+
+async function acceptRequest(requestId) {
+  if (!confirm('¿Estás seguro de aceptar esta solicitud?')) return;
+  
+  try {
+    showLoading(true);
+    
+    await db.collection('solicitudes_ingreso').doc(requestId).update({
+      'clasificacion.estado': 'aceptada',
+      'clasificacion.fecha_aceptacion': firebase.firestore.FieldValue.serverTimestamp(),
+      'clasificacion.profesional_asignado': currentUserData.uid
+    });
+    
+    const solicitud = await db.collection('solicitudes_ingreso').doc(requestId).get();
+    const data = solicitud.data();
+    
+    if (!data.datos_personales.anonimo && !data.datos_personales.solo_informacion) {
+      await createPatientRecord(requestId, data);
+    }
+    
+    showNotification('Solicitud aceptada correctamente', 'success');
+    loadRequestsPanel(currentUserData);
+    
+  } catch (error) {
+    console.error('Error accepting request:', error);
+    showNotification('Error al aceptar la solicitud', 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function sendInformation(requestId) {
+  if (!confirm('¿Enviar información del programa al email proporcionado?')) return;
+  
+  try {
+    showLoading(true);
+    
+    await db.collection('solicitudes_ingreso').doc(requestId).update({
+      'clasificacion.estado': 'informacion_enviada',
+      'clasificacion.fecha_respuesta': firebase.firestore.FieldValue.serverTimestamp(),
+      'clasificacion.profesional_responsable': currentUserData.uid
+    });
+    
+    showNotification('Información enviada correctamente', 'success');
+    loadRequestsPanel(currentUserData);
+    
+  } catch (error) {
+    console.error('Error sending information:', error);
+    showNotification('Error al enviar información', 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function createPatientRecord(solicitudId, solicitudData) {
+  const patientData = {
+    solicitud_origen: solicitudId,
+    datos_personales: {
+      nombre_completo: solicitudData.datos_contacto?.nombre_completo || solicitudData.datos_personales?.nombre_completo || '',
+      rut: solicitudData.datos_contacto?.rut || solicitudData.datos_personales?.rut || '',
+      edad: solicitudData.datos_personales?.edad || 0,
+      cesfam: solicitudData.datos_personales?.cesfam || '',
+      direccion: solicitudData.datos_contacto?.direccion || ''
+    },
+    contacto: {
+      telefono: solicitudData.datos_contacto?.telefono_principal || '',
+      email: solicitudData.datos_contacto?.email || ''
+    },
+    historial_clinico: [{
+      fecha: firebase.firestore.FieldValue.serverTimestamp(),
+      tipo: 'ingreso_inicial',
+      profesional: currentUserData.uid,
+      evaluacion_inicial: solicitudData.evaluacion_inicial || {},
+      observaciones: 'Paciente ingresado desde solicitud web'
+    }],
+    estado_actual: {
+      activo: true,
+      programa: 'ambulatorio',
+      profesional_asignado: null,
+      fecha_ingreso: firebase.firestore.FieldValue.serverTimestamp()
+    },
+    metadata: {
+      fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
+      creado_por: currentUserData.uid
+    }
+  };
+  
+  await db.collection('pacientes').add(patientData);
+}
+
+// ================= REPORTES =================
+
+async function loadReportsPanel(userData) {
+  const reportsPanel = document.getElementById('reports-panel');
+  if (!reportsPanel) return;
+  
+  if (!userData.configuracion_sistema?.permisos?.includes('reportes') && 
+      userData.profesion !== 'admin' && userData.profesion !== 'coordinador') {
+    reportsPanel.innerHTML = `
+      <div class="panel-header">
+        <h1 class="panel-title">Reportes</h1>
+        <p class="panel-subtitle">Generación de reportes y estadísticas</p>
+      </div>
+      <div class="card">
+        <p style="text-align: center; color: var(--gray-600);">
+          <i class="fas fa-lock" style="font-size: 24px; margin-bottom: 12px; display: block;"></i>
+          No tienes permisos para acceder a los reportes.
+        </p>
+      </div>
+    `;
+    return;
+  }
+  
+  try {
+    const stats = await loadSystemStatistics();
+    
+    reportsPanel.innerHTML = `
+      <div class="panel-header">
+        <h1 class="panel-title">Reportes y Estadísticas</h1>
+        <p class="panel-subtitle">Métricas del sistema y reportes generales</p>
+      </div>
+      
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-icon"><i class="fas fa-users"></i></div>
+          <div class="stat-content">
+            <h3>${stats.totalPatients}</h3>
+            <p>Pacientes Activos</p>
+          </div>
+        </div>
+        
+        <div class="stat-item">
+          <div class="stat-icon"><i class="fas fa-clipboard-list"></i></div>
+          <div class="stat-content">
+            <h3>${stats.pendingRequests}</h3>
+            <p>Solicitudes Pendientes</p>
+          </div>
+        </div>
+        
+        <div class="stat-item">
+          <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+          <div class="stat-content">
+            <h3>${stats.criticalCases}</h3>
+            <p>Casos Críticos</p>
+          </div>
+        </div>
+        
+        <div class="stat-item">
+          <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+          <div class="stat-content">
+            <h3>${stats.appointmentsToday}</h3>
+            <p>Citas Hoy</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="reports-section">
+        <h2>Generar Reportes</h2>
+        <div class="reports-grid">
+          <div class="report-card">
+            <h3>Estadísticas por CESFAM</h3>
+            <p>Distribución de casos por CESFAM de Puente Alto</p>
+            <button class="btn btn-primary" onclick="generateCesfamReport()">
+              <i class="fas fa-chart-bar"></i> Ver Estadísticas
+            </button>
+          </div>
+          
+          <div class="report-card">
+            <h3>Reporte de Pacientes</h3>
+            <p>Lista completa de pacientes activos</p>
+            <button class="btn btn-primary" onclick="generatePatientsReport()">
+              <i class="fas fa-file-excel"></i> Generar Excel
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+  } catch (error) {
+    console.error('Error loading reports panel:', error);
+    reportsPanel.innerHTML = `
+      <div class="panel-header">
+        <h1 class="panel-title">Reportes</h1>
+        <p class="panel-subtitle">Error al cargar estadísticas</p>
+      </div>
+      <p>Error: ${error.message}</p>
+    `;
+  }
+}
+
+async function loadSystemStatistics() {
+  try {
+    const today = new Date();
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+    
+    const [
+      totalPatientsSnapshot,
+      pendingRequestsSnapshot,
+      criticalCasesSnapshot,
+      appointmentsTodaySnapshot
+    ] = await Promise.all([
+      db.collection('pacientes').where('estado_actual.activo', '==', true).get(),
+      db.collection('solicitudes_ingreso').where('clasificacion.estado', '==', 'pendiente').get(),
+      db.collection('solicitudes_ingreso').where('clasificacion.prioridad', '==', 'critica').where('clasificacion.estado', '==', 'pendiente').get(),
+      db.collection('citas').where('fecha', '>=', startOfDay).where('fecha', '<=', endOfDay).get()
+    ]);
+    
+    return {
+      totalPatients: totalPatientsSnapshot.size,
+      pendingRequests: pendingRequestsSnapshot.size,
+      criticalCases: criticalCasesSnapshot.size,
+      appointmentsToday: appointmentsTodaySnapshot.size
+    };
+  } catch (error) {
+    console.error('Error loading statistics:', error);
+    return {
+      totalPatients: 0,
+      pendingRequests: 0,
+      criticalCases: 0,
+      appointmentsToday: 0
+    };
+  }
+}
+
+async function generateCesfamReport() {
+  try {
+    showLoading(true);
+
+    const requestsSnapshot = await db.collection('solicitudes_ingreso').get();
+    const patientsSnapshot = await db.collection('pacientes').get();
+
+    const cesfamStats = {};
+
+    cesfamPuenteAlto.forEach(c => cesfamStats[c] = { solicitudes: 0, pacientes: 0 });
+
+    requestsSnapshot.forEach(doc => {
+      const cesfam = doc.data().datos_personales?.cesfam || 'Sin CESFAM';
+      if (!cesfamStats[cesfam]) cesfamStats[cesfam] = { solicitudes: 0, pacientes: 0 };
+      cesfamStats[cesfam].solicitudes++;
+    });
+
+    patientsSnapshot.forEach(doc => {
+      const cesfam = doc.data().datos_personales?.cesfam || 'Sin CESFAM';
+      if (!cesfamStats[cesfam]) cesfamStats[cesfam] = { solicitudes: 0, pacientes: 0 };
+      cesfamStats[cesfam].pacientes++;
+    });
+
+    showCesfamStatsModal(cesfamStats);
+
+  } catch (error) {
+    console.error('Error generando estadísticas por CESFAM:', error);
+    showNotification('Error al generar estadísticas por CESFAM', 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+function showCesfamStatsModal(stats) {
+  const modalHTML = `
+    <div class="modal-overlay" id="cesfam-stats-modal">
+      <div class="modal large-modal">
+        <button class="modal-close" onclick="closeModal('cesfam-stats-modal')">
+          <i class="fas fa-times"></i>
+        </button>
+        <h2>Estadísticas por CESFAM - Puente Alto</h2>
+        <div class="regional-stats">
+          <table class="stats-table">
+            <thead>
+              <tr>
+                <th>CESFAM</th>
+                <th>Solicitudes</th>
+                <th>Pacientes Activos</th>
+                <th>Conversión</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${Object.entries(stats).map(([cesfam, data]) => `
+                <tr>
+                  <td><strong>${cesfam}</strong></td>
+                  <td>${data.solicitudes}</td>
+                  <td>${data.pacientes}</td>
+                  <td>${data.solicitudes > 0 ? Math.round((data.pacientes / data.solicitudes) * 100) : 0}%</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-actions" style="margin-top: 24px;">
+          <button class="btn btn-outline" onclick="closeModal('cesfam-stats-modal')">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  document.getElementById('cesfam-stats-modal').style.display = 'flex';
+}
+
+async function generatePatientsReport() {
+  try {
+    showLoading(true);
+    
+    const patientsSnapshot = await db.collection('pacientes')
+      .where('estado_actual.activo', '==', true)
+      .get();
+    
+    if (patientsSnapshot.empty) {
+      showNotification('No hay pacientes para generar el reporte', 'warning');
+      return;
+    }
+    
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Nombre,RUT,Edad,CESFAM,Teléfono,Email,Programa,Fecha Ingreso\n";
+    
+    patientsSnapshot.forEach(doc => {
+      const data = doc.data();
+      const row = [
+        `"${data.datos_personales?.nombre_completo || 'Sin nombre'}"`,
+        `"${data.datos_personales?.rut || 'Sin RUT'}"`,
+        data.datos_personales?.edad || 0,
+        `"${data.datos_personales?.cesfam || 'N/A'}"`,
+        `"${data.contacto?.telefono || 'Sin teléfono'}"`,
+        `"${data.contacto?.email || 'Sin email'}"`,
+        `"${data.estado_actual?.programa || 'N/A'}"`,
+        `"${formatDate(data.estado_actual?.fecha_ingreso)}"`
+      ].join(',');
+      
+      csvContent += row + "\n";
+    });
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `pacientes_puente_alto_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showNotification('Reporte de pacientes generado correctamente', 'success');
+    
+  } catch (error) {
+    console.error('Error generating patients report:', error);
+    showNotification('Error al generar el reporte de pacientes', 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+// ================= FUNCIONES AUXILIARES FINALES =================
+
+function getCurrentLocation() {
+  if (!navigator.geolocation) {
+    showNotification('La geolocalización no está soportada en este navegador', 'error');
+    return;
+  }
+  
+  showLoading(true);
+  navigator.geolocation.getCurrentPosition(
+    async function(position) {
+      try {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        
+        showNotification(`Ubicación obtenida: ${lat.toFixed(6)}, ${lng.toFixed(6)}`, 'success');
+        await loadNearbyClinics(lat, lng);
+        
+      } catch (error) {
+        console.error('Error processing location:', error);
+        showNotification('Error al procesar la ubicación', 'error');
+      } finally {
+        showLoading(false);
+      }
+    },
+    function(error) {
+      showLoading(false);
+      let errorMessage = 'Error al obtener la ubicación';
+      
+      switch(error.code) {
+        case error.PERMISSION_DENIED:
+          errorMessage = 'Permiso de geolocalización denegado';
+          break;
+        case error.POSITION_UNAVAILABLE:
+          errorMessage = 'Información de ubicación no disponible';
+          break;
+        case error.TIMEOUT:
+          errorMessage = 'Tiempo de espera agotado para obtener la ubicación';
+          break;
+      }
+      
+      showNotification(errorMessage, 'error');
+    }
+  );
+}
+
+async function loadNearbyClinics(lat = null, lng = null) {
+  try {
+    const centersList = document.getElementById('centers-list');
+    if (!centersList) return;
+    
+    let html = '<h3>CESFAM de Puente Alto</h3>';
+    cesfamPuenteAlto.forEach(cesfam => {
+      html += `
+        <div class="center-card">
+          <h3>${cesfam}</h3>
+          <p><i class="fas fa-map-marker-alt"></i> Puente Alto, Región Metropolitana</p>
+          <p><i class="fas fa-hospital"></i> Centro de Salud Familiar</p>
+          <div class="center-actions">
+            <button class="btn btn-sm btn-primary" onclick="selectCenter('${cesfam}')">
+              <i class="fas fa-check"></i> Seleccionar
+            </button>
+          </div>
+        </div>
+      `;
+    });
+    
+    centersList.innerHTML = html;
+    
+  } catch (error) {
+    console.error('Error loading centers:', error);
+    const centersList = document.getElementById('centers-list');
+    if (centersList) {
+      centersList.innerHTML = '<p>Error al cargar centros: ' + error.message + '</p>';
+    }
+  }
+}
+
+function selectCenter(centerName) {
+  const centerInput = document.getElementById('centro-preferencia');
+  if (centerInput) {
+    centerInput.value = centerName;
+  }
+  
+  showNotification(`Centro seleccionado: ${centerName}`, 'success');
+  closeModal('center-modal');
+}
+
+async function handleLogout() {
+  if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
+    try {
+      if (window.sendaUnsubscribers) {
+        window.sendaUnsubscribers.forEach(unsubscribe => unsubscribe());
+        window.sendaUnsubscribers = [];
+      }
+      
+      await auth.signOut();
+      currentUser = null;
+      currentUserData = null;
+      closeModal('panel-modal');
+      showNotification('Sesión cerrada correctamente', 'success');
+      
+      const loginForm = document.getElementById('login-form');
+      const registerForm = document.getElementById('register-form');
+      if (loginForm) loginForm.reset();
+      if (registerForm) registerForm.reset();
+      
+      const loginTab = document.querySelector('[data-tab="login"]');
+      if (loginTab) loginTab.click();
+      
+    } catch (error) {
+      console.error('Logout error:', error);
+      showNotification('Error al cerrar sesión: ' + error.message, 'error');
+    }
+  }
+}
+
+function startRealTimeListeners(userData) {
+  console.log('Starting real-time listeners for:', userData.nombre);
+  
+  const unsubscribeCritical = db.collection('alertas_criticas')
+    .where('estado', '==', 'pendiente')
+    .onSnapshot(snapshot => {
+      snapshot.docChanges().forEach(change => {
+        if (change.type === 'added') {
+          const alertData = change.doc.data();
+          showNotification(
+            `Nueva alerta crítica: ${alertData.mensaje}`,
+            'error',
+            10000
+          );
+        }
+      });
+    });
+  
+  const unsubscribeRequests = db.collection('solicitudes_ingreso')
+    .where('clasificacion.estado', '==', 'pendiente')
+    .onSnapshot(snapshot => {
+      const pendingCount = snapshot.size;
+      const badge = document.getElementById('requests-badge');
+      if (badge) {
+        badge.textContent = pendingCount;
+        badge.style.display = pendingCount > 0 ? 'inline' : 'none';
+      }
+    });
+  
+  window.sendaUnsubscribers = [unsubscribeCritical, unsubscribeRequests];
+}
+
+// ================= LISTENER DE AUTENTICACIÓN =================
+
+auth.onAuthStateChanged(user => {
+  currentUser = user;
+  if (user) {
+    loadUserData(user.uid);
+  }
+});
+
+async function loadUserData(uid) {
+  try {
+    const doc = await db.collection('profesionales').doc(uid).get();
+    if (doc.exists) {
+      currentUserData = { uid, ...doc.data() };
+    }
+  } catch (error) {
+    console.error('Error loading user data:', error);
+  }
+}
+
+// ================= EVENTOS FINALES =================
+
+window.addEventListener('beforeunload', function() {
+  if (localStorage.getItem('senda_draft')) {
+    localStorage.removeItem('senda_draft');
+  }
+});
+
+window.addEventListener('online', function() {
+  showNotification('Conexión restablecida', 'success', 3000);
+});
+
+window.addEventListener('offline', function() {
+  showNotification('Sin conexión a internet', 'warning', 10000);
+});
+
+// ================= ESTILOS ADICIONALES =================
+
+const additionalStyles = `
+<style>
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+
+.stats-table th,
+.stats-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.stats-table th {
+  background: var(--gray-50);
+  font-weight: 600;
+  color: var(--gray-700);
+}
+
+.stats-table tr:hover {
+  background: var(--gray-50);
+}
+
+.report-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+}
+
+.report-card h3 {
+  color: var(--primary-blue);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.reports-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.reports-section h2 {
+  color: var(--gray-800);
+  font-size: 20px;
+  font-weight: 600;
+  margin: 32px 0 16px 0;
+  border-bottom: 2px solid var(--gray-200);
+  padding-bottom: 8px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.info-grid div {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.detail-section {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.detail-section:last-child {
+  border-bottom: none;
+}
+
+.detail-section h3 {
+  color: var(--primary-blue);
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid var(--gray-200);
+}
+</style>
+`;
+
+// Agregar estilos al documento
+document.head.insertAdjacentHTML('beforeend', additionalStyles);
+
+// ================= INICIALIZACIÓN FINAL =================
+
+window.addEventListener('DOMContentLoaded', () => {
+  loadCesfamData();
+  console.log('SENDA Puente Alto - Sistema completamente cargado');
+});
+
+// Fin del archivo app.js
