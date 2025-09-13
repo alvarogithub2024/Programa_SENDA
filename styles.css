@@ -255,6 +255,18 @@ body {
   margin: 0;
 }
 
+/* Logout button in professional header */
+.professional-header .btn-outline {
+  background: transparent;
+  color: white !important;
+  border: 2px solid white;
+}
+
+.professional-header .btn-outline:hover {
+  background: white;
+  color: var(--primary-blue) !important;
+}
+
 /* BUTTONS */
 .btn {
   display: inline-flex;

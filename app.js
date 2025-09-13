@@ -679,7 +679,19 @@ function setupMultiStepForm() {
     btn.addEventListener('click', () => {
       const currentStep = parseInt(btn.id.split('-')[2]);
       if (validateStep(currentStep)) {
-        goToStep(currentStep + 1);
+        const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+        let nextStep = currentStep + 1;
+        
+        // Handle special navigation based on request type
+        if (tipoSolicitud === 'informacion' && currentStep === 1) {
+          // Information-only: skip directly to step 4 (submission)
+          nextStep = 4;
+        } else if (tipoSolicitud === 'anonimo' && currentStep === 1) {
+          // Anonymous: skip step 2, go to step 3
+          nextStep = 3;
+        }
+        
+        goToStep(nextStep);
       }
     });
   });
@@ -687,7 +699,19 @@ function setupMultiStepForm() {
   prevButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       const currentStep = parseInt(btn.id.split('-')[2]);
-      goToStep(currentStep - 1);
+      const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+      let prevStep = currentStep - 1;
+      
+      // Handle special navigation based on request type
+      if (tipoSolicitud === 'informacion' && currentStep === 4) {
+        // Information-only: go back to step 1
+        prevStep = 1;
+      } else if (tipoSolicitud === 'anonimo' && currentStep === 3) {
+        // Anonymous: skip step 2, go back to step 1
+        prevStep = 1;
+      }
+      
+      goToStep(prevStep);
     });
   });
 
@@ -808,6 +832,13 @@ function validateStep(step) {
 function goToStep(step) {
   if (step < 1 || step > maxFormStep) return;
 
+  const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+  
+  // Apply form flow logic based on user type
+  if (tipoSolicitud) {
+    step = getNextValidStep(step, tipoSolicitud);
+  }
+
   // Update step visibility
   document.querySelectorAll('.form-step').forEach(stepDiv => {
     stepDiv.classList.remove('active');
@@ -818,29 +849,68 @@ function goToStep(step) {
     targetStep.classList.add('active');
   }
 
-  // Update progress
+  // Update progress based on actual flow
   const progressFill = document.getElementById('form-progress');
   const progressText = document.getElementById('progress-text');
   
-  if (progressFill) {
-    const progressPercentage = (step / maxFormStep) * 100;
-    progressFill.style.width = `${progressPercentage}%`;
-  }
-  
-  if (progressText) {
-    progressText.textContent = `Paso ${step} de ${maxFormStep}`;
+  if (progressFill && progressText) {
+    updateFormProgress(step, tipoSolicitud);
   }
 
   currentFormStep = step;
+}
 
-  // Handle step 2 visibility for identified patients only
-  if (step === 2) {
-    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
-    if (tipoSolicitud !== 'identificado') {
-      goToStep(3); // Skip to step 3 for anonymous or info-only requests
-      return;
+function getNextValidStep(step, tipoSolicitud) {
+  // Information-only requests: only step 1, then submission
+  if (tipoSolicitud === 'informacion') {
+    if (step > 1) {
+      // For information-only, skip directly to submission (step 4)
+      return 4;
     }
+    return step;
   }
+  
+  // Anonymous requests: steps 1, 3, 4 (skip step 2)
+  if (tipoSolicitud === 'anonimo') {
+    if (step === 2) {
+      return 3; // Skip step 2
+    }
+    return step;
+  }
+  
+  // Identified requests: all steps 1, 2, 3, 4
+  return step;
+}
+
+function updateFormProgress(step, tipoSolicitud) {
+  const progressFill = document.getElementById('form-progress');
+  const progressText = document.getElementById('progress-text');
+  
+  let totalSteps, currentStepInFlow, progressPercentage;
+  
+  if (tipoSolicitud === 'informacion') {
+    // Information-only: effectively 2 steps (step 1 + submission)
+    totalSteps = 2;
+    currentStepInFlow = step === 1 ? 1 : 2;
+    progressPercentage = (currentStepInFlow / totalSteps) * 100;
+    progressText.textContent = step === 1 ? 'Paso 1 de 2' : 'Paso 2 de 2 - Finalizar';
+  } else if (tipoSolicitud === 'anonimo') {
+    // Anonymous: 3 steps (1, 3, 4)
+    totalSteps = 3;
+    if (step === 1) currentStepInFlow = 1;
+    else if (step === 3) currentStepInFlow = 2;
+    else if (step === 4) currentStepInFlow = 3;
+    progressPercentage = (currentStepInFlow / totalSteps) * 100;
+    progressText.textContent = `Paso ${currentStepInFlow} de ${totalSteps}`;
+  } else {
+    // Identified: all 4 steps
+    totalSteps = 4;
+    currentStepInFlow = step;
+    progressPercentage = (currentStepInFlow / totalSteps) * 100;
+    progressText.textContent = `Paso ${step} de ${totalSteps}`;
+  }
+  
+  progressFill.style.width = `${progressPercentage}%`;
 }
 
 async function handlePatientFormSubmit(e) {
@@ -860,15 +930,40 @@ async function handlePatientFormSubmit(e) {
       edad: parseInt(document.getElementById('patient-age').value),
       cesfam: document.getElementById('patient-cesfam').value,
       paraMi: document.querySelector('input[name="paraMi"]:checked')?.value,
-      sustancias: Array.from(document.querySelectorAll('input[name="sustancias"]:checked')).map(cb => cb.value),
-      tiempoConsumo: document.getElementById('tiempo-consumo').value,
-      urgencia: document.querySelector('input[name="urgencia"]:checked')?.value,
-      tratamientoPrevio: document.querySelector('input[name="tratamientoPrevio"]:checked')?.value,
-      descripcion: document.getElementById('patient-description').value.trim(),
-      motivacion: parseInt(document.getElementById('motivacion-range').value),
       fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
       estado: 'pendiente'
     };
+
+    // Add evaluation data only if not information-only request
+    if (tipoSolicitud !== 'informacion') {
+      const sustanciasElements = document.querySelectorAll('input[name="sustancias"]:checked');
+      const urgenciaElement = document.querySelector('input[name="urgencia"]:checked');
+      const tratamientoPrevioElement = document.querySelector('input[name="tratamientoPrevio"]:checked');
+      const motivacionElement = document.getElementById('motivacion-range');
+      
+      if (sustanciasElements.length > 0) {
+        solicitudData.sustancias = Array.from(sustanciasElements).map(cb => cb.value);
+      }
+      if (document.getElementById('tiempo-consumo').value) {
+        solicitudData.tiempoConsumo = document.getElementById('tiempo-consumo').value;
+      }
+      if (urgenciaElement) {
+        solicitudData.urgencia = urgenciaElement.value;
+      }
+      if (tratamientoPrevioElement) {
+        solicitudData.tratamientoPrevio = tratamientoPrevioElement.value;
+      }
+      if (document.getElementById('patient-description').value.trim()) {
+        solicitudData.descripcion = document.getElementById('patient-description').value.trim();
+      }
+      if (motivacionElement) {
+        solicitudData.motivacion = parseInt(motivacionElement.value);
+      }
+    } else {
+      // For information-only requests, mark as low priority
+      solicitudData.prioridad = 'baja';
+      solicitudData.descripcion = 'Solicitud de información sobre el programa SENDA';
+    }
 
     // Add contact info based on tipo solicitud
     if (tipoSolicitud === 'identificado') {
@@ -884,8 +979,10 @@ async function handlePatientFormSubmit(e) {
       solicitudData.email = document.getElementById('info-email').value.trim();
     }
 
-    // Calculate priority
-    solicitudData.prioridad = calculatePriority(solicitudData);
+    // Calculate priority only for non-information requests
+    if (tipoSolicitud !== 'informacion') {
+      solicitudData.prioridad = calculatePriority(solicitudData);
+    }
 
     // Save to Firebase
     await db.collection('solicitudes').add(solicitudData);
