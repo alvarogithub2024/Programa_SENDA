@@ -577,7 +577,6 @@ function initializeApp() {
     setupTabFunctionality();
     setupCalendar();
     setupFilters();
-    validateFormInputs();
     
     auth.onAuthStateChanged(onAuthStateChanged);
     
