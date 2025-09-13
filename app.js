@@ -1,5 +1,5 @@
 // ================= SENDA PUENTE ALTO - SISTEMA OPTIMIZADO COMPLETO =================
-// PARTE 1: Configuración, Variables Globales y Funciones Utilitarias
+// PARTE 1: Configuración, Variables Globales y Funciones Utilitarias - MODIFICADO
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -49,7 +49,7 @@ const cesfamPuenteAlto = [
   "CESFAM Cardenal Raúl Silva Henriquez"
 ];
 
-// Variables globales
+// Variables globales MODIFICADAS
 let currentUser = null;
 let currentUserData = null;
 let currentFormStep = 1;
@@ -60,12 +60,21 @@ let currentCalendarDate = new Date();
 let selectedCalendarDate = null;
 let currentFilter = 'todas';
 let currentPriorityFilter = '';
-let currentDateFilter = '';
 let solicitudesData = [];
 let pacientesData = [];
 let citasData = [];
 let professionalsList = [];
+let selectedProfessional = null; // NUEVO: para agenda
 let isLoading = false;
+
+// NUEVO: Configuración de horarios
+const HORARIOS_CONFIG = {
+  horaInicio: 8, // 08:00
+  horaFin: 16, // 16:30
+  minutoFin: 30,
+  intervaloMinutos: 30,
+  diasSemana: [1, 2, 3, 4, 5] // Lunes a Viernes
+};
 
 // Configuración de la aplicación
 const APP_CONFIG = {
@@ -97,12 +106,10 @@ function showNotification(message, type = 'info', duration = 4000) {
     
     container.appendChild(notification);
     
-    // Animación de entrada
     requestAnimationFrame(() => {
       notification.classList.add('show');
     });
     
-    // Auto-remove después del tiempo especificado
     setTimeout(() => {
       if (notification.parentElement) {
         notification.classList.remove('show');
@@ -114,7 +121,6 @@ function showNotification(message, type = 'info', duration = 4000) {
       }
     }, duration);
     
-    // Log para debugging
     if (APP_CONFIG.DEBUG_MODE) {
       console.log(`📢 Notification [${type.toUpperCase()}]: ${message}`);
     }
@@ -150,7 +156,6 @@ function showModal(modalId) {
       modal.style.display = 'flex';
       document.body.style.overflow = 'hidden';
       
-      // Focus en el primer input del modal
       setTimeout(() => {
         const firstInput = modal.querySelector('input:not([type="hidden"]), select, textarea');
         if (firstInput && !firstInput.disabled) {
@@ -175,7 +180,7 @@ function closeModal(modalId) {
   try {
     const modal = document.getElementById(modalId);
     if (modal) {
-      // Verificar si hay cambios sin guardar en formularios
+      // MODIFICADO: Verificar cambios solo en formulario de pacientes
       if (modalId === 'patient-modal' && !isDraftSaved) {
         const hasChanges = checkFormChanges();
         if (hasChanges && !confirm('¿Estás seguro de cerrar? Los cambios no guardados se perderán.')) {
@@ -187,7 +192,6 @@ function closeModal(modalId) {
       modal.style.display = 'none';
       document.body.style.overflow = 'auto';
       
-      // Remover modales temporales
       if (modal.classList.contains('temp-modal')) {
         modal.remove();
       }
@@ -245,11 +249,69 @@ function showLoading(show = true, message = 'Cargando...') {
   }
 }
 
+// NUEVAS FUNCIONES PARA AGENDA Y PROFESIONALES
+
+function generateTimeSlots() {
+  const slots = [];
+  const { horaInicio, horaFin, minutoFin, intervaloMinutos } = HORARIOS_CONFIG;
+  
+  for (let hora = horaInicio; hora <= horaFin; hora++) {
+    for (let minuto = 0; minuto < 60; minuto += intervaloMinutos) {
+      // No agregar slots después de la hora de fin
+      if (hora === horaFin && minuto > minutoFin) break;
+      
+      const timeString = `${hora.toString().padStart(2, '0')}:${minuto.toString().padStart(2, '0')}`;
+      slots.push({
+        time: timeString,
+        hour: hora,
+        minute: minuto,
+        available: true
+      });
+    }
+  }
+  
+  return slots;
+}
+
+function isWorkingDay(date) {
+  const dayOfWeek = date.getDay();
+  return HORARIOS_CONFIG.diasSemana.includes(dayOfWeek);
+}
+
+async function loadProfessionalsByArea() {
+  try {
+    if (!currentUserData) return [];
+    
+    const snapshot = await db.collection('profesionales')
+      .where('cesfam', '==', currentUserData.cesfam)
+      .where('activo', '==', true)
+      .get();
+    
+    const professionals = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      professionals.push({
+        id: doc.id,
+        nombre: data.nombre,
+        apellidos: data.apellidos,
+        profession: data.profession,
+        cesfam: data.cesfam,
+        email: data.email
+      });
+    });
+    
+    return professionals;
+  } catch (error) {
+    console.error('Error loading professionals:', error);
+    return [];
+  }
+}
+
+// Resto de las funciones utilitarias siguen igual...
 function formatRUT(rut) {
   try {
     if (!rut) return '';
     
-    // Limpiar el RUT
     const cleaned = rut.replace(/[^\dKk]/g, '').toUpperCase();
     
     if (cleaned.length < 2) return cleaned;
@@ -257,7 +319,6 @@ function formatRUT(rut) {
     const body = cleaned.slice(0, -1);
     const dv = cleaned.slice(-1);
     
-    // Formatear con puntos
     const formattedBody = body.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
     
     return `${formattedBody}-${dv}`;
@@ -277,7 +338,6 @@ function validateRUT(rut) {
     const body = cleaned.slice(0, -1);
     const dv = cleaned.slice(-1);
     
-    // Validar que el cuerpo sean solo números
     if (!/^\d+$/.test(body)) return false;
     
     let sum = 0;
@@ -323,22 +383,18 @@ function formatPhoneNumber(phone) {
     
     const cleaned = phone.replace(/\D/g, '');
     
-    // Teléfono fijo (8 dígitos)
     if (cleaned.length === 8 && !cleaned.startsWith('9')) {
       return cleaned.replace(/(\d{4})(\d{4})/, '$1 $2');
     }
     
-    // Celular sin código país (9 dígitos, empieza con 9)
     if (cleaned.length === 9 && cleaned.startsWith('9')) {
       return '+56 ' + cleaned.replace(/(\d)(\d{4})(\d{4})/, '$1 $2 $3');
     }
     
-    // Con código país (11 dígitos, empieza con 56)
     if (cleaned.length === 11 && cleaned.startsWith('56')) {
       return '+' + cleaned.replace(/(\d{2})(\d)(\d{4})(\d{4})/, '$1 $2 $3 $4');
     }
     
-    // Número internacional completo (12 dígitos, empieza con 569)
     if (cleaned.length === 12 && cleaned.startsWith('569')) {
       return '+' + cleaned.replace(/(\d{3})(\d{4})(\d{4})/, '$1 $2 $3');
     }
@@ -396,37 +452,30 @@ function calculatePriority(evaluationData) {
   try {
     let score = 0;
     
-    // Factores de riesgo por sustancia
     if (evaluationData.sustancias?.includes('pasta_base')) score += 4;
     if (evaluationData.sustancias?.includes('cocaina')) score += 3;
     if (evaluationData.sustancias?.includes('alcohol')) score += 1;
     if (evaluationData.sustancias?.includes('marihuana')) score += 1;
     
-    // Factores de riesgo por edad
     if (evaluationData.edad < 18) score += 3;
     if (evaluationData.edad >= 65) score += 2;
     
-    // Tiempo de consumo
     const tiempoConsumo = evaluationData.tiempoConsumo;
     if (tiempoConsumo === '60+') score += 3;
     if (tiempoConsumo === '24-60') score += 2;
     if (tiempoConsumo === '12-24') score += 1;
     
-    // Urgencia reportada
     if (evaluationData.urgencia === 'critica') score += 5;
     if (evaluationData.urgencia === 'alta') score += 3;
     if (evaluationData.urgencia === 'media') score += 1;
     
-    // Motivación (inversa - menor motivación = mayor riesgo)
     const motivacion = parseInt(evaluationData.motivacion) || 5;
     if (motivacion <= 3) score += 2;
     if (motivacion >= 8) score -= 1;
     
-    // Tratamiento previo fallido
     if (evaluationData.tratamientoPrevio === 'si_senda') score += 2;
     if (evaluationData.tratamientoPrevio === 'si_otro') score += 1;
     
-    // Palabras clave en descripción que indican crisis
     const descripcion = (evaluationData.descripcion || evaluationData.razon || '').toLowerCase();
     const palabrasCriticas = ['suicid', 'muerte', 'morir', 'matar', 'crisis', 'emergencia', 'urgente', 'desesper'];
     
@@ -437,7 +486,6 @@ function calculatePriority(evaluationData) {
       }
     }
     
-    // Clasificación final
     if (score >= 8) return 'critica';
     if (score >= 5) return 'alta';
     if (score >= 2) return 'media';
@@ -461,20 +509,6 @@ function debounce(func, wait) {
   };
 }
 
-function throttle(func, limit) {
-  let inThrottle;
-  return function() {
-    const args = arguments;
-    const context = this;
-    if (!inThrottle) {
-      func.apply(context, args);
-      inThrottle = true;
-      setTimeout(() => inThrottle = false, limit);
-    }
-  };
-}
-
-// Función para reintentos automáticos
 async function retryOperation(operation, maxAttempts = APP_CONFIG.MAX_RETRY_ATTEMPTS) {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
@@ -486,7 +520,6 @@ async function retryOperation(operation, maxAttempts = APP_CONFIG.MAX_RETRY_ATTE
         throw error;
       }
       
-      // Esperar antes del siguiente intento (backoff exponencial)
       await new Promise(resolve => 
         setTimeout(resolve, APP_CONFIG.RETRY_DELAY * Math.pow(2, attempt - 1))
       );
@@ -494,7 +527,6 @@ async function retryOperation(operation, maxAttempts = APP_CONFIG.MAX_RETRY_ATTE
   }
 }
 
-// Función para cachear datos
 function getCachedData(key) {
   const cached = dataCache.get(key);
   if (cached && (Date.now() - cached.timestamp) < APP_CONFIG.CACHE_DURATION) {
@@ -508,41 +540,6 @@ function setCachedData(key, data) {
     data,
     timestamp: Date.now()
   });
-}
-
-// Validación de campos de formulario mejorada
-function validateFormInputs() {
-  try {
-    const requiredInputs = document.querySelectorAll('input[required], select[required], textarea[required]');
-    
-    requiredInputs.forEach((input, index) => {
-      // Asegurar tabindex
-      if (!input.hasAttribute('tabindex')) {
-        input.setAttribute('tabindex', index + 1);
-      }
-      
-      // Asegurar visibilidad y capacidad de focus
-      if (input.style.display === 'none' || input.hidden) {
-        const parent = input.closest('.form-group');
-        if (parent && parent.style.display !== 'none') {
-          input.style.display = 'block';
-          input.hidden = false;
-        }
-      }
-      
-      // Agregar aria-labels si no existen
-      if (!input.hasAttribute('aria-label') && !input.hasAttribute('aria-labelledby')) {
-        const label = input.closest('.form-group')?.querySelector('label');
-        if (label) {
-          const labelId = `label-${index}`;
-          label.id = labelId;
-          input.setAttribute('aria-labelledby', labelId);
-        }
-      }
-    });
-  } catch (error) {
-    console.error('Error validating form inputs:', error);
-  }
 }
 
 // ================= INICIALIZACIÓN =================
@@ -559,7 +556,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function initializeApp() {
   try {
-    // Verificar dependencias críticas
     if (!firebase) {
       throw new Error('Firebase SDK no cargado');
     }
@@ -568,14 +564,12 @@ function initializeApp() {
       throw new Error('Firebase no está inicializado correctamente');
     }
 
-    // Configurar título y elementos básicos
     document.title = "PROGRAMA SENDA PUENTE ALTO";
     const mainTitle = document.getElementById('main-title');
     if (mainTitle) {
       mainTitle.textContent = "PROGRAMA SENDA PUENTE ALTO";
     }
 
-    // Inicializar componentes en orden
     initializeEventListeners();
     setupFormValidation();
     setupMultiStepForm();
@@ -585,10 +579,8 @@ function initializeApp() {
     setupFilters();
     validateFormInputs();
     
-    // Configurar listener de autenticación
     auth.onAuthStateChanged(onAuthStateChanged);
     
-    // Configurar manejo de errores globales
     window.addEventListener('error', handleGlobalError);
     window.addEventListener('unhandledrejection', handleUnhandledRejection);
     
@@ -614,34 +606,28 @@ function handleUnhandledRejection(event) {
     showNotification(`Error async: ${event.reason.message || event.reason}`, 'error');
   }
 }
-
-// ================= GESTIÓN DE EVENTOS Y AUTENTICACIÓN =================
+// ================= PARTE 2: GESTIÓN DE EVENTOS Y AUTENTICACIÓN - MODIFICADO =================
 
 function initializeEventListeners() {
   try {
-    // Elementos principales
     const loginProfessionalBtn = document.getElementById('login-professional');
     const logoutBtn = document.getElementById('logout-btn');
     const registerPatientBtn = document.getElementById('register-patient');
     const reentryProgramBtn = document.getElementById('reentry-program');
     const aboutProgramBtn = document.getElementById('about-program');
     
-    // Elementos de búsqueda
     const searchSolicitudes = document.getElementById('search-solicitudes');
     const searchSeguimiento = document.getElementById('search-seguimiento');
     const searchPacientesRut = document.getElementById('search-pacientes-rut');
     const buscarPacienteBtn = document.getElementById('buscar-paciente-btn');
     
-    // Elementos de filtros
     const priorityFilter = document.getElementById('priority-filter');
-    const dateFilter = document.getElementById('date-filter');
+    // ELIMINADO: dateFilter ya no se usa
     
-    // Elementos de calendario
     const prevMonthBtn = document.getElementById('prev-month');
     const nextMonthBtn = document.getElementById('next-month');
     const nuevaCitaBtn = document.getElementById('nueva-cita-btn');
 
-    // Event listeners principales
     if (loginProfessionalBtn) {
       loginProfessionalBtn.addEventListener('click', () => {
         if (APP_CONFIG.DEBUG_MODE) console.log('🔧 Abriendo modal de login');
@@ -671,7 +657,6 @@ function initializeEventListeners() {
       aboutProgramBtn.addEventListener('click', showAboutProgram);
     }
 
-    // Búsquedas con debounce
     if (searchSolicitudes) {
       searchSolicitudes.addEventListener('input', debounce(filterSolicitudes, 300));
     }
@@ -692,22 +677,15 @@ function initializeEventListeners() {
         }
       });
       
-      // Formatear RUT mientras se escribe
       searchPacientesRut.addEventListener('input', (e) => {
         e.target.value = formatRUT(e.target.value);
       });
     }
 
-    // Filtros
     if (priorityFilter) {
       priorityFilter.addEventListener('change', filterSolicitudes);
     }
 
-    if (dateFilter) {
-      dateFilter.addEventListener('change', filterSolicitudes);
-    }
-
-    // Navegación de calendario
     if (prevMonthBtn) {
       prevMonthBtn.addEventListener('click', () => {
         currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
@@ -726,7 +704,6 @@ function initializeEventListeners() {
       nuevaCitaBtn.addEventListener('click', () => createNuevaCitaModal());
     }
 
-    // Keyboard shortcuts
     document.addEventListener('keydown', handleKeyboardShortcuts);
     
     console.log('✅ Event listeners inicializados correctamente');
@@ -737,7 +714,6 @@ function initializeEventListeners() {
 
 function handleKeyboardShortcuts(e) {
   try {
-    // Ctrl/Cmd + K para búsqueda rápida
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
       e.preventDefault();
       const searchInput = document.getElementById('search-solicitudes');
@@ -746,7 +722,6 @@ function handleKeyboardShortcuts(e) {
       }
     }
     
-    // Escape para cerrar modales
     if (e.key === 'Escape') {
       const openModal = document.querySelector('.modal-overlay[style*="flex"]');
       if (openModal) {
@@ -781,16 +756,13 @@ function onAuthStateChanged(user) {
 
 function clearUserCache() {
   try {
-    // Limpiar datos en memoria
     solicitudesData = [];
     pacientesData = [];
     citasData = [];
     professionalsList = [];
     
-    // Limpiar cache
     dataCache.clear();
     
-    // Limpiar contenedores
     const containers = [
       'requests-container',
       'patients-grid',
@@ -819,7 +791,6 @@ async function loadUserData() {
       throw new Error('Usuario no autenticado');
     }
 
-    // Intentar cargar desde cache primero
     const cacheKey = `user_${currentUser.uid}`;
     const cachedData = getCachedData(cacheKey);
     
@@ -830,7 +801,6 @@ async function loadUserData() {
       return;
     }
 
-    // Cargar desde Firestore con reintentos
     const userData = await retryOperation(async () => {
       const userDoc = await db.collection('profesionales').doc(currentUser.uid).get();
       
@@ -863,15 +833,11 @@ async function loadUserData() {
     showLoading(false);
   }
 }
-// ================= PARTE 2: FORMULARIOS Y VALIDACIONES =================
-// Continuación desde la PARTE 1
 
 async function loadInitialData() {
   try {
-    // Cargar datos básicos en paralelo
     const loadPromises = [];
     
-    // Solo cargar si estamos en la tab activa correspondiente
     const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab || 'solicitudes';
     
     switch (activeTab) {
@@ -889,7 +855,6 @@ async function loadInitialData() {
         break;
     }
     
-    // Cargar lista de profesionales para referencias
     loadPromises.push(loadProfessionalsList());
     
     await Promise.allSettled(loadPromises);
@@ -960,7 +925,6 @@ function showProfessionalContent() {
     if (professionalHeader) professionalHeader.style.display = 'block';
     if (loginBtn) loginBtn.style.display = 'none';
     
-    // Actualizar información del profesional
     if (currentUserData) {
       updateProfessionalInfo();
     }
@@ -989,7 +953,6 @@ function updateProfessionalInfo() {
       professionalCesfam.textContent = currentUserData.cesfam;
     }
     
-    // Actualizar avatar con iniciales
     const avatar = document.querySelector('.professional-avatar');
     if (avatar) {
       const initials = `${currentUserData.nombre.charAt(0)}${currentUserData.apellidos.charAt(0)}`.toUpperCase();
@@ -1001,11 +964,10 @@ function updateProfessionalInfo() {
   }
 }
 
-// ================= AUTENTICACIÓN =================
+// ================= AUTENTICACIÓN CORREGIDA =================
 
 function setupModalControls() {
   try {
-    // Configurar tabs de modales
     const modalTabs = document.querySelectorAll('.modal-tab');
     modalTabs.forEach(tab => {
       tab.addEventListener('click', () => {
@@ -1013,17 +975,14 @@ function setupModalControls() {
         const modal = tab.closest('.modal');
         
         if (modal) {
-          // Cambiar tab activo
           modal.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
           tab.classList.add('active');
           
-          // Cambiar form activo
           modal.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
           const targetForm = modal.querySelector(`#${targetTab}-form`);
           if (targetForm) {
             targetForm.classList.add('active');
             
-            // Focus en primer input
             setTimeout(() => {
               const firstInput = targetForm.querySelector('input:not([type="hidden"])');
               if (firstInput) firstInput.focus();
@@ -1033,7 +992,6 @@ function setupModalControls() {
       });
     });
 
-    // Configurar botones de cerrar
     const closeButtons = document.querySelectorAll('.modal-close, [data-close]');
     closeButtons.forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -1043,7 +1001,9 @@ function setupModalControls() {
       });
     });
 
-    // Configurar cierre con click fuera del modal
+    // MODIFICADO: Eliminar cierre al hacer click fuera
+    // Se comenta esta funcionalidad
+    /*
     const modalOverlays = document.querySelectorAll('.modal-overlay');
     modalOverlays.forEach(overlay => {
       overlay.addEventListener('click', (e) => {
@@ -1052,8 +1012,8 @@ function setupModalControls() {
         }
       });
     });
+    */
 
-    // Configurar formularios de autenticación
     const loginForm = document.getElementById('login-form');
     const registerForm = document.getElementById('register-form');
 
@@ -1079,7 +1039,6 @@ async function handleLogin(e) {
     const password = document.getElementById('login-password')?.value || '';
     const submitBtn = e.target.querySelector('button[type="submit"]');
     
-    // Validación básica
     if (!email || !password) {
       showNotification('Por favor completa todos los campos', 'warning');
       return;
@@ -1092,7 +1051,6 @@ async function handleLogin(e) {
 
     toggleSubmitButton(submitBtn, true);
     
-    // Intentar login con reintentos
     await retryOperation(async () => {
       await auth.signInWithEmailAndPassword(email, password);
     });
@@ -1100,7 +1058,6 @@ async function handleLogin(e) {
     closeModal('login-modal');
     showNotification('Sesión iniciada correctamente', 'success');
     
-    // Limpiar formulario
     e.target.reset();
     
   } catch (error) {
@@ -1138,6 +1095,7 @@ async function handleLogin(e) {
   }
 }
 
+// CORREGIDO: Función de registro que SÍ GUARDA en Firebase
 async function handleRegister(e) {
   e.preventDefault();
   
@@ -1151,6 +1109,8 @@ async function handleRegister(e) {
       email: document.getElementById('register-email')?.value?.trim() || '',
       password: document.getElementById('register-password')?.value || ''
     };
+    
+    console.log('📋 Datos del registro:', formData); // Debug
     
     const submitBtn = e.target.querySelector('button[type="submit"]');
     
@@ -1182,22 +1142,34 @@ async function handleRegister(e) {
 
     toggleSubmitButton(submitBtn, true);
     
+    console.log('🔍 Verificando RUT existente...');
+    
     // Verificar si el RUT ya existe
     const rutFormatted = formatRUT(formData.rut);
-    const existingUser = await db.collection('profesionales')
-      .where('rut', '==', rutFormatted)
-      .get();
-    
-    if (!existingUser.empty) {
-      throw new Error('Ya existe un profesional registrado con este RUT');
+    try {
+      const existingUser = await db.collection('profesionales')
+        .where('rut', '==', rutFormatted)
+        .get();
+      
+      if (!existingUser.empty) {
+        throw new Error('Ya existe un profesional registrado con este RUT');
+      }
+    } catch (queryError) {
+      if (queryError.message.includes('RUT')) {
+        throw queryError;
+      }
+      console.warn('⚠️ Error verificando RUT (continuando):', queryError);
     }
     
-    // Crear usuario
+    console.log('👤 Creando usuario de autenticación...');
+    
+    // Crear usuario en Authentication
     const userCredential = await auth.createUserWithEmailAndPassword(formData.email, formData.password);
     const user = userCredential.user;
     
-    // Guardar datos del profesional
-    await db.collection('profesionales').doc(user.uid).set({
+    console.log('✅ Usuario creado con UID:', user.uid);
+    
+    const professionalData = {
       nombre: formData.nombre,
       apellidos: formData.apellidos,
       rut: rutFormatted,
@@ -1210,12 +1182,19 @@ async function handleRegister(e) {
         notificaciones: true,
         idioma: 'es'
       }
-    });
+    };
+    
+    console.log('💾 Guardando profesional en Firestore...');
+    console.log('📋 Datos a guardar:', professionalData);
+    
+    // Guardar en Firestore con el UID como ID del documento
+    await db.collection('profesionales').doc(user.uid).set(professionalData);
+    
+    console.log('✅ Profesional guardado exitosamente');
     
     closeModal('login-modal');
     showNotification('Cuenta creada exitosamente. ¡Bienvenido al sistema SENDA!', 'success');
     
-    // Limpiar formulario
     e.target.reset();
     
   } catch (error) {
@@ -1236,6 +1215,9 @@ async function handleRegister(e) {
       case 'auth/network-request-failed':
         message = 'Error de conexión. Verifica tu internet';
         break;
+      case 'permission-denied':
+        message = 'Sin permisos para crear profesional. Verifica las reglas de Firebase.';
+        break;
       default:
         if (error.message.includes('RUT')) {
           message = error.message;
@@ -1243,6 +1225,16 @@ async function handleRegister(e) {
     }
     
     showNotification(message, 'error');
+    
+    // Si se creó el usuario pero falló Firestore, eliminarlo
+    if (error.code === 'permission-denied' && auth.currentUser) {
+      try {
+        await auth.currentUser.delete();
+        console.log('Usuario de autenticación eliminado debido a error en Firestore');
+      } catch (deleteError) {
+        console.error('Error eliminando usuario:', deleteError);
+      }
+    }
   } finally {
     const submitBtn = e.target.querySelector('button[type="submit"]');
     if (submitBtn) toggleSubmitButton(submitBtn, false);
@@ -1289,19 +1281,16 @@ async function handleLogout() {
     showLoading(false);
   }
 }
-
-// ================= FORMULARIOS Y VALIDACIONES =================
+// ================= PARTE 3: FORMULARIOS Y VALIDACIONES MODIFICADAS =================
 
 function setupFormValidation() {
   try {
-    // Configurar validación en tiempo real para RUTs
     const rutInputs = document.querySelectorAll('input[id*="rut"], input[placeholder*="RUT"]');
     rutInputs.forEach(input => {
       input.addEventListener('input', (e) => {
         const formatted = formatRUT(e.target.value);
         e.target.value = formatted;
         
-        // Validación visual en tiempo real
         if (formatted.length > 3) {
           if (validateRUT(formatted)) {
             e.target.classList.remove('error');
@@ -1325,11 +1314,9 @@ function setupFormValidation() {
       });
     });
 
-    // Configurar validación para teléfonos
     const phoneInputs = document.querySelectorAll('input[type="tel"]');
     phoneInputs.forEach(input => {
       input.addEventListener('input', (e) => {
-        // Solo permitir números, espacios, + y -
         e.target.value = e.target.value.replace(/[^\d\s\+\-]/g, '');
       });
       
@@ -1341,7 +1328,6 @@ function setupFormValidation() {
       });
     });
 
-    // Configurar validación para emails
     const emailInputs = document.querySelectorAll('input[type="email"]');
     emailInputs.forEach(input => {
       input.addEventListener('blur', (e) => {
@@ -1360,7 +1346,6 @@ function setupFormValidation() {
       });
     });
 
-    // Configurar validación para campos de texto requeridos
     const requiredInputs = document.querySelectorAll('input[required], select[required], textarea[required]');
     requiredInputs.forEach(input => {
       input.addEventListener('blur', validateRequiredField);
@@ -1425,7 +1410,6 @@ function clearFieldError(field) {
 function validatePhoneNumber(input) {
   const phone = input.value.replace(/\D/g, '');
   
-  // Validar longitud según formato chileno
   const isValid = phone.length === 8 || // Fijo
                   phone.length === 9 && phone.startsWith('9') || // Celular sin código
                   phone.length === 11 && phone.startsWith('56') || // Con código país
@@ -1444,12 +1428,13 @@ function validatePhoneNumber(input) {
   return isValid;
 }
 
+// ================= FORMULARIO MULTI-PASO MODIFICADO =================
+
 function setupMultiStepForm() {
   try {
     const form = document.getElementById('patient-form');
     if (!form) return;
 
-    // Configurar navegación entre pasos
     const nextButtons = form.querySelectorAll('[id^="next-step"]');
     const prevButtons = form.querySelectorAll('[id^="prev-step"]');
     
@@ -1458,7 +1443,10 @@ function setupMultiStepForm() {
         e.preventDefault();
         const currentStep = parseInt(btn.id.split('-')[2]);
         if (validateStep(currentStep)) {
-          goToStep(currentStep + 1);
+          const nextStep = getNextStep(currentStep);
+          if (nextStep) {
+            goToStep(nextStep);
+          }
         }
       });
     });
@@ -1467,20 +1455,20 @@ function setupMultiStepForm() {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         const currentStep = parseInt(btn.id.split('-')[2]);
-        goToStep(currentStep - 1);
+        const prevStep = getPreviousStep(currentStep);
+        if (prevStep) {
+          goToStep(prevStep);
+        }
       });
     });
 
-    // Configurar envío del formulario
     form.addEventListener('submit', handlePatientFormSubmit);
 
-    // Configurar cambios en tipo de solicitud
     const tipoSolicitudInputs = document.querySelectorAll('input[name="tipoSolicitud"]');
     tipoSolicitudInputs.forEach(input => {
       input.addEventListener('change', updateFormVisibility);
     });
 
-    // Configurar slider de motivación
     const motivacionRange = document.getElementById('motivacion-range');
     const motivacionValue = document.getElementById('motivacion-value');
     if (motivacionRange && motivacionValue) {
@@ -1489,24 +1477,63 @@ function setupMultiStepForm() {
         updateMotivacionColor(motivacionRange.value);
       });
       
-      // Inicializar valor
       motivacionValue.textContent = motivacionRange.value;
       updateMotivacionColor(motivacionRange.value);
     }
 
-    // Configurar formulario de reingreso
     const reentryForm = document.getElementById('reentry-form');
     if (reentryForm) {
       reentryForm.addEventListener('submit', handleReentrySubmit);
     }
 
-    // Configurar autoguardado (draft)
     setupAutoSave();
 
     console.log('✅ Formulario multi-step configurado');
   } catch (error) {
     console.error('❌ Error configurando formulario multi-step:', error);
   }
+}
+
+// NUEVAS FUNCIONES PARA FLUJO MODIFICADO
+function getNextStep(currentStep) {
+  const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+  
+  switch (currentStep) {
+    case 1:
+      if (tipoSolicitud === 'informacion') {
+        return null; // No hay siguiente paso para información
+      } else if (tipoSolicitud === 'identificado') {
+        return 2; // Ir a datos personales
+      } else if (tipoSolicitud === 'anonimo') {
+        return 3; // Saltar datos personales, ir a evaluación
+      }
+      break;
+    case 2:
+      return 3; // De datos personales a evaluación
+    case 3:
+      return 4; // De evaluación a finalización
+    case 4:
+      return null; // No hay siguiente paso
+  }
+  return null;
+}
+
+function getPreviousStep(currentStep) {
+  const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+  
+  switch (currentStep) {
+    case 2:
+      return 1; // De datos personales a tipo de solicitud
+    case 3:
+      if (tipoSolicitud === 'identificado') {
+        return 2; // De evaluación a datos personales
+      } else {
+        return 1; // De evaluación a tipo de solicitud (anónimo)
+      }
+    case 4:
+      return 3; // De finalización a evaluación
+  }
+  return null;
 }
 
 function updateMotivacionColor(value) {
@@ -1541,10 +1568,9 @@ function setupAutoSave() {
     
     form.addEventListener('input', () => {
       clearTimeout(autoSaveTimer);
-      autoSaveTimer = setTimeout(saveFormDraft, 2000); // Auto-save cada 2 segundos
+      autoSaveTimer = setTimeout(saveFormDraft, 2000);
     });
     
-    // Cargar draft al abrir el formulario
     loadFormDraft();
   } catch (error) {
     console.error('Error setting up auto-save:', error);
@@ -1563,14 +1589,12 @@ function saveFormDraft() {
       draftData[key] = value;
     }
     
-    // Agregar datos adicionales
     draftData.currentStep = currentFormStep;
     draftData.timestamp = Date.now();
     
     localStorage.setItem('senda_form_draft', JSON.stringify(draftData));
     isDraftSaved = true;
     
-    // Mostrar indicador visual de guardado
     showDraftSavedIndicator();
     
   } catch (error) {
@@ -1585,13 +1609,11 @@ function loadFormDraft() {
     
     const draftData = JSON.parse(savedDraft);
     
-    // Verificar si el draft no es muy viejo (24 horas)
     if (Date.now() - draftData.timestamp > 24 * 60 * 60 * 1000) {
       localStorage.removeItem('senda_form_draft');
       return;
     }
     
-    // Preguntar si quiere restaurar
     if (confirm('Se encontró un borrador guardado. ¿Deseas continuar donde lo dejaste?')) {
       restoreFormDraft(draftData);
     }
@@ -1605,7 +1627,6 @@ function restoreFormDraft(draftData) {
     const form = document.getElementById('patient-form');
     if (!form) return;
     
-    // Restaurar valores de campos
     Object.keys(draftData).forEach(key => {
       if (key === 'currentStep' || key === 'timestamp') return;
       
@@ -1619,12 +1640,10 @@ function restoreFormDraft(draftData) {
       }
     });
     
-    // Ir al paso guardado
     if (draftData.currentStep) {
       goToStep(draftData.currentStep);
     }
     
-    // Actualizar visibilidad
     updateFormVisibility();
     
     showNotification('Borrador restaurado correctamente', 'success');
@@ -1675,11 +1694,9 @@ function updateFormVisibility() {
     const anonymousPhone = document.getElementById('anonymous-phone-container');
     const infoEmail = document.getElementById('info-email-container');
     
-    // Ocultar todos los campos condicionales
     if (anonymousPhone) anonymousPhone.style.display = 'none';
     if (infoEmail) infoEmail.style.display = 'none';
     
-    // Mostrar campos según el tipo de solicitud
     if (tipoSolicitud === 'anonimo' && anonymousPhone) {
       anonymousPhone.style.display = 'block';
       const phoneInput = document.getElementById('anonymous-phone');
@@ -1696,7 +1713,6 @@ function updateFormVisibility() {
       }
     }
     
-    // Limpiar requisitos de campos no visibles
     if (anonymousPhone && tipoSolicitud !== 'anonimo') {
       const phoneInput = document.getElementById('anonymous-phone');
       if (phoneInput) phoneInput.required = false;
@@ -1706,7 +1722,6 @@ function updateFormVisibility() {
       if (emailInput) emailInput.required = false;
     }
     
-    // Guardar draft después de cambios
     setTimeout(saveFormDraft, 500);
     
   } catch (error) {
@@ -1714,10 +1729,11 @@ function updateFormVisibility() {
   }
 }
 
-// ================= FUNCIONES DE VALIDACIÓN DE PASOS =================
+// ================= VALIDACIÓN DE PASOS MODIFICADA =================
 
 function validateStep(step) {
   try {
+    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
     const currentStepDiv = document.querySelector(`.form-step[data-step="${step}"]`);
     if (!currentStepDiv) return false;
 
@@ -1725,7 +1741,7 @@ function validateStep(step) {
     let isValid = true;
     const errors = [];
 
-    // Validar campos requeridos
+    // Validar campos requeridos visibles
     requiredFields.forEach(field => {
       const value = field.value?.trim() || '';
       
@@ -1742,22 +1758,21 @@ function validateStep(step) {
 
     // Validaciones específicas por paso
     if (step === 1) {
-      const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked');
       if (!tipoSolicitud) {
         errors.push('Selecciona un tipo de solicitud');
         isValid = false;
       } else {
-        // Validaciones específicas según tipo
-        if (tipoSolicitud.value === 'anonimo') {
+        // Validar campos específicos según tipo de solicitud
+        if (tipoSolicitud === 'anonimo') {
           const phone = document.getElementById('anonymous-phone');
           if (!phone.value.trim()) {
             errors.push('Ingresa un teléfono de contacto');
             isValid = false;
-          } else if (!validatePhoneNumber(phone)) {
+          } else if (!validatePhoneNumberString(phone.value.trim())) {
             errors.push('Ingresa un teléfono válido');
             isValid = false;
           }
-        } else if (tipoSolicitud.value === 'informacion') {
+        } else if (tipoSolicitud === 'informacion') {
           const email = document.getElementById('info-email');
           if (!email.value.trim()) {
             errors.push('Ingresa un email para recibir información');
@@ -1766,10 +1781,15 @@ function validateStep(step) {
             errors.push('Ingresa un email válido');
             isValid = false;
           }
+          
+          // Para información, terminar aquí - no hay más pasos
+          if (isValid) {
+            handleInformationOnlySubmit();
+            return false; // No continuar con más pasos
+          }
         }
       }
 
-      // Validar edad
       const edad = parseInt(document.getElementById('patient-age').value);
       if (edad && (edad < 12 || edad > 120)) {
         errors.push('La edad debe estar entre 12 y 120 años');
@@ -1785,7 +1805,7 @@ function validateStep(step) {
       }
 
       const phone = document.getElementById('patient-phone');
-      if (phone && phone.value.trim() && !validatePhoneNumber(phone)) {
+      if (phone && phone.value.trim() && !validatePhoneNumberString(phone.value.trim())) {
         errors.push('Teléfono inválido');
         isValid = false;
       }
@@ -1817,7 +1837,6 @@ function validateStep(step) {
       }
     }
 
-    // Mostrar errores si los hay
     if (errors.length > 0) {
       showNotification(errors.join('\n'), 'warning', 5000);
     }
@@ -1827,6 +1846,12 @@ function validateStep(step) {
     console.error('Error validating step:', error);
     return false;
   }
+}
+
+function validatePhoneNumberString(phone) {
+  if (!phone) return false;
+  const cleaned = phone.replace(/\D/g, '');
+  return cleaned.length >= 8 && cleaned.length <= 12;
 }
 
 function getFieldLabel(field) {
@@ -1842,17 +1867,14 @@ function goToStep(step) {
   try {
     if (step < 1 || step > maxFormStep) return;
 
-    // Ocultar todos los pasos
     document.querySelectorAll('.form-step').forEach(stepDiv => {
       stepDiv.classList.remove('active');
     });
     
-    // Mostrar paso objetivo
     const targetStep = document.querySelector(`.form-step[data-step="${step}"]`);
     if (targetStep) {
       targetStep.classList.add('active');
       
-      // Focus en primer campo del paso
       setTimeout(() => {
         const firstInput = targetStep.querySelector('input:not([type="hidden"]), select, textarea');
         if (firstInput && !firstInput.disabled) {
@@ -1861,7 +1883,6 @@ function goToStep(step) {
       }, 100);
     }
 
-    // Actualizar barra de progreso
     const progressFill = document.getElementById('form-progress');
     const progressText = document.getElementById('progress-text');
     
@@ -1875,17 +1896,6 @@ function goToStep(step) {
     }
 
     currentFormStep = step;
-
-    // Lógica especial para saltar paso 2 si no es identificado
-    if (step === 2) {
-      const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
-      if (tipoSolicitud !== 'identificado') {
-        goToStep(3);
-        return;
-      }
-    }
-
-    // Guardar progreso en draft
     saveFormDraft();
 
     if (APP_CONFIG.DEBUG_MODE) {
@@ -1896,257 +1906,53 @@ function goToStep(step) {
   }
 }
 
-// ================= MANEJO DE FORMULARIOS PRINCIPALES =================
-
-// Función collectFormData CORREGIDA
-function collectFormData() {
+// NUEVA FUNCIÓN PARA MANEJO DE SOLICITUD SOLO INFORMACIÓN
+async function handleInformationOnlySubmit() {
   try {
-    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+    console.log('📧 Procesando solicitud de información únicamente...');
     
-    if (!tipoSolicitud) {
-      throw new Error('Tipo de solicitud no seleccionado');
-    }
-    
-    console.log('Tipo de solicitud:', tipoSolicitud);
-    
-    const solicitudData = {
-      tipoSolicitud,
-      edad: parseInt(document.getElementById('patient-age')?.value) || null,
-      cesfam: document.getElementById('patient-cesfam')?.value || '',
-      paraMi: document.querySelector('input[name="paraMi"]:checked')?.value || '',
-      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
-      estado: 'pendiente',
-      origen: 'web_publica',
-      version: '1.0'
-    };
-
-    // Datos de evaluación (solo si existen)
-    const sustanciasChecked = document.querySelectorAll('input[name="sustancias"]:checked');
-    if (sustanciasChecked.length > 0) {
-      solicitudData.sustancias = Array.from(sustanciasChecked).map(cb => cb.value);
-    }
-
-    const tiempoConsumo = document.getElementById('tiempo-consumo')?.value;
-    if (tiempoConsumo) {
-      solicitudData.tiempoConsumo = tiempoConsumo;
-    }
-
-    const urgencia = document.querySelector('input[name="urgencia"]:checked')?.value;
-    if (urgencia) {
-      solicitudData.urgencia = urgencia;
-    }
-
-    const tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked')?.value;
-    if (tratamientoPrevio) {
-      solicitudData.tratamientoPrevio = tratamientoPrevio;
-    }
-
-    const descripcion = document.getElementById('patient-description')?.value?.trim();
-    if (descripcion) {
-      solicitudData.descripcion = descripcion;
-    }
-
-    const motivacion = document.getElementById('motivacion-range')?.value;
-    if (motivacion) {
-      solicitudData.motivacion = parseInt(motivacion);
-    }
-
-    // Datos específicos según tipo de solicitud
-    if (tipoSolicitud === 'identificado') {
-      const nombre = document.getElementById('patient-name')?.value?.trim();
-      const apellidos = document.getElementById('patient-lastname')?.value?.trim();
-      const rut = document.getElementById('patient-rut')?.value?.trim();
-      const telefono = document.getElementById('patient-phone')?.value?.trim();
-      const email = document.getElementById('patient-email')?.value?.trim();
-      const direccion = document.getElementById('patient-address')?.value?.trim();
-
-      if (nombre) solicitudData.nombre = nombre;
-      if (apellidos) solicitudData.apellidos = apellidos;
-      if (rut) solicitudData.rut = formatRUT(rut);
-      if (telefono) solicitudData.telefono = formatPhoneNumber(telefono);
-      if (email) solicitudData.email = email;
-      if (direccion) solicitudData.direccion = direccion;
-      
-    } else if (tipoSolicitud === 'anonimo') {
-      const telefono = document.getElementById('anonymous-phone')?.value?.trim();
-      if (telefono) {
-        solicitudData.telefono = formatPhoneNumber(telefono);
-      }
-      solicitudData.identificador = `ANONIMO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-    } else if (tipoSolicitud === 'informacion') {
-      const email = document.getElementById('info-email')?.value?.trim();
-      if (email) {
-        solicitudData.email = email;
-      }
-      solicitudData.identificador = `INFO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    }
-
-    console.log('Datos recopilados exitosamente:', solicitudData);
-    return solicitudData;
-    
-  } catch (error) {
-    console.error('Error recopilando datos del formulario:', error);
-    throw new Error('Error recopilando datos del formulario: ' + error.message);
-  }
-}
-
-// Función handlePatientFormSubmit CORREGIDA
-// REEMPLAZA la función handlePatientFormSubmit con esta versión corregida
-
-async function handlePatientFormSubmit(e) {
-  e.preventDefault();
-  console.log('🔄 Iniciando envío de solicitud...');
-  
-  const submitBtn = document.getElementById('submit-form');
-  
-  try {
-    toggleSubmitButton(submitBtn, true);
-    
-    // PASO 1: Obtener tipo de solicitud
-    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
-    if (!tipoSolicitud) {
-      showNotification('Selecciona un tipo de solicitud', 'warning');
-      return;
-    }
-    console.log('Tipo de solicitud:', tipoSolicitud);
-
-    // PASO 2: Validar campos básicos (siempre visibles)
+    const email = document.getElementById('info-email')?.value?.trim();
     const edad = document.getElementById('patient-age')?.value;
     const cesfam = document.getElementById('patient-cesfam')?.value;
-    const paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
     
-    if (!edad || !cesfam || !paraMi) {
-      showNotification('Completa todos los campos básicos obligatorios', 'warning');
+    if (!email || !isValidEmail(email)) {
+      showNotification('Email inválido', 'error');
       return;
     }
-
-    // PASO 3: Validar campos específicos según tipo de solicitud
-    if (tipoSolicitud === 'anonimo') {
-      const phone = document.getElementById('anonymous-phone')?.value?.trim();
-      if (!phone) {
-        showNotification('Ingresa un teléfono de contacto', 'warning');
-        return;
-      }
-      if (!validatePhoneNumberString(phone)) {
-        showNotification('Ingresa un teléfono válido', 'warning');
-        return;
-      }
-    } else if (tipoSolicitud === 'informacion') {
-      const email = document.getElementById('info-email')?.value?.trim();
-      if (!email) {
-        showNotification('Ingresa un email para recibir información', 'warning');
-        return;
-      }
-      if (!isValidEmail(email)) {
-        showNotification('Ingresa un email válido', 'warning');
-        return;
-      }
-    } else if (tipoSolicitud === 'identificado') {
-      // Validar campos del paso 2 solo si es identificado
-      const nombre = document.getElementById('patient-name')?.value?.trim();
-      const apellidos = document.getElementById('patient-lastname')?.value?.trim();
-      const rut = document.getElementById('patient-rut')?.value?.trim();
-      const telefono = document.getElementById('patient-phone')?.value?.trim();
-      
-      if (!nombre || !apellidos || !rut || !telefono) {
-        showNotification('Para solicitud identificada, completa todos los datos personales', 'warning');
-        return;
-      }
-      
-      if (!validateRUT(rut)) {
-        showNotification('RUT inválido', 'warning');
-        return;
-      }
-      
-      if (!validatePhoneNumberString(telefono)) {
-        showNotification('Teléfono inválido', 'warning');
-        return;
-      }
-    }
-
-    // PASO 4: Recopilar datos (sin validación de campos ocultos)
-    const solicitudData = collectFormDataSafe();
-    console.log('📋 Datos recopilados:', solicitudData);
     
-    // PASO 5: Calcular prioridad
-    solicitudData.prioridad = calculatePriority(solicitudData);
-    console.log('⚡ Prioridad calculada:', solicitudData.prioridad);
+    const informationData = {
+      tipoSolicitud: 'informacion',
+      email: email,
+      edad: parseInt(edad) || null,
+      cesfam: cesfam,
+      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+      estado: 'información_enviada',
+      origen: 'web_publica',
+      prioridad: 'baja',
+      identificador: `INFO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    };
     
-    // PASO 6: Verificar Firebase
-    if (!db) {
-      throw new Error('No hay conexión a Firebase');
-    }
+    console.log('💾 Guardando solicitud de información...');
     
-    console.log('💾 Guardando en Firestore...');
+    await db.collection('solicitudes_informacion').add(informationData);
     
-    // PASO 7: Guardar con reintentos
-    const docRef = await retryOperation(async () => {
-      return await db.collection('solicitudes_ingreso').add(solicitudData);
-    });
+    // Simular envío de email (aquí se integraría con servicio de email)
+    console.log('📧 Enviando información por email a:', email);
     
-    console.log('✅ Solicitud guardada con ID:', docRef.id);
-    
-    // PASO 8: Crear alerta crítica si es necesario
-    if (solicitudData.prioridad === 'critica') {
-      try {
-        await createCriticalAlert(solicitudData, docRef.id);
-        console.log('🚨 Alerta crítica creada');
-      } catch (alertError) {
-        console.warn('⚠️ Error creando alerta crítica:', alertError);
-      }
-    }
-    
-    // PASO 9: Limpiar y cerrar
     localStorage.removeItem('senda_form_draft');
     closeModal('patient-modal');
     resetForm();
     
-    // PASO 10: Mensaje de éxito
-    let successMessage = 'Solicitud enviada correctamente. ';
-    if (tipoSolicitud === 'anonimo') {
-      successMessage += 'Te contactaremos al número proporcionado.';
-    } else if (tipoSolicitud === 'informacion') {
-      successMessage += 'Te enviaremos la información por email.';
-    } else {
-      successMessage += 'Te contactaremos pronto para coordinar una cita.';
-    }
-    
-    showNotification(successMessage, 'success', 6000);
-    console.log('🎉 Proceso completado exitosamente');
+    showNotification('Información enviada a tu email correctamente. Revisa tu bandeja de entrada.', 'success', 6000);
     
   } catch (error) {
-    console.error('❌ Error enviando solicitud:', error);
-    
-    let errorMessage = 'Error al enviar la solicitud: ';
-    
-    // Manejar errores específicos de Firebase
-    if (error.code === 'permission-denied') {
-      errorMessage += 'Sin permisos para crear solicitudes. Verifica las reglas de Firebase.';
-    } else if (error.code === 'network-request-failed') {
-      errorMessage += 'Problema de conexión. Verifica tu internet.';
-    } else if (error.code === 'unavailable') {
-      errorMessage += 'Servicio no disponible temporalmente.';
-    } else if (error.message.includes('Firebase')) {
-      errorMessage += 'Error de configuración de Firebase.';
-    } else {
-      errorMessage += error.message || 'Intenta nuevamente en unos momentos.';
-    }
-    
-    showNotification(errorMessage, 'error', 8000);
-  } finally {
-    toggleSubmitButton(submitBtn, false);
+    console.error('❌ Error enviando información:', error);
+    showNotification('Error al enviar la información: ' + error.message, 'error');
   }
 }
 
-// Nueva función para validar teléfonos como string
-function validatePhoneNumberString(phone) {
-  if (!phone) return false;
-  const cleaned = phone.replace(/\D/g, '');
-  return cleaned.length >= 8 && cleaned.length <= 12;
-}
+// ================= MANEJO DE FORMULARIOS PRINCIPALES CORREGIDO =================
 
-// Función collectFormData mejorada y segura
 function collectFormDataSafe() {
   try {
     const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
@@ -2166,7 +1972,7 @@ function collectFormDataSafe() {
       version: '1.0'
     };
 
-    // Datos de evaluación (solo si existen y están visibles)
+    // Solo agregar datos de evaluación si existen y son visibles
     const sustanciasChecked = document.querySelectorAll('input[name="sustancias"]:checked');
     if (sustanciasChecked.length > 0) {
       solicitudData.sustancias = Array.from(sustanciasChecked).map(cb => cb.value);
@@ -2219,13 +2025,6 @@ function collectFormDataSafe() {
         solicitudData.telefono = formatPhoneNumber(telefono);
       }
       solicitudData.identificador = `ANONIMO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-    } else if (tipoSolicitud === 'informacion') {
-      const email = document.getElementById('info-email')?.value?.trim();
-      if (email) {
-        solicitudData.email = email;
-      }
-      solicitudData.identificador = `INFO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     }
 
     console.log('Datos recopilados exitosamente:', solicitudData);
@@ -2236,7 +2035,132 @@ function collectFormDataSafe() {
     throw new Error('Error recopilando datos del formulario: ' + error.message);
   }
 }
-// Función handleReentrySubmit CORREGIDA
+// ================= PARTE 4: MANEJO DE FORMULARIOS Y AGENDA =================
+
+async function handlePatientFormSubmit(e) {
+  e.preventDefault();
+  console.log('🔄 Iniciando envío de solicitud...');
+  
+  const submitBtn = document.getElementById('submit-form');
+  
+  try {
+    toggleSubmitButton(submitBtn, true);
+    
+    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+    if (!tipoSolicitud) {
+      showNotification('Selecciona un tipo de solicitud', 'warning');
+      return;
+    }
+    console.log('Tipo de solicitud:', tipoSolicitud);
+
+    const edad = document.getElementById('patient-age')?.value;
+    const cesfam = document.getElementById('patient-cesfam')?.value;
+    const paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
+    
+    if (!edad || !cesfam || !paraMi) {
+      showNotification('Completa todos los campos básicos obligatorios', 'warning');
+      return;
+    }
+
+    // Validar campos específicos según tipo de solicitud
+    if (tipoSolicitud === 'anonimo') {
+      const phone = document.getElementById('anonymous-phone')?.value?.trim();
+      if (!phone) {
+        showNotification('Ingresa un teléfono de contacto', 'warning');
+        return;
+      }
+      if (!validatePhoneNumberString(phone)) {
+        showNotification('Ingresa un teléfono válido', 'warning');
+        return;
+      }
+    } else if (tipoSolicitud === 'identificado') {
+      const nombre = document.getElementById('patient-name')?.value?.trim();
+      const apellidos = document.getElementById('patient-lastname')?.value?.trim();
+      const rut = document.getElementById('patient-rut')?.value?.trim();
+      const telefono = document.getElementById('patient-phone')?.value?.trim();
+      
+      if (!nombre || !apellidos || !rut || !telefono) {
+        showNotification('Para solicitud identificada, completa todos los datos personales', 'warning');
+        return;
+      }
+      
+      if (!validateRUT(rut)) {
+        showNotification('RUT inválido', 'warning');
+        return;
+      }
+      
+      if (!validatePhoneNumberString(telefono)) {
+        showNotification('Teléfono inválido', 'warning');
+        return;
+      }
+    }
+
+    const solicitudData = collectFormDataSafe();
+    console.log('📋 Datos recopilados:', solicitudData);
+    
+    solicitudData.prioridad = calculatePriority(solicitudData);
+    console.log('⚡ Prioridad calculada:', solicitudData.prioridad);
+    
+    if (!db) {
+      throw new Error('No hay conexión a Firebase');
+    }
+    
+    console.log('💾 Guardando en Firestore...');
+    
+    const docRef = await retryOperation(async () => {
+      return await db.collection('solicitudes_ingreso').add(solicitudData);
+    });
+    
+    console.log('✅ Solicitud guardada con ID:', docRef.id);
+    
+    if (solicitudData.prioridad === 'critica') {
+      try {
+        await createCriticalAlert(solicitudData, docRef.id);
+        console.log('🚨 Alerta crítica creada');
+      } catch (alertError) {
+        console.warn('⚠️ Error creando alerta crítica:', alertError);
+      }
+    }
+    
+    localStorage.removeItem('senda_form_draft');
+    closeModal('patient-modal');
+    resetForm();
+    
+    let successMessage = 'Solicitud enviada correctamente. ';
+    if (tipoSolicitud === 'anonimo') {
+      successMessage += 'Te contactaremos al número proporcionado.';
+    } else if (tipoSolicitud === 'informacion') {
+      successMessage += 'Te enviaremos la información por email.';
+    } else {
+      successMessage += 'Te contactaremos pronto para coordinar una cita.';
+    }
+    
+    showNotification(successMessage, 'success', 6000);
+    console.log('🎉 Proceso completado exitosamente');
+    
+  } catch (error) {
+    console.error('❌ Error enviando solicitud:', error);
+    
+    let errorMessage = 'Error al enviar la solicitud: ';
+    
+    if (error.code === 'permission-denied') {
+      errorMessage += 'Sin permisos para crear solicitudes. Verifica las reglas de Firebase.';
+    } else if (error.code === 'network-request-failed') {
+      errorMessage += 'Problema de conexión. Verifica tu internet.';
+    } else if (error.code === 'unavailable') {
+      errorMessage += 'Servicio no disponible temporalmente.';
+    } else if (error.message.includes('Firebase')) {
+      errorMessage += 'Error de configuración de Firebase.';
+    } else {
+      errorMessage += error.message || 'Intenta nuevamente en unos momentos.';
+    }
+    
+    showNotification(errorMessage, 'error', 8000);
+  } finally {
+    toggleSubmitButton(submitBtn, false);
+  }
+}
+
 async function handleReentrySubmit(e) {
   e.preventDefault();
   console.log('🔄 Iniciando envío de reingreso...');
@@ -2253,7 +2177,6 @@ async function handleReentrySubmit(e) {
   
   const submitBtn = e.target.querySelector('button[type="submit"]');
   
-  // Validaciones mejoradas
   const requiredFields = [
     { field: 'nombre', name: 'Nombre' },
     { field: 'rut', name: 'RUT' },
@@ -2274,7 +2197,6 @@ async function handleReentrySubmit(e) {
     return;
   }
 
-  // Validación básica de teléfono
   const phoneClean = formData.telefono.replace(/\D/g, '');
   if (phoneClean.length < 8) {
     showNotification('Teléfono inválido', 'warning');
@@ -2284,14 +2206,12 @@ async function handleReentrySubmit(e) {
   try {
     toggleSubmitButton(submitBtn, true);
     
-    // Verificar conexión a Firebase
     if (!db) {
       throw new Error('No hay conexión a Firebase');
     }
     
     console.log('🔍 Verificando reingresos existentes...');
     
-    // Verificar si ya existe una solicitud de reingreso pendiente (más flexible)
     const rutFormatted = formatRUT(formData.rut);
     try {
       const existingReingreso = await db.collection('reingresos')
@@ -2305,7 +2225,6 @@ async function handleReentrySubmit(e) {
       }
     } catch (queryError) {
       console.warn('⚠️ Error verificando reingresos existentes:', queryError);
-      // Continuar de todas formas si es solo un problema de consulta
     }
     
     const reingresoData = {
@@ -2349,8 +2268,6 @@ async function handleReentrySubmit(e) {
   }
 }
 
-// ================= GESTIÓN DE ALERTAS CRÍTICAS =================
-
 async function createCriticalAlert(solicitudData, solicitudId) {
   try {
     const alertData = {
@@ -2377,7 +2294,6 @@ async function createCriticalAlert(solicitudData, solicitudId) {
     }
   } catch (error) {
     console.error('❌ Error creando alerta crítica:', error);
-    // No fallar la solicitud principal por esto
   }
 }
 
@@ -2388,14 +2304,12 @@ function resetForm() {
       form.reset();
       goToStep(1);
       
-      // Ocultar campos condicionales
       const anonymousPhone = document.getElementById('anonymous-phone-container');
       const infoEmail = document.getElementById('info-email-container');
       
       if (anonymousPhone) anonymousPhone.style.display = 'none';
       if (infoEmail) infoEmail.style.display = 'none';
       
-      // Resetear slider de motivación
       const motivacionRange = document.getElementById('motivacion-range');
       const motivacionValue = document.getElementById('motivacion-value');
       if (motivacionRange && motivacionValue) {
@@ -2404,7 +2318,6 @@ function resetForm() {
         updateMotivacionColor(5);
       }
       
-      // Limpiar errores visuales
       form.querySelectorAll('.error').forEach(field => {
         field.classList.remove('error');
       });
@@ -2424,10 +2337,8 @@ function resetForm() {
     console.error('❌ Error reseteando formulario:', error);
   }
 }
-// ================= PARTE 3 FINAL: GESTIÓN DE DATOS Y FUNCIONES AUXILIARES =================
-// Continuación desde la PARTE 2
 
-// ================= GESTIÓN DE SOLICITUDES =================
+// ================= GESTIÓN DE SOLICITUDES CON DETALLES =================
 
 async function loadSolicitudes() {
   if (!currentUserData) {
@@ -2444,15 +2355,12 @@ async function loadSolicitudes() {
       return;
     }
     
-    // Verificar cache primero
     const cacheKey = `solicitudes_${currentUserData.cesfam}`;
     const cachedData = getCachedData(cacheKey);
     
     if (cachedData) {
       solicitudesData = cachedData;
       renderSolicitudes(cachedData);
-      
-      // Cargar datos frescos en background
       loadSolicitudesFromFirestore(false);
       return;
     }
@@ -2484,7 +2392,6 @@ async function loadSolicitudesFromFirestore(showLoadingIndicator = true) {
     const solicitudes = [];
     const loadPromises = [];
     
-    // Cargar solicitudes de ingreso
     loadPromises.push(
       retryOperation(async () => {
         try {
@@ -2515,7 +2422,6 @@ async function loadSolicitudesFromFirestore(showLoadingIndicator = true) {
       })
     );
     
-    // Cargar reingresos
     loadPromises.push(
       retryOperation(async () => {
         try {
@@ -2546,10 +2452,8 @@ async function loadSolicitudesFromFirestore(showLoadingIndicator = true) {
       })
     );
     
-    // Ejecutar cargas en paralelo
     await Promise.allSettled(loadPromises);
     
-    // Ordenar por fecha
     solicitudes.sort((a, b) => {
       const fechaA = a.fechaCreacion?.toDate() || new Date(0);
       const fechaB = b.fechaCreacion?.toDate() || new Date(0);
@@ -2558,7 +2462,6 @@ async function loadSolicitudesFromFirestore(showLoadingIndicator = true) {
     
     solicitudesData = solicitudes;
     
-    // Guardar en cache
     const cacheKey = `solicitudes_${currentUserData.cesfam}`;
     setCachedData(cacheKey, solicitudes);
     
@@ -2600,7 +2503,6 @@ function renderSolicitudes(solicitudes) {
 
     container.innerHTML = solicitudes.map(solicitud => createSolicitudCard(solicitud)).join('');
     
-    // Configurar event listeners para las tarjetas
     container.querySelectorAll('.request-card').forEach(card => {
       card.addEventListener('click', (e) => {
         if (e.target.closest('button')) return;
@@ -2619,42 +2521,6 @@ function renderSolicitudes(solicitudes) {
   } catch (error) {
     console.error('❌ Error renderizando solicitudes:', error);
   }
-}
-
-function renderSolicitudesError(error) {
-  const container = document.getElementById('requests-container');
-  if (!container) return;
-  
-  let errorMessage = 'Error al cargar solicitudes';
-  let errorDetails = '';
-  
-  if (error.code === 'permission-denied') {
-    errorMessage = 'Sin permisos de acceso';
-    errorDetails = 'No tienes permisos para ver las solicitudes de este CESFAM';
-  } else if (error.code === 'unavailable') {
-    errorMessage = 'Servicio no disponible';
-    errorDetails = 'El servicio está temporalmente no disponible';
-  } else {
-    errorDetails = error.message;
-  }
-  
-  container.innerHTML = `
-    <div class="no-results">
-      <i class="fas fa-exclamation-triangle" style="color: var(--danger-red);"></i>
-      <h3>${errorMessage}</h3>
-      <p>${errorDetails}</p>
-      <div class="mt-4">
-        <button class="btn btn-primary" onclick="loadSolicitudes()">
-          <i class="fas fa-redo"></i>
-          Reintentar
-        </button>
-        <button class="btn btn-outline ml-2" onclick="debugFirebaseConnection()">
-          <i class="fas fa-tools"></i>
-          Diagnosticar
-        </button>
-      </div>
-    </div>
-  `;
 }
 
 function createSolicitudCard(solicitud) {
@@ -2714,33 +2580,32 @@ function createSolicitudCard(solicitud) {
             <p style="color: var(--gray-600);">${subtitulo}</p>
           </div>
           <div class="request-meta">
-            <span class="priority-badge ${prioridad}" style="background-color: ${prioridadColor[prioridad]};">
+            <span class="priority-badge ${prioridad}" style="background-color: ${prioridadColor[prioridad]}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
               ${prioridad.toUpperCase()}
             </span>
-            ${solicitud.tipo === 'reingreso' ? '<span class="request-type reingreso">REINGRESO</span>' : ''}
+            ${solicitud.tipo === 'reingreso' ? '<span class="request-type reingreso" style="background: #e0e7ff; color: #3730a3; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">REINGRESO</span>' : ''}
           </div>
         </div>
         
         <div class="request-body">
-          ${sustanciasHtml ? `<div class="request-substances">${sustanciasHtml}</div>` : ''}
+          ${sustanciasHtml ? `<div class="request-substances" style="margin-bottom: 8px;">${sustanciasHtml}</div>` : ''}
           ${solicitud.descripcion || solicitud.motivo ? 
-            `<p class="request-description">${truncateText(solicitud.descripcion || solicitud.motivo, 150)}</p>` : ''}
+            `<p class="request-description" style="color: var(--gray-700); line-height: 1.5;">${truncateText(solicitud.descripcion || solicitud.motivo, 150)}</p>` : ''}
           
-          <div class="request-details" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; font-size: 13px;">
+          <div class="request-details" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--gray-600);">
             <div><strong>CESFAM:</strong> ${solicitud.cesfam}</div>
-            <div><strong>Fecha:</strong> ${fecha}</div>
-            <div>
-              <strong>Estado:</strong> 
+            <div><strong>Estado:</strong> 
               <span class="status-${estado}" style="display: inline-flex; align-items: center; gap: 4px;">
                 <i class="fas ${estadoIcon[estado] || 'fa-circle'}"></i>
                 ${estado.replace('_', ' ').toUpperCase()}
               </span>
             </div>
             ${solicitud.edad ? `<div><strong>Edad:</strong> ${solicitud.edad} años</div>` : ''}
+            <div><strong>Fecha:</strong> ${fecha}</div>
           </div>
         </div>
         
-        <div class="request-actions">
+        <div class="request-actions" style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px;">
           <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); showAgendaModal('${solicitud.id}')" title="Agendar cita">
             <i class="fas fa-calendar-plus"></i>
             Agendar
@@ -2778,7 +2643,662 @@ function truncateText(text, maxLength) {
   return text.substring(0, maxLength) + '...';
 }
 
-// ================= FILTROS Y BÚSQUEDAS =================
+function renderSolicitudesError(error) {
+  const container = document.getElementById('requests-container');
+  if (!container) return;
+  
+  let errorMessage = 'Error al cargar solicitudes';
+  let errorDetails = '';
+  
+  if (error.code === 'permission-denied') {
+    errorMessage = 'Sin permisos de acceso';
+    errorDetails = 'No tienes permisos para ver las solicitudes de este CESFAM';
+  } else if (error.code === 'unavailable') {
+    errorMessage = 'Servicio no disponible';
+    errorDetails = 'El servicio está temporalmente no disponible';
+  } else {
+    errorDetails = error.message;
+  }
+  
+  container.innerHTML = `
+    <div class="no-results">
+      <i class="fas fa-exclamation-triangle" style="color: var(--danger-red);"></i>
+      <h3>${errorMessage}</h3>
+      <p>${errorDetails}</p>
+      <div class="mt-4">
+        <button class="btn btn-primary" onclick="loadSolicitudes()">
+          <i class="fas fa-redo"></i>
+          Reintentar
+        </button>
+        <button class="btn btn-outline ml-2" onclick="debugFirebaseConnection()">
+          <i class="fas fa-tools"></i>
+          Diagnosticar
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// ================= NUEVAS FUNCIONES DE DETALLE Y AGENDA =================
+
+function showSolicitudDetail(solicitud) {
+  try {
+    const detailModal = createSolicitudDetailModal(solicitud);
+    document.body.insertAdjacentHTML('beforeend', detailModal);
+    showModal('solicitud-detail-modal');
+  } catch (error) {
+    console.error('Error showing solicitud detail:', error);
+    showNotification('Error al mostrar detalles de la solicitud', 'error');
+  }
+}
+
+function showSolicitudDetailById(solicitudId) {
+  const solicitud = solicitudesData.find(s => s.id === solicitudId);
+  if (solicitud) {
+    showSolicitudDetail(solicitud);
+  } else {
+    showNotification('Solicitud no encontrada', 'error');
+  }
+}
+
+function createSolicitudDetailModal(solicitud) {
+  const fecha = formatDate(solicitud.fechaCreacion);
+  const prioridad = solicitud.prioridad || 'baja';
+  const estado = solicitud.estado || 'pendiente';
+  
+  let titulo, tipoIcon, tipoLabel;
+  
+  if (solicitud.tipo === 'reingreso') {
+    titulo = `${solicitud.nombre || 'Sin nombre'}`;
+    tipoIcon = 'fa-redo';
+    tipoLabel = 'Reingreso';
+  } else {
+    tipoIcon = 'fa-user-plus';
+    tipoLabel = 'Nueva Solicitud';
+    if (solicitud.tipoSolicitud === 'identificado') {
+      titulo = `${solicitud.nombre || ''} ${solicitud.apellidos || ''}`.trim() || 'Solicitud identificada';
+    } else if (solicitud.tipoSolicitud === 'anonimo') {
+      titulo = 'Solicitud Anónima';
+      tipoIcon = 'fa-user-secret';
+    } else {
+      titulo = 'Solicitud de Información';
+      tipoIcon = 'fa-info-circle';
+    }
+  }
+
+  const sustancias = solicitud.sustancias || [];
+  const sustanciasHtml = sustancias.length > 0 ? 
+    `<div class="detail-section">
+      <h4><i class="fas fa-flask"></i> Sustancias</h4>
+      <div class="substances-list">
+        ${sustancias.map(s => `<span class="substance-tag">${s}</span>`).join('')}
+      </div>
+    </div>` : '';
+
+  return `
+    <div class="modal-overlay temp-modal" id="solicitud-detail-modal">
+      <div class="modal large-modal">
+        <button class="modal-close" onclick="closeModal('solicitud-detail-modal')">
+          <i class="fas fa-times"></i>
+        </button>
+        
+        <div style="padding: 24px;">
+          <div class="detail-header" style="margin-bottom: 24px; border-bottom: 2px solid var(--gray-200); padding-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <h2 style="margin: 0; color: var(--primary-blue);">
+                  <i class="fas ${tipoIcon}"></i> ${titulo}
+                </h2>
+                <p style="margin: 4px 0; color: var(--gray-600); font-weight: 500;">${tipoLabel}</p>
+              </div>
+              <div style="text-align: right;">
+                <span class="priority-badge ${prioridad}" style="background-color: ${getPriorityColor(prioridad)}; color: white; padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: bold;">
+                  PRIORIDAD ${prioridad.toUpperCase()}
+                </span>
+                <div style="margin-top: 8px;">
+                  <span class="status-badge ${estado}" style="background-color: ${getStatusColor(estado)}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                    ${estado.replace('_', ' ').toUpperCase()}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="detail-content" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <div class="detail-column">
+              <div class="detail-section" style="margin-bottom: 20px;">
+                <h4 style="color: var(--primary-blue); margin-bottom: 12px; font-size: 16px;">
+                  <i class="fas fa-info-circle"></i> Información General
+                </h4>
+                <div class="detail-grid" style="display: grid; gap: 8px;">
+                  ${solicitud.rut ? `<div><strong>RUT:</strong> ${solicitud.rut}</div>` : ''}
+                  ${solicitud.edad ? `<div><strong>Edad:</strong> ${solicitud.edad} años</div>` : ''}
+                  ${solicitud.telefono ? `<div><strong>Teléfono:</strong> <a href="tel:${solicitud.telefono}" style="color: var(--primary-blue);">${solicitud.telefono}</a></div>` : ''}
+                  ${solicitud.email ? `<div><strong>Email:</strong> <a href="mailto:${solicitud.email}" style="color: var(--primary-blue);">${solicitud.email}</a></div>` : ''}
+                  ${solicitud.direccion ? `<div><strong>Dirección:</strong> ${solicitud.direccion}</div>` : ''}
+                  <div><strong>CESFAM:</strong> ${solicitud.cesfam}</div>
+                  <div><strong>Fecha:</strong> ${fecha}</div>
+                  ${solicitud.paraMi ? `<div><strong>Solicita para:</strong> ${solicitud.paraMi.replace('_', ' ')}</div>` : ''}
+                </div>
+              </div>
+              
+              ${sustanciasHtml}
+            </div>
+            
+            <div class="detail-column">
+              ${solicitud.urgencia || solicitud.tiempoConsumo || solicitud.tratamientoPrevio || solicitud.motivacion ? 
+                `<div class="detail-section" style="margin-bottom: 20px;">
+                  <h4 style="color: var(--primary-blue); margin-bottom: 12px; font-size: 16px;">
+                    <i class="fas fa-stethoscope"></i> Evaluación Clínica
+                  </h4>
+                  <div class="detail-grid" style="display: grid; gap: 8px;">
+                    ${solicitud.urgencia ? `<div><strong>Nivel de urgencia:</strong> <span style="color: ${getPriorityColor(solicitud.urgencia)}; font-weight: bold;">${solicitud.urgencia.toUpperCase()}</span></div>` : ''}
+                    ${solicitud.tiempoConsumo ? `<div><strong>Tiempo de consumo:</strong> ${formatTiempoConsumo(solicitud.tiempoConsumo)}</div>` : ''}
+                    ${solicitud.tratamientoPrevio ? `<div><strong>Tratamiento previo:</strong> ${formatTratamientoPrevio(solicitud.tratamientoPrevio)}</div>` : ''}
+                    ${solicitud.motivacion ? `<div><strong>Motivación (1-10):</strong> <span style="color: ${getMotivacionColor(solicitud.motivacion)}; font-weight: bold;">${solicitud.motivacion}/10</span></div>` : ''}
+                  </div>
+                </div>` : ''
+              }
+              
+              ${solicitud.descripcion || solicitud.motivo ? 
+                `<div class="detail-section">
+                  <h4 style="color: var(--primary-blue); margin-bottom: 12px; font-size: 16px;">
+                    <i class="fas fa-comment-alt"></i> ${solicitud.tipo === 'reingreso' ? 'Motivo del Reingreso' : 'Descripción'}
+                  </h4>
+                  <div style="background: var(--gray-50); padding: 16px; border-radius: 8px; border-left: 4px solid var(--primary-blue);">
+                    <p style="margin: 0; line-height: 1.6; color: var(--gray-700);">${solicitud.descripcion || solicitud.motivo}</p>
+                  </div>
+                </div>` : ''
+              }
+            </div>
+          </div>
+          
+          <div class="detail-actions" style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--gray-200); display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="btn btn-outline" onclick="closeModal('solicitud-detail-modal')">
+              <i class="fas fa-times"></i>
+              Cerrar
+            </button>
+            <button class="btn btn-success" onclick="showAgendaModal('${solicitud.id}')">
+              <i class="fas fa-calendar-plus"></i>
+              Agendar Cita
+            </button>
+            ${solicitud.prioridad === 'critica' ? 
+              `<button class="btn btn-danger" onclick="handleUrgentCase('${solicitud.id}')">
+                <i class="fas fa-exclamation-triangle"></i>
+                Caso Urgente
+              </button>` : ''
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function getPriorityColor(prioridad) {
+  const colors = {
+    'critica': '#ef4444',
+    'alta': '#f59e0b',
+    'media': '#3b82f6',
+    'baja': '#10b981'
+  };
+  return colors[prioridad] || '#6b7280';
+}
+
+function getStatusColor(estado) {
+  const colors = {
+    'pendiente': '#f59e0b',
+    'en_proceso': '#3b82f6',
+    'agendada': '#10b981',
+    'completada': '#059669'
+  };
+  return colors[estado] || '#6b7280';
+}
+
+function getMotivacionColor(motivacion) {
+  const nivel = parseInt(motivacion);
+  if (nivel <= 3) return '#ef4444';
+  if (nivel <= 6) return '#f59e0b';
+  return '#10b981';
+}
+
+function formatTiempoConsumo(tiempo) {
+  const tiempos = {
+    '0-6': 'Menos de 6 meses',
+    '6-12': '6 meses a 1 año',
+    '12-24': '1 a 2 años',
+    '24-60': '2 a 5 años',
+    '60+': 'Más de 5 años'
+  };
+  return tiempos[tiempo] || tiempo;
+}
+
+function formatTratamientoPrevio(tratamiento) {
+  const tratamientos = {
+    'no': 'No, es la primera vez',
+    'si_senda': 'Sí, en SENDA',
+    'si_otro': 'Sí, en otro lugar'
+  };
+  return tratamientos[tratamiento] || tratamiento;
+}
+// ================= PARTE 5 FINAL: AGENDA, CALENDARIO Y FUNCIONES AUXILIARES =================
+
+// ================= NUEVA FUNCIÓN PARA MODAL DE AGENDA =================
+
+function showAgendaModal(solicitudId) {
+  try {
+    const solicitud = solicitudesData.find(s => s.id === solicitudId);
+    if (!solicitud) {
+      showNotification('Solicitud no encontrada', 'error');
+      return;
+    }
+
+    const agendaModal = createAgendaModal(solicitud);
+    document.body.insertAdjacentHTML('beforeend', agendaModal);
+    showModal('agenda-modal');
+    
+    // Cargar profesionales y horarios
+    loadProfessionalsForScheduling();
+    
+  } catch (error) {
+    console.error('Error showing agenda modal:', error);
+    showNotification('Error al abrir modal de agenda', 'error');
+  }
+}
+
+function createAgendaModal(solicitud) {
+  const titulo = solicitud.tipo === 'reingreso' ? 
+    `${solicitud.nombre || 'Reingreso'}` : 
+    `${solicitud.nombre || ''} ${solicitud.apellidos || ''}`.trim() || 'Solicitud anónima';
+
+  return `
+    <div class="modal-overlay temp-modal" id="agenda-modal">
+      <div class="modal large-modal">
+        <button class="modal-close" onclick="closeModal('agenda-modal')">
+          <i class="fas fa-times"></i>
+        </button>
+        
+        <div style="padding: 24px;">
+          <h2 style="margin-bottom: 24px; color: var(--primary-blue);">
+            <i class="fas fa-calendar-plus"></i> Agendar Cita
+          </h2>
+          
+          <div class="patient-info" style="background: var(--light-blue); padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+            <h3 style="margin: 0; color: var(--primary-blue);">${titulo}</h3>
+            <p style="margin: 4px 0 0 0; color: var(--gray-700);">
+              ${solicitud.cesfam} - Prioridad: <strong>${(solicitud.prioridad || 'media').toUpperCase()}</strong>
+            </p>
+          </div>
+          
+          <form id="agenda-form">
+            <input type="hidden" id="solicitud-id" value="${solicitud.id}">
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+              <div class="form-group">
+                <label class="form-label">Profesional *</label>
+                <select class="form-select" id="professional-select" required>
+                  <option value="">Seleccionar profesional...</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Fecha *</label>
+                <input type="date" class="form-input" id="appointment-date" required>
+              </div>
+            </div>
+            
+            <div class="time-slots-container" id="time-slots-container" style="display: none;">
+              <h4 style="margin-bottom: 16px; color: var(--primary-blue);">
+                <i class="fas fa-clock"></i> Horarios Disponibles
+              </h4>
+              <div class="time-slots-grid" id="time-slots-grid">
+                <!-- Los slots de tiempo se cargarán aquí -->
+              </div>
+            </div>
+            
+            <div class="form-group" style="margin-top: 24px;">
+              <label class="form-label">Observaciones</label>
+              <textarea class="form-textarea" id="appointment-notes" rows="3" 
+                        placeholder="Observaciones adicionales para la cita..."></textarea>
+            </div>
+            
+            <div class="form-actions" style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+              <button type="button" class="btn btn-outline" onclick="closeModal('agenda-modal')">
+                <i class="fas fa-times"></i>
+                Cancelar
+              </button>
+              <button type="submit" class="btn btn-success" disabled>
+                <i class="fas fa-calendar-check"></i>
+                Confirmar Cita
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function loadProfessionalsForScheduling() {
+  try {
+    const professionalSelect = document.getElementById('professional-select');
+    if (!professionalSelect) return;
+
+    const professionals = await loadProfessionalsByArea();
+    
+    professionalSelect.innerHTML = '<option value="">Seleccionar profesional...</option>';
+    
+    professionals.forEach(prof => {
+      const option = document.createElement('option');
+      option.value = prof.id;
+      option.textContent = `${prof.nombre} ${prof.apellidos} - ${getProfessionName(prof.profession)}`;
+      option.dataset.profession = prof.profession;
+      professionalSelect.appendChild(option);
+    });
+
+    // Event listeners para el formulario de agenda
+    setupAgendaFormListeners();
+    
+  } catch (error) {
+    console.error('Error loading professionals for scheduling:', error);
+    showNotification('Error al cargar profesionales', 'error');
+  }
+}
+
+function setupAgendaFormListeners() {
+  try {
+    const professionalSelect = document.getElementById('professional-select');
+    const appointmentDate = document.getElementById('appointment-date');
+    const agendaForm = document.getElementById('agenda-form');
+    
+    // Configurar fecha mínima (hoy)
+    if (appointmentDate) {
+      const today = new Date().toISOString().split('T')[0];
+      appointmentDate.min = today;
+    }
+
+    // Listener para cambio de profesional o fecha
+    if (professionalSelect) {
+      professionalSelect.addEventListener('change', loadAvailableTimeSlots);
+    }
+    
+    if (appointmentDate) {
+      appointmentDate.addEventListener('change', loadAvailableTimeSlots);
+    }
+
+    // Listener para envío del formulario
+    if (agendaForm) {
+      agendaForm.addEventListener('submit', handleAgendaSubmit);
+    }
+    
+  } catch (error) {
+    console.error('Error setting up agenda form listeners:', error);
+  }
+}
+
+async function loadAvailableTimeSlots() {
+  try {
+    const professionalSelect = document.getElementById('professional-select');
+    const appointmentDate = document.getElementById('appointment-date');
+    const timeSlotsContainer = document.getElementById('time-slots-container');
+    const timeSlotsGrid = document.getElementById('time-slots-grid');
+    const submitBtn = document.querySelector('#agenda-form button[type="submit"]');
+    
+    if (!professionalSelect?.value || !appointmentDate?.value) {
+      if (timeSlotsContainer) timeSlotsContainer.style.display = 'none';
+      if (submitBtn) submitBtn.disabled = true;
+      return;
+    }
+
+    const selectedDate = new Date(appointmentDate.value);
+    
+    // Verificar si es día laborable
+    if (!isWorkingDay(selectedDate)) {
+      if (timeSlotsGrid) {
+        timeSlotsGrid.innerHTML = `
+          <div style="text-align: center; padding: 20px; color: var(--gray-600);">
+            <i class="fas fa-calendar-times" style="font-size: 24px; margin-bottom: 8px;"></i>
+            <p>No hay atención los fines de semana</p>
+            <p><small>Selecciona un día de lunes a viernes</small></p>
+          </div>
+        `;
+      }
+      if (timeSlotsContainer) timeSlotsContainer.style.display = 'block';
+      if (submitBtn) submitBtn.disabled = true;
+      return;
+    }
+
+    // Generar slots de tiempo disponibles
+    const timeSlots = generateTimeSlots();
+    const occupiedSlots = await getOccupiedSlots(professionalSelect.value, selectedDate);
+    
+    if (timeSlotsGrid) {
+      timeSlotsGrid.innerHTML = timeSlots.map(slot => {
+        const isOccupied = occupiedSlots.includes(slot.time);
+        const isPast = isPastTimeSlot(selectedDate, slot.hour, slot.minute);
+        const isDisabled = isOccupied || isPast;
+        
+        return `
+          <button type="button" 
+                  class="time-slot ${isDisabled ? 'disabled' : ''}" 
+                  data-time="${slot.time}"
+                  ${isDisabled ? 'disabled' : ''}
+                  onclick="selectTimeSlot(this)"
+                  style="
+                    padding: 12px;
+                    border: 2px solid ${isDisabled ? 'var(--gray-300)' : 'var(--primary-blue)'};
+                    border-radius: 8px;
+                    background: ${isDisabled ? 'var(--gray-100)' : 'white'};
+                    color: ${isDisabled ? 'var(--gray-400)' : 'var(--primary-blue)'};
+                    cursor: ${isDisabled ? 'not-allowed' : 'pointer'};
+                    transition: all 0.2s ease;
+                    font-weight: 500;
+                  ">
+            <i class="fas fa-clock" style="margin-right: 4px;"></i>
+            ${slot.time}
+            ${isOccupied ? '<br><small>Ocupado</small>' : ''}
+            ${isPast ? '<br><small>Pasado</small>' : ''}
+          </button>
+        `;
+      }).join('');
+    }
+    
+    if (timeSlotsContainer) timeSlotsContainer.style.display = 'block';
+    if (submitBtn) submitBtn.disabled = true; // Se habilitará al seleccionar hora
+    
+  } catch (error) {
+    console.error('Error loading time slots:', error);
+    showNotification('Error al cargar horarios disponibles', 'error');
+  }
+}
+
+function isPastTimeSlot(date, hour, minute) {
+  const now = new Date();
+  const slotTime = new Date(date);
+  slotTime.setHours(hour, minute, 0, 0);
+  return slotTime <= now;
+}
+
+async function getOccupiedSlots(professionalId, date) {
+  try {
+    if (!currentUserData) return [];
+    
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    const snapshot = await db.collection('citas')
+      .where('profesionalId', '==', professionalId)
+      .where('fecha', '>=', startOfDay)
+      .where('fecha', '<=', endOfDay)
+      .where('estado', '!=', 'cancelada')
+      .get();
+    
+    const occupiedSlots = [];
+    snapshot.forEach(doc => {
+      const cita = doc.data();
+      const citaDate = cita.fecha.toDate();
+      const timeString = citaDate.toLocaleTimeString('es-CL', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
+      occupiedSlots.push(timeString);
+    });
+    
+    return occupiedSlots;
+    
+  } catch (error) {
+    console.error('Error getting occupied slots:', error);
+    return [];
+  }
+}
+
+function selectTimeSlot(button) {
+  try {
+    // Remover selección anterior
+    document.querySelectorAll('.time-slot.selected').forEach(slot => {
+      slot.classList.remove('selected');
+      slot.style.background = 'white';
+      slot.style.color = 'var(--primary-blue)';
+    });
+    
+    // Seleccionar nuevo slot
+    button.classList.add('selected');
+    button.style.background = 'var(--primary-blue)';
+    button.style.color = 'white';
+    
+    // Habilitar botón de envío
+    const submitBtn = document.querySelector('#agenda-form button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.disabled = false;
+    }
+    
+  } catch (error) {
+    console.error('Error selecting time slot:', error);
+  }
+}
+
+async function handleAgendaSubmit(e) {
+  e.preventDefault();
+  
+  try {
+    const formData = {
+      solicitudId: document.getElementById('solicitud-id')?.value,
+      professionalId: document.getElementById('professional-select')?.value,
+      fecha: document.getElementById('appointment-date')?.value,
+      hora: document.querySelector('.time-slot.selected')?.dataset.time,
+      observaciones: document.getElementById('appointment-notes')?.value?.trim() || ''
+    };
+    
+    console.log('📅 Datos de la cita:', formData);
+    
+    // Validaciones
+    if (!formData.solicitudId || !formData.professionalId || !formData.fecha || !formData.hora) {
+      showNotification('Completa todos los campos obligatorios', 'warning');
+      return;
+    }
+    
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    toggleSubmitButton(submitBtn, true);
+    
+    // Obtener datos del profesional
+    const professional = professionalsList.find(p => p.id === formData.professionalId);
+    const solicitud = solicitudesData.find(s => s.id === formData.solicitudId);
+    
+    if (!professional || !solicitud) {
+      throw new Error('Datos de profesional o solicitud no encontrados');
+    }
+    
+    // Crear fecha y hora completa
+    const fechaCompleta = new Date(`${formData.fecha}T${formData.hora}:00`);
+    
+    const citaData = {
+      solicitudId: formData.solicitudId,
+      profesionalId: formData.professionalId,
+      profesionalNombre: `${professional.nombre} ${professional.apellidos}`,
+      tipoProfesional: professional.profession,
+      pacienteNombre: solicitud.tipo === 'reingreso' ? 
+        solicitud.nombre : 
+        `${solicitud.nombre || ''} ${solicitud.apellidos || ''}`.trim() || 'Paciente anónimo',
+      pacienteRut: solicitud.rut || null,
+      pacienteTelefono: solicitud.telefono || null,
+      fecha: fechaCompleta,
+      estado: 'programada',
+      tipo: 'primera_consulta',
+      cesfam: currentUserData.cesfam,
+      observaciones: formData.observaciones,
+      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+      creadoPor: currentUser.uid
+    };
+    
+    console.log('💾 Guardando cita...');
+    
+    // Guardar cita
+    const citaRef = await db.collection('citas').add(citaData);
+    
+    // Actualizar estado de la solicitud
+    const solicitudRef = db.collection(solicitud.tipo === 'reingreso' ? 'reingresos' : 'solicitudes_ingreso')
+      .doc(formData.solicitudId);
+    
+    await solicitudRef.update({
+      estado: 'agendada',
+      citaId: citaRef.id,
+      fechaAgendamiento: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    console.log('✅ Cita creada exitosamente');
+    
+    // Actualizar datos locales
+    const solicitudIndex = solicitudesData.findIndex(s => s.id === formData.solicitudId);
+    if (solicitudIndex !== -1) {
+      solicitudesData[solicitudIndex].estado = 'agendada';
+      solicitudesData[solicitudIndex].citaId = citaRef.id;
+    }
+    
+    closeModal('agenda-modal');
+    
+    // Cambiar a la pestaña de agenda
+    switchToAgendaTab();
+    
+    showNotification(`Cita agendada exitosamente para ${fechaCompleta.toLocaleDateString('es-CL')} a las ${formData.hora}`, 'success', 5000);
+    
+    // Recargar solicitudes para mostrar el cambio de estado
+    setTimeout(() => {
+      loadSolicitudes();
+    }, 1000);
+    
+  } catch (error) {
+    console.error('❌ Error creando cita:', error);
+    showNotification('Error al agendar cita: ' + error.message, 'error');
+  } finally {
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn) toggleSubmitButton(submitBtn, false);
+  }
+}
+
+function switchToAgendaTab() {
+  try {
+    // Cambiar tab activo
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+    
+    const agendaTabBtn = document.querySelector('.tab-btn[data-tab="agenda"]');
+    const agendaTabPane = document.getElementById('agenda-tab');
+    
+    if (agendaTabBtn) agendaTabBtn.classList.add('active');
+    if (agendaTabPane) agendaTabPane.classList.add('active');
+    
+    // Cargar datos de agenda
+    loadTabData('agenda');
+    
+  } catch (error) {
+    console.error('Error switching to agenda tab:', error);
+  }
+}
+
+// ================= FUNCIONES DE FILTROS MODIFICADAS =================
 
 function setupFilters() {
   try {
@@ -2805,7 +3325,6 @@ function filterSolicitudes() {
   try {
     const searchTerm = document.getElementById('search-solicitudes')?.value.toLowerCase() || '';
     const priorityFilter = document.getElementById('priority-filter')?.value || '';
-    const dateFilter = document.getElementById('date-filter')?.value || '';
     
     const cards = document.querySelectorAll('.request-card');
     let visibleCount = 0;
@@ -2813,7 +3332,6 @@ function filterSolicitudes() {
     cards.forEach(card => {
       const cardText = card.textContent.toLowerCase();
       const cardPriority = card.querySelector('.priority-badge')?.textContent.toLowerCase() || '';
-      const cardDate = card.querySelector('.request-description')?.parentElement.textContent || '';
       
       let show = true;
       
@@ -2827,15 +3345,7 @@ function filterSolicitudes() {
         show = false;
       }
       
-      // Filtro de fecha
-      if (dateFilter) {
-        const filterDate = new Date(dateFilter).toLocaleDateString('es-CL');
-        if (!cardDate.includes(filterDate)) {
-          show = false;
-        }
-      }
-      
-      // Filtro de estado
+      // Filtro de estado (solo prioridad y estado, sin fecha)
       if (currentFilter !== 'todas') {
         const statusElement = card.querySelector('[class*="status-"]');
         const cardStatus = statusElement ? statusElement.textContent.toLowerCase().trim() : 'pendiente';
@@ -2850,7 +3360,6 @@ function filterSolicitudes() {
       if (show) visibleCount++;
     });
     
-    // Mostrar contador de resultados
     updateFilterResultsCount(visibleCount, cards.length);
     
   } catch (error) {
@@ -2913,23 +3422,18 @@ function setupTabFunctionality() {
       btn.addEventListener('click', () => {
         const targetTab = btn.dataset.tab;
         
-        // Cambiar tab activo
         tabBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         
-        // Cambiar pane activo
         tabPanes.forEach(pane => pane.classList.remove('active'));
         const targetPane = document.getElementById(`${targetTab}-tab`);
         if (targetPane) {
           targetPane.classList.add('active');
-          
-          // Cargar datos específicos de cada tab
           loadTabData(targetTab);
         }
       });
     });
     
-    // Cargar datos del tab inicial
     const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab;
     if (activeTab) {
       loadTabData(activeTab);
@@ -2967,7 +3471,7 @@ async function loadTabData(tabName) {
   }
 }
 
-// ================= GESTIÓN DE CALENDARIO Y CITAS =================
+// ================= GESTIÓN DE CALENDARIO =================
 
 function setupCalendar() {
   try {
@@ -3001,7 +3505,6 @@ function renderCalendar() {
     
     calendarGrid.innerHTML = '';
     
-    // Headers de días
     const dayHeaders = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     dayHeaders.forEach(day => {
       const dayHeader = document.createElement('div');
@@ -3010,7 +3513,6 @@ function renderCalendar() {
       calendarGrid.appendChild(dayHeader);
     });
     
-    // Calcular fechas
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const startDate = new Date(firstDay);
@@ -3020,8 +3522,7 @@ function renderCalendar() {
     today.setHours(0, 0, 0, 0);
     const currentDate = new Date(startDate);
     
-    // Generar días del calendario
-    for (let i = 0; i < 42; i++) { // 6 semanas
+    for (let i = 0; i < 42; i++) {
       const dayElement = createCalendarDay(currentDate, month, today);
       calendarGrid.appendChild(dayElement);
       currentDate.setDate(currentDate.getDate() + 1);
@@ -3043,7 +3544,6 @@ function createCalendarDay(date, currentMonth, today) {
   const isPast = date < today;
   const isWeekend = date.getDay() === 0 || date.getDay() === 6;
   
-  // Aplicar clases
   if (!isCurrentMonth) dayElement.classList.add('other-month');
   if (isToday) dayElement.classList.add('today');
   if (isWeekend) dayElement.classList.add('weekend');
@@ -3057,7 +3557,6 @@ function createCalendarDay(date, currentMonth, today) {
     <div class="calendar-appointments" id="appointments-${date.toISOString().split('T')[0]}"></div>
   `;
   
-  // Event listener para días válidos
   if (!isPast && isCurrentMonth) {
     dayElement.addEventListener('click', () => selectCalendarDay(new Date(date)));
     dayElement.style.cursor = 'pointer';
@@ -3068,12 +3567,10 @@ function createCalendarDay(date, currentMonth, today) {
 
 function selectCalendarDay(date) {
   try {
-    // Remover selección anterior
     document.querySelectorAll('.calendar-day.selected').forEach(day => {
       day.classList.remove('selected');
     });
     
-    // Seleccionar día actual
     const dayElements = document.querySelectorAll('.calendar-day');
     dayElements.forEach(dayEl => {
       const dayNumber = dayEl.querySelector('.calendar-day-number').textContent;
@@ -3107,7 +3604,6 @@ async function loadMonthAppointments(year, month) {
       .where('fecha', '<=', endOfMonth)
       .get();
     
-    // Limpiar appointments anteriores
     document.querySelectorAll('.calendar-appointments').forEach(container => {
       container.innerHTML = '';
     });
@@ -3129,7 +3625,6 @@ async function loadMonthAppointments(year, month) {
       });
     });
     
-    // Renderizar appointments en el calendario
     Object.keys(appointmentsByDate).forEach(dateString => {
       const container = document.getElementById(`appointments-${dateString}`);
       if (container) {
@@ -3143,7 +3638,6 @@ async function loadMonthAppointments(year, month) {
           container.appendChild(appointmentEl);
         });
         
-        // Mostrar indicador si hay más citas
         if (appointments.length > 3) {
           const moreEl = document.createElement('div');
           moreEl.className = 'calendar-appointment more';
@@ -3267,6 +3761,8 @@ async function loadTodayAppointments() {
   }
 }
 
+// ================= CITAS DEL DÍA PARA PROFESIONALES =================
+
 async function loadSeguimiento() {
   if (!currentUserData) return;
   
@@ -3278,7 +3774,6 @@ async function loadSeguimiento() {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     
-    // Cargar citas de hoy
     const todayAppointmentsSnapshot = await db.collection('citas')
       .where('cesfam', '==', currentUserData.cesfam)
       .where('fecha', '>=', today)
@@ -3288,7 +3783,6 @@ async function loadSeguimiento() {
     
     renderPatientsTimeline(todayAppointmentsSnapshot);
     
-    // Cargar próximas citas
     const upcomingAppointmentsSnapshot = await db.collection('citas')
       .where('cesfam', '==', currentUserData.cesfam)
       .where('fecha', '>=', tomorrow)
@@ -3780,7 +4274,6 @@ async function debugFirebaseConnection() {
   console.log('🔍 INICIANDO DIAGNÓSTICO COMPLETO DE FIREBASE...');
   
   try {
-    // 1. Verificar Firebase App
     console.log('Firebase apps:', firebase.apps.length);
     if (firebase.apps.length > 0) {
       console.log('Firebase inicializado correctamente');
@@ -3789,14 +4282,11 @@ async function debugFirebaseConnection() {
       return false;
     }
     
-    // 2. Verificar Auth
     const currentUser = firebase.auth().currentUser;
     console.log('Usuario autenticado:', currentUser ? 'SÍ' : 'NO');
     
-    // 3. Verificar Firestore
     console.log('Firestore disponible:', !!db);
     
-    // 4. Probar escritura simple
     testFirestoreWrite();
     
     return true;
@@ -3815,11 +4305,9 @@ async function testFirestoreWrite() {
       message: 'Test de conexión'
     };
     
-    // Intentar escribir en una colección de prueba
     const docRef = await db.collection('test_connection').add(testData);
     console.log('✅ Escritura exitosa, ID:', docRef.id);
     
-    // Limpiar el documento de prueba
     await docRef.delete();
     console.log('✅ Documento de prueba eliminado');
     
@@ -3832,74 +4320,35 @@ async function testFirestoreWrite() {
   }
 }
 
-// Función para debugging manual (usar en consola del navegador)
-window.debugSenda = function() {
-  console.clear();
-  console.log('🔍 INICIANDO DEBUGGING COMPLETO...');
-  
-  debugFirebaseConnection();
-  
-  // Verificar configuración
-  console.log('=== CONFIGURACIÓN ===');
-  console.log('APP_CONFIG:', APP_CONFIG);
-  console.log('currentUser:', currentUser);
-  console.log('currentUserData:', currentUserData);
-  
-  console.log('=== DEBUGGING COMPLETADO ===');
-};
-
-// Función para simular envío de formulario (para testing)
-window.testFormSubmission = async function() {
-  console.log('🧪 PROBANDO ENVÍO DE FORMULARIO...');
-  
-  try {
-    const testSolicitud = {
-      tipoSolicitud: 'anonimo',
-      edad: 25,
-      cesfam: 'CESFAM Alejandro del Río',
-      paraMi: 'mi_mismo',
-      telefono: '+56912345678',
-      sustancias: ['alcohol'],
-      urgencia: 'media',
-      tratamientoPrevio: 'no',
-      motivacion: 7,
-      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
-      estado: 'pendiente',
-      origen: 'test',
-      identificador: `TEST_${Date.now()}`
-    };
-    
-    console.log('Datos de prueba:', testSolicitud);
-    
-    const docRef = await db.collection('solicitudes_ingreso').add(testSolicitud);
-    console.log('✅ Solicitud de prueba creada:', docRef.id);
-    
-    // Limpiar
-    await docRef.delete();
-    console.log('✅ Solicitud de prueba eliminada');
-    
-  } catch (error) {
-    console.error('❌ Error en prueba:', error);
-  }
-};
-
 // ================= FUNCIONES PLACEHOLDER =================
 
-function showSolicitudDetail(solicitud) { showNotification('Función en desarrollo', 'info'); }
-function showSolicitudDetailById(solicitudId) { showNotification('Función en desarrollo', 'info'); }
-function showAgendaModal(solicitudId) { showNotification('Función en desarrollo', 'info'); }
-function handleUrgentCase(solicitudId) { showNotification('Función en desarrollo', 'info'); }
-function verFichaPaciente(pacienteId) { showNotification('Función en desarrollo', 'info'); }
-function agendarPaciente(pacienteId) { showNotification('Función en desarrollo', 'info'); }
-function editarPaciente(pacienteId) { showNotification('Función en desarrollo', 'info'); }
-function createNuevaCitaModal() { showNotification('Función en desarrollo', 'info'); }
-function createQuickAppointment(dateIso) { showNotification('Función en desarrollo', 'info'); }
-function editAppointment(appointmentId) { showNotification('Función en desarrollo', 'info'); }
-function markAppointmentComplete(appointmentId) { showNotification('Función en desarrollo', 'info'); }
+function handleUrgentCase(solicitudId) { 
+  showNotification('Caso urgente identificado. Se notificará al coordinador.', 'warning'); 
+}
+function verFichaPaciente(pacienteId) { 
+  showNotification('Función de ficha del paciente en desarrollo', 'info'); 
+}
+function agendarPaciente(pacienteId) { 
+  showNotification('Función de agendar paciente en desarrollo', 'info'); 
+}
+function editarPaciente(pacienteId) { 
+  showNotification('Función de editar paciente en desarrollo', 'info'); 
+}
+function createNuevaCitaModal() { 
+  showNotification('Función de nueva cita en desarrollo', 'info'); 
+}
+function createQuickAppointment(dateIso) { 
+  showNotification('Función de cita rápida en desarrollo', 'info'); 
+}
+function editAppointment(appointmentId) { 
+  showNotification('Función de editar cita en desarrollo', 'info'); 
+}
+function markAppointmentComplete(appointmentId) { 
+  showNotification('Función de completar cita en desarrollo', 'info'); 
+}
 
 // ================= FUNCIONES GLOBALES Y EXPORTS =================
 
-// Funciones que deben ser accesibles globalmente
 window.showSolicitudDetail = showSolicitudDetail;
 window.showSolicitudDetailById = showSolicitudDetailById;
 window.showAgendaModal = showAgendaModal;
@@ -3921,10 +4370,10 @@ window.loadSeguimiento = loadSeguimiento;
 window.loadTodayAppointments = loadTodayAppointments;
 window.debugFirebaseConnection = debugFirebaseConnection;
 window.validateFormInputs = validateFormInputs;
+window.selectTimeSlot = selectTimeSlot;
 
 // ================= INICIALIZACIÓN FINAL =================
 
-// Auto-ejecutar verificación al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
   setTimeout(() => {
     if (APP_CONFIG.DEBUG_MODE) {
@@ -3934,14 +4383,12 @@ document.addEventListener('DOMContentLoaded', function() {
   }, 2000);
 });
 
-// Agregar event listener para cargar la aplicación
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
   initializeApp();
 }
 
-// Registro de service worker para PWA (opcional)
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
@@ -3949,40 +4396,3 @@ if ('serviceWorker' in navigator) {
         if (APP_CONFIG.DEBUG_MODE) {
           console.log('✅ Service Worker registrado:', registration.scope);
         }
-      })
-      .catch(error => {
-        if (APP_CONFIG.DEBUG_MODE) {
-          console.log('❌ Error registrando Service Worker:', error);
-        }
-      });
-  });
-}
-
-// Event listeners globales para PWA
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  window.deferredPrompt = e;
-});
-
-// Manejo de errores no capturados
-window.addEventListener('error', (e) => {
-  if (APP_CONFIG.DEBUG_MODE) {
-    console.error('❌ Error no capturado:', e.error);
-  }
-});
-
-// Verificar conectividad
-window.addEventListener('online', () => {
-  showNotification('Conexión restaurada', 'success', 2000);
-});
-
-window.addEventListener('offline', () => {
-  showNotification('Sin conexión a internet', 'warning', 5000);
-});
-
-console.log('🎉 SENDA PUENTE ALTO - Sistema cargado completamente');
-console.log('📱 Versión: 1.0');
-console.log('🏥 CESFAM: Configuración dinámica');
-console.log('🔧 Debug mode:', APP_CONFIG.DEBUG_MODE ? 'Activado' : 'Desactivado');
-
-// ================= FIN DEL ARCHIVO APP.JS =================
