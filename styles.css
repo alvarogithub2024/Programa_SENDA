@@ -1704,6 +1704,12 @@ body {
   font-family: inherit;
   font-size: 14px;
   transition: all 0.2s ease;
+  padding: 12px;
+  border: 2px solid var(--primary-blue);
+  border-radius: 8px;
+  background: white;
+  color: var(--primary-blue);
+  cursor: pointer;
 }
 
 .time-slot:hover:not(:disabled) {
@@ -1723,6 +1729,9 @@ body {
 .time-slot:disabled {
   opacity: 0.5;
   cursor: not-allowed !important;
+  background: var(--gray-100);
+  color: var(--gray-400);
+  border-color: var(--gray-300);
 }
 
 /* Modal de Agenda más grande */
@@ -1731,9 +1740,17 @@ body {
   width: 90%;
 }
 
-/* Info del paciente en modal de agenda */
-.patient-info {
-  border-left: 4px solid var(--primary-blue);
+/* Contenedor de time slots */
+.time-slots-container {
+  margin-top: 16px;
+}
+
+.time-slots-container h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  color: var(--primary-blue);
 }
 
 /* Estilos para detalles de solicitudes */
@@ -1758,23 +1775,10 @@ body {
   line-height: 1.5;
 }
 
-.detail-grid div {
-  color: var(--gray-700);
-}
-
-.detail-grid strong {
-  color: var(--gray-800);
-  font-weight: 600;
-}
-
 .detail-content {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
-}
-
-.detail-column {
-  /* Columnas para organizar el contenido del detalle */
 }
 
 .detail-header {
@@ -1804,13 +1808,6 @@ body {
   transform: translateY(-2px);
 }
 
-.priority-badge {
-  font-size: 11px !important;
-  font-weight: bold !important;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
 /* Status badges mejorados */
 .status-badge {
   display: inline-flex;
@@ -1823,52 +1820,17 @@ body {
   text-transform: uppercase;
 }
 
-.status-badge i {
-  font-size: 10px;
-}
-
-/* Indicadores de estado en timeline */
-.timeline-status {
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  text-transform: uppercase;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.timeline-status.confirmada,
-.timeline-status.programada {
-  background: #dbeafe;
-  color: #1e40af;
-}
-
-.timeline-status.en_curso {
-  background: #fecaca;
-  color: #991b1b;
-}
-
-/* Contenedor de time slots */
-.time-slots-container {
-  margin-top: 16px;
-}
-
-.time-slots-container h4 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  color: var(--primary-blue);
-}
-
 /* Mejoras para formularios de agenda */
 .form-actions {
   margin-top: 24px;
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+}
+
+/* Info del paciente en modal de agenda */
+.patient-info {
+  border-left: 4px solid var(--primary-blue);
 }
 
 /* Responsive para modales nuevos */
@@ -1887,28 +1849,4 @@ body {
     grid-template-columns: 1fr !important;
     gap: 16px !important;
   }
-}
-
-/* Fix para el header profesional */
-.professional-header .header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px;
-}
-
-/* Estilos para modales temporales */
-.temp-modal {
-  /* Estilos específicos para modales que se crean dinámicamente */
-}
-
-/* Mejoras para el modal large */
-.large-modal {
-  max-width: 800px;
-}
-
-#agenda-modal.modal-overlay .modal.large-modal {
-  max-width: 900px;
 }
