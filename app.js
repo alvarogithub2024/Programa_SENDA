@@ -1788,343 +1788,148 @@ function showDraftSavedIndicator() {
     console.error('Error showing draft saved indicator:', error);
   }
 }
-
-// REEMPLAZA la función updateFormVisibility existente con esta versión corregida:
-
+// Reemplaza updateFormVisibility con esta versión mejorada
 function updateFormVisibility() {
   try {
     const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
     const anonymousPhone = document.getElementById('anonymous-phone-container');
     const infoEmail = document.getElementById('info-email-container');
-    const anonymousPhoneInput = document.getElementById('anonymous-phone');
-    const infoEmailInput = document.getElementById('info-email');
-    
-    console.log('🔧 Actualizando visibilidad del formulario, tipo:', tipoSolicitud);
-    
-    // IMPORTANTE: Remover required de todos los campos condicionales ANTES de ocultarlos
-    if (anonymousPhoneInput) {
-      anonymousPhoneInput.required = false;
-      anonymousPhoneInput.removeAttribute('required');
-    }
-    if (infoEmailInput) {
-      infoEmailInput.required = false;
-      infoEmailInput.removeAttribute('required');
-    }
     
     // Ocultar todos los campos condicionales
-    if (anonymousPhone) {
-      anonymousPhone.style.display = 'none';
-      anonymousPhone.style.visibility = 'hidden';
-    }
-    if (infoEmail) {
-      infoEmail.style.display = 'none'; 
-      infoEmail.style.visibility = 'hidden';
-    }
+    if (anonymousPhone) anonymousPhone.style.display = 'none';
+    if (infoEmail) infoEmail.style.display = 'none';
     
-    // Mostrar campos según el tipo de solicitud
-    if (tipoSolicitud === 'anonimo' && anonymousPhone && anonymousPhoneInput) {
-      anonymousPhone.style.display = 'block';
-      anonymousPhone.style.visibility = 'visible';
-      anonymousPhoneInput.required = true;
-      anonymousPhoneInput.setAttribute('required', 'required');
-      
-      // Focus después de un pequeño delay
-      setTimeout(() => {
-        if (anonymousPhoneInput.offsetParent !== null) { // Solo si es visible
-          anonymousPhoneInput.focus();
+    // Actualizar botón "Siguiente" del paso 1
+    const nextBtn = document.getElementById('next-step-1');
+    
+    if (tipoSolicitud === 'anonimo') {
+      if (anonymousPhone) {
+        anonymousPhone.style.display = 'block';
+        const phoneInput = document.getElementById('anonymous-phone');
+        if (phoneInput) {
+          phoneInput.required = true;
+          phoneInput.focus();
         }
-      }, 100);
+      }
+      if (nextBtn) nextBtn.textContent = 'Siguiente';
       
-    } else if (tipoSolicitud === 'informacion' && infoEmail && infoEmailInput) {
-      infoEmail.style.display = 'block';
-      infoEmail.style.visibility = 'visible';
-      infoEmailInput.required = true;
-      infoEmailInput.setAttribute('required', 'required');
-      
-      // Focus después de un pequeño delay
-      setTimeout(() => {
-        if (infoEmailInput.offsetParent !== null) { // Solo si es visible
-          infoEmailInput.focus();
+    } else if (tipoSolicitud === 'informacion') {
+      if (infoEmail) {
+        infoEmail.style.display = 'block';
+        const emailInput = document.getElementById('info-email');
+        if (emailInput) {
+          emailInput.required = true;
+          emailInput.focus();
         }
-      }, 100);
+      }
+      // Cambiar botón a "Enviar" para solo información
+      if (nextBtn) {
+        nextBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar Solicitud';
+        nextBtn.style.background = 'var(--success-green)';
+      }
+      
+    } else if (tipoSolicitud === 'identificado') {
+      if (nextBtn) nextBtn.textContent = 'Siguiente';
     }
     
-    console.log('✅ Visibilidad actualizada correctamente');
+    // Limpiar requisitos de campos no visibles
+    if (tipoSolicitud !== 'anonimo') {
+      const phoneInput = document.getElementById('anonymous-phone');
+      if (phoneInput) phoneInput.required = false;
+    }
+    if (tipoSolicitud !== 'informacion') {
+      const emailInput = document.getElementById('info-email');
+      if (emailInput) emailInput.required = false;
+    }
     
-    // Guardar draft después de cambios (sin required en campos ocultos)
+    // Guardar draft después de cambios
     setTimeout(saveFormDraft, 500);
     
   } catch (error) {
-    console.error('❌ Error updating form visibility:', error);
+    console.error('Error updating form visibility:', error);
   }
 }
 
-// AGREGA también esta función para limpiar validaciones problemáticas:
-function clearInvalidFormControls() {
+// También actualiza la función que maneja el click del botón "Siguiente" del paso 1
+function setupMultiStepForm() {
   try {
-    // Encontrar todos los elementos required que están ocultos
-    const allRequired = document.querySelectorAll('[required]');
-    
-    allRequired.forEach(element => {
-      // Si el elemento no es visible, remover temporalmente required
-      if (element.offsetParent === null || element.style.display === 'none') {
-        element.removeAttribute('required');
-        element.classList.add('temp-required'); // Marcar para restaurar después
-        console.log('🔧 Removiendo required temporal de:', element.id || element.name);
-      }
-    });
-    
-  } catch (error) {
-    console.error('Error clearing invalid form controls:', error);
-  }
-}
+    const form = document.getElementById('patient-form');
+    if (!form) return;
 
-// MODIFICA también la función validateStep para manejar mejor los campos ocultos:
-function validateStep(step) {
-  try {
-    // Limpiar controles inválidos antes de validar
-    clearInvalidFormControls();
+    // Configurar navegación entre pasos
+    const nextButtons = form.querySelectorAll('[id^="next-step"]');
+    const prevButtons = form.querySelectorAll('[id^="prev-step"]');
     
-    const currentStepDiv = document.querySelector(`.form-step[data-step="${step}"].active`);
-    if (!currentStepDiv) {
-      console.warn('No se encontró el paso activo:', step);
-      return false;
-    }
-
-    // Solo validar campos requeridos que están VISIBLES en el paso actual
-    const requiredFields = currentStepDiv.querySelectorAll('[required], .temp-required');
-    let isValid = true;
-    const errors = [];
-
-    requiredFields.forEach(field => {
-      // Solo validar si el campo es visible
-      if (field.offsetParent !== null && field.style.display !== 'none') {
-        const value = field.value?.trim() || '';
+    nextButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const currentStep = parseInt(btn.id.split('-')[2]);
         
-        if (!value && (field.hasAttribute('required') || field.classList.contains('temp-required'))) {
-          field.classList.add('error');
-          showFieldError(field, 'Este campo es obligatorio');
-          errors.push(`${getFieldLabel(field)} es obligatorio`);
-          isValid = false;
+        // Lógica especial para el paso 1
+        if (currentStep === 1) {
+          const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+          
+          if (tipoSolicitud === 'informacion') {
+            // Para solo información, enviar directamente
+            handlePatientFormSubmitSimplified();
+            return;
+          }
+        }
+        
+        // Para otros pasos, validar y continuar
+        if (validateStep(currentStep)) {
+          goToStep(currentStep + 1);
+        }
+      });
+    });
+
+    prevButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const currentStep = parseInt(btn.id.split('-')[2]);
+        
+        // Lógica especial para navegación hacia atrás
+        const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+        
+        if (currentStep === 3 && tipoSolicitud === 'anonimo') {
+          // Si es anónimo y está en paso 3, regresar al paso 1
+          goToStep(1);
         } else {
-          field.classList.remove('error');
-          clearFieldError(field);
+          goToStep(currentStep - 1);
         }
-      }
+      });
     });
 
-    // Validaciones específicas por paso (solo si el paso es visible)
-    if (step === 1) {
-      const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked');
-      if (!tipoSolicitud) {
-        errors.push('Selecciona un tipo de solicitud');
-        isValid = false;
-      } else {
-        // Validaciones específicas según tipo
-        if (tipoSolicitud.value === 'anonimo') {
-          const phone = document.getElementById('anonymous-phone');
-          if (phone && phone.offsetParent !== null) { // Solo validar si es visible
-            if (!phone.value.trim()) {
-              errors.push('Ingresa un teléfono de contacto');
-              isValid = false;
-            } else if (!validatePhoneNumber(phone)) {
-              errors.push('Ingresa un teléfono válido');
-              isValid = false;
-            }
-          }
-        } else if (tipoSolicitud.value === 'informacion') {
-          const email = document.getElementById('info-email');
-          if (email && email.offsetParent !== null) { // Solo validar si es visible
-            if (!email.value.trim()) {
-              errors.push('Ingresa un email para recibir información');
-              isValid = false;
-            } else if (!isValidEmail(email.value.trim())) {
-              errors.push('Ingresa un email válido');
-              isValid = false;
-            }
-          }
-        }
-      }
+    // Resto de la configuración...
+    form.addEventListener('submit', handlePatientFormSubmit);
 
-      // Validar edad
-      const edad = parseInt(document.getElementById('patient-age')?.value);
-      if (edad && (edad < 12 || edad > 120)) {
-        errors.push('La edad debe estar entre 12 y 120 años');
-        isValid = false;
-      }
-    }
-
-    // Mostrar errores si los hay
-    if (errors.length > 0) {
-      showNotification(errors.join('\n'), 'warning', 5000);
-    }
-
-    return isValid;
-  } catch (error) {
-    console.error('Error validating step:', error);
-    return false;
-  }
-}
-
-function getFieldLabel(field) {
-  try {
-    const label = field.closest('.form-group')?.querySelector('label');
-    return label ? label.textContent.replace('*', '').trim() : 'Campo';
-  } catch (error) {
-    return 'Campo';
-  }
-}
-
-function goToStep(step) {
-  try {
-    if (step < 1 || step > maxFormStep) return;
-
-    // Ocultar todos los pasos
-    document.querySelectorAll('.form-step').forEach(stepDiv => {
-      stepDiv.classList.remove('active');
+    const tipoSolicitudInputs = document.querySelectorAll('input[name="tipoSolicitud"]');
+    tipoSolicitudInputs.forEach(input => {
+      input.addEventListener('change', updateFormVisibility);
     });
-    
-    // Mostrar paso objetivo
-    const targetStep = document.querySelector(`.form-step[data-step="${step}"]`);
-    if (targetStep) {
-      targetStep.classList.add('active');
+
+    const motivacionRange = document.getElementById('motivacion-range');
+    const motivacionValue = document.getElementById('motivacion-value');
+    if (motivacionRange && motivacionValue) {
+      motivacionRange.addEventListener('input', () => {
+        motivacionValue.textContent = motivacionRange.value;
+        updateMotivacionColor(motivacionRange.value);
+      });
       
-      // Focus en primer campo del paso
-      setTimeout(() => {
-        const firstInput = targetStep.querySelector('input:not([type="hidden"]), select, textarea');
-        if (firstInput && !firstInput.disabled) {
-          firstInput.focus();
-        }
-      }, 100);
+      motivacionValue.textContent = motivacionRange.value;
+      updateMotivacionColor(motivacionRange.value);
     }
 
-    // Actualizar barra de progreso
-    const progressFill = document.getElementById('form-progress');
-    const progressText = document.getElementById('progress-text');
-    
-    if (progressFill) {
-      const progressPercentage = (step / maxFormStep) * 100;
-      progressFill.style.width = `${progressPercentage}%`;
-    }
-    
-    if (progressText) {
-      progressText.textContent = `Paso ${step} de ${maxFormStep}`;
+    const reentryForm = document.getElementById('reentry-form');
+    if (reentryForm) {
+      reentryForm.addEventListener('submit', handleReentrySubmit);
     }
 
-    currentFormStep = step;
+    setupAutoSave();
 
-    // Lógica especial para saltar paso 2 si no es identificado
-    if (step === 2) {
-      const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
-      if (tipoSolicitud !== 'identificado') {
-        goToStep(3);
-        return;
-      }
-    }
-
-    // Guardar progreso en draft
-    saveFormDraft();
-
-    if (APP_CONFIG.DEBUG_MODE) {
-      console.log(`🔧 Navegando a paso ${step}`);
-    }
+    console.log('✅ Formulario multi-step configurado con flujo simplificado');
   } catch (error) {
-    console.error('Error going to step:', error);
-  }
-}
-
-// ================= MANEJO DE FORMULARIOS PRINCIPALES =================
-
-// Función collectFormData CORREGIDA
-function collectFormData() {
-  try {
-    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
-    
-    if (!tipoSolicitud) {
-      throw new Error('Tipo de solicitud no seleccionado');
-    }
-    
-    console.log('Tipo de solicitud:', tipoSolicitud);
-    
-    const solicitudData = {
-      tipoSolicitud,
-      edad: parseInt(document.getElementById('patient-age')?.value) || null,
-      cesfam: document.getElementById('patient-cesfam')?.value || '',
-      paraMi: document.querySelector('input[name="paraMi"]:checked')?.value || '',
-      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
-      estado: 'pendiente',
-      origen: 'web_publica',
-      version: '1.0'
-    };
-
-    // Datos de evaluación (solo si existen)
-    const sustanciasChecked = document.querySelectorAll('input[name="sustancias"]:checked');
-    if (sustanciasChecked.length > 0) {
-      solicitudData.sustancias = Array.from(sustanciasChecked).map(cb => cb.value);
-    }
-
-    const tiempoConsumo = document.getElementById('tiempo-consumo')?.value;
-    if (tiempoConsumo) {
-      solicitudData.tiempoConsumo = tiempoConsumo;
-    }
-
-    const urgencia = document.querySelector('input[name="urgencia"]:checked')?.value;
-    if (urgencia) {
-      solicitudData.urgencia = urgencia;
-    }
-
-    const tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked')?.value;
-    if (tratamientoPrevio) {
-      solicitudData.tratamientoPrevio = tratamientoPrevio;
-    }
-
-    const descripcion = document.getElementById('patient-description')?.value?.trim();
-    if (descripcion) {
-      solicitudData.descripcion = descripcion;
-    }
-
-    const motivacion = document.getElementById('motivacion-range')?.value;
-    if (motivacion) {
-      solicitudData.motivacion = parseInt(motivacion);
-    }
-
-    // Datos específicos según tipo de solicitud
-    if (tipoSolicitud === 'identificado') {
-      const nombre = document.getElementById('patient-name')?.value?.trim();
-      const apellidos = document.getElementById('patient-lastname')?.value?.trim();
-      const rut = document.getElementById('patient-rut')?.value?.trim();
-      const telefono = document.getElementById('patient-phone')?.value?.trim();
-      const email = document.getElementById('patient-email')?.value?.trim();
-      const direccion = document.getElementById('patient-address')?.value?.trim();
-
-      if (nombre) solicitudData.nombre = nombre;
-      if (apellidos) solicitudData.apellidos = apellidos;
-      if (rut) solicitudData.rut = formatRUT(rut);
-      if (telefono) solicitudData.telefono = formatPhoneNumber(telefono);
-      if (email) solicitudData.email = email;
-      if (direccion) solicitudData.direccion = direccion;
-      
-    } else if (tipoSolicitud === 'anonimo') {
-      const telefono = document.getElementById('anonymous-phone')?.value?.trim();
-      if (telefono) {
-        solicitudData.telefono = formatPhoneNumber(telefono);
-      }
-      solicitudData.identificador = `ANONIMO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-    } else if (tipoSolicitud === 'informacion') {
-      const email = document.getElementById('info-email')?.value?.trim();
-      if (email) {
-        solicitudData.email = email;
-      }
-      solicitudData.identificador = `INFO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    }
-
-    console.log('Datos recopilados exitosamente:', solicitudData);
-    return solicitudData;
-    
-  } catch (error) {
-    console.error('Error recopilando datos del formulario:', error);
-    throw new Error('Error recopilando datos del formulario: ' + error.message);
+    console.error('❌ Error configurando formulario multi-step:', error);
   }
 }
 
