@@ -2440,7 +2440,7 @@ async function handleReentrySubmit(e) {
       tipo: 'reingreso',
       origen: 'web_publica',
       version: '1.0'
-    };
+    }
 
     console.log('💾 Guardando reingreso en Firestore...');
     const docRef = await db.collection('reingresos').add(reingresoData);
