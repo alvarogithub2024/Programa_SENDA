@@ -888,7 +888,7 @@ async function handlePatientFormSubmit(e) {
     solicitudData.prioridad = calculatePriority(solicitudData);
 
     // Save to Firebase
-    await db.collection('solicitudes').add(solicitudData);
+    await db.collection('solicitudes_ingreso').add(solicitudData);
     
     closeModal('patient-modal');
     resetForm();
@@ -985,7 +985,7 @@ async function loadSolicitudes() {
     showLoading(true);
     
     // Cargar solicitudes normales
-    const solicitudesSnapshot = await db.collection('solicitudes')
+    const solicitudesSnapshot = await db.collection('solicitudes_ingreso')
       .where('cesfam', '==', currentUserData.cesfam)
       .orderBy('fechaCreacion', 'desc')
       .get();
@@ -2082,7 +2082,7 @@ async function handleAgendaSubmit(e) {
     const professionalData = professionalDoc.data();
     
     // Get solicitud data
-    const solicitudDoc = await db.collection('solicitudes').doc(solicitudId).get();
+    const solicitudDoc = await db.collection('solicitudes_ingreso').doc(solicitudId).get();
     const solicitudData = solicitudDoc.data();
     
     // Create appointment
@@ -2106,7 +2106,7 @@ async function handleAgendaSubmit(e) {
     await db.collection('citas').add(citaData);
     
     // Update solicitud status
-    await db.collection('solicitudes').doc(solicitudId).update({
+    await db.collection('solicitudes_ingreso').doc(solicitudId).update({
       estado: 'agendada',
       fechaAgenda: firebase.firestore.FieldValue.serverTimestamp()
     });
