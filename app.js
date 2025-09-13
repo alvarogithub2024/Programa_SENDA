@@ -2136,3 +2136,558 @@ function setupFormValidation() {
   });
 
   const ageInput = document.getElementById('patient-age');
+// Completar las funciones restantes que faltaban en el archivo anterior
+
+// ================= FUNCIONES AUXILIARES ADICIONALES =================
+
+function setupModalControls() {
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal-close') || e.target.closest('.modal-close')) {
+      const modal = e.target.closest('.modal-overlay');
+      if (modal) {
+        closeModal(modal.id);
+      }
+    }
+    
+    // Cerrar modal al hacer clic en el overlay
+    if (e.target.classList.contains('modal-overlay')) {
+      closeModal(e.target.id);
+    }
+  });
+}
+
+function setupTabFunctionality() {
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('tab-button')) {
+      const tabGroup = e.target.closest('.tabs');
+      const targetTab = e.target.dataset.tab;
+      
+      if (tabGroup && targetTab) {
+        tabGroup.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+        tabGroup.parentElement.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        e.target.classList.add('active');
+        const tabContent = document.getElementById(targetTab + '-tab');
+        if (tabContent) {
+          tabContent.classList.add('active');
+        }
+      }
+    }
+  });
+}
+
+function setupMultiStepForm() {
+  const motivacionSlider = document.getElementById('motivacion');
+  const motivacionValue = document.getElementById('motivacion-value');
+  
+  if (motivacionSlider && motivacionValue) {
+    motivacionSlider.addEventListener('input', function() {
+      motivacionValue.textContent = this.value;
+    });
+  }
+
+  document.addEventListener('change', function(e) {
+    if (e.target.name === 'tipoSolicitud') {
+      handleTipoSolicitudChange(e.target.value);
+    }
+  });
+}
+
+function handleTipoSolicitudChange(tipoSolicitud) {
+  const phoneContainer = document.getElementById('anonymous-phone-container');
+  const emailContainer = document.getElementById('info-email-container');
+  
+  if (phoneContainer) phoneContainer.style.display = 'none';
+  if (emailContainer) emailContainer.style.display = 'none';
+  
+  switch(tipoSolicitud) {
+    case 'anonimo':
+      flowSteps = [1, 3, 4];
+      if (phoneContainer) phoneContainer.style.display = 'block';
+      break;
+      
+    case 'identificado':
+      flowSteps = [1, 2, 3, 4];
+      break;
+      
+    case 'informacion':
+      flowSteps = [1];
+      if (emailContainer) emailContainer.style.display = 'block';
+      break;
+  }
+  
+  updateFormProgress();
+}
+
+function updateFormProgress() {
+  const progressFill = document.getElementById('form-progress');
+  const progressText = document.getElementById('progress-text');
+  
+  const totalSteps = flowSteps.length;
+  const currentStepInFlow = currentStepIndex + 1;
+  const progress = (currentStepInFlow / totalSteps) * 100;
+  
+  if (progressFill) progressFill.style.width = progress + '%';
+  if (progressText) progressText.textContent = `Paso ${currentStepInFlow} de ${totalSteps}`;
+  
+  const prevBtn = document.getElementById('prev-step');
+  const nextBtn = document.getElementById('next-step');
+  const submitBtn = document.getElementById('submit-form');
+  
+  if (prevBtn) prevBtn.style.display = currentStepIndex > 0 ? 'block' : 'none';
+  if (nextBtn) nextBtn.style.display = currentStepIndex < flowSteps.length - 1 ? 'block' : 'none';
+  if (submitBtn) submitBtn.style.display = currentStepIndex === flowSteps.length - 1 ? 'block' : 'none';
+}
+
+function nextFormStep() {
+  if (validateCurrentStep()) {
+    collectCurrentStepData();
+    
+    if (currentStepIndex < flowSteps.length - 1) {
+      const currentStepNumber = flowSteps[currentStepIndex];
+      const currentStepElement = document.querySelector(`[data-step="${currentStepNumber}"]`);
+      if (currentStepElement) currentStepElement.classList.remove('active');
+      
+      currentStepIndex++;
+      const nextStepNumber = flowSteps[currentStepIndex];
+      currentFormStep = nextStepNumber;
+      
+      const nextStepElement = document.querySelector(`[data-step="${nextStepNumber}"]`);
+      if (nextStepElement) nextStepElement.classList.add('active');
+      
+      updateFormProgress();
+      saveDraft(false);
+    }
+  }
+}
+
+function prevFormStep() {
+  if (currentStepIndex > 0) {
+    const currentStepNumber = flowSteps[currentStepIndex];
+    const currentStepElement = document.querySelector(`[data-step="${currentStepNumber}"]`);
+    if (currentStepElement) currentStepElement.classList.remove('active');
+    
+    currentStepIndex--;
+    const prevStepNumber = flowSteps[currentStepIndex];
+    currentFormStep = prevStepNumber;
+    
+    const prevStepElement = document.querySelector(`[data-step="${prevStepNumber}"]`);
+    if (prevStepElement) prevStepElement.classList.add('active');
+    
+    updateFormProgress();
+  }
+}
+
+function setupFormValidation() {
+  const rutInput = document.getElementById('patient-rut');
+  if (rutInput) {
+    rutInput.addEventListener('input', function(e) {
+      e.target.value = formatRUT(e.target.value);
+    });
+
+    rutInput.addEventListener('blur', function(e) {
+      const rut = e.target.value.trim();
+      if (rut && !validateRUT(rut)) {
+        e.target.classList.add('error');
+        showNotification('El RUT ingresado no es válido', 'error');
+      } else {
+        e.target.classList.remove('error');
+      }
+    });
+  }
+
+  const phoneInputs = document.querySelectorAll('#patient-phone, #anonymous-phone');
+  phoneInputs.forEach(input => {
+    input.addEventListener('input', function(e) {
+      e.target.value = formatPhoneNumber(e.target.value);
+    });
+  });
+
+  const emailInputs = document.querySelectorAll('input[type="email"]');
+  emailInputs.forEach(input => {
+    input.addEventListener('blur', function(e) {
+      const email = e.target.value.trim();
+      if (email && !isValidEmail(email)) {
+        e.target.classList.add('error');
+        showNotification('Por favor ingresa un correo electrónico válido', 'error');
+      } else {
+        e.target.classList.remove('error');
+      }
+    });
+  });
+
+  const ageInput = document.getElementById('patient-age');
+  if (ageInput) {
+    ageInput.addEventListener('blur', function(e) {
+      const age = parseInt(e.target.value);
+      if (age && (age < 12 || age > 120)) {
+        e.target.classList.add('error');
+        showNotification('Por favor ingresa una edad válida (12-120 años)', 'error');
+      } else {
+        e.target.classList.remove('error');
+      }
+    });
+  }
+}
+
+// ================= VALIDACIÓN DE FORMULARIOS =================
+
+function validateCurrentStep() {
+  const currentStepElement = document.querySelector(`[data-step="${currentFormStep}"]`);
+  if (!currentStepElement) return false;
+  
+  const requiredFields = currentStepElement.querySelectorAll('[required]:not([style*="display: none"] [required])');
+  let isValid = true;
+  
+  requiredFields.forEach(field => {
+    if (field.offsetParent === null) return;
+    
+    if (!field.value.trim()) {
+      field.classList.add('error');
+      isValid = false;
+    } else {
+      field.classList.remove('error');
+    }
+  });
+  
+  if (currentFormStep === 1) {
+    isValid = validateStep1() && isValid;
+  } else if (currentFormStep === 2) {
+    isValid = validateStep2() && isValid;
+  } else if (currentFormStep === 3) {
+    isValid = validateStep3() && isValid;
+  }
+  
+  if (!isValid) {
+    showNotification('Por favor corrige los errores antes de continuar', 'error');
+  }
+  
+  return isValid;
+}
+
+function validateStep1() {
+  const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked');
+  const paraMi = document.querySelector('input[name="paraMi"]:checked');
+  
+  if (!tipoSolicitud || !paraMi) {
+    showNotification('Por favor completa todos los campos obligatorios', 'error');
+    return false;
+  }
+  
+  if (tipoSolicitud.value === 'anonimo') {
+    const phone = document.getElementById('anonymous-phone')?.value;
+    if (!phone) {
+      showNotification('Por favor ingresa un teléfono de contacto', 'error');
+      return false;
+    }
+  }
+  
+  if (tipoSolicitud.value === 'informacion') {
+    const email = document.getElementById('info-email')?.value;
+    if (!email || !isValidEmail(email)) {
+      showNotification('Por favor ingresa un email válido', 'error');
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+function validateStep2() {
+  if (formData.tipoSolicitud !== 'identificado') return true;
+  
+  const rut = document.getElementById('patient-rut')?.value;
+  const email = document.getElementById('patient-email')?.value;
+  
+  if (rut && !validateRUT(rut)) {
+    showNotification('El RUT ingresado no es válido', 'error');
+    return false;
+  }
+  
+  if (email && !isValidEmail(email)) {
+    showNotification('El email ingresado no es válido', 'error');
+    return false;
+  }
+  
+  return true;
+}
+
+function validateStep3() {
+  if (formData.tipoSolicitud !== 'informacion') {
+    const sustancias = document.querySelectorAll('input[name="sustancias"]:checked');
+    if (sustancias.length === 0) {
+      showNotification('Por favor selecciona al menos una sustancia', 'error');
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+function collectCurrentStepData() {
+  if (currentFormStep === 1) {
+    formData.tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+    formData.edad = document.getElementById('patient-age')?.value;
+    formData.cesfam = document.getElementById('patient-cesfam')?.value;
+    formData.paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
+    
+    if (formData.tipoSolicitud === 'anonimo') {
+      formData.telefonoContacto = document.getElementById('anonymous-phone')?.value;
+    }
+    
+    if (formData.tipoSolicitud === 'informacion') {
+      formData.emailInformacion = document.getElementById('info-email')?.value;
+    }
+  }
+  
+  if (currentFormStep === 2 && formData.tipoSolicitud === 'identificado') {
+    formData.nombre = document.getElementById('patient-name')?.value;
+    formData.apellido = document.getElementById('patient-lastname')?.value;
+    formData.rut = document.getElementById('patient-rut')?.value;
+    formData.telefono = document.getElementById('patient-phone')?.value;
+    formData.email = document.getElementById('patient-email')?.value;
+    formData.direccion = document.getElementById('patient-address')?.value;
+  }
+  
+  if (currentFormStep === 3) {
+    if (formData.tipoSolicitud !== 'informacion') {
+      const sustancias = Array.from(document.querySelectorAll('input[name="sustancias"]:checked'))
+        .map(cb => cb.value);
+      formData.sustancias = sustancias;
+      formData.tiempoConsumo = document.getElementById('tiempo-consumo')?.value;
+      formData.motivacion = document.getElementById('motivacion')?.value;
+      formData.urgencia = document.querySelector('input[name="urgencia"]:checked')?.value;
+    }
+  }
+  
+  if (currentFormStep === 4) {
+    formData.razon = document.getElementById('patient-reason')?.value;
+    formData.tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked')?.value;
+    formData.centroPreferencia = document.getElementById('centro-preferencia')?.value;
+  }
+}
+
+function saveDraft(showMessage = true) {
+  collectCurrentStepData();
+  
+  const draftData = {
+    ...formData,
+    currentStep: currentFormStep,
+    currentStepIndex: currentStepIndex,
+    flowSteps: flowSteps,
+    timestamp: new Date().toISOString()
+  };
+  
+  localStorage.setItem('senda_draft', JSON.stringify(draftData));
+  isDraftSaved = true;
+  
+  if (showMessage) {
+    showNotification('Borrador guardado correctamente', 'success', 2000);
+  }
+}
+
+function loadDraftIfExists() {
+  const draft = localStorage.getItem('senda_draft');
+  if (draft) {
+    try {
+      const draftData = JSON.parse(draft);
+      const draftAge = new Date() - new Date(draftData.timestamp);
+      
+      if (draftAge < 24 * 60 * 60 * 1000) {
+        const loadDraft = confirm('Se encontró un borrador guardado. ¿Deseas continuar donde lo dejaste?');
+        if (loadDraft) {
+          formData = draftData;
+          currentFormStep = draftData.currentStep || 1;
+          currentStepIndex = draftData.currentStepIndex || 0;
+          flowSteps = draftData.flowSteps || [1];
+          restoreFormData();
+          isDraftSaved = true;
+        } else {
+          localStorage.removeItem('senda_draft');
+        }
+      } else {
+        localStorage.removeItem('senda_draft');
+      }
+    } catch (error) {
+      console.error('Error loading draft:', error);
+      localStorage.removeItem('senda_draft');
+    }
+  }
+}
+
+function restoreFormData() {
+  Object.keys(formData).forEach(key => {
+    const element = document.getElementById(`patient-${key}`) || 
+                   document.querySelector(`input[name="${key}"]`) ||
+                   document.querySelector(`select[name="${key}"]`);
+    
+    if (element && formData[key]) {
+      if (element.type === 'radio' || element.type === 'checkbox') {
+        if (Array.isArray(formData[key])) {
+          formData[key].forEach(value => {
+            const checkbox = document.querySelector(`input[name="${key}"][value="${value}"]`);
+            if (checkbox) checkbox.checked = true;
+          });
+        } else {
+          const radio = document.querySelector(`input[name="${key}"][value="${formData[key]}"]`);
+          if (radio) radio.checked = true;
+        }
+      } else {
+        element.value = formData[key];
+      }
+    }
+  });
+  
+  if (formData.tipoSolicitud) {
+    handleTipoSolicitudChange(formData.tipoSolicitud);
+  }
+  
+  document.querySelectorAll('.form-step').forEach(step => step.classList.remove('active'));
+  const currentStepElement = document.querySelector(`[data-step="${currentFormStep}"]`);
+  if (currentStepElement) currentStepElement.classList.add('active');
+  
+  updateFormProgress();
+}
+
+function submitPatientForm() {
+  if (validateCurrentStep()) {
+    collectCurrentStepData();
+    handlePatientRegistration();
+  }
+}
+
+function resetForm() {
+  formData = {};
+  currentFormStep = 1;
+  currentStepIndex = 0;
+  flowSteps = [1];
+  isDraftSaved = false;
+  
+  const form = document.getElementById('patient-form');
+  if (form) {
+    form.reset();
+    
+    document.querySelectorAll('.form-step').forEach((step, index) => {
+      step.classList.toggle('active', index === 0);
+    });
+    
+    const phoneContainer = document.getElementById('anonymous-phone-container');
+    const emailContainer = document.getElementById('info-email-container');
+    if (phoneContainer) phoneContainer.style.display = 'none';
+    if (emailContainer) emailContainer.style.display = 'none';
+    
+    updateFormProgress();
+  }
+}
+
+// ================= FUNCIONES DE SOLICITUDES AUXILIARES =================
+
+async function reviewRequest(requestId) {
+  try {
+    const doc = await db.collection('solicitudes_ingreso').doc(requestId).get();
+    if (!doc.exists) {
+      showNotification('Solicitud no encontrada', 'error');
+      return;
+    }
+    
+    const data = doc.data();
+    showRequestDetailModal(requestId, data);
+  } catch (error) {
+    console.error('Error reviewing request:', error);
+    showNotification('Error al cargar la solicitud', 'error');
+  }
+}
+
+function showRequestDetailModal(requestId, data) {
+  const isAnonymous = data.datos_personales?.anonimo || false;
+  const isInfoOnly = data.datos_personales?.solo_informacion || false;
+  const isReentry = data.tipo_solicitud === 'reingreso';
+  
+  const modalHTML = `
+    <div class="modal-overlay" id="request-detail-modal">
+      <div class="modal large-modal">
+        <button class="modal-close" onclick="closeModal('request-detail-modal')">
+          <i class="fas fa-times"></i>
+        </button>
+        <h2>${isReentry ? 'Solicitud de Reingreso' : 'Detalle de Solicitud'} ${requestId.substring(0, 8).toUpperCase()}</h2>
+        
+        <div class="request-detail-content">
+          <div class="detail-section">
+            <h3>Información Personal</h3>
+            <div class="info-grid">
+              ${!isAnonymous && (data.datos_contacto?.nombre_completo || data.datos_personales?.nombre_completo) ? 
+                `<div><strong>Nombre:</strong> ${data.datos_contacto?.nombre_completo || data.datos_personales?.nombre_completo}</div>` : ''}
+              ${!isAnonymous && (data.datos_contacto?.rut || data.datos_personales?.rut) ? 
+                `<div><strong>RUT:</strong> ${data.datos_contacto?.rut || data.datos_personales?.rut}</div>` : ''}
+              <div><strong>Edad:</strong> ${data.datos_personales?.edad || 'N/A'} años</div>
+              <div><strong>CESFAM:</strong> ${data.datos_personales?.cesfam || 'N/A'}</div>
+              ${!isReentry ? `<div><strong>Para quien:</strong> ${data.datos_personales?.para_quien || 'N/A'}</div>` : ''}
+              <div><strong>Tipo:</strong> ${isReentry ? 'Reingreso' : isInfoOnly ? 'Solo información' : isAnonymous ? 'Anónimo' : 'Identificado'}</div>
+            </div>
+          </div>
+          
+          <div class="detail-section">
+            <h3>Datos de Contacto</h3>
+            <div class="info-grid">
+              ${data.datos_contacto?.telefono_principal ? 
+                `<div><strong>Teléfono:</strong> ${data.datos_contacto.telefono_principal}</div>` : ''}
+              ${data.datos_contacto?.email ? 
+                `<div><strong>Email:</strong> ${data.datos_contacto.email}</div>` : ''}
+              ${data.datos_contacto?.direccion ? 
+                `<div><strong>Dirección:</strong> ${data.datos_contacto.direccion}</div>` : ''}
+            </div>
+          </div>
+          
+          ${isReentry && data.reingreso ? `
+          <div class="detail-section">
+            <h3>Información del Reingreso</h3>
+            <div class="info-grid">
+              <div><strong>Fecha solicitud:</strong> ${formatDate(data.reingreso.fecha_solicitud)}</div>
+              <div><strong>Estado:</strong> ${data.reingreso.estado || 'pendiente'}</div>
+            </div>
+            <div style="margin-top: 12px;">
+              <strong>Motivo del reingreso:</strong>
+              <p style="margin-top: 8px; padding: 12px; background: var(--gray-50); border-radius: 4px;">
+                ${data.reingreso.motivo || 'No especificado'}
+              </p>
+            </div>
+          </div>
+          ` : ''}
+          
+          ${data.evaluacion_inicial ? `
+          <div class="detail-section">
+            <h3>Evaluación Inicial</h3>
+            <div class="info-grid">
+              ${data.evaluacion_inicial.sustancias_consumo ? 
+                `<div><strong>Sustancias:</strong> ${data.evaluacion_inicial.sustancias_consumo.join(', ')}</div>` : ''}
+              ${data.evaluacion_inicial.tiempo_consumo_meses ? 
+                `<div><strong>Tiempo de consumo:</strong> ${data.evaluacion_inicial.tiempo_consumo_meses} meses</div>` : ''}
+              ${data.evaluacion_inicial.motivacion_cambio ? 
+                `<div><strong>Motivación al cambio:</strong> ${data.evaluacion_inicial.motivacion_cambio}/10</div>` : ''}
+              ${data.evaluacion_inicial.urgencia_declarada ? 
+                `<div><strong>Urgencia:</strong> ${data.evaluacion_inicial.urgencia_declarada}</div>` : ''}
+              ${data.evaluacion_inicial.tratamiento_previo ? 
+                `<div><strong>Tratamiento previo:</strong> ${data.evaluacion_inicial.tratamiento_previo}</div>` : ''}
+            </div>
+            ${data.evaluacion_inicial.descripcion_situacion ? `
+            <div style="margin-top: 12px;">
+              <strong>Descripción de la situación:</strong>
+              <p style="margin-top: 8px; padding: 12px; background: var(--gray-50); border-radius: 4px;">
+                ${data.evaluacion_inicial.descripcion_situacion}
+              </p>
+            </div>
+            ` : ''}
+          </div>
+          ` : ''}
+          
+          <div class="detail-section">
+            <h3>Estado de la Solicitud</h3>
+            <div class="info-grid">
+              <div><strong>Estado:</strong> <span class="status-badge status-${data.clasificacion?.estado || 'pendiente'}">${data.clasificacion?.estado || 'pendiente'}</span></div>
+              <div><strong>Prioridad:</strong> <span class="priority-indicator priority-${data.clasificacion?.prioridad || 'baja'}">${(data.clasificacion?.prioridad || 'baja').toUpperCase()}</span></div>
+              <div><strong>Fecha solicitud:</strong> ${formatDate(data.metadata?.fecha_creacion || data.reingreso?.fecha_solicitud)}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="
