@@ -3824,7 +3824,7 @@ window.createNuevaCitaModal = createNuevaCitaModal;
                 </div>
               </div>
               
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
 // ================= PARTE 6 FINAL: FUNCIONES AUXILIARES Y CONFIGURACIÓN =================
 
 // ================= GESTIÓN DE PACIENTES MODIFICADA =================
