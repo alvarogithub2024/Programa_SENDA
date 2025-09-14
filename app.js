@@ -1,4 +1,4 @@
-// PARTE 1: Configuración, Variables Globales y Formulario Original - CORREGIDO
+// Configuración, Variables Globales y Formulario Original - CORREGIDO
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -638,6 +638,27 @@ function saveFormDraft() {
   } catch (error) {
     console.error('Error saving form draft:', error);
   }
+}
+
+function loadFormDraft() {
+  try {
+    const savedDraft = localStorage.getItem('senda_form_draft');
+    if (!savedDraft) return;
+    
+    const draftData = JSON.parse(savedDraft);
+    
+    if (Date.now() - draftData.timestamp > 24 * 60 * 60 * 1000) {
+      localStorage.removeItem('senda_form_draft');
+      return;
+    }
+    
+    if (confirm('Se encontró un borrador guardado. ¿Deseas continuar donde lo dejaste?')) {
+      restoreFormDraft(draftData);
+    }
+  } catch (error) {
+    console.error('Error loading form draft:', error);
+  }
+}
 
 function restoreFormDraft(draftData) {
   try {
@@ -1795,6 +1816,7 @@ function createPatientCard(paciente) {
     </div>
   `;
 }
+
 // ================= CALENDARIO CORREGIDO Y GESTIÓN DE CITAS =================
 
 // ================= CALENDARIO FUNCIONAL CORREGIDO =================
@@ -3889,3 +3911,10 @@ window.showAboutProgram = showAboutProgram;
 window.showModal = showModal;
 window.closeModal = closeModal;
 window.showPatientAppointmentInfo = showPatientAppointmentInfo;
+
+console.log(`
+   ====================================
+   SISTEMA SENDA PUENTE ALTO v2.0
+   ====================================
+`);
+
