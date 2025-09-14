@@ -1,5 +1,5 @@
-// ================= SENDA PUENTE ALTO - SISTEMA OPTIMIZADO COMPLETO MODIFICADO =================
-// PARTE 1: Configuración, Variables Globales y Funciones Utilitarias - MODIFICADO
+// ================= SENDA PUENTE ALTO - SISTEMA OPTIMIZADO COMPLETO =================
+// PARTE 1: Configuración, Variables Globales y Funciones Utilitarias
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -49,11 +49,11 @@ const cesfamPuenteAlto = [
   "CESFAM Cardenal Raúl Silva Henriquez"
 ];
 
-// Variables globales MODIFICADAS
+// Variables globales
 let currentUser = null;
 let currentUserData = null;
 let currentFormStep = 1;
-let maxFormStep = 4; // MODIFICADO: 4 pasos para solicitud identificada, 1 para información
+let maxFormStep = 4;
 let formData = {};
 let isDraftSaved = false;
 let currentCalendarDate = new Date();
@@ -66,23 +66,23 @@ let citasData = [];
 let professionalsList = [];
 let selectedProfessional = null;
 let isLoading = false;
-let solicitudesInformacionData = []; // NUEVO: Para solicitudes de información
+let solicitudesInformacionData = [];
 
-// MODIFICADO: Configuración de horarios extendida con fines de semana
+// Configuración de horarios extendida con fines de semana
 const HORARIOS_CONFIG = {
   semana: {
-    horaInicio: 8, // 08:00
-    horaFin: 16, // 16:30
+    horaInicio: 8,
+    horaFin: 16,
     minutoFin: 30,
     intervaloMinutos: 30,
-    diasSemana: [1, 2, 3, 4, 5] // Lunes a Viernes
+    diasSemana: [1, 2, 3, 4, 5]
   },
   finSemana: {
-    horaInicio: 9, // 09:00
-    horaFin: 12, // 12:30
+    horaInicio: 9,
+    horaFin: 12,
     minutoFin: 30,
     intervaloMinutos: 30,
-    diasSemana: [0, 6] // Sábado y Domingo
+    diasSemana: [0, 6]
   }
 };
 
@@ -91,14 +91,14 @@ const APP_CONFIG = {
   MAX_RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000,
   PAGINATION_LIMIT: 50,
-  CACHE_DURATION: 5 * 60 * 1000, // 5 minutos
+  CACHE_DURATION: 5 * 60 * 1000,
   DEBUG_MODE: true
 };
 
 // Cache simple para datos
 const dataCache = new Map();
 
-// ================= FUNCIONES UTILITARIAS MEJORADAS =================
+// ================= FUNCIONES UTILITARIAS =================
 
 function showNotification(message, type = 'info', duration = 4000) {
   try {
@@ -130,10 +130,6 @@ function showNotification(message, type = 'info', duration = 4000) {
         }, 300);
       }
     }, duration);
-    
-    if (APP_CONFIG.DEBUG_MODE) {
-      console.log(`📢 Notification [${type.toUpperCase()}]: ${message}`);
-    }
     
   } catch (error) {
     console.error('Error showing notification:', error);
@@ -172,17 +168,9 @@ function showModal(modalId) {
           firstInput.focus();
         }
       }, 100);
-      
-      if (APP_CONFIG.DEBUG_MODE) {
-        console.log(`🔧 Modal abierto: ${modalId}`);
-      }
-    } else {
-      console.error(`❌ Modal ${modalId} no encontrado`);
-      showNotification(`Error: Modal ${modalId} no encontrado`, 'error');
     }
   } catch (error) {
     console.error('Error showing modal:', error);
-    showNotification('Error al abrir modal', 'error');
   }
 }
 
@@ -190,7 +178,6 @@ function closeModal(modalId) {
   try {
     const modal = document.getElementById(modalId);
     if (modal) {
-      // MODIFICADO: Verificar cambios solo en formulario de pacientes
       if (modalId === 'patient-modal' && !isDraftSaved) {
         const hasChanges = checkFormChanges();
         if (hasChanges && !confirm('¿Estás seguro de cerrar? Los cambios no guardados se perderán.')) {
@@ -204,10 +191,6 @@ function closeModal(modalId) {
       
       if (modal.classList.contains('temp-modal')) {
         modal.remove();
-      }
-      
-      if (APP_CONFIG.DEBUG_MODE) {
-        console.log(`🔧 Modal cerrado: ${modalId}`);
       }
     }
   } catch (error) {
@@ -259,13 +242,11 @@ function showLoading(show = true, message = 'Cargando...') {
   }
 }
 
-// MODIFICADAS: Funciones para horarios extendidos con fines de semana
 function generateTimeSlots(date = null) {
   const slots = [];
   const targetDate = date || new Date();
   const dayOfWeek = targetDate.getDay();
   
-  // Determinar si es fin de semana o día de semana
   const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
   const config = isWeekend ? HORARIOS_CONFIG.finSemana : HORARIOS_CONFIG.semana;
   
@@ -273,7 +254,6 @@ function generateTimeSlots(date = null) {
   
   for (let hora = horaInicio; hora <= horaFin; hora++) {
     for (let minuto = 0; minuto < 60; minuto += intervaloMinutos) {
-      // No agregar slots después de la hora de fin
       if (hora === horaFin && minuto > minutoFin) break;
       
       const timeString = `${hora.toString().padStart(2, '0')}:${minuto.toString().padStart(2, '0')}`;
@@ -290,7 +270,6 @@ function generateTimeSlots(date = null) {
 }
 
 function isWorkingDay(date) {
-  // MODIFICADO: Ahora todos los días son laborables (lunes a domingo)
   return true;
 }
 
@@ -342,10 +321,8 @@ async function loadProfessionalsByArea() {
   }
 }
 
-// NUEVA: Función para verificar acceso basado en profesión
 function hasAccessToSolicitudes() {
   if (!currentUserData) return false;
-  // Solo asistentes sociales pueden ver solicitudes
   return currentUserData.profession === 'asistente_social';
 }
 
@@ -354,19 +331,16 @@ function canAccessTab(tabName) {
   
   switch (tabName) {
     case 'solicitudes':
-      // Solo asistentes sociales pueden acceder a solicitudes
       return currentUserData.profession === 'asistente_social';
     case 'agenda':
     case 'seguimiento':
     case 'pacientes':
-      // Todos los profesionales pueden acceder a estas tabs
       return true;
     default:
       return false;
   }
 }
 
-// Resto de las funciones utilitarias siguen igual...
 function formatRUT(rut) {
   try {
     if (!rut) return '';
@@ -664,7 +638,8 @@ function handleUnhandledRejection(event) {
     showNotification(`Error async: ${event.reason.message || event.reason}`, 'error');
   }
 }
-// ================= PARTE 2: GESTIÓN DE EVENTOS Y AUTENTICACIÓN - MODIFICADO =================
+
+// ================= GESTIÓN DE EVENTOS Y AUTENTICACIÓN =================
 
 function initializeEventListeners() {
   try {
@@ -686,7 +661,6 @@ function initializeEventListeners() {
 
     if (loginProfessionalBtn) {
       loginProfessionalBtn.addEventListener('click', () => {
-        if (APP_CONFIG.DEBUG_MODE) console.log('🔧 Abriendo modal de login');
         showModal('login-modal');
       });
     }
@@ -697,14 +671,12 @@ function initializeEventListeners() {
 
     if (registerPatientBtn) {
       registerPatientBtn.addEventListener('click', () => {
-        if (APP_CONFIG.DEBUG_MODE) console.log('🔧 Abriendo modal de registro de paciente');
         showModal('patient-modal');
       });
     }
 
     if (reentryProgramBtn) {
       reentryProgramBtn.addEventListener('click', () => {
-        if (APP_CONFIG.DEBUG_MODE) console.log('🔧 Abriendo modal de reingreso');
         showModal('reentry-modal');
       });
     }
@@ -787,10 +759,6 @@ function handleKeyboardShortcuts(e) {
 
 function onAuthStateChanged(user) {
   try {
-    if (APP_CONFIG.DEBUG_MODE) {
-      console.log('🔧 Estado de autenticación cambió:', user ? user.email : 'No autenticado');
-    }
-    
     if (user) {
       currentUser = user;
       loadUserData();
@@ -893,7 +861,6 @@ async function loadInitialData() {
     
     const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab || 'agenda';
     
-    // Solo cargar solicitudes si el usuario es asistente social
     if (activeTab === 'solicitudes' && hasAccessToSolicitudes()) {
       loadPromises.push(loadSolicitudes());
     } else if (activeTab === 'pacientes') {
@@ -976,7 +943,7 @@ function showProfessionalContent() {
     
     if (currentUserData) {
       updateProfessionalInfo();
-      updateTabVisibility(); // NUEVO: Actualizar visibilidad de tabs según profesión
+      updateTabVisibility();
     }
     
     console.log('👨‍⚕️ Mostrando contenido profesional');
@@ -985,7 +952,6 @@ function showProfessionalContent() {
   }
 }
 
-// NUEVA: Función para actualizar visibilidad de tabs según profesión
 function updateTabVisibility() {
   try {
     const tabBtns = document.querySelectorAll('.tab-btn');
@@ -996,7 +962,6 @@ function updateTabVisibility() {
         btn.style.display = 'flex';
       } else {
         btn.style.display = 'none';
-        // Si la tab activa no es accesible, cambiar a agenda
         if (btn.classList.contains('active')) {
           btn.classList.remove('active');
           const agendaTab = document.querySelector('.tab-btn[data-tab="agenda"]');
@@ -1044,8 +1009,7 @@ function updateProfessionalInfo() {
     console.error('Error updating professional info:', error);
   }
 }
-
-// ================= AUTENTICACIÓN =================
+// ================= PARTE 2: AUTENTICACIÓN Y FORMULARIOS =================
 
 function setupModalControls() {
   try {
@@ -1336,153 +1300,7 @@ async function handleLogout() {
   }
 }
 
-// ================= FUNCIONES AUXILIARES Y SETUP =================
-
-function setupTabFunctionality() {
-  try {
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const tabPanes = document.querySelectorAll('.tab-pane');
-
-    tabBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const targetTab = btn.dataset.tab;
-        
-        // Verificar acceso a la tab
-        if (!canAccessTab(targetTab)) {
-          showNotification('No tienes permisos para acceder a esta sección', 'warning');
-          return;
-        }
-
-        // Remover active de todos los botones y panes
-        tabBtns.forEach(b => b.classList.remove('active'));
-        tabPanes.forEach(p => p.classList.remove('active'));
-
-        // Activar el botón y pane clickeado
-        btn.classList.add('active');
-        const targetPane = document.getElementById(`${targetTab}-tab`);
-        if (targetPane) {
-          targetPane.classList.add('active');
-          loadTabData(targetTab);
-        }
-      });
-    });
-
-    console.log('✅ Funcionalidad de tabs configurada');
-  } catch (error) {
-    console.error('❌ Error configurando tabs:', error);
-  }
-}
-
-function loadTabData(tabName) {
-  try {
-    if (!currentUserData) return;
-
-    switch (tabName) {
-      case 'solicitudes':
-        if (hasAccessToSolicitudes()) {
-          loadSolicitudes();
-        }
-        break;
-      case 'agenda':
-        loadTodayAppointments();
-        break;
-      case 'seguimiento':
-        loadSeguimiento();
-        break;
-      case 'pacientes':
-        loadPacientes();
-        break;
-    }
-  } catch (error) {
-    console.error('Error loading tab data:', error);
-  }
-}
-
-function setupFilters() {
-  try {
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    
-    filterBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        filterBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        
-        currentFilter = btn.dataset.filter;
-        filterSolicitudes();
-      });
-    });
-    
-    console.log('✅ Filtros configurados');
-  } catch (error) {
-    console.error('❌ Error configurando filtros:', error);
-  }
-}
-
-function showAboutProgram() {
-  try {
-    const aboutModal = `
-      <div class="modal-overlay temp-modal" id="about-modal">
-        <div class="modal large-modal">
-          <button class="modal-close" onclick="closeModal('about-modal')">
-            <i class="fas fa-times"></i>
-          </button>
-          
-          <div style="padding: 24px;">
-            <h2><i class="fas fa-info-circle"></i> Sobre el Programa SENDA</h2>
-            
-            <div style="line-height: 1.6; color: var(--text-dark);">
-              <p><strong>SENDA (Servicio Nacional para la Prevención y Rehabilitación del Consumo de Drogas y Alcohol)</strong> es el organismo del Gobierno de Chile encargado de elaborar las políticas de prevención del consumo de drogas y alcohol, así como de tratamiento, rehabilitación e integración social de las personas afectadas por estas sustancias.</p>
-              
-              <h3 style="color: var(--primary-blue); margin-top: 24px;">Nuestros Servicios</h3>
-              <ul style="margin-left: 20px;">
-                <li>Tratamiento ambulatorio básico e intensivo</li>
-                <li>Tratamiento residencial</li>
-                <li>Programas de reinserción social</li>
-                <li>Apoyo familiar y comunitario</li>
-                <li>Prevención en establecimientos educacionales</li>
-                <li>Capacitación a profesionales</li>
-              </ul>
-              
-              <h3 style="color: var(--primary-blue); margin-top: 24px;">Horarios de Atención</h3>
-              <ul style="margin-left: 20px;">
-                <li><strong>Lunes a Viernes:</strong> 08:00 - 16:30</li>
-                <li><strong>Sábados y Domingos:</strong> 09:00 - 12:30</li>
-              </ul>
-              
-              <h3 style="color: var(--primary-blue); margin-top: 24px;">Contacto</h3>
-              <ul style="margin-left: 20px;">
-                <li><strong>Teléfono:</strong> 1412 (gratuito)</li>
-                <li><strong>Emergencias:</strong> 131</li>
-                <li><strong>Web:</strong> <a href="https://www.senda.gob.cl" target="_blank">www.senda.gob.cl</a></li>
-              </ul>
-              
-              <div style="background: var(--light-blue); padding: 16px; border-radius: 8px; margin-top: 24px;">
-                <p style="margin: 0; font-style: italic; text-align: center;">
-                  "Tu recuperación es posible. Estamos aquí para acompañarte en cada paso del camino."
-                </p>
-              </div>
-            </div>
-            
-            <div style="text-align: center; margin-top: 24px;">
-              <button class="btn btn-primary" onclick="closeModal('about-modal')">
-                <i class="fas fa-check"></i>
-                Entendido
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', aboutModal);
-    showModal('about-modal');
-    
-  } catch (error) {
-    console.error('Error showing about program:', error);
-    showNotification('Error al mostrar información del programa', 'error');
-  }
-}
-// ================= PARTE 3: FORMULARIOS Y VALIDACIONES MODIFICADAS =================
+// ================= FORMULARIOS Y VALIDACIONES =================
 
 function setupFormValidation() {
   try {
@@ -1609,10 +1427,10 @@ function clearFieldError(field) {
 function validatePhoneNumber(input) {
   const phone = input.value.replace(/\D/g, '');
   
-  const isValid = phone.length === 8 || // Fijo
-                  phone.length === 9 && phone.startsWith('9') || // Celular sin código
-                  phone.length === 11 && phone.startsWith('56') || // Con código país
-                  phone.length === 12 && phone.startsWith('569'); // Celular con código país
+  const isValid = phone.length === 8 || 
+                  phone.length === 9 && phone.startsWith('9') || 
+                  phone.length === 11 && phone.startsWith('56') || 
+                  phone.length === 12 && phone.startsWith('569'); 
   
   if (isValid) {
     input.classList.remove('error');
@@ -1626,8 +1444,6 @@ function validatePhoneNumber(input) {
   
   return isValid;
 }
-
-// ================= FORMULARIO MULTI-PASO MODIFICADO =================
 
 function setupMultiStepForm() {
   try {
@@ -1663,13 +1479,11 @@ function setupMultiStepForm() {
 
     form.addEventListener('submit', handlePatientFormSubmit);
 
-    // MODIFICADO: Listener para tipo de solicitud con nuevo flujo
     const tipoSolicitudInputs = document.querySelectorAll('input[name="tipoSolicitud"]');
     tipoSolicitudInputs.forEach(input => {
       input.addEventListener('change', updateFormVisibility);
     });
 
-    // Botón especial para envío directo de información
     const sendInfoBtn = document.getElementById('send-info-btn');
     if (sendInfoBtn) {
       sendInfoBtn.addEventListener('click', (e) => {
@@ -1703,24 +1517,23 @@ function setupMultiStepForm() {
   }
 }
 
-// MODIFICADAS: Funciones para nuevo flujo de pasos (4 pasos para identificado, 1 para información)
 function getNextStep(currentStep) {
   const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
   
   switch (currentStep) {
     case 1:
       if (tipoSolicitud === 'informacion') {
-        return null; // No hay siguiente paso para información - se envía directamente
+        return null;
       } else if (tipoSolicitud === 'identificado') {
-        return 2; // Ir a datos personales
+        return 2;
       }
       break;
     case 2:
-      return 3; // De datos personales a evaluación
+      return 3;
     case 3:
-      return 4; // De evaluación a finalización
+      return 4;
     case 4:
-      return null; // No hay siguiente paso
+      return null;
   }
   return null;
 }
@@ -1728,11 +1541,11 @@ function getNextStep(currentStep) {
 function getPreviousStep(currentStep) {
   switch (currentStep) {
     case 2:
-      return 1; // De datos personales a tipo de solicitud
+      return 1;
     case 3:
-      return 2; // De evaluación a datos personales
+      return 2;
     case 4:
-      return 3; // De finalización a evaluación
+      return 3;
   }
   return null;
 }
@@ -1889,7 +1702,6 @@ function showDraftSavedIndicator() {
   }
 }
 
-// MODIFICADA: Función para manejar visibilidad según tipo de solicitud
 function updateFormVisibility() {
   try {
     const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
@@ -1906,7 +1718,6 @@ function updateFormVisibility() {
     if (sendInfoBtn) sendInfoBtn.style.display = 'none';
     
     if (tipoSolicitud === 'informacion') {
-      // Mostrar solo email para información
       if (infoEmailContainer) infoEmailContainer.style.display = 'block';
       if (basicInfoContainer) basicInfoContainer.style.display = 'none';
       if (nextBtn) nextBtn.style.display = 'none';
@@ -1919,10 +1730,8 @@ function updateFormVisibility() {
         setTimeout(() => emailInput.focus(), 100);
       }
       
-      // Actualizar maxFormStep para información
       maxFormStep = 1;
     } else if (tipoSolicitud === 'identificado') {
-      // Mostrar campos básicos para solicitud identificada
       if (infoEmailContainer) infoEmailContainer.style.display = 'none';
       if (basicInfoContainer) basicInfoContainer.style.display = 'block';
       if (nextBtn) nextBtn.style.display = 'inline-flex';
@@ -1932,7 +1741,6 @@ function updateFormVisibility() {
       const emailInput = document.getElementById('info-email');
       if (emailInput) emailInput.required = false;
       
-      // Actualizar maxFormStep para identificado
       maxFormStep = 4;
     }
     
@@ -1942,8 +1750,6 @@ function updateFormVisibility() {
     console.error('Error updating form visibility:', error);
   }
 }
-
-// ================= VALIDACIÓN DE PASOS MODIFICADA =================
 
 function validateStep(step) {
   try {
@@ -1955,7 +1761,6 @@ function validateStep(step) {
     let isValid = true;
     const errors = [];
 
-    // Validar campos requeridos visibles
     requiredFields.forEach(field => {
       const value = field.value?.trim() || '';
       
@@ -1970,7 +1775,6 @@ function validateStep(step) {
       }
     });
 
-    // Validaciones específicas por paso
     if (step === 1) {
       if (!tipoSolicitud) {
         errors.push('Selecciona un tipo de solicitud');
@@ -1985,7 +1789,6 @@ function validateStep(step) {
           isValid = false;
         }
       } else if (tipoSolicitud === 'identificado') {
-        // Validar campos básicos para solicitudes identificadas
         const edad = parseInt(document.getElementById('patient-age')?.value);
         if (!edad || edad < 12 || edad > 120) {
           errors.push('La edad debe estar entre 12 y 120 años');
@@ -2045,8 +1848,6 @@ function validateStep(step) {
         isValid = false;
       }
     }
-
-    // Paso 4 solo requiere motivación (ya validada por ser required)
 
     if (errors.length > 0) {
       showNotification(errors.join('\n'), 'warning', 5000);
@@ -2109,15 +1910,11 @@ function goToStep(step) {
     currentFormStep = step;
     saveFormDraft();
 
-    if (APP_CONFIG.DEBUG_MODE) {
-      console.log(`🔧 Navegando a paso ${step} de ${maxFormStep}`);
-    }
   } catch (error) {
     console.error('Error going to step:', error);
   }
 }
 
-// NUEVA FUNCIÓN PARA MANEJO DE SOLICITUD SOLO INFORMACIÓN
 async function handleInformationOnlySubmit() {
   try {
     console.log('🔧 Procesando solicitud de información únicamente...');
@@ -2141,7 +1938,6 @@ async function handleInformationOnlySubmit() {
     
     console.log('💾 Guardando solicitud de información...');
     
-    // Guardar en la nueva colección de solicitudes_informacion
     await db.collection('solicitudes_informacion').add(informationData);
     
     localStorage.removeItem('senda_form_draft');
@@ -2163,7 +1959,6 @@ function resetForm() {
       form.reset();
       goToStep(1);
       
-      // Resetear visibilidad
       const infoEmail = document.getElementById('info-email-container');
       const basicInfo = document.getElementById('basic-info-container');
       const nextBtn = document.getElementById('next-step-1');
@@ -2190,7 +1985,6 @@ function resetForm() {
         error.remove();
       });
       
-      // Resetear maxFormStep
       maxFormStep = 4;
       
       const progressText = document.getElementById('progress-text');
@@ -2200,14 +1994,10 @@ function resetForm() {
     isDraftSaved = false;
     localStorage.removeItem('senda_form_draft');
     
-    if (APP_CONFIG.DEBUG_MODE) {
-      console.log('🔧 Formulario reseteado');
-    }
   } catch (error) {
     console.error('❌ Error reseteando formulario:', error);
   }
 }
-// ================= PARTE 4: MANEJO DE FORMULARIOS Y GESTIÓN DE SOLICITUDES MODIFICADA =================
 
 async function handlePatientFormSubmit(e) {
   e.preventDefault();
@@ -2224,7 +2014,6 @@ async function handlePatientFormSubmit(e) {
       return;
     }
 
-    // Solo procesar solicitudes identificadas aquí (las de información ya se procesaron)
     if (tipoSolicitud !== 'identificado') {
       showNotification('Tipo de solicitud no válido para este flujo', 'error');
       return;
@@ -2239,7 +2028,6 @@ async function handlePatientFormSubmit(e) {
       return;
     }
 
-    // Validar campos específicos para solicitudes identificadas
     const nombre = document.getElementById('patient-name')?.value?.trim();
     const apellidos = document.getElementById('patient-lastname')?.value?.trim();
     const rut = document.getElementById('patient-rut')?.value?.trim();
@@ -2336,7 +2124,6 @@ function collectFormDataSafe() {
       version: '2.0'
     };
 
-    // Datos de evaluación
     const sustanciasChecked = document.querySelectorAll('input[name="sustancias"]:checked');
     if (sustanciasChecked.length > 0) {
       solicitudData.sustancias = Array.from(sustanciasChecked).map(cb => cb.value);
@@ -2367,7 +2154,6 @@ function collectFormDataSafe() {
       solicitudData.motivacion = parseInt(motivacion.value);
     }
 
-    // Datos específicos para solicitudes identificadas
     if (tipoSolicitud === 'identificado') {
       const nombre = document.getElementById('patient-name')?.value?.trim();
       const apellidos = document.getElementById('patient-lastname')?.value?.trim();
@@ -2514,780 +2300,273 @@ async function createCriticalAlert(solicitudData, solicitudId) {
     
     await db.collection('alertas_criticas').add(alertData);
     
-    if (APP_CONFIG.DEBUG_MODE) {
-      console.log('🚨 Alerta crítica creada para solicitud:', solicitudId);
-    }
   } catch (error) {
     console.error('❌ Error creando alerta crítica:', error);
   }
 }
 
-// ================= GESTIÓN DE SOLICITUDES MODIFICADA =================
+// ================= SETUP DE TABS Y CALENDARIO =================
+
+function setupTabFunctionality() {
+  try {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetTab = btn.dataset.tab;
+        
+        if (!canAccessTab(targetTab)) {
+          showNotification('No tienes permisos para acceder a esta sección', 'warning');
+          return;
+        }
+
+        tabBtns.forEach(b => b.classList.remove('active'));
+        tabPanes.forEach(p => p.classList.remove('active'));
+
+        btn.classList.add('active');
+        const targetPane = document.getElementById(`${targetTab}-tab`);
+        if (targetPane) {
+          targetPane.classList.add('active');
+          loadTabData(targetTab);
+        }
+      });
+    });
+
+    console.log('✅ Funcionalidad de tabs configurada');
+  } catch (error) {
+    console.error('❌ Error configurando tabs:', error);
+  }
+}
+
+function loadTabData(tabName) {
+  try {
+    if (!currentUserData) return;
+
+    switch (tabName) {
+      case 'solicitudes':
+        if (hasAccessToSolicitudes()) {
+          loadSolicitudes();
+        }
+        break;
+      case 'agenda':
+        loadTodayAppointments();
+        break;
+      case 'seguimiento':
+        loadSeguimiento();
+        break;
+      case 'pacientes':
+        loadPacientes();
+        break;
+    }
+  } catch (error) {
+    console.error('Error loading tab data:', error);
+  }
+}
+
+function setupFilters() {
+  try {
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        currentFilter = btn.dataset.filter;
+        filterSolicitudes();
+      });
+    });
+    
+    console.log('✅ Filtros configurados');
+  } catch (error) {
+    console.error('❌ Error configurando filtros:', error);
+  }
+}
+
+function setupCalendar() {
+  try {
+    renderCalendar();
+    console.log('✅ Calendario configurado');
+  } catch (error) {
+    console.error('❌ Error configurando calendario:', error);
+  }
+}
+
+function renderCalendar() {
+  try {
+    const calendarGrid = document.getElementById('calendar-grid');
+    const currentMonthYear = document.getElementById('current-month-year');
+    
+    if (!calendarGrid || !currentMonthYear) return;
+    
+    const currentMonth = currentCalendarDate.getMonth();
+    const currentYear = currentCalendarDate.getFullYear();
+    
+    currentMonthYear.textContent = currentCalendarDate.toLocaleDateString('es-CL', {
+      month: 'long',
+      year: 'numeric'
+    });
+    
+    const firstDay = new Date(currentYear, currentMonth, 1);
+    const lastDay = new Date(currentYear, currentMonth + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    
+    calendarGrid.innerHTML = '';
+    
+    for (let i = 0; i < 42; i++) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      
+      const dayElement = document.createElement('div');
+      dayElement.className = 'calendar-day';
+      dayElement.textContent = date.getDate();
+      
+      if (date.getMonth() !== currentMonth) {
+        dayElement.classList.add('other-month');
+      }
+      
+      if (date.toDateString() === new Date().toDateString()) {
+        dayElement.classList.add('today');
+      }
+      
+      if (selectedCalendarDate && date.toDateString() === selectedCalendarDate.toDateString()) {
+        dayElement.classList.add('selected');
+      }
+      
+      dayElement.addEventListener('click', () => selectCalendarDay(date));
+      
+      calendarGrid.appendChild(dayElement);
+    }
+  } catch (error) {
+    console.error('Error rendering calendar:', error);
+  }
+}
+
+function selectCalendarDay(date) {
+  try {
+    selectedCalendarDate = new Date(date);
+    renderCalendar();
+    loadDayAppointments(date);
+  } catch (error) {
+    console.error('Error selecting calendar day:', error);
+  }
+}
+
+function showAboutProgram() {
+  try {
+    const aboutModal = `
+      <div class="modal-overlay temp-modal" id="about-modal">
+        <div class="modal large-modal">
+          <button class="modal-close" onclick="closeModal('about-modal')">
+            <i class="fas fa-times"></i>
+          </button>
+          
+          <div style="padding: 24px;">
+            <h2><i class="fas fa-info-circle"></i> Sobre el Programa SENDA</h2>
+            
+            <div style="line-height: 1.6; color: var(--text-dark);">
+              <p><strong>SENDA (Servicio Nacional para la Prevención y Rehabilitación del Consumo de Drogas y Alcohol)</strong> es el organismo del Gobierno de Chile encargado de elaborar las políticas de prevención del consumo de drogas y alcohol, así como de tratamiento, rehabilitación e integración social de las personas afectadas por estas sustancias.</p>
+              
+              <h3 style="color: var(--primary-blue); margin-top: 24px;">Nuestros Servicios</h3>
+              <ul style="margin-left: 20px;">
+                <li>Tratamiento ambulatorio básico e intensivo</li>
+                <li>Tratamiento residencial</li>
+                <li>Programas de reinserción social</li>
+                <li>Apoyo familiar y comunitario</li>
+                <li>Prevención en establecimientos educacionales</li>
+                <li>Capacitación a profesionales</li>
+              </ul>
+              
+              <h3 style="color: var(--primary-blue); margin-top: 24px;">Horarios de Atención</h3>
+              <ul style="margin-left: 20px;">
+                <li><strong>Lunes a Viernes:</strong> 08:00 - 16:30</li>
+                <li><strong>Sábados y Domingos:</strong> 09:00 - 12:30</li>
+              </ul>
+              
+              <h3 style="color: var(--primary-blue); margin-top: 24px;">Contacto</h3>
+              <ul style="margin-left: 20px;">
+                <li><strong>Teléfono:</strong> 1412 (gratuito)</li>
+                <li><strong>Emergencias:</strong> 131</li>
+                <li><strong>Web:</strong> <a href="https://www.senda.gob.cl" target="_blank">www.senda.gob.cl</a></li>
+              </ul>
+              
+              <div style="background: var(--light-blue); padding: 16px; border-radius: 8px; margin-top: 24px;">
+                <p style="margin: 0; font-style: italic; text-align: center;">
+                  "Tu recuperación es posible. Estamos aquí para acompañarte en cada paso del camino."
+                </p>
+              </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 24px;">
+              <button class="btn btn-primary" onclick="closeModal('about-modal')">
+                <i class="fas fa-check"></i>
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', aboutModal);
+    showModal('about-modal');
+    
+  } catch (error) {
+    console.error('Error showing about program:', error);
+    showNotification('Error al mostrar información del programa', 'error');
+  }
+}
+
+// ================= FUNCIONES PLACEHOLDER (para evitar errores) =================
 
 async function loadSolicitudes() {
-  // Solo cargar si el usuario tiene acceso (asistentes sociales)
-  if (!currentUserData || !hasAccessToSolicitudes()) {
-    console.log('⚠️ Usuario no tiene acceso a solicitudes');
-    return;
-  }
-
-  try {
-    showLoading(true, 'Cargando solicitudes...');
-    const container = document.getElementById('requests-container');
-    
-    if (!container) {
-      console.error('❌ Container requests-container no encontrado');
-      return;
-    }
-    
-    const cacheKey = `solicitudes_${currentUserData.cesfam}`;
-    const cachedData = getCachedData(cacheKey);
-    
-    if (cachedData) {
-      solicitudesData = cachedData;
-      renderSolicitudes(cachedData);
-      loadSolicitudesFromFirestore(false);
-      return;
-    }
-    
-    await loadSolicitudesFromFirestore(true);
-    
-  } catch (error) {
-    console.error('❌ Error general cargando solicitudes:', error);
-    renderSolicitudesError(error);
-  } finally {
-    showLoading(false);
-  }
+  console.log('Loading solicitudes...');
 }
 
-async function loadSolicitudesFromFirestore(showLoadingIndicator = true) {
-  try {
-    if (showLoadingIndicator) {
-      const container = document.getElementById('requests-container');
-      if (container) {
-        container.innerHTML = `
-          <div class="loading-message">
-            <i class="fas fa-spinner fa-spin"></i>
-            Cargando solicitudes...
-          </div>
-        `;
-      }
-    }
-    
-    const solicitudes = [];
-    const loadPromises = [];
-    
-    // Solo cargar solicitudes que no estén agendadas
-    loadPromises.push(
-      retryOperation(async () => {
-        try {
-          const snapshot = await db.collection('solicitudes_ingreso')
-            .where('cesfam', '==', currentUserData.cesfam)
-            .where('estado', '!=', 'agendada')
-            .orderBy('fechaCreacion', 'desc')
-            .limit(APP_CONFIG.PAGINATION_LIMIT)
-            .get();
-          
-          snapshot.forEach(doc => {
-            solicitudes.push({
-              id: doc.id,
-              tipo: 'solicitud',
-              ...doc.data()
-            });
-          });
-          
-          if (APP_CONFIG.DEBUG_MODE) {
-            console.log(`✅ Cargadas ${snapshot.size} solicitudes de ingreso`);
-          }
-        } catch (error) {
-          if (error.code === 'permission-denied') {
-            console.warn('⚠️ Sin permisos para solicitudes_ingreso');
-          } else {
-            throw error;
-          }
-        }
-      })
-    );
-    
-    loadPromises.push(
-      retryOperation(async () => {
-        try {
-          const snapshot = await db.collection('reingresos')
-            .where('cesfam', '==', currentUserData.cesfam)
-            .where('estado', '!=', 'agendada')
-            .orderBy('fechaCreacion', 'desc')
-            .limit(APP_CONFIG.PAGINATION_LIMIT)
-            .get();
-          
-          snapshot.forEach(doc => {
-            solicitudes.push({
-              id: doc.id,
-              tipo: 'reingreso',
-              ...doc.data()
-            });
-          });
-          
-          if (APP_CONFIG.DEBUG_MODE) {
-            console.log(`✅ Cargados ${snapshot.size} reingresos`);
-          }
-        } catch (error) {
-          if (error.code === 'permission-denied') {
-            console.warn('⚠️ Sin permisos para reingresos');
-          } else {
-            throw error;
-          }
-        }
-      })
-    );
-    
-    await Promise.allSettled(loadPromises);
-    
-    solicitudes.sort((a, b) => {
-      const fechaA = a.fechaCreacion?.toDate() || new Date(0);
-      const fechaB = b.fechaCreacion?.toDate() || new Date(0);
-      return fechaB - fechaA;
-    });
-    
-    solicitudesData = solicitudes;
-    
-    const cacheKey = `solicitudes_${currentUserData.cesfam}`;
-    setCachedData(cacheKey, solicitudes);
-    
-    renderSolicitudes(solicitudes);
-    
-    if (APP_CONFIG.DEBUG_MODE) {
-      console.log(`✅ Total solicitudes cargadas: ${solicitudes.length}`);
-    }
-    
-  } catch (error) {
-    console.error('❌ Error cargando desde Firestore:', error);
-    renderSolicitudesError(error);
-  }
+async function loadPacientes() {
+  console.log('Loading pacientes...');
 }
 
-function renderSolicitudes(solicitudes) {
-  try {
-    const container = document.getElementById('requests-container');
-    if (!container) {
-      console.error('❌ Container requests-container no encontrado');
-      return;
-    }
-
-    if (solicitudes.length === 0) {
-      container.innerHTML = `
-        <div class="no-results">
-          <i class="fas fa-inbox"></i>
-          <h3>No hay solicitudes pendientes</h3>
-          <p>No se encontraron solicitudes pendientes para tu CESFAM</p>
-          <button class="btn btn-primary mt-4" onclick="loadSolicitudes()">
-            <i class="fas fa-redo"></i>
-            Actualizar
-          </button>
-        </div>
-      `;
-      return;
-    }
-
-    container.innerHTML = solicitudes.map(solicitud => createSolicitudCard(solicitud)).join('');
-    
-    container.querySelectorAll('.request-card').forEach(card => {
-      card.addEventListener('click', (e) => {
-        if (e.target.closest('button')) return;
-        
-        const solicitudId = card.dataset.id;
-        const solicitud = solicitudes.find(s => s.id === solicitudId);
-        if (solicitud) {
-          showSolicitudDetail(solicitud);
-        }
-      });
-    });
-    
-    if (APP_CONFIG.DEBUG_MODE) {
-      console.log(`✅ Renderizadas ${solicitudes.length} solicitudes`);
-    }
-  } catch (error) {
-    console.error('❌ Error renderizando solicitudes:', error);
-  }
+async function loadSeguimiento() {
+  console.log('Loading seguimiento...');
 }
 
-function createSolicitudCard(solicitud) {
-  try {
-    const fecha = formatDate(solicitud.fechaCreacion);
-    const prioridad = solicitud.prioridad || 'baja';
-    const estado = solicitud.estado || 'pendiente';
-    
-    let titulo, subtitulo, tipoIcon;
-    
-    if (solicitud.tipo === 'reingreso') {
-      titulo = `Reingreso - ${solicitud.nombre || 'Sin nombre'}`;
-      subtitulo = `RUT: ${solicitud.rut || 'No disponible'}`;
-      tipoIcon = 'fa-redo';
-    } else {
-      tipoIcon = 'fa-user-plus';
-      if (solicitud.tipoSolicitud === 'identificado') {
-        titulo = `${solicitud.nombre || ''} ${solicitud.apellidos || ''}`.trim() || 'Solicitud identificada';
-        subtitulo = `RUT: ${solicitud.rut || 'No disponible'}`;
-      } else {
-        titulo = 'Solicitud de Información';
-        subtitulo = `Email: ${solicitud.email || 'No disponible'}`;
-        tipoIcon = 'fa-info-circle';
-      }
-    }
-
-    const sustancias = solicitud.sustancias || [];
-    const sustanciasHtml = sustancias.length > 0 ? 
-      sustancias.map(s => `<span class="substance-tag">${s}</span>`).join('') : '';
-
-    const prioridadColor = {
-      'critica': '#ef4444',
-      'alta': '#f59e0b',
-      'media': '#3b82f6',
-      'baja': '#10b981'
-    };
-
-    const estadoIcon = {
-      'pendiente': 'fa-clock',
-      'en_proceso': 'fa-spinner',
-      'completada': 'fa-check-circle'
-    };
-
-    return `
-      <div class="request-card" data-id="${solicitud.id}" style="transition: all 0.2s ease;">
-        <div class="request-header">
-          <div class="request-info">
-            <h3>
-              <i class="fas ${tipoIcon}" style="margin-right: 8px; color: var(--primary-blue);"></i>
-              ${titulo}
-            </h3>
-            <p style="color: var(--gray-600);">${subtitulo}</p>
-          </div>
-          <div class="request-meta">
-            <span class="priority-badge ${prioridad}" style="background-color: ${prioridadColor[prioridad]}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
-              ${prioridad.toUpperCase()}
-            </span>
-            ${solicitud.tipo === 'reingreso' ? '<span class="request-type reingreso" style="background: #e0e7ff; color: #3730a3; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">REINGRESO</span>' : ''}
-          </div>
-        </div>
-        
-        <div class="request-body">
-          ${sustanciasHtml ? `<div class="request-substances" style="margin-bottom: 8px;">${sustanciasHtml}</div>` : ''}
-          ${solicitud.descripcion || solicitud.motivo ? 
-            `<p class="request-description" style="color: var(--gray-700); line-height: 1.5;">${truncateText(solicitud.descripcion || solicitud.motivo, 150)}</p>` : ''}
-          
-          <div class="request-details" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--gray-600);">
-            <div><strong>CESFAM:</strong> ${solicitud.cesfam}</div>
-            <div><strong>Estado:</strong> 
-              <span class="status-${estado}" style="display: inline-flex; align-items: center; gap: 4px;">
-                <i class="fas ${estadoIcon[estado] || 'fa-circle'}"></i>
-                ${estado.replace('_', ' ').toUpperCase()}
-              </span>
-            </div>
-            ${solicitud.edad ? `<div><strong>Edad:</strong> ${solicitud.edad} años</div>` : ''}
-            <div><strong>Fecha:</strong> ${fecha}</div>
-          </div>
-        </div>
-        
-        <div class="request-actions" style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px;">
-          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); showAgendaModal('${solicitud.id}')" title="Agendar cita">
-            <i class="fas fa-calendar-plus"></i>
-            Agendar
-          </button>
-          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); showSolicitudDetailById('${solicitud.id}')" title="Ver detalles completos">
-            <i class="fas fa-eye"></i>
-            Ver Detalle
-          </button>
-          ${solicitud.prioridad === 'critica' ? 
-            `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); handleUrgentCase('${solicitud.id}')" title="Caso urgente">
-              <i class="fas fa-exclamation-triangle"></i>
-              URGENTE
-            </button>` : ''
-          }
-        </div>
-      </div>
-    `;
-  } catch (error) {
-    console.error('❌ Error creando tarjeta de solicitud:', error);
-    return `
-      <div class="request-card error-card">
-        <div class="request-header">
-          <h3>Error al cargar solicitud</h3>
-        </div>
-        <div class="request-body">
-          <p>No se pudo cargar la información de esta solicitud</p>
-        </div>
-      </div>
-    `;
-  }
+async function loadTodayAppointments() {
+  console.log('Loading today appointments...');
 }
 
-function truncateText(text, maxLength) {
-  if (!text || text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + '...';
+async function loadDayAppointments(date) {
+  console.log('Loading day appointments for:', date);
 }
-
-function renderSolicitudesError(error) {
-  const container = document.getElementById('requests-container');
-  if (!container) return;
-  
-  let errorMessage = 'Error al cargar solicitudes';
-  let errorDetails = '';
-  
-  if (error.code === 'permission-denied') {
-    errorMessage = 'Sin permisos de acceso';
-    errorDetails = 'No tienes permisos para ver las solicitudes de este CESFAM';
-  } else if (error.code === 'unavailable') {
-    errorMessage = 'Servicio no disponible';
-    errorDetails = 'El servicio está temporalmente no disponible';
-  } else {
-    errorDetails = error.message;
-  }
-  
-  container.innerHTML = `
-    <div class="no-results">
-      <i class="fas fa-exclamation-triangle" style="color: var(--danger-red);"></i>
-      <h3>${errorMessage}</h3>
-      <p>${errorDetails}</p>
-      <div class="mt-4">
-        <button class="btn btn-primary" onclick="loadSolicitudes()">
-          <i class="fas fa-redo"></i>
-          Reintentar
-        </button>
-      </div>
-    </div>
-  `;
-}
-
-// ================= FUNCIONES DE SOLICITUDES DE INFORMACIÓN =================
-
-async function loadSolicitudesInformacion() {
-  try {
-    if (!currentUserData) return [];
-    
-    const snapshot = await db.collection('solicitudes_informacion')
-      .where('estado', '!=', 'respondida')
-      .orderBy('fechaCreacion', 'desc')
-      .get();
-    
-    const solicitudes = [];
-    snapshot.forEach(doc => {
-      solicitudes.push({
-        id: doc.id,
-        ...doc.data()
-      });
-    });
-    
-    solicitudesInformacionData = solicitudes;
-    return solicitudes;
-    
-  } catch (error) {
-    console.error('Error loading solicitudes información:', error);
-    return [];
-  }
-}
-
-// NUEVA: Función para responder solicitudes de información
-async function responderSolicitudInformacion(solicitudId) {
-  try {
-    const solicitud = solicitudesInformacionData.find(s => s.id === solicitudId);
-    if (!solicitud) {
-      showNotification('Solicitud no encontrada', 'error');
-      return;
-    }
-
-    const respuestaModal = createRespuestaInformacionModal(solicitud);
-    document.body.insertAdjacentHTML('beforeend', respuestaModal);
-    showModal('respuesta-info-modal');
-    
-    // Configurar listener para el envío
-    const form = document.getElementById('respuesta-info-form');
-    if (form) {
-      form.addEventListener('submit', handleRespuestaInformacionSubmit);
-    }
-    
-  } catch (error) {
-    console.error('Error showing respuesta modal:', error);
-    showNotification('Error al abrir modal de respuesta', 'error');
-  }
-}
-
-function createRespuestaInformacionModal(solicitud) {
-  const plantillaRespuesta = `Estimado/a,
-
-Gracias por tu interés en el Programa SENDA. Te compartimos la siguiente información:
-
-**Servicios que ofrecemos:**
-- Atención ambulatoria básica e intensiva
-- Tratamiento residencial
-- Programas de reinserción social
-- Apoyo familiar
-- Prevención comunitaria
-
-**Horarios de atención:**
-- Lunes a Viernes: 08:00 - 16:30
-- Sábados y Domingos: 09:00 - 12:30
-
-**Contacto:**
-- Teléfono: 1412 (gratuito)
-- Email: info@senda.gob.cl
-
-Para iniciar un tratamiento, puedes solicitar una cita a través de nuestro sistema web o contactarnos directamente.
-
-Saludos cordiales,
-${currentUserData.nombre} ${currentUserData.apellidos}
-${getProfessionName(currentUserData.profession)}
-${currentUserData.cesfam}`;
-
-  return `
-    <div class="modal-overlay temp-modal" id="respuesta-info-modal">
-      <div class="modal large-modal">
-        <button class="modal-close" onclick="closeModal('respuesta-info-modal')">
-          <i class="fas fa-times"></i>
-        </button>
-        
-        <div style="padding: 24px;">
-          <h2>Responder Solicitud de Información</h2>
-          
-          <div class="patient-info" style="background: var(--light-blue); padding: 16px; border-radius: 8px; margin-bottom: 24px;">
-            <h3>Para: ${solicitud.email}</h3>
-            <p>Fecha solicitud: ${formatDate(solicitud.fechaCreacion)}</p>
-            <p>ID: ${solicitud.identificador || solicitud.id}</p>
-          </div>
-          
-          <form id="respuesta-info-form">
-            <input type="hidden" id="solicitud-info-id" value="${solicitud.id}">
-            
-            <div class="form-group">
-              <label class="form-label">Asunto del correo</label>
-              <input type="text" class="form-input" id="respuesta-asunto" 
-                     value="Información Programa SENDA - ${currentUserData.cesfam}" required>
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label">Mensaje</label>
-              <textarea class="form-textarea" id="respuesta-mensaje" rows="12" required>${plantillaRespuesta}</textarea>
-            </div>
-            
-            <div class="form-actions">
-              <button type="button" class="btn btn-outline" onclick="closeModal('respuesta-info-modal')">
-                Cancelar
-              </button>
-              <button type="submit" class="btn btn-success">
-                <i class="fas fa-paper-plane"></i>
-                Enviar Respuesta
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-async function handleRespuestaInformacionSubmit(e) {
-  e.preventDefault();
-  
-  try {
-    const solicitudId = document.getElementById('solicitud-info-id')?.value;
-    const asunto = document.getElementById('respuesta-asunto')?.value?.trim();
-    const mensaje = document.getElementById('respuesta-mensaje')?.value?.trim();
-    
-    if (!asunto || !mensaje) {
-      showNotification('Completa todos los campos', 'warning');
-      return;
-    }
-    
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    toggleSubmitButton(submitBtn, true);
-    
-    // Crear registro de respuesta
-    const respuestaData = {
-      solicitudId: solicitudId,
-      asunto: asunto,
-      mensaje: mensaje,
-      fechaRespuesta: firebase.firestore.FieldValue.serverTimestamp(),
-      profesionalId: currentUser.uid,
-      profesionalNombre: `${currentUserData.nombre} ${currentUserData.apellidos}`,
-      profesionalEmail: currentUserData.email,
-      cesfam: currentUserData.cesfam
-    };
-    
-    // Guardar respuesta
-    await db.collection('respuestas_informacion').add(respuestaData);
-    
-    // Actualizar estado de la solicitud
-    await db.collection('solicitudes_informacion').doc(solicitudId).update({
-      estado: 'respondida',
-      fechaRespuesta: firebase.firestore.FieldValue.serverTimestamp(),
-      respondidoPor: currentUser.uid
-    });
-    
-    closeModal('respuesta-info-modal');
-    showNotification('Respuesta enviada correctamente', 'success');
-    
-    // Recargar solicitudes de información
-    await loadSolicitudesInformacionSection();
-    
-  } catch (error) {
-    console.error('Error enviando respuesta:', error);
-    showNotification('Error al enviar respuesta: ' + error.message, 'error');
-  } finally {
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    if (submitBtn) toggleSubmitButton(submitBtn, false);
-  }
-}
-
-// ================= FUNCIONES AUXILIARES Y FILTROS =================
 
 function filterSolicitudes() {
-  try {
-    const searchTerm = document.getElementById('search-solicitudes')?.value?.toLowerCase() || '';
-    const priorityFilter = document.getElementById('priority-filter')?.value || '';
-    
-    let filteredSolicitudes = solicitudesData;
-    
-    // Filtrar por estado
-    if (currentFilter !== 'todas') {
-      filteredSolicitudes = filteredSolicitudes.filter(s => s.estado === currentFilter);
-    }
-    
-    // Filtrar por prioridad
-    if (priorityFilter) {
-      filteredSolicitudes = filteredSolicitudes.filter(s => s.prioridad === priorityFilter);
-    }
-    
-    // Filtrar por término de búsqueda
-    if (searchTerm) {
-      filteredSolicitudes = filteredSolicitudes.filter(s => {
-        const searchableText = `
-          ${s.nombre || ''} 
-          ${s.apellidos || ''} 
-          ${s.rut || ''} 
-          ${s.email || ''} 
-          ${s.descripcion || ''} 
-          ${s.motivo || ''}
-        `.toLowerCase();
-        
-        return searchableText.includes(searchTerm);
-      });
-    }
-    
-    renderSolicitudes(filteredSolicitudes);
-    
-  } catch (error) {
-    console.error('Error filtering solicitudes:', error);
-  }
+  console.log('Filtering solicitudes...');
 }
 
-async function buscarPacientePorRUT() {
-  try {
-    const rutInput = document.getElementById('search-pacientes-rut');
-    const resultsContainer = document.getElementById('pacientes-search-results');
-    
-    if (!rutInput || !resultsContainer) return;
-    
-    const rut = rutInput.value.trim();
-    
-    if (!rut) {
-      showNotification('Ingresa un RUT para buscar', 'warning');
-      return;
-    }
-    
-    if (!validateRUT(rut)) {
-      showNotification('RUT inválido', 'error');
-      return;
-    }
-    
-    showLoading(true, 'Buscando paciente...');
-    
-    const rutFormatted = formatRUT(rut);
-    
-    try {
-      const snapshot = await db.collection('pacientes')
-        .where('rut', '==', rutFormatted)
-        .where('cesfam', '==', currentUserData.cesfam)
-        .get();
-      
-      if (snapshot.empty) {
-        resultsContainer.innerHTML = `
-          <div class="no-results">
-            <i class="fas fa-user-slash"></i>
-            <h3>Paciente no encontrado</h3>
-            <p>No se encontró ningún paciente con el RUT ${rutFormatted} en tu CESFAM</p>
-          </div>
-        `;
-      } else {
-        const pacientes = [];
-        snapshot.forEach(doc => {
-          pacientes.push({
-            id: doc.id,
-            ...doc.data()
-          });
-        });
-        
-        resultsContainer.innerHTML = `
-          <h4>Resultados de búsqueda:</h4>
-          <div class="patients-grid">
-            ${pacientes.map(createPatientCard).join('')}
-          </div>
-        `;
-      }
-      
-    } catch (queryError) {
-      console.error('Error en consulta:', queryError);
-      resultsContainer.innerHTML = `
-        <div class="no-results">
-          <i class="fas fa-exclamation-triangle"></i>
-          <h3>Error en la búsqueda</h3>
-          <p>No se pudo realizar la búsqueda. Intenta nuevamente.</p>
-        </div>
-      `;
-    }
-    
-  } catch (error) {
-    console.error('Error buscando paciente:', error);
-    showNotification('Error al buscar paciente: ' + error.message, 'error');
-  } finally {
-    showLoading(false);
-  }
+function buscarPacientePorRUT() {
+  console.log('Searching patient by RUT...');
 }
 
-function createPatientCard(paciente) {
-  const fecha = formatDate(paciente.fechaCreacion);
-  const estado = paciente.estado || 'activo';
-  
-  return `
-    <div class="patient-card" onclick="showPatientDetail('${paciente.id}')">
-      <div class="patient-header">
-        <div class="patient-info">
-          <h3>${paciente.nombre} ${paciente.apellidos}</h3>
-          <p>RUT: ${paciente.rut}</p>
-        </div>
-        <span class="patient-status ${estado}">
-          ${estado.toUpperCase()}
-        </span>
-      </div>
-      <div class="patient-details">
-        <div><strong>Edad:</strong> ${paciente.edad} años</div>
-        <div><strong>Teléfono:</strong> ${paciente.telefono || 'No disponible'}</div>
-        <div><strong>Email:</strong> ${paciente.email || 'No disponible'}</div>
-        <div><strong>Registrado:</strong> ${fecha}</div>
-      </div>
-      <div class="patient-actions">
-        <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); downloadPatientPDF('${paciente.id}')">
-          <i class="fas fa-download"></i>
-          Descargar PDF
-        </button>
-      </div>
-    </div>
-  `;
+function createNuevaCitaModal() {
+  console.log('Creating nueva cita modal...');
 }
 
-// NUEVA: Función para descargar ficha en PDF
-async function downloadPatientPDF(pacienteId) {
-  try {
-    showLoading(true, 'Generando PDF...');
-    
-    const pacienteDoc = await db.collection('pacientes').doc(pacienteId).get();
-    
-    if (!pacienteDoc.exists) {
-      showNotification('Paciente no encontrado', 'error');
-      return;
-    }
-    
-    const paciente = pacienteDoc.data();
-    
-    // Verificar que jsPDF esté disponible
-    if (typeof window.jsPDF === 'undefined') {
-      showNotification('Error: Librería PDF no cargada', 'error');
-      return;
-    }
-    
-    const { jsPDF } = window.jsPDF;
-    const doc = new jsPDF();
-    
-    // Configurar fuente
-    doc.setFont('helvetica');
-    
-    // Título
-    doc.setFontSize(20);
-    doc.text('FICHA PACIENTE - PROGRAMA SENDA', 20, 30);
-    
-    // Información del CESFAM
-    doc.setFontSize(12);
-    doc.text(`CESFAM: ${paciente.cesfam}`, 20, 50);
-    doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-CL')}`, 20, 60);
-    
-    // Línea separadora
-    doc.line(20, 70, 190, 70);
-    
-    // Datos del paciente
-    doc.setFontSize(14);
-    doc.text('DATOS DEL PACIENTE', 20, 85);
-    
-    doc.setFontSize(11);
-    let yPos = 100;
-    
-    doc.text(`Nombre: ${paciente.nombre} ${paciente.apellidos}`, 20, yPos);
-    yPos += 10;
-    doc.text(`RUT: ${paciente.rut}`, 20, yPos);
-    yPos += 10;
-    doc.text(`Edad: ${paciente.edad} años`, 20, yPos);
-    yPos += 10;
-    doc.text(`Teléfono: ${paciente.telefono || 'No disponible'}`, 20, yPos);
-    yPos += 10;
-    doc.text(`Email: ${paciente.email || 'No disponible'}`, 20, yPos);
-    yPos += 10;
-    doc.text(`Dirección: ${paciente.direccion || 'No disponible'}`, 20, yPos);
-    yPos += 15;
-    
-    if (paciente.sustanciasProblematicas && paciente.sustanciasProblematicas.length > 0) {
-      doc.text(`Sustancias problemáticas: ${paciente.sustanciasProblematicas.join(', ')}`, 20, yPos);
-      yPos += 10;
-    }
-    
-    doc.text(`Estado: ${paciente.estado || 'Activo'}`, 20, yPos);
-    yPos += 10;
-    doc.text(`Fecha de ingreso: ${formatDate(paciente.fechaCreacion)}`, 20, yPos);
-    
-    // Pie de página
-    doc.setFontSize(8);
-    doc.text('Documento generado por Sistema SENDA Puente Alto', 20, 280);
-    doc.text('Información confidencial - Uso exclusivo profesional', 20, 290);
-    
-    // Descargar
-    const fileName = `ficha_${paciente.nombre}_${paciente.apellidos}_${paciente.rut}.pdf`;
-    doc.save(fileName);
-    
-    showNotification('PDF generado correctamente', 'success');
-    
-  } catch (error) {
-    console.error('Error generando PDF:', error);
-    showNotification('Error al generar PDF: ' + error.message, 'error');
-  } finally {
-    showLoading(false);
-  }
+function showSolicitudDetailById(id) {
+  console.log('Show solicitud detail:', id);
 }
 
-// ================= EXPORTAR FUNCIONES GLOBALES =================
+function showAgendaModal(id) {
+  console.log('Show agenda modal:', id);
+}
 
-// Funciones que necesitan estar disponibles globalmente
-window.showSolicitudDetailById = showSolicitudDetailById;
-window.showAgendaModal = showAgendaModal;
-window.handleUrgentCase = handleUrgentCase;
-window.responderSolicitudInformacion = responderSolicitudInformacion;
-window.downloadPatientPDF = downloadPatientPDF;
-window.showPatientDetail = showPatientDetail;
-window.filterSolicitudes = filterSolicitudes;
-window.buscarPacientePorRUT = buscarPacientePorRUT;
-window.loadSolicitudes = loadSolicitudes;
-window.loadPacientes = loadPacientes;
-window.loadSeguimiento = loadSeguimiento;
-window.loadTodayAppointments = loadTodayAppointments;
+function handleUrgentCase(id) {
+  console.log('Handle urgent case:', id);
+}
 
-// Funciones de calendario y agenda
-window.setupCalendar = setupCalendar;
-window.renderCalendar = renderCalendar;
-window.selectCalendarDay = selectCalendarDay;
-window.loadDayAppointments = loadDayAppointments;
+function showPatientDetail(id) {
+  console.log('Show patient detail:', id);
+}
 
 console.log('✅ SENDA Puente Alto - Sistema completo cargado');
