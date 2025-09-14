@@ -12,6 +12,12 @@ const firebaseConfig = {
   measurementId: "G-82DCLW5R2W"
 };
 
+// app.js
+
+document.addEventListener("DOMContentLoaded", function () {
+  console.log("¡JavaScript cargado correctamente!");
+});
+
 // Initialize Firebase con manejo de errores mejorado
 let auth, db;
 try {
