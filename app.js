@@ -1632,6 +1632,8 @@ function collectFormDataSafe() {
     const tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked');
     if (tratamientoPrevio) {
       solicitudData.tratamientoPrevio = tratamientoPrevio.value;
+    }
+    
         const descripcion = document.getElementById('patient-description');
     if (descripcion && descripcion.value.trim()) {
       solicitudData.descripcion = descripcion.value.trim();
