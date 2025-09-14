@@ -1,5 +1,5 @@
 // ================= SENDA PUENTE ALTO - SISTEMA OPTIMIZADO COMPLETO =================
-// PARTE 1: Configuración, Variables Globales y Funciones Utilitarias - MODIFICADO
+// CONFIGURACIÓN, VARIABLES GLOBALES Y FUNCIONES UTILITARIAS
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -49,11 +49,11 @@ const cesfamPuenteAlto = [
   "CESFAM Cardenal Raúl Silva Henriquez"
 ];
 
-// Variables globales MODIFICADAS
+// Variables globales
 let currentUser = null;
 let currentUserData = null;
 let currentFormStep = 1;
-let maxFormStep = 4; // MODIFICADO: Se ajustará dinámicamente
+let maxFormStep = 4;
 let formData = {};
 let isDraftSaved = false;
 let currentCalendarDate = new Date();
@@ -66,9 +66,9 @@ let citasData = [];
 let professionalsList = [];
 let selectedProfessional = null;
 let isLoading = false;
-let fichasClinicasData = []; // NUEVO: Para fichas clínicas
+let fichasClinicasData = [];
 
-// NUEVO: Configuración de horarios
+// Configuración de horarios
 const HORARIOS_CONFIG = {
   horaInicio: 8,
   horaFin: 16,
@@ -89,7 +89,7 @@ const APP_CONFIG = {
 // Cache simple para datos
 const dataCache = new Map();
 
-// ================= FUNCIONES UTILITARIAS MEJORADAS =================
+// ================= FUNCIONES UTILITARIAS =================
 
 function showNotification(message, type = 'info', duration = 4000) {
   try {
@@ -249,7 +249,6 @@ function showLoading(show = true, message = 'Cargando...') {
   }
 }
 
-// Resto de funciones utilitarias (sin cambios)
 function formatRUT(rut) {
   try {
     if (!rut) return '';
@@ -402,7 +401,7 @@ function calculatePriority(evaluationData) {
     if (evaluationData.edad < 18) score += 3;
     if (evaluationData.edad >= 65) score += 2;
     
-    const tiempoConsumo = evaluationData.tiempoConsumo;
+    const tiempoConsumo = evaluationData.tiempoConsumo || evaluationData['tiempo-consumo'];
     if (tiempoConsumo === '60+') score += 3;
     if (tiempoConsumo === '24-60') score += 2;
     if (tiempoConsumo === '12-24') score += 1;
@@ -411,14 +410,14 @@ function calculatePriority(evaluationData) {
     if (evaluationData.urgencia === 'alta') score += 3;
     if (evaluationData.urgencia === 'media') score += 1;
     
-    const motivacion = parseInt(evaluationData.motivacion) || 5;
+    const motivacion = parseInt(evaluationData.motivacion || evaluationData['motivacion-range']) || 5;
     if (motivacion <= 3) score += 2;
     if (motivacion >= 8) score -= 1;
     
     if (evaluationData.tratamientoPrevio === 'si_senda') score += 2;
     if (evaluationData.tratamientoPrevio === 'si_otro') score += 1;
     
-    const descripcion = (evaluationData.descripcion || evaluationData.razon || '').toLowerCase();
+    const descripcion = (evaluationData.descripcion || evaluationData['patient-description'] || '').toLowerCase();
     const palabrasCriticas = ['suicid', 'muerte', 'morir', 'matar', 'crisis', 'emergencia', 'urgente', 'desesper'];
     
     for (const palabra of palabrasCriticas) {
@@ -483,6 +482,53 @@ function setCachedData(key, data) {
     timestamp: Date.now()
   });
 }
+
+// ================= FUNCIÓN AGREGADA: Toggle Submit Button =================
+function toggleSubmitButton(button, loading) {
+  if (!button) return;
+  
+  const buttonText = button.querySelector('.btn-text');
+  const buttonLoading = button.querySelector('.btn-loading');
+  
+  if (loading) {
+    button.disabled = true;
+    if (buttonText) buttonText.style.display = 'none';
+    if (buttonLoading) buttonLoading.style.display = 'inline-flex';
+    if (!buttonText && !buttonLoading) {
+      button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+    }
+  } else {
+    button.disabled = false;
+    if (buttonText) buttonText.style.display = 'inline';
+    if (buttonLoading) buttonLoading.style.display = 'none';
+  }
+}
+
+// ================= FUNCIÓN AGREGADA: Reset Form =================
+function resetForm() {
+  try {
+    const form = document.getElementById('patient-form');
+    if (form) {
+      form.reset();
+      currentFormStep = 1;
+      goToStep(1);
+      
+      // Limpiar validaciones visuales
+      form.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+      form.querySelectorAll('.field-error').forEach(el => el.remove());
+      
+      // Resetear visibilidad de campos
+      updateFormVisibility();
+    }
+    
+    formData = {};
+    isDraftSaved = false;
+    
+  } catch (error) {
+    console.error('Error resetting form:', error);
+  }
+}
+
 // ================= INICIALIZACIÓN =================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -547,7 +593,7 @@ function handleUnhandledRejection(event) {
   }
 }
 
-// ================= GESTIÓN DE EVENTOS MODIFICADA =================
+// ================= GESTIÓN DE EVENTOS =================
 
 function initializeEventListeners() {
   try {
@@ -558,10 +604,6 @@ function initializeEventListeners() {
     const aboutProgramBtn = document.getElementById('about-program');
     
     const searchSolicitudes = document.getElementById('search-solicitudes');
-    // ELIMINADO: const searchSeguimiento = document.getElementById('search-seguimiento');
-    // ELIMINADO: const searchPacientesRut = document.getElementById('search-pacientes-rut');
-    // ELIMINADO: const buscarPacienteBtn = document.getElementById('buscar-paciente-btn');
-    
     const priorityFilter = document.getElementById('priority-filter');
     
     const prevMonthBtn = document.getElementById('prev-month');
@@ -652,7 +694,7 @@ function handleKeyboardShortcuts(e) {
   }
 }
 
-// ================= AUTENTICACIÓN (SIN CAMBIOS) =================
+// ================= AUTENTICACIÓN =================
 
 function onAuthStateChanged(user) {
   try {
@@ -681,7 +723,7 @@ function clearUserCache() {
     pacientesData = [];
     citasData = [];
     professionalsList = [];
-    fichasClinicasData = []; // NUEVO
+    fichasClinicasData = [];
     
     dataCache.clear();
     
@@ -885,7 +927,8 @@ function updateProfessionalInfo() {
     console.error('Error updating professional info:', error);
   }
 }
-// ================= FORMULARIOS Y VALIDACIONES MODIFICADAS =================
+
+// ================= FORMULARIOS Y VALIDACIONES =================
 
 function setupFormValidation() {
   try {
@@ -1030,12 +1073,15 @@ function validatePhoneNumber(input) {
   return isValid;
 }
 
-// ================= FORMULARIO MULTI-PASO MODIFICADO =================
+// ================= FORMULARIO MULTI-PASO CON CORRECCIONES =================
 
 function setupMultiStepForm() {
   try {
     const form = document.getElementById('patient-form');
     if (!form) return;
+
+    // CORREGIDO: Agregar event listener para submit del formulario
+    form.addEventListener('submit', handlePatientFormSubmit);
 
     const nextButtons = form.querySelectorAll('[id^="next-step"]');
     const prevButtons = form.querySelectorAll('[id^="prev-step"]');
@@ -1063,8 +1109,6 @@ function setupMultiStepForm() {
         }
       });
     });
-
-    form.addEventListener('submit', handlePatientFormSubmit);
 
     const tipoSolicitudInputs = document.querySelectorAll('input[name="tipoSolicitud"]');
     tipoSolicitudInputs.forEach(input => {
@@ -1096,7 +1140,127 @@ function setupMultiStepForm() {
   }
 }
 
-// NUEVAS FUNCIONES PARA FLUJO MODIFICADO
+// ================= FUNCIÓN CORREGIDA: Handle Patient Form Submit =================
+async function handlePatientFormSubmit(e) {
+  e.preventDefault();
+  
+  try {
+    const formElement = e.target;
+    const formData = new FormData(formElement);
+    const data = {};
+    
+    // Convertir FormData a objeto
+    for (let [key, value] of formData.entries()) {
+      if (data[key]) {
+        // Manejar checkboxes múltiples (sustancias)
+        if (Array.isArray(data[key])) {
+          data[key].push(value);
+        } else {
+          data[key] = [data[key], value];
+        }
+      } else {
+        data[key] = value;
+      }
+    }
+    
+    // Obtener valores adicionales del DOM
+    data['patient-age'] = document.getElementById('patient-age')?.value;
+    data['patient-cesfam'] = document.getElementById('patient-cesfam')?.value;
+    data['anonymous-phone'] = document.getElementById('anonymous-phone')?.value;
+    data['patient-name'] = document.getElementById('patient-name')?.value;
+    data['patient-lastname'] = document.getElementById('patient-lastname')?.value;
+    data['patient-rut'] = document.getElementById('patient-rut')?.value;
+    data['patient-phone'] = document.getElementById('patient-phone')?.value;
+    data['patient-email'] = document.getElementById('patient-email')?.value;
+    data['patient-address'] = document.getElementById('patient-address')?.value;
+    data['tiempo-consumo'] = document.getElementById('tiempo-consumo')?.value;
+    data['motivacion-range'] = document.getElementById('motivacion-range')?.value;
+    data['patient-description'] = document.getElementById('patient-description')?.value;
+    
+    // Validación final
+    if (!data.tipoSolicitud) {
+      showNotification('Error: Tipo de solicitud no especificado', 'error');
+      return;
+    }
+    
+    const submitBtn = formElement.querySelector('button[type="submit"]');
+    toggleSubmitButton(submitBtn, true);
+    
+    console.log('📝 Procesando solicitud:', data.tipoSolicitud);
+    
+    // Procesar según tipo
+    if (data.tipoSolicitud === 'identificado' || data.tipoSolicitud === 'anonimo') {
+      await processSolicitudCompleta(data);
+    } else if (data.tipoSolicitud === 'informacion') {
+      await handleInformationOnlySubmit();
+    }
+    
+  } catch (error) {
+    console.error('❌ Error en envío de formulario:', error);
+    showNotification('Error al enviar solicitud: ' + error.message, 'error');
+  } finally {
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn) toggleSubmitButton(submitBtn, false);
+  }
+}
+
+// ================= FUNCIÓN AGREGADA: Procesar Solicitud Completa =================
+async function processSolicitudCompleta(data) {
+  try {
+    // Calcular prioridad
+    const prioridad = calculatePriority(data);
+    
+    // Preparar datos para Firestore
+    const solicitudData = {
+      tipoSolicitud: data.tipoSolicitud,
+      nombre: data.tipoSolicitud === 'identificado' ? data['patient-name'] : null,
+      apellidos: data.tipoSolicitud === 'identificado' ? data['patient-lastname'] : null,
+      rut: data.tipoSolicitud === 'identificado' ? data['patient-rut'] : null,
+      edad: parseInt(data['patient-age']),
+      telefono: data.tipoSolicitud === 'identificado' ? data['patient-phone'] : data['anonymous-phone'],
+      email: data['patient-email'] || null,
+      direccion: data['patient-address'] || null,
+      cesfam: data['patient-cesfam'],
+      paraMi: data.paraMi,
+      sustancias: Array.isArray(data.sustancias) ? data.sustancias : [data.sustancias],
+      tiempoConsumo: data['tiempo-consumo'],
+      urgencia: data.urgencia,
+      tratamientoPrevio: data.tratamientoPrevio,
+      motivacion: data['motivacion-range'],
+      descripcion: data['patient-description'] || '',
+      prioridad: prioridad,
+      estado: 'pendiente',
+      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+      origen: 'web_publica'
+    };
+    
+    console.log('💾 Guardando solicitud en Firestore...');
+    
+    // Guardar en Firestore
+    const docRef = await db.collection('solicitudes_ingreso').add(solicitudData);
+    
+    console.log('✅ Solicitud guardada con ID:', docRef.id);
+    
+    // Limpiar formulario y cerrar modal
+    localStorage.removeItem('senda_form_draft');
+    closeModal('patient-modal');
+    resetForm();
+    
+    // Mostrar mensaje de éxito
+    const mensajeExito = data.tipoSolicitud === 'anonimo' 
+      ? 'Tu solicitud anónima fue enviada correctamente. Te contactaremos al número proporcionado.'
+      : 'Tu solicitud fue enviada correctamente. Te contactaremos pronto a los datos proporcionados.';
+    
+    showNotification(mensajeExito, 'success', 6000);
+    
+  } catch (error) {
+    console.error('❌ Error procesando solicitud:', error);
+    showNotification('Error al enviar solicitud: ' + error.message, 'error');
+    throw error;
+  }
+}
+
+// FUNCIONES PARA FLUJO MODIFICADO
 function getNextStep(currentStep) {
   const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
   
@@ -1141,7 +1305,6 @@ function getPreviousStep(currentStep) {
 function updateMaxFormStep() {
   const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
   
-  // MODIFICADO: Ajustar maxFormStep según tipo de solicitud
   if (tipoSolicitud === 'informacion') {
     maxFormStep = 1; // Solo necesita el primer paso
   } else if (tipoSolicitud === 'anonimo') {
@@ -1345,7 +1508,6 @@ function updateFormVisibility() {
       if (emailInput) emailInput.required = false;
     }
     
-    // MODIFICADO: Actualizar pasos del formulario
     updateMaxFormStep();
     
     setTimeout(saveFormDraft, 500);
@@ -1355,7 +1517,7 @@ function updateFormVisibility() {
   }
 }
 
-// ================= VALIDACIÓN DE PASOS MODIFICADA =================
+// ================= VALIDACIÓN DE PASOS CORREGIDA =================
 
 function validateStep(step) {
   try {
@@ -1408,10 +1570,10 @@ function validateStep(step) {
             isValid = false;
           }
           
-          // Para información, terminar aquí - no hay más pasos
+          // CORREGIDO: Si es válido, procesar información después de la validación
           if (isValid) {
-            handleInformationOnlySubmit();
-            return false; // No continuar con más pasos
+            setTimeout(() => handleInformationOnlySubmit(), 100);
+            return true; // Permitir que el flujo continue normalmente
           }
         }
       }
@@ -1518,16 +1680,15 @@ function goToStep(step) {
     }
     
     if (progressText) {
-      // MODIFICADO: Mostrar pasos correctos según tipo de solicitud
       const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
       let displayStep = step;
       let totalSteps = maxFormStep;
       
       if (tipoSolicitud === 'anonimo' && step === 3) {
-        displayStep = 2; // Mostrar como paso 2 de 3 para anónimos
+        displayStep = 2;
         totalSteps = 3;
       } else if (tipoSolicitud === 'anonimo' && step === 4) {
-        displayStep = 3; // Mostrar como paso 3 de 3 para anónimos
+        displayStep = 3;
         totalSteps = 3;
       }
       
@@ -1545,7 +1706,7 @@ function goToStep(step) {
   }
 }
 
-// NUEVA FUNCIÓN PARA MANEJO DE SOLICITUD SOLO INFORMACIÓN
+// FUNCIÓN CORREGIDA PARA MANEJO DE SOLICITUD SOLO INFORMACIÓN
 async function handleInformationOnlySubmit() {
   try {
     console.log('📧 Procesando solicitud de información únicamente...');
@@ -1586,6 +1747,7 @@ async function handleInformationOnlySubmit() {
     showNotification('Error al enviar la información: ' + error.message, 'error');
   }
 }
+
 // ================= NUEVA FUNCIÓN PARA MODAL DE NUEVA CITA =================
 
 function showNuevaCitaModal() {
@@ -1594,7 +1756,6 @@ function showNuevaCitaModal() {
     document.body.insertAdjacentHTML('beforeend', nuevaCitaModal);
     showModal('nueva-cita-modal');
     
-    // Configurar el modal después de crearlo
     setupNuevaCitaModal();
     
   } catch (error) {
@@ -1699,7 +1860,6 @@ async function setupNuevaCitaModal() {
       fechaInput.min = today;
     }
 
-    // Event listeners
     setupNuevaCitaEventListeners();
     
   } catch (error) {
@@ -1798,17 +1958,7 @@ async function loadNuevaCitaTimeSlots() {
                   class="time-slot ${isDisabled ? 'disabled' : ''}" 
                   data-time="${slot.time}"
                   ${isDisabled ? 'disabled' : ''}
-                  onclick="selectNuevaCitaTimeSlot(this)"
-                  style="
-                    padding: 12px;
-                    border: 2px solid ${isDisabled ? 'var(--gray-300)' : 'var(--primary-blue)'};
-                    border-radius: 8px;
-                    background: ${isDisabled ? 'var(--gray-100)' : 'white'};
-                    color: ${isDisabled ? 'var(--gray-400)' : 'var(--primary-blue)'};
-                    cursor: ${isDisabled ? 'not-allowed' : 'pointer'};
-                    transition: all 0.2s ease;
-                    font-weight: 500;
-                  ">
+                  onclick="selectNuevaCitaTimeSlot(this)">
             <i class="fas fa-clock" style="margin-right: 4px;"></i>
             ${slot.time}
             ${isOccupied ? '<br><small>Ocupado</small>' : ''}
@@ -2005,7 +2155,8 @@ async function getOccupiedSlots(professionalId, date) {
     return [];
   }
 }
-// ================= GESTIÓN DE PACIENTES MODIFICADA =================
+
+// ================= GESTIÓN DE PACIENTES =================
 
 async function loadPacientes() {
   if (!currentUserData) return;
@@ -2022,7 +2173,6 @@ async function loadPacientes() {
       return;
     }
     
-    // MODIFICADO: Cargar pacientes que se registraron en el CESFAM
     const pacientesSnapshot = await db.collection('pacientes')
       .where('cesfam', '==', currentUserData.cesfam)
       .orderBy('fechaCreacion', 'desc')
@@ -2150,7 +2300,7 @@ function createPacienteCard(paciente) {
   }
 }
 
-// NUEVAS FUNCIONES PARA FICHAS CLÍNICAS
+// ================= FUNCIONES PARA FICHAS CLÍNICAS =================
 
 async function verFichaClinicaPaciente(pacienteId) {
   try {
@@ -2401,7 +2551,7 @@ function createNuevaFichaModal(paciente) {
   `;
 }
 
-// NUEVA FUNCIÓN: Manejar envío de nueva ficha
+// Función para manejar envío de nueva ficha
 async function handleNuevaFichaSubmit(e) {
   e.preventDefault();
   
@@ -2462,7 +2612,20 @@ async function handleNuevaFichaSubmit(e) {
   }
 }
 
-// NUEVA FUNCIÓN: Descargar ficha clínica en PDF
+// Event listener dinámico para formularios que se crean después
+document.addEventListener('submit', function(e) {
+  if (e.target.id === 'nueva-ficha-form') {
+    handleNuevaFichaSubmit(e);
+  } else if (e.target.id === 'seguimiento-form') {
+    handleSeguimientoSubmit(e);
+  } else if (e.target.id === 'reentry-form') {
+    handleReentrySubmit(e);
+  }
+});
+
+// ================= CONTINUAR CON RESTO DE FUNCIONES... =================
+
+// Función para descargar ficha clínica en PDF
 async function downloadFichaClinica(pacienteId) {
   try {
     showLoading(true, 'Generando PDF...');
@@ -2609,7 +2772,7 @@ function generateFichaPDFContent(paciente, fichas) {
   `;
 }
 
-// FUNCIÓN PLACEHOLDER PARA AGENDAR PACIENTE EXISTENTE
+// Función placeholder para agendar paciente existente
 async function agendarPacienteExistente(pacienteId) {
   const paciente = pacientesData.find(p => p.id === pacienteId);
   if (paciente) {
@@ -2633,7 +2796,8 @@ async function agendarPacienteExistente(pacienteId) {
     showNotification('Paciente no encontrado', 'error');
   }
 }
-// ================= SEGUIMIENTO MODIFICADO (SIN BÚSQUEDA) =================
+
+// ================= SEGUIMIENTO =================
 
 async function loadSeguimiento() {
   if (!currentUserData) return;
@@ -2805,7 +2969,7 @@ function renderUpcomingAppointments(appointmentsSnapshot) {
   }
 }
 
-// NUEVA FUNCIÓN: Modal de seguimiento para escribir en ficha del paciente
+// Modal de seguimiento para escribir en ficha del paciente
 async function openSeguimientoModal(citaId) {
   try {
     showLoading(true, 'Cargando información de la cita...');
@@ -2919,6 +3083,7 @@ function createSeguimientoModal(cita, paciente) {
                         placeholder="Plan de tratamiento, recomendaciones, próximas citas..."></textarea>
             </div>
             
+            <div class="form-actions
             <div class="form-actions" style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
               <button type="button" class="btn btn-outline" onclick="closeModal('seguimiento-modal')">
                 <i class="fas fa-times"></i>
@@ -2936,7 +3101,7 @@ function createSeguimientoModal(cita, paciente) {
   `;
 }
 
-// NUEVA FUNCIÓN: Manejar envío de seguimiento
+// Manejar envío de seguimiento
 async function handleSeguimientoSubmit(e) {
   e.preventDefault();
   
@@ -3012,7 +3177,7 @@ async function handleSeguimientoSubmit(e) {
   }
 }
 
-// NUEVA FUNCIÓN: Crear paciente desde cita
+// Crear paciente desde cita
 async function createPacienteFromCita(citaId) {
   try {
     const citaDoc = await db.collection('citas').doc(citaId).get();
@@ -3049,7 +3214,7 @@ async function createPacienteFromCita(citaId) {
   }
 }
 
-// ================= GESTIÓN DE SOLICITUDES (SIN CAMBIOS MAYORES) =================
+// ================= GESTIÓN DE SOLICITUDES =================
 
 async function loadSolicitudes() {
   if (!currentUserData) {
@@ -3390,7 +3555,7 @@ function renderSolicitudesError(error) {
   `;
 }
 
-// ================= FILTROS MODIFICADOS (SIN FECHA) =================
+// ================= FILTROS =================
 
 function setupFilters() {
   try {
@@ -3437,7 +3602,7 @@ function filterSolicitudes() {
         show = false;
       }
       
-      // Filtro de estado (solo prioridad y estado, sin fecha)
+      // Filtro de estado
       if (currentFilter !== 'todas') {
         const statusElement = card.querySelector('[class*="status-"]');
         const cardStatus = statusElement ? statusElement.textContent.toLowerCase().trim() : 'pendiente';
@@ -3488,33 +3653,6 @@ function updateFilterResultsCount(visible, total) {
     console.error('Error updating filter count:', error);
   }
 }
-// ================= PARTE 8 FINAL: Event Listeners, Funciones Auxiliares y Exportaciones =================
-
-// ================= EVENT LISTENERS ADICIONALES =================
-
-// Configurar event listeners para las nuevas funciones
-document.addEventListener('DOMContentLoaded', function() {
-  // Event listener para formulario de nueva ficha
-  const nuevaFichaForm = document.getElementById('nueva-ficha-form');
-  if (nuevaFichaForm) {
-    nuevaFichaForm.addEventListener('submit', handleNuevaFichaSubmit);
-  }
-  
-  // Event listener para formulario de seguimiento
-  const seguimientoForm = document.getElementById('seguimiento-form');
-  if (seguimientoForm) {
-    seguimientoForm.addEventListener('submit', handleSeguimientoSubmit);
-  }
-});
-
-// Event listener dinámico para formularios que se crean después
-document.addEventListener('submit', function(e) {
-  if (e.target.id === 'nueva-ficha-form') {
-    handleNuevaFichaSubmit(e);
-  } else if (e.target.id === 'seguimiento-form') {
-    handleSeguimientoSubmit(e);
-  }
-});
 
 // ================= GESTIÓN DE TABS =================
 
@@ -3936,7 +4074,7 @@ function setupModalControls() {
   }
 }
 
-// ================= FUNCIONES DE AUTENTICACIÓN (SIN CAMBIOS) =================
+// ================= FUNCIONES DE AUTENTICACIÓN =================
 
 async function handleLogin(e) {
   e.preventDefault();
@@ -4152,6 +4290,72 @@ async function handleLogout() {
   }
 }
 
+// ================= FUNCIÓN PARA MANEJAR REENTRY SUBMIT =================
+
+async function handleReentrySubmit(e) {
+  e.preventDefault();
+  
+  try {
+    const formData = {
+      nombre: document.getElementById('reentry-name')?.value?.trim(),
+      rut: document.getElementById('reentry-rut')?.value?.trim(),
+      cesfam: document.getElementById('reentry-cesfam')?.value,
+      motivo: document.getElementById('reentry-reason')?.value?.trim(),
+      telefono: document.getElementById('reentry-phone')?.value?.trim()
+    };
+    
+    // Validaciones
+    if (!formData.nombre || !formData.rut || !formData.cesfam || !formData.motivo || !formData.telefono) {
+      showNotification('Por favor completa todos los campos', 'warning');
+      return;
+    }
+    
+    if (!validateRUT(formData.rut)) {
+      showNotification('RUT inválido', 'warning');
+      return;
+    }
+    
+    if (!validatePhoneNumberString(formData.telefono)) {
+      showNotification('Teléfono inválido', 'warning');
+      return;
+    }
+    
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    toggleSubmitButton(submitBtn, true);
+    
+    const reingresoData = {
+      nombre: formData.nombre,
+      rut: formatRUT(formData.rut),
+      cesfam: formData.cesfam,
+      motivo: formData.motivo,
+      telefono: formData.telefono,
+      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+      estado: 'pendiente',
+      prioridad: 'media',
+      origen: 'web_publica',
+      tipo: 'reingreso'
+    };
+    
+    console.log('💾 Guardando solicitud de reingreso...');
+    
+    const docRef = await db.collection('reingresos').add(reingresoData);
+    
+    console.log('✅ Reingreso guardado con ID:', docRef.id);
+    
+    closeModal('reentry-modal');
+    e.target.reset();
+    
+    showNotification('Solicitud de reingreso enviada correctamente. Te contactaremos pronto.', 'success', 6000);
+    
+  } catch (error) {
+    console.error('❌ Error enviando reingreso:', error);
+    showNotification('Error al enviar solicitud de reingreso: ' + error.message, 'error');
+  } finally {
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn) toggleSubmitButton(submitBtn, false);
+  }
+}
+
 // ================= FUNCIONES AUXILIARES Y PLACEHOLDERS =================
 
 function showAboutProgram() {
@@ -4278,7 +4482,7 @@ async function testFirestoreWrite() {
   }
 }
 
-// ================= FUNCIONES DE DETALLE Y AGENDA (IMPORTADAS DE PARTES ANTERIORES) =================
+// ================= FUNCIONES DE DETALLE Y AGENDA =================
 
 function showSolicitudDetail(solicitud) {
   try {
@@ -4376,6 +4580,7 @@ function createSolicitudDetailModal(solicitud) {
                   ${solicitud.email ? `<div><strong>Email:</strong> <a href="mailto:${solicitud.email}" style="color: var(--primary-blue);">${solicitud.email}</a></div>` : ''}
                   ${solicitud.direccion ? `<div><strong>Dirección:</strong> ${solicitud.direccion}</div>` : ''}
                   <div><strong>CESFAM:</strong> ${solicitud.cesfam}</div>
+                  <div>
                   <div><strong>Fecha:</strong> ${fecha}</div>
                   ${solicitud.paraMi ? `<div><strong>Solicita para:</strong> ${solicitud.paraMi.replace('_', ' ')}</div>` : ''}
                 </div>
@@ -4516,7 +4721,6 @@ window.loadPacientes = loadPacientes;
 window.loadSeguimiento = loadSeguimiento;
 window.loadTodayAppointments = loadTodayAppointments;
 window.debugFirebaseConnection = debugFirebaseConnection;
-window.validateFormInputs = validateFormInputs;
 window.switchToAgendaTab = switchToAgendaTab;
 
 // ================= INICIALIZACIÓN FINAL =================
