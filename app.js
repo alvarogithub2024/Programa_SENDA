@@ -631,34 +631,37 @@ function updateMotivacionColor(value) {
 }
 
 // ================= GESTIÓN DE EVENTOS CORREGIDOS =================
-
 function initializeEventListeners() {
   try {
     const loginProfessionalBtn = document.getElementById('login-professional');
-    // CORREGIDO: Solo un botón de logout
+    
+    console.log('🔧 Botón login encontrado:', loginProfessionalBtn); // DEBUG
+    
+    if (loginProfessionalBtn) {
+      loginProfessionalBtn.addEventListener('click', () => {
+        console.log('🔧 Click en botón login detectado'); // DEBUG
+        showModal('login-modal');
+      });
+      console.log('✅ Event listener agregado al botón login');
+    } else {
+      console.error('❌ Botón login-professional no encontrado');
+    }
+
+    // Resto del código...
     const logoutBtn = document.getElementById('logout-professional');
     const registerPatientBtn = document.getElementById('register-patient');
     const reentryProgramBtn = document.getElementById('reentry-program');
     const aboutProgramBtn = document.getElementById('about-program');
     
-    // ELIMINADO: search solicitudes ya no existe
     const searchPacientesRut = document.getElementById('search-pacientes-rut');
     const buscarPacienteBtn = document.getElementById('buscar-paciente-btn');
     
-    // CORREGIDO: Filtro de prioridad funcional
     const priorityFilter = document.getElementById('priority-filter');
     
     const prevMonthBtn = document.getElementById('prev-month');
     const nextMonthBtn = document.getElementById('next-month');
     const nuevaCitaBtn = document.getElementById('nueva-cita-btn');
 
-    if (loginProfessionalBtn) {
-      loginProfessionalBtn.addEventListener('click', () => {
-        showModal('login-modal');
-      });
-    }
-
-    // CORREGIDO: Solo un botón de logout que funciona
     if (logoutBtn) {
       logoutBtn.addEventListener('click', handleLogout);
     }
@@ -697,7 +700,6 @@ function initializeEventListeners() {
       });
     }
 
-    // CORREGIDO: Filtro de prioridad funcional
     if (priorityFilter) {
       priorityFilter.addEventListener('change', (e) => {
         currentPriorityFilter = e.target.value;
@@ -719,7 +721,6 @@ function initializeEventListeners() {
       });
     }
 
-    // CORREGIDO: Nueva cita funcional
     if (nuevaCitaBtn) {
       nuevaCitaBtn.addEventListener('click', () => createNuevaCitaModal());
     }
@@ -732,6 +733,7 @@ function initializeEventListeners() {
   }
 }
 
+ 
 function handleKeyboardShortcuts(e) {
   try {
     if (e.key === 'Escape') {
