@@ -4369,7 +4369,6 @@ window.loadPacientes = loadPacientes;
 window.loadSeguimiento = loadSeguimiento;
 window.loadTodayAppointments = loadTodayAppointments;
 window.debugFirebaseConnection = debugFirebaseConnection;
-window.validateFormInputs = validateFormInputs;
 window.selectTimeSlot = selectTimeSlot;
 
 // ================= INICIALIZACIÓN FINAL =================
