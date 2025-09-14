@@ -2881,6 +2881,12 @@ function setupAutoSave() {
       autoSaveTimer = setTimeout(saveFormDraft, 2000);
     });
     
+    loadFormDraft();
+  } catch (error) {
+    console.error('Error setting up auto-save:', error);
+  }
+}
+
 function saveFormDraft() {
   try {
     const form = document.getElementById('patient-form');
@@ -2902,6 +2908,26 @@ function saveFormDraft() {
     
   } catch (error) {
     console.error('Error saving form draft:', error);
+  }
+}
+
+function loadFormDraft() {
+  try {
+    const savedDraft = localStorage.getItem('senda_form_draft');
+    if (!savedDraft) return;
+    
+    const draftData = JSON.parse(savedDraft);
+    
+    if (Date.now() - draftData.timestamp > 24 * 60 * 60 * 1000) {
+      localStorage.removeItem('senda_form_draft');
+      return;
+    }
+    
+    if (confirm('Se encontró un borrador guardado. ¿Deseas continuar donde lo dejaste?')) {
+      restoreFormDraft(draftData);
+    }
+  } catch (error) {
+    console.error('Error loading form draft:', error);
   }
 }
 
