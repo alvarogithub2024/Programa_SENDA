@@ -16,8 +16,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
-    <!-- jsPDF para generar PDFs -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- EmailJS para envío de correos -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body>
     <!-- ================= HEADER PRINCIPAL ================= -->
@@ -52,7 +52,7 @@
                 </div>
             </div>
             <div class="professional-actions">
-                <button class="btn btn-outline" id="logout-btn-professional" style="display: none;">
+                <button class="btn btn-outline btn-sm" id="logout-professional" style="color: white; border-color: white;">
                     <i class="fas fa-sign-out-alt"></i>
                     Cerrar Sesión
                 </button>
@@ -195,7 +195,6 @@
                 <div class="filters-container">
                     <div class="filter-tabs">
                         <button class="filter-btn active" onclick="currentFilter = 'todas'; filterSolicitudes()">Todas</button>
-                        <!-- eliminado botones de en proceso y completadas -->
                         <button class="filter-btn" onclick="currentFilter = 'pendiente'; filterSolicitudes()">Pendientes</button>
                     </div>
                     
@@ -367,7 +366,6 @@
         </div>
     </div>
 
- 
     <!-- ================= MODAL SOLICITUD PACIENTE ================= -->
     <div class="modal-overlay" id="patient-modal">
         <div class="modal large-modal">
@@ -733,6 +731,63 @@
             </form>
         </div>
     </div>
+
+    <!-- ================= MODAL AGENDA CITA ================= -->
+    <div class="modal-overlay" id="agenda-cita-modal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeModal('agenda-cita-modal')">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <h2><i class="fas fa-calendar-plus"></i> Agendar Cita</h2>
+            <p class="modal-description">Programa una cita para esta solicitud</p>
+
+            <div id="agenda-solicitud-info" style="background: var(--light-blue); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                <!-- Información de la solicitud se carga aquí -->
+            </div>
+
+            <form id="agenda-cita-form">
+                <div class="form-group">
+                    <label class="form-label">Profesional *</label>
+                    <select class="form-select" id="agenda-professional" required>
+                        <option value="">Seleccionar profesional...</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Fecha *</label>
+                    <input type="date" class="form-input" id="agenda-date" required>
+                </div>
+                
+                <div class="time-slots-container" id="agenda-time-slots-container" style="display: none;">
+                    <h4 style="margin-bottom: 16px; color: var(--primary-blue);">
+                        <i class="fas fa-clock"></i> Horarios Disponibles
+                    </h4>
+                    <div class="time-slots-grid" id="agenda-time-slots-grid">
+                        <!-- Los slots de tiempo se cargarán aquí -->
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Observaciones</label>
+                    <textarea class="form-textarea" id="agenda-notes" rows="3" 
+                              placeholder="Observaciones adicionales..."></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('agenda-cita-modal')">
+                        <i class="fas fa-times"></i>
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success" disabled>
+                        <i class="fas fa-calendar-check"></i>
+                        Agendar Cita
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- ================= LOADING OVERLAY ================= -->
     <div class="loading-overlay hidden" id="loading-overlay">
         <div class="loading-spinner">
@@ -758,6 +813,9 @@
 
     <!-- ================= JAVASCRIPT ================= -->
     <script>
+        // Inicializar EmailJS
+        emailjs.init('tu_user_id'); // Reemplaza con tu User ID de EmailJS
+        
         // Función para cambiar tabs de login
         function switchLoginTab(tab) {
             const tabs = document.querySelectorAll('.modal-tab');
@@ -790,7 +848,7 @@
                         errorMessage = 'Usuario no encontrado';
                         break;
                     case 'auth/wrong-password':
-                        errorMessage = 'Contraseña incorrecta';
+                        errorMessage = 'Contraseña incorreta';
                         break;
                     case 'auth/invalid-email':
                         errorMessage = 'Email inválido';
