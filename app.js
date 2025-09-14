@@ -4038,6 +4038,232 @@ function renderSolicitudesError(error) {
     </div>
   `;
 }
+// ================= FUNCIONES DE AUTENTICACIÓN =================
+function setupAuthForms() {
+  try {
+    console.log('🔧 Configurando formularios de autenticación...');
+    
+    // Configurar formulario de login
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+      loginForm.addEventListener('submit', handleLoginSubmit);
+      console.log('✅ Formulario de login configurado');
+    } else {
+      console.warn('⚠️ Formulario de login no encontrado');
+    }
+    
+    // Configurar formulario de registro
+    const registerForm = document.getElementById('register-form');
+    if (registerForm) {
+      registerForm.addEventListener('submit', handleRegisterSubmit);
+      console.log('✅ Formulario de registro configurado');
+    } else {
+      console.warn('⚠️ Formulario de registro no encontrado');
+    }
+    
+    console.log('✅ Formularios de autenticación configurados');
+  } catch (error) {
+    console.error('❌ Error configurando formularios de auth:', error);
+  }
+}
+
+async function handleLoginSubmit(e) {
+  e.preventDefault();
+  
+  try {
+    console.log('🔐 Iniciando proceso de login...');
+    
+    const email = document.getElementById('login-email')?.value?.trim();
+    const password = document.getElementById('login-password')?.value?.trim();
+    
+    if (!email || !password) {
+      showNotification('Completa todos los campos', 'warning');
+      return;
+    }
+    
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    toggleSubmitButton(submitBtn, true);
+    
+    showLoading(true, 'Iniciando sesión...');
+    
+    console.log('🔐 Intentando login con email:', email);
+    
+    // Intentar iniciar sesión
+    const userCredential = await auth.signInWithEmailAndPassword(email, password);
+    console.log('✅ Login exitoso:', userCredential.user.uid);
+    
+    closeModal('login-modal');
+    showNotification('Sesión iniciada correctamente', 'success');
+    
+    // Limpiar formulario
+    e.target.reset();
+    
+  } catch (error) {
+    console.error('❌ Error en login:', error);
+    
+    let errorMessage = 'Error al iniciar sesión: ';
+    switch (error.code) {
+      case 'auth/user-not-found':
+        errorMessage += 'Usuario no encontrado';
+        break;
+      case 'auth/wrong-password':
+        errorMessage += 'Contraseña incorrecta';
+        break;
+      case 'auth/invalid-email':
+        errorMessage += 'Email inválido';
+        break;
+      case 'auth/user-disabled':
+        errorMessage += 'Usuario deshabilitado';
+        break;
+      case 'auth/too-many-requests':
+        errorMessage += 'Demasiados intentos. Intenta más tarde';
+        break;
+      default:
+        errorMessage += error.message;
+    }
+    
+    showNotification(errorMessage, 'error');
+  } finally {
+    showLoading(false);
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn) toggleSubmitButton(submitBtn, false);
+  }
+}
+
+async function handleRegisterSubmit(e) {
+  e.preventDefault();
+  
+  try {
+    console.log('📝 Iniciando proceso de registro...');
+    
+    const formData = {
+      nombre: document.getElementById('register-nombre')?.value?.trim(),
+      apellidos: document.getElementById('register-apellidos')?.value?.trim(),
+      email: document.getElementById('register-email')?.value?.trim(),
+      password: document.getElementById('register-password')?.value?.trim(),
+      profession: document.getElementById('register-profession')?.value,
+      cesfam: document.getElementById('register-cesfam')?.value
+    };
+    
+    console.log('📝 Datos del formulario:', { ...formData, password: '***' });
+    
+    // Validaciones
+    const requiredFields = ['nombre', 'apellidos', 'email', 'password', 'profession', 'cesfam'];
+    for (const field of requiredFields) {
+      if (!formData[field]) {
+        showNotification(`El campo ${field} es obligatorio`, 'warning');
+        return;
+      }
+    }
+    
+    // Validar email @senda.cl
+    if (!formData.email.endsWith('@senda.cl')) {
+      showNotification('Solo se permiten emails @senda.cl', 'warning');
+      return;
+    }
+    
+    // Validar contraseña mínima
+    if (formData.password.length < 6) {
+      showNotification('La contraseña debe tener al menos 6 caracteres', 'warning');
+      return;
+    }
+    
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    toggleSubmitButton(submitBtn, true);
+    
+    showLoading(true, 'Registrando usuario...');
+    
+    console.log('📝 Creando usuario en Firebase Auth...');
+    
+    // Crear usuario en Firebase Auth
+    const userCredential = await auth.createUserWithEmailAndPassword(formData.email, formData.password);
+    const user = userCredential.user;
+    
+    console.log('✅ Usuario creado en Auth:', user.uid);
+    
+    // Crear documento del profesional en Firestore
+    const professionalData = {
+      nombre: formData.nombre,
+      apellidos: formData.apellidos,
+      email: formData.email,
+      profession: formData.profession,
+      cesfam: formData.cesfam,
+      activo: true,
+      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+      uid: user.uid
+    };
+    
+    console.log('📝 Guardando datos del profesional en Firestore...');
+    
+    // Guardar en la colección 'profesionales'
+    await db.collection('profesionales').doc(user.uid).set(professionalData);
+    
+    console.log('✅ Profesional guardado en Firestore');
+    
+    closeModal('login-modal');
+    showNotification('Registro exitoso. Bienvenido al sistema SENDA', 'success');
+    
+    // Limpiar formulario
+    e.target.reset();
+    
+    console.log('✅ Usuario registrado exitosamente:', user.uid);
+    
+  } catch (error) {
+    console.error('❌ Error en registro:', error);
+    
+    let errorMessage = 'Error al registrarse: ';
+    switch (error.code) {
+      case 'auth/email-already-in-use':
+        errorMessage += 'Este email ya está registrado';
+        break;
+      case 'auth/invalid-email':
+        errorMessage += 'Email inválido';
+        break;
+      case 'auth/operation-not-allowed':
+        errorMessage += 'Registro no permitido';
+        break;
+      case 'auth/weak-password':
+        errorMessage += 'Contraseña muy débil';
+        break;
+      case 'permission-denied':
+        errorMessage += 'Sin permisos para crear el perfil profesional';
+        break;
+      default:
+        errorMessage += error.message;
+    }
+    
+    showNotification(errorMessage, 'error');
+  } finally {
+    showLoading(false);
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn) toggleSubmitButton(submitBtn, false);
+  }
+}
+
+function switchLoginTab(tab) {
+  try {
+    console.log('🔄 Cambiando tab a:', tab);
+    
+    const loginTab = document.querySelector('.modal-tab[onclick*="login"]');
+    const registerTab = document.querySelector('.modal-tab[onclick*="register"]');
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+
+    if (tab === 'login') {
+      if (loginTab) loginTab.classList.add('active');
+      if (registerTab) registerTab.classList.remove('active');
+      if (loginForm) loginForm.classList.add('active');
+      if (registerForm) registerForm.classList.remove('active');
+    } else if (tab === 'register') {
+      if (registerTab) registerTab.classList.add('active');
+      if (loginTab) loginTab.classList.remove('active');
+      if (registerForm) registerForm.classList.add('active');
+      if (loginForm) loginForm.classList.remove('active');
+    }
+  } catch (error) {
+    console.error('Error switching login tab:', error);
+  }
+}
 
 // ================= INICIALIZACIÓN FINAL =================
 
@@ -4060,7 +4286,7 @@ document.addEventListener('DOMContentLoaded', function() {
     showNotification('Error inicializando el sistema', 'error');
   }
 });
-
+  
 // EXPORTAR FUNCIONES GLOBALES
 window.showPatientDetail = showPatientDetail;
 window.downloadPatientPDF = downloadPatientPDF;
