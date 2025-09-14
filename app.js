@@ -1,4 +1,4 @@
-// ================= SENDA PUENTE ALTO - APP.JS PARTE 1 =================
+// ================= SENDA PUENTE ALTO - APP.JS PARTE 1 MEJORADA =================
 // Configuración Firebase, Variables Globales y Formularios Modificados
 
 // Firebase Configuration
@@ -1091,19 +1091,19 @@ function setCachedData(key, data) {
 }
 
 console.log('✅ PARTE 2: Autenticación con @senda.cl y eventos cargados');
-// ================= SENDA PUENTE ALTO - APP.JS PARTE 3 =================
-// Calendario Enlazado con Fecha Actual, Gestión de Citas y Agenda
+// ================= SENDA PUENTE ALTO - APP.JS PARTE 3 MEJORADA =================
+// Calendario con Fecha/Hora Actual, Gestión de Citas y Agenda
 
 // ================= CALENDARIO FUNCIONAL ENLAZADO CON FECHA ACTUAL =================
 
 function setupCalendar() {
   try {
-    // MODIFICADO: Inicializar siempre con la fecha actual
+    // MEJORA 1: Siempre inicializar con la fecha y hora actual del sistema
     currentCalendarDate = new Date();
     renderCalendar();
     
     if (APP_CONFIG.DEBUG_MODE) {
-      console.log('✅ Calendario configurado con fecha actual:', currentCalendarDate.toLocaleDateString('es-CL'));
+      console.log('✅ Calendario configurado con fecha/hora actual:', new Date().toLocaleString('es-CL'));
     }
   } catch (error) {
     console.error('❌ Error configurando calendario:', error);
@@ -1144,7 +1144,7 @@ function renderCalendar() {
     const firstDayOfWeek = (firstDay.getDay() + 6) % 7;
     startDate.setDate(startDate.getDate() - firstDayOfWeek);
     
-    // MODIFICADO: Usar fecha actual real del sistema
+    // MEJORA 1: Usar fecha y hora actual real del sistema
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const currentDate = new Date(startDate);
@@ -1384,10 +1384,19 @@ function createPatientAppointmentInfoModal(appointment) {
   `;
 }
 
-// ================= MODAL NUEVA CITA CON HORARIOS SIN DUPLICAR =================
+// ================= MODAL NUEVA CITA CON FECHA/HORA ACTUAL CONFIGURADA =================
 
 function createNuevaCitaModal() {
   try {
+    // MEJORA 1: Obtener fecha y hora actual del sistema
+    const now = new Date();
+    const fechaActual = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const horaActual = now.toLocaleTimeString('es-CL', { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: false 
+    });
+    
     const nuevaCitaModal = `
       <div class="modal-overlay temp-modal" id="nueva-cita-modal">
         <div class="modal large-modal">
@@ -1397,6 +1406,11 @@ function createNuevaCitaModal() {
           
           <div style="padding: 24px;">
             <h2><i class="fas fa-calendar-plus"></i> Nueva Cita</h2>
+            
+            <!-- MEJORA 1: Mostrar fecha y hora actual -->
+            <div style="background: var(--light-blue); padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+              <strong>📅 Fecha y hora actual: ${now.toLocaleDateString('es-CL')} - ${horaActual}</strong>
+            </div>
             
             <form id="nueva-cita-form">
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
@@ -1420,14 +1434,14 @@ function createNuevaCitaModal() {
                 </div>
                 
                 <div class="form-group">
-                  <label class="form-label">Fecha *</label>
-                  <input type="date" class="form-input" id="nueva-cita-date" required>
+                  <label class="form-label">Fecha * (configurada con fecha actual)</label>
+                  <input type="date" class="form-input" id="nueva-cita-date" value="${fechaActual}" required>
                 </div>
               </div>
               
               <div class="time-slots-container" id="nueva-cita-time-slots-container" style="display: none;">
                 <h4 style="margin-bottom: 16px; color: var(--primary-blue);">
-                  <i class="fas fa-clock"></i> Horarios Disponibles
+                  <i class="fas fa-clock"></i> Horarios Disponibles (hora actual: ${horaActual})
                 </h4>
                 <div class="time-slots-grid" id="nueva-cita-time-slots-grid">
                   <!-- Los slots de tiempo se cargarán aquí -->
@@ -1460,6 +1474,10 @@ function createNuevaCitaModal() {
     showModal('nueva-cita-modal');
     
     loadProfessionalsForNuevaCita();
+    
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log(`✅ Modal nueva cita abierto con fecha/hora actual: ${fechaActual} ${horaActual}`);
+    }
     
   } catch (error) {
     console.error('Error creating nueva cita modal:', error);
@@ -1527,10 +1545,15 @@ function setupNuevaCitaFormListeners() {
     const citaForm = document.getElementById('nueva-cita-form');
     const rutInput = document.getElementById('nueva-cita-rut');
     
+    // MEJORA 1: Asegurar que la fecha mínima sea siempre la actual
     if (citaDate) {
-      // MODIFICADO: Usar fecha actual del sistema
       const today = new Date().toISOString().split('T')[0];
       citaDate.min = today;
+      
+      // Si la fecha está vacía o es anterior a hoy, configurar con fecha actual
+      if (!citaDate.value || citaDate.value < today) {
+        citaDate.value = today;
+      }
     }
 
     if (rutInput) {
@@ -1556,7 +1579,7 @@ function setupNuevaCitaFormListeners() {
   }
 }
 
-// MODIFICADO: Función que evita duplicar horarios
+// MODIFICADO: Función que evita duplicar horarios con validación de hora actual
 async function loadNuevaCitaTimeSlots() {
   try {
     const professionalSelect = document.getElementById('nueva-cita-professional');
@@ -1652,7 +1675,7 @@ function generateTimeSlots(date) {
 }
 
 function isPastTimeSlot(date, hour, minute) {
-  // MODIFICADO: Usar fecha y hora actual del sistema
+  // MEJORA 1: Usar fecha y hora actual real del sistema
   const now = new Date();
   const slotTime = new Date(date);
   slotTime.setHours(hour, minute, 0, 0);
@@ -1827,12 +1850,13 @@ async function moveToPatients(solicitudData, citaId) {
   }
 }
 
-console.log('✅ PARTE 3: Calendario enlazado con fecha actual y gestión de citas sin duplicados');
-// ================= SENDA PUENTE ALTO - APP.JS PARTE 4 =================
-// Pacientes con Búsqueda en CESFAM, Solicitudes de Información y Formularios
+console.log('✅ PARTE 3: Calendario con fecha/hora actual y gestión de citas mejoradas');
+// ================= SENDA PUENTE ALTO - APP.JS PARTE 4 MEJORADA =================
+// Enlace con Firebase para Solicitudes de Ingreso y Pacientes con Botón Limpiar
 
-// ================= GESTIÓN DE SOLICITUDES MODIFICADA =================
+// ================= GESTIÓN DE SOLICITUDES ENLAZADAS CON FIREBASE =================
 
+// MEJORA 2: Función mejorada para cargar solicitudes desde Firebase incluyendo solicitudes_ingreso
 async function loadSolicitudes() {
   if (!currentUserData || !hasAccessToSolicitudes()) {
     console.log('⚠️ Usuario no tiene acceso a solicitudes');
@@ -1840,7 +1864,7 @@ async function loadSolicitudes() {
   }
 
   try {
-    showLoading(true, 'Cargando solicitudes...');
+    showLoading(true, 'Cargando solicitudes desde Firebase...');
     const container = document.getElementById('requests-container');
     
     if (!container) {
@@ -1851,7 +1875,7 @@ async function loadSolicitudes() {
     const cacheKey = `solicitudes_${currentUserData.cesfam}`;
     dataCache.delete(cacheKey);
     
-    await loadSolicitudesFromFirestore(true);
+    await loadSolicitudesFromFirebaseEnhanced(true);
     
   } catch (error) {
     console.error('❌ Error general cargando solicitudes:', error);
@@ -1861,7 +1885,8 @@ async function loadSolicitudes() {
   }
 }
 
-async function loadSolicitudesFromFirestore(showLoadingIndicator = true) {
+// MEJORA 2: Función mejorada que enlaza directamente con Firebase solicitudes_ingreso
+async function loadSolicitudesFromFirebaseEnhanced(showLoadingIndicator = true) {
   try {
     if (showLoadingIndicator) {
       const container = document.getElementById('requests-container');
@@ -1869,7 +1894,7 @@ async function loadSolicitudesFromFirestore(showLoadingIndicator = true) {
         container.innerHTML = `
           <div class="loading-message">
             <i class="fas fa-spinner fa-spin"></i>
-            Cargando solicitudes...
+            Cargando solicitudes desde Firebase (solicitudes_ingreso)...
           </div>
         `;
       }
@@ -1877,54 +1902,62 @@ async function loadSolicitudesFromFirestore(showLoadingIndicator = true) {
     
     const solicitudes = [];
     
-    console.log('🔍 Cargando solicitudes para CESFAM:', currentUserData.cesfam);
+    console.log('🔍 MEJORA 2: Cargando desde Firebase - solicitudes_ingreso para CESFAM:', currentUserData.cesfam);
     
+    // MEJORA 2: Cargar desde solicitudes_ingreso con mejor enlace
     try {
       const solicitudesSnapshot = await db.collection('solicitudes_ingreso')
         .where('cesfam', '==', currentUserData.cesfam)
-        .where('estado', '!=', 'agendada') // MODIFICADO: Excluir solicitudes agendadas
+        .where('estado', 'in', ['pendiente', 'pendiente_respuesta', 'en_evaluacion'])
         .orderBy('fechaCreacion', 'desc')
         .limit(APP_CONFIG.PAGINATION_LIMIT)
         .get();
       
-      console.log('📊 Solicitudes_ingreso encontradas:', solicitudesSnapshot.size);
+      console.log('📊 MEJORA 2: Solicitudes_ingreso encontradas desde Firebase:', solicitudesSnapshot.size);
       
       solicitudesSnapshot.forEach(doc => {
         const data = doc.data();
+        // MEJORA 2: Categorizar pacientes que necesitan horas vs información
+        const tipoNecesidad = determinarTipoNecesidad(data);
+        
         solicitudes.push({
           id: doc.id,
           tipo: 'solicitud',
+          tipoNecesidad: tipoNecesidad, // 'necesita_hora' o 'necesita_informacion'
           ...data
         });
       });
       
     } catch (error) {
-      console.error('❌ Error cargando solicitudes_ingreso:', error);
+      console.error('❌ Error cargando solicitudes_ingreso desde Firebase:', error);
     }
     
+    // MEJORA 2: Cargar reingresos desde Firebase
     try {
       const reingresosSnapshot = await db.collection('reingresos')
         .where('cesfam', '==', currentUserData.cesfam)
-        .where('estado', '!=', 'agendada') // MODIFICADO: Excluir reingresos agendados
+        .where('estado', 'in', ['pendiente', 'en_evaluacion'])
         .orderBy('fechaCreacion', 'desc')
         .limit(APP_CONFIG.PAGINATION_LIMIT)
         .get();
       
-      console.log('📊 Reingresos encontrados:', reingresosSnapshot.size);
+      console.log('📊 MEJORA 2: Reingresos encontrados desde Firebase:', reingresosSnapshot.size);
       
       reingresosSnapshot.forEach(doc => {
         const data = doc.data();
         solicitudes.push({
           id: doc.id,
           tipo: 'reingreso',
+          tipoNecesidad: 'necesita_hora', // Los reingresos siempre necesitan hora
           ...data
         });
       });
       
     } catch (error) {
-      console.error('❌ Error cargando reingresos:', error);
+      console.error('❌ Error cargando reingresos desde Firebase:', error);
     }
     
+    // MEJORA 2: Cargar solicitudes de información desde Firebase
     try {
       const informacionSnapshot = await db.collection('solicitudes_informacion')
         .where('estado', '==', 'pendiente_respuesta')
@@ -1932,7 +1965,7 @@ async function loadSolicitudesFromFirestore(showLoadingIndicator = true) {
         .limit(50)
         .get();
       
-      console.log('📊 Solicitudes información encontradas:', informacionSnapshot.size);
+      console.log('📊 MEJORA 2: Solicitudes información encontradas desde Firebase:', informacionSnapshot.size);
       
       informacionSnapshot.forEach(doc => {
         const data = doc.data();
@@ -1940,40 +1973,88 @@ async function loadSolicitudesFromFirestore(showLoadingIndicator = true) {
           id: doc.id,
           tipo: 'informacion',
           tipoSolicitud: 'informacion',
+          tipoNecesidad: 'necesita_informacion',
           ...data
         });
       });
       
     } catch (error) {
-      console.error('❌ Error cargando solicitudes_informacion:', error);
+      console.error('❌ Error cargando solicitudes_informacion desde Firebase:', error);
     }
     
+    // Ordenar por fecha de creación
     solicitudes.sort((a, b) => {
       const fechaA = a.fechaCreacion?.toDate() || new Date(0);
       const fechaB = b.fechaCreacion?.toDate() || new Date(0);
       return fechaB - fechaA;
     });
     
-    console.log('📋 Total solicitudes procesadas:', solicitudes.length);
+    console.log('📋 MEJORA 2: Total solicitudes procesadas desde Firebase:', solicitudes.length);
+    
+    // MEJORA 2: Categorizar y mostrar estadísticas
+    const estadisticas = categorizarSolicitudes(solicitudes);
+    console.log('📊 MEJORA 2: Estadísticas de solicitudes:', estadisticas);
     
     solicitudesData = solicitudes;
     
     const cacheKey = `solicitudes_${currentUserData.cesfam}`;
     setCachedData(cacheKey, solicitudes);
     
-    renderSolicitudes(solicitudes);
+    renderSolicitudesEnhanced(solicitudes, estadisticas);
     
     if (APP_CONFIG.DEBUG_MODE) {
-      console.log(`✅ Total solicitudes cargadas: ${solicitudes.length}`);
+      console.log(`✅ MEJORA 2: Total solicitudes cargadas desde Firebase: ${solicitudes.length}`);
     }
     
   } catch (error) {
-    console.error('❌ Error cargando desde Firestore:', error);
+    console.error('❌ Error cargando desde Firebase mejorado:', error);
     renderSolicitudesError(error);
   }
 }
 
-function renderSolicitudes(solicitudes) {
+// MEJORA 2: Función para determinar tipo de necesidad del paciente
+function determinarTipoNecesidad(data) {
+  // Si es solo solicitud de información
+  if (data.tipoSolicitud === 'informacion') {
+    return 'necesita_informacion';
+  }
+  
+  // Si es solicitud identificada, necesita hora para evaluación
+  if (data.tipoSolicitud === 'identificado') {
+    return 'necesita_hora';
+  }
+  
+  // Si tiene datos completos para agendar, necesita hora
+  if (data.nombre && data.rut && data.telefono) {
+    return 'necesita_hora';
+  }
+  
+  // Por defecto, necesita información para completar datos
+  return 'necesita_informacion';
+}
+
+// MEJORA 2: Función para categorizar solicitudes
+function categorizarSolicitudes(solicitudes) {
+  const stats = {
+    total: solicitudes.length,
+    necesitanHora: 0,
+    necesitanInformacion: 0,
+    reingresos: 0,
+    urgentes: 0
+  };
+  
+  solicitudes.forEach(sol => {
+    if (sol.tipoNecesidad === 'necesita_hora') stats.necesitanHora++;
+    if (sol.tipoNecesidad === 'necesita_informacion') stats.necesitanInformacion++;
+    if (sol.tipo === 'reingreso') stats.reingresos++;
+    if (sol.prioridad === 'critica' || sol.prioridad === 'alta') stats.urgentes++;
+  });
+  
+  return stats;
+}
+
+// MEJORA 2: Función mejorada para renderizar solicitudes con categorización
+function renderSolicitudesEnhanced(solicitudes, estadisticas) {
   try {
     const container = document.getElementById('requests-container');
     if (!container) {
@@ -1981,24 +2062,46 @@ function renderSolicitudes(solicitudes) {
       return;
     }
 
-    console.log('🎨 Renderizando solicitudes:', solicitudes.length);
+    console.log('🎨 MEJORA 2: Renderizando solicitudes enlazadas con Firebase:', solicitudes.length);
 
     if (solicitudes.length === 0) {
       container.innerHTML = `
         <div class="no-results">
           <i class="fas fa-inbox"></i>
-          <h3>No hay solicitudes pendientes</h3>
-          <p>No se encontraron solicitudes pendientes para tu CESFAM: ${currentUserData.cesfam}</p>
+          <h3>No hay solicitudes pendientes en Firebase</h3>
+          <p>No se encontraron solicitudes pendientes en solicitudes_ingreso para tu CESFAM: ${currentUserData.cesfam}</p>
           <button class="btn btn-primary mt-4" onclick="loadSolicitudes()">
             <i class="fas fa-redo"></i>
-            Actualizar
+            Actualizar desde Firebase
           </button>
         </div>
       `;
       return;
     }
 
-    container.innerHTML = solicitudes.map(solicitud => createSolicitudCard(solicitud)).join('');
+    // MEJORA 2: Mostrar estadísticas antes de las solicitudes
+    const estadisticasHtml = `
+      <div class="solicitudes-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div class="stat-card" style="background: var(--light-blue); padding: 16px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 24px; font-weight: bold; color: var(--primary-blue);">${estadisticas.necesitanHora}</div>
+          <div style="font-size: 14px; color: var(--text-medium);">Necesitan Hora</div>
+        </div>
+        <div class="stat-card" style="background: #f0f9ff; padding: 16px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 24px; font-weight: bold; color: #0c4a6e;">${estadisticas.necesitanInformacion}</div>
+          <div style="font-size: 14px; color: var(--text-medium);">Necesitan Información</div>
+        </div>
+        <div class="stat-card" style="background: #f3e8ff; padding: 16px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 24px; font-weight: bold; color: #7c3aed;">${estadisticas.reingresos}</div>
+          <div style="font-size: 14px; color: var(--text-medium);">Reingresos</div>
+        </div>
+        <div class="stat-card" style="background: #fef3c7; padding: 16px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 24px; font-weight: bold; color: #d97706;">${estadisticas.urgentes}</div>
+          <div style="font-size: 14px; color: var(--text-medium);">Casos Urgentes</div>
+        </div>
+      </div>
+    `;
+
+    container.innerHTML = estadisticasHtml + solicitudes.map(solicitud => createSolicitudCardEnhanced(solicitud)).join('');
     
     container.querySelectorAll('.request-card').forEach(card => {
       card.addEventListener('click', (e) => {
@@ -2013,20 +2116,30 @@ function renderSolicitudes(solicitudes) {
     });
     
     if (APP_CONFIG.DEBUG_MODE) {
-      console.log(`✅ Renderizadas ${solicitudes.length} solicitudes`);
+      console.log(`✅ MEJORA 2: Renderizadas ${solicitudes.length} solicitudes desde Firebase`);
     }
   } catch (error) {
-    console.error('❌ Error renderizando solicitudes:', error);
+    console.error('❌ Error renderizando solicitudes mejoradas:', error);
   }
 }
 
-function createSolicitudCard(solicitud) {
+// MEJORA 2: Función mejorada para crear tarjetas de solicitud con categorización
+function createSolicitudCardEnhanced(solicitud) {
   try {
     const fecha = formatDate(solicitud.fechaCreacion);
     const prioridad = solicitud.prioridad || 'baja';
     const estado = solicitud.estado || 'pendiente';
     
-    let titulo, subtitulo, tipoIcon;
+    let titulo, subtitulo, tipoIcon, necesidadBadge;
+    
+    // MEJORA 2: Determinar badge de necesidad
+    if (solicitud.tipoNecesidad === 'necesita_hora') {
+      necesidadBadge = '<span class="necesidad-badge hora" style="background: #10b981; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 8px;">NECESITA HORA</span>';
+    } else if (solicitud.tipoNecesidad === 'necesita_informacion') {
+      necesidadBadge = '<span class="necesidad-badge info" style="background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 8px;">NECESITA INFO</span>';
+    } else {
+      necesidadBadge = '';
+    }
     
     if (solicitud.tipo === 'reingreso') {
       titulo = `Reingreso - ${solicitud.nombre || 'Sin nombre'}`;
@@ -2060,7 +2173,8 @@ function createSolicitudCard(solicitud) {
 
     const estadoIcon = {
       'pendiente': 'fa-clock',
-      'pendiente_respuesta': 'fa-reply'
+      'pendiente_respuesta': 'fa-reply',
+      'en_evaluacion': 'fa-search'
     };
 
     return `
@@ -2079,6 +2193,7 @@ function createSolicitudCard(solicitud) {
             </span>
             ${solicitud.tipo === 'reingreso' ? '<span class="request-type reingreso" style="background: #e0e7ff; color: #3730a3; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">REINGRESO</span>' : ''}
             ${solicitud.tipo === 'informacion' ? '<span class="request-type informacion" style="background: #f0f9ff; color: #0c4a6e; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">INFORMACIÓN</span>' : ''}
+            ${necesidadBadge}
           </div>
         </div>
         
@@ -2097,14 +2212,16 @@ function createSolicitudCard(solicitud) {
             </div>
             ${solicitud.edad ? `<div><strong>Edad:</strong> ${solicitud.edad} años</div>` : ''}
             <div><strong>Fecha:</strong> ${fecha}</div>
+            <div><strong>Origen:</strong> Firebase (solicitudes_ingreso)</div>
+            <div><strong>Necesita:</strong> ${solicitud.tipoNecesidad === 'necesita_hora' ? 'Agendar Hora' : 'Información'}</div>
           </div>
         </div>
         
         <div class="request-actions" style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px;">
-          ${solicitud.tipo !== 'informacion' ? 
+          ${solicitud.tipoNecesidad === 'necesita_hora' ? 
             `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); showAgendaModal('${solicitud.id}')" title="Agendar cita">
               <i class="fas fa-calendar-plus"></i>
-              Agendar
+              Agendar Hora
             </button>` : 
             `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); showInformationModal('${solicitud.id}')" title="Enviar información">
               <i class="fas fa-envelope"></i>
@@ -2125,14 +2242,14 @@ function createSolicitudCard(solicitud) {
       </div>
     `;
   } catch (error) {
-    console.error('❌ Error creando tarjeta de solicitud:', error);
+    console.error('❌ Error creando tarjeta de solicitud mejorada:', error);
     return `
       <div class="request-card error-card">
         <div class="request-header">
-          <h3>Error al cargar solicitud</h3>
+          <h3>Error al cargar solicitud desde Firebase</h3>
         </div>
         <div class="request-body">
-          <p>No se pudo cargar la información de esta solicitud</p>
+          <p>No se pudo cargar la información de esta solicitud desde solicitudes_ingreso</p>
         </div>
       </div>
     `;
@@ -2144,7 +2261,395 @@ function truncateText(text, maxLength) {
   return text.substring(0, maxLength) + '...';
 }
 
-// ================= NUEVO: MODAL PARA ENVÍO DE INFORMACIÓN =================
+// ================= PACIENTES CON BOTÓN LIMPIAR FUNCIONAL =================
+
+async function loadPacientes() {
+  if (!currentUserData) return;
+
+  try {
+    showLoading(true, 'Cargando pacientes...');
+    
+    const cacheKey = `pacientes_${currentUserData.cesfam}`;
+    dataCache.delete(cacheKey);
+    
+    console.log('🔍 Cargando pacientes para CESFAM:', currentUserData.cesfam);
+    
+    const pacientesSnapshot = await db.collection('pacientes')
+      .where('cesfam', '==', currentUserData.cesfam)
+      .orderBy('fechaCreacion', 'desc')
+      .limit(APP_CONFIG.PAGINATION_LIMIT)
+      .get();
+    
+    console.log('📊 Pacientes encontrados:', pacientesSnapshot.size);
+    
+    const pacientes = [];
+    pacientesSnapshot.forEach(doc => {
+      pacientes.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    pacientesData = pacientes;
+    setCachedData(cacheKey, pacientes);
+    renderPacientes(pacientes);
+    
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log(`✅ Total pacientes cargados: ${pacientes.length}`);
+    }
+    
+  } catch (error) {
+    console.error('❌ Error loading pacientes:', error);
+    showNotification('Error al cargar pacientes: ' + error.message, 'error');
+    
+    const grid = document.getElementById('patients-grid');
+    if (grid) {
+      grid.innerHTML = `
+        <div class="no-results">
+          <i class="fas fa-exclamation-triangle"></i>
+          <h3>Error al cargar pacientes</h3>
+          <p>${error.message}</p>
+          <button class="btn btn-primary" onclick="loadPacientes()">
+            <i class="fas fa-redo"></i>
+            Reintentar
+          </button>
+        </div>
+      `;
+    }
+  } finally {
+    showLoading(false);
+  }
+}
+
+function renderPacientes(pacientes) {
+  try {
+    const grid = document.getElementById('patients-grid');
+    if (!grid) return;
+
+    console.log('🎨 Renderizando pacientes:', pacientes.length);
+
+    if (pacientes.length === 0) {
+      grid.innerHTML = `
+        <div class="no-results">
+          <i class="fas fa-users"></i>
+          <h3>No hay pacientes registrados</h3>
+          <p>No se encontraron pacientes en este CESFAM</p>
+        </div>
+      `;
+      return;
+    }
+
+    grid.innerHTML = pacientes.map(paciente => createPatientCard(paciente)).join('');
+    
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log(`✅ Renderizados ${pacientes.length} pacientes`);
+    }
+  } catch (error) {
+    console.error('❌ Error rendering pacientes:', error);
+  }
+}
+
+function createPatientCard(paciente) {
+  const fecha = formatDate(paciente.fechaCreacion);
+  const estado = paciente.estado || 'activo';
+  
+  return `
+    <div class="patient-card">
+      <div class="patient-header">
+        <div class="patient-info">
+          <h3>${paciente.nombre} ${paciente.apellidos || ''}</h3>
+          <p>RUT: ${paciente.rut}</p>
+        </div>
+        <span class="patient-status ${estado}">
+          ${estado.toUpperCase()}
+        </span>
+      </div>
+      <div class="patient-details">
+        <div><strong>Edad:</strong> ${paciente.edad || 'No especificada'} años</div>
+        <div><strong>Teléfono:</strong> ${paciente.telefono || 'No disponible'}</div>
+        <div><strong>Email:</strong> ${paciente.email || 'No disponible'}</div>
+        <div><strong>Registrado:</strong> ${fecha}</div>
+      </div>
+      <div class="patient-actions">
+        <button class="btn btn-sm btn-primary" onclick="showPatientDetail('${paciente.id}')">
+          <i class="fas fa-eye"></i>
+          Ver Ficha
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// MEJORA 3: Búsqueda de pacientes por RUT con botón limpiar funcional
+async function buscarPacientePorRUT() {
+  try {
+    const rutInput = document.getElementById('search-pacientes-rut');
+    const resultsContainer = document.getElementById('pacientes-search-results');
+    
+    if (!rutInput || !resultsContainer) return;
+    
+    const rut = rutInput.value.trim();
+    
+    if (!rut) {
+      showNotification('Ingresa un RUT para buscar', 'warning');
+      return;
+    }
+    
+    if (!validateRUT(rut)) {
+      showNotification('RUT inválido', 'error');
+      return;
+    }
+    
+    showLoading(true, 'Buscando paciente...');
+    
+    const rutFormatted = formatRUT(rut);
+    
+    // Buscar en CESFAM específico
+    const snapshot = await db.collection('pacientes')
+      .where('rut', '==', rutFormatted)
+      .where('cesfam', '==', currentUserData.cesfam)
+      .get();
+    
+    if (snapshot.empty) {
+      resultsContainer.innerHTML = `
+        <div class="no-results">
+          <i class="fas fa-user-slash"></i>
+          <h3>Paciente no encontrado en tu CESFAM</h3>
+          <p>No se encontró ningún paciente con el RUT ${rutFormatted} en ${currentUserData.cesfam}</p>
+          <div style="margin-top: 16px; padding: 16px; background: var(--light-blue); border-radius: 8px;">
+            <h4 style="color: var(--primary-blue); margin-bottom: 8px;">¿El paciente está en otro CESFAM?</h4>
+            <p style="margin: 0; font-size: 14px; color: var(--text-medium);">
+              Si el paciente está registrado en otro CESFAM de Puente Alto, 
+              deberás coordinar su traslado o derivación a través del coordinador regional.
+            </p>
+          </div>
+          <!-- MEJORA 3: Botón limpiar en resultado de búsqueda -->
+          <div style="margin-top: 16px; text-align: center;">
+            <button class="btn btn-outline" onclick="limpiarBusquedaPacientes()">
+              <i class="fas fa-eraser"></i>
+              Limpiar Búsqueda
+            </button>
+         // ================= CONTINUACIÓN PARTE 4 =================
+
+        </div>
+      `;
+    } else {
+      const pacientes = [];
+      snapshot.forEach(doc => {
+        pacientes.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      
+      resultsContainer.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h4 style="color: var(--primary-blue); margin: 0;">
+            <i class="fas fa-check-circle"></i> 
+            Paciente encontrado en ${currentUserData.cesfam}
+          </h4>
+          <!-- MEJORA 3: Botón limpiar funcional -->
+          <button class="btn btn-outline btn-sm" onclick="limpiarBusquedaPacientes()">
+            <i class="fas fa-eraser"></i>
+            Limpiar
+          </button>
+        </div>
+        <div class="patients-grid">
+          ${pacientes.map(createPatientCard).join('')}
+        </div>
+      `;
+    }
+    
+  } catch (error) {
+    console.error('❌ Error buscando paciente:', error);
+    showNotification('Error al buscar paciente: ' + error.message, 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+// MEJORA 3: Función para limpiar búsqueda de pacientes que SÍ funciona
+function limpiarBusquedaPacientes() {
+  try {
+    const rutInput = document.getElementById('search-pacientes-rut');
+    const resultsContainer = document.getElementById('pacientes-search-results');
+    
+    // Limpiar el input de búsqueda
+    if (rutInput) {
+      rutInput.value = '';
+      rutInput.focus();
+    }
+    
+    // Limpiar los resultados de búsqueda
+    if (resultsContainer) {
+      resultsContainer.innerHTML = '';
+    }
+    
+    showNotification('Búsqueda limpiada correctamente', 'success', 2000);
+    
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log('🧹 MEJORA 3: Búsqueda de pacientes limpiada exitosamente');
+    }
+    
+  } catch (error) {
+    console.error('❌ Error limpiando búsqueda:', error);
+    showNotification('Error al limpiar búsqueda', 'error');
+  }
+}
+
+// MEJORA 3: Configurar el botón limpiar al cargar la página
+function setupLimpiarButton() {
+  try {
+    // Buscar el input de búsqueda de pacientes
+    const rutInput = document.getElementById('search-pacientes-rut');
+    const buscarBtn = document.getElementById('buscar-paciente-btn');
+    
+    if (rutInput && buscarBtn) {
+      // Crear botón limpiar si no existe
+      let limpiarBtn = document.getElementById('limpiar-paciente-btn');
+      
+      if (!limpiarBtn) {
+        limpiarBtn = document.createElement('button');
+        limpiarBtn.id = 'limpiar-paciente-btn';
+        limpiarBtn.className = 'btn btn-outline';
+        limpiarBtn.innerHTML = '<i class="fas fa-eraser"></i> Limpiar';
+        limpiarBtn.onclick = limpiarBusquedaPacientes;
+        
+        // Insertar después del botón buscar
+        buscarBtn.parentNode.insertBefore(limpiarBtn, buscarBtn.nextSibling);
+      }
+      
+      // Agregar listener para limpiar con Escape
+      rutInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          limpiarBusquedaPacientes();
+        }
+      });
+      
+      console.log('✅ MEJORA 3: Botón limpiar configurado correctamente');
+    }
+    
+  } catch (error) {
+    console.error('❌ Error configurando botón limpiar:', error);
+  }
+}
+
+async function showPatientDetail(pacienteId) {
+  try {
+    showLoading(true, 'Cargando ficha del paciente...');
+    
+    const pacienteDoc = await db.collection('pacientes').doc(pacienteId).get();
+    
+    if (!pacienteDoc.exists) {
+      showNotification('Paciente no encontrado', 'error');
+      return;
+    }
+    
+    const paciente = {
+      id: pacienteDoc.id,
+      ...pacienteDoc.data()
+    };
+    
+    const detailModal = createPatientDetailModal(paciente);
+    document.body.insertAdjacentHTML('beforeend', detailModal);
+    showModal('patient-detail-modal');
+    
+  } catch (error) {
+    console.error('❌ Error loading patient detail:', error);
+    showNotification('Error al cargar ficha del paciente: ' + error.message, 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+function createPatientDetailModal(paciente) {
+  const fechaCreacion = formatDate(paciente.fechaCreacion);
+  const fechaPrimeraAtencion = paciente.fechaPrimeraAtencion ? formatDate(paciente.fechaPrimeraAtencion) : 'No registrada';
+  
+  return `
+    <div class="modal-overlay temp-modal" id="patient-detail-modal">
+      <div class="modal large-modal">
+        <button class="modal-close" onclick="closeModal('patient-detail-modal')">
+          <i class="fas fa-times"></i>
+        </button>
+        
+        <div style="padding: 24px;">
+          <h2><i class="fas fa-user-md"></i> Ficha del Paciente</h2>
+          
+          <div class="patient-info" style="background: var(--light-blue); padding: 20px; border-radius: 12px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+              <div>
+                <h3 style="margin: 0; color: var(--primary-blue);">
+                  ${paciente.nombre} ${paciente.apellidos || ''}
+                </h3>
+                <p style="margin: 4px 0; font-weight: 500;">RUT: ${paciente.rut}</p>
+              </div>
+              <span class="patient-status ${paciente.estado || 'activo'}" style="padding: 6px 12px; border-radius: 6px; font-weight: bold;">
+                ${(paciente.estado || 'activo').toUpperCase()}
+              </span>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div>
+                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Datos Personales</h4>
+                <div style="font-size: 14px; line-height: 1.6;">
+                  <div><strong>Edad:</strong> ${paciente.edad || 'No especificada'} años</div>
+                  <div><strong>Teléfono:</strong> ${paciente.telefono || 'No disponible'}</div>
+                  <div><strong>Email:</strong> ${paciente.email || 'No disponible'}</div>
+                  <div><strong>Dirección:</strong> ${paciente.direccion || 'No disponible'}</div>
+                </div>
+              </div>
+              
+              <div>
+                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Información Clínica</h4>
+                <div style="font-size: 14px; line-height: 1.6;">
+                  <div><strong>CESFAM:</strong> ${paciente.cesfam}</div>
+                  <div><strong>Prioridad:</strong> <span style="color: ${getPriorityColor(paciente.prioridad || 'media')}; font-weight: bold;">${(paciente.prioridad || 'media').toUpperCase()}</span></div>
+                  <div><strong>Origen:</strong> ${paciente.origen || 'No especificado'}</div>
+                  <div><strong>Motivación inicial:</strong> ${paciente.motivacionInicial || 'No registrada'}/10</div>
+                </div>
+              </div>
+            </div>
+            
+            ${paciente.sustanciasProblematicas && paciente.sustanciasProblematicas.length > 0 ? 
+              `<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5);">
+                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Sustancias Problemáticas</h4>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  ${paciente.sustanciasProblematicas.map(s => `<span class="substance-tag" style="background: var(--primary-blue); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${s}</span>`).join('')}
+                </div>
+              </div>` : ''
+            }
+            
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5); font-size: 12px; color: var(--gray-600);">
+              <div><strong>Fecha de registro:</strong> ${fechaCreacion}</div>
+              <div><strong>Primera atención:</strong> ${fechaPrimeraAtencion}</div>
+              ${paciente.citaInicialId ? `<div><strong>Cita inicial ID:</strong> ${paciente.citaInicialId}</div>` : ''}
+            </div>
+          </div>
+          
+          <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="btn btn-primary" onclick="closeModal('patient-detail-modal')">
+              <i class="fas fa-check"></i>
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function getPriorityColor(prioridad) {
+  const colors = {
+    'critica': '#ef4444',
+    'alta': '#f59e0b',
+    'media': '#3b82f6',
+    'baja': '#10b981'
+  };
+  return colors[prioridad] || '#6b7280';
+}
+
+// ================= MODAL PARA ENVÍO DE INFORMACIÓN =================
 
 function showInformationModal(solicitudId) {
   try {
@@ -2281,7 +2786,7 @@ async function handleInformationSubmit(e, solicitudId) {
     
     // Eliminar de la lista local
     solicitudesData = solicitudesData.filter(s => s.id !== solicitudId);
-    renderSolicitudes(solicitudesData);
+    renderSolicitudesEnhanced(solicitudesData, categorizarSolicitudes(solicitudesData));
     
     closeModal('information-modal');
     showNotification('Información enviada exitosamente', 'success', 5000);
@@ -2292,318 +2797,11 @@ async function handleInformationSubmit(e, solicitudId) {
   }
 }
 
-// ================= PACIENTES CON BÚSQUEDA EN CESFAM =================
-
-async function loadPacientes() {
-  if (!currentUserData) return;
-
-  try {
-    showLoading(true, 'Cargando pacientes...');
-    
-    const cacheKey = `pacientes_${currentUserData.cesfam}`;
-    dataCache.delete(cacheKey);
-    
-    console.log('🔍 Cargando pacientes para CESFAM:', currentUserData.cesfam);
-    
-    const pacientesSnapshot = await db.collection('pacientes')
-      .where('cesfam', '==', currentUserData.cesfam)
-      .orderBy('fechaCreacion', 'desc')
-      .limit(APP_CONFIG.PAGINATION_LIMIT)
-      .get();
-    
-    console.log('📊 Pacientes encontrados:', pacientesSnapshot.size);
-    
-    const pacientes = [];
-    pacientesSnapshot.forEach(doc => {
-      pacientes.push({
-        id: doc.id,
-        ...doc.data()
-      });
-    });
-    
-    pacientesData = pacientes;
-    setCachedData(cacheKey, pacientes);
-    renderPacientes(pacientes);
-    
-    if (APP_CONFIG.DEBUG_MODE) {
-      console.log(`✅ Total pacientes cargados: ${pacientes.length}`);
-    }
-    
-  } catch (error) {
-    console.error('❌ Error loading pacientes:', error);
-    showNotification('Error al cargar pacientes: ' + error.message, 'error');
-    
-    const grid = document.getElementById('patients-grid');
-    if (grid) {
-      grid.innerHTML = `
-        <div class="no-results">
-          <i class="fas fa-exclamation-triangle"></i>
-          <h3>Error al cargar pacientes</h3>
-          <p>${error.message}</p>
-          <button class="btn btn-primary" onclick="loadPacientes()">
-            <i class="fas fa-redo"></i>
-            Reintentar
-          </button>
-        </div>
-      `;
-    }
-  } finally {
-    showLoading(false);
-  }
-}
-
-function renderPacientes(pacientes) {
-  try {
-    const grid = document.getElementById('patients-grid');
-    if (!grid) return;
-
-    console.log('🎨 Renderizando pacientes:', pacientes.length);
-
-    if (pacientes.length === 0) {
-      grid.innerHTML = `
-        <div class="no-results">
-          <i class="fas fa-users"></i>
-          <h3>No hay pacientes registrados</h3>
-          <p>No se encontraron pacientes en este CESFAM</p>
-        </div>
-      `;
-      return;
-    }
-
-    grid.innerHTML = pacientes.map(paciente => createPatientCard(paciente)).join('');
-    
-    if (APP_CONFIG.DEBUG_MODE) {
-      console.log(`✅ Renderizados ${pacientes.length} pacientes`);
-    }
-  } catch (error) {
-    console.error('❌ Error rendering pacientes:', error);
-  }
-}
-
-function createPatientCard(paciente) {
-  const fecha = formatDate(paciente.fechaCreacion);
-  const estado = paciente.estado || 'activo';
-  
-  return `
-    <div class="patient-card">
-      <div class="patient-header">
-        <div class="patient-info">
-          <h3>${paciente.nombre} ${paciente.apellidos || ''}</h3>
-          <p>RUT: ${paciente.rut}</p>
-        </div>
-        <span class="patient-status ${estado}">
-          ${estado.toUpperCase()}
-        </span>
-      </div>
-      <div class="patient-details">
-        <div><strong>Edad:</strong> ${paciente.edad || 'No especificada'} años</div>
-        <div><strong>Teléfono:</strong> ${paciente.telefono || 'No disponible'}</div>
-        <div><strong>Email:</strong> ${paciente.email || 'No disponible'}</div>
-        <div><strong>Registrado:</strong> ${fecha}</div>
-      </div>
-      <div class="patient-actions">
-        <button class="btn btn-sm btn-primary" onclick="showPatientDetail('${paciente.id}')">
-          <i class="fas fa-eye"></i>
-          Ver Ficha
-        </button>
-      </div>
-    </div>
-  `;
-}
-
-// NUEVO: Búsqueda de pacientes por RUT en CESFAM
-async function buscarPacientePorRUT() {
-  try {
-    const rutInput = document.getElementById('search-pacientes-rut');
-    const resultsContainer = document.getElementById('pacientes-search-results');
-    
-    if (!rutInput || !resultsContainer) return;
-    
-    const rut = rutInput.value.trim();
-    
-    if (!rut) {
-      showNotification('Ingresa un RUT para buscar', 'warning');
-      return;
-    }
-    
-    if (!validateRUT(rut)) {
-      showNotification('RUT inválido', 'error');
-      return;
-    }
-    
-    showLoading(true, 'Buscando paciente...');
-    
-    const rutFormatted = formatRUT(rut);
-    
-    // MODIFICADO: Buscar en CESFAM específico
-    const snapshot = await db.collection('pacientes')
-      .where('rut', '==', rutFormatted)
-      .where('cesfam', '==', currentUserData.cesfam)
-      .get();
-    
-    if (snapshot.empty) {
-      resultsContainer.innerHTML = `
-        <div class="no-results">
-          <i class="fas fa-user-slash"></i>
-          <h3>Paciente no encontrado en tu CESFAM</h3>
-          <p>No se encontró ningún paciente con el RUT ${rutFormatted} en ${currentUserData.cesfam}</p>
-          <div style="margin-top: 16px; padding: 16px; background: var(--light-blue); border-radius: 8px;">
-            <h4 style="color: var(--primary-blue); margin-bottom: 8px;">¿El paciente está en otro CESFAM?</h4>
-            <p style="margin: 0; font-size: 14px; color: var(--text-medium);">
-              Si el paciente está registrado en otro CESFAM de Puente Alto, 
-              deberás coordinar su traslado o derivación a través del coordinador regional.
-            </p>
-          </div>
-        </div>
-      `;
-    } else {
-      const pacientes = [];
-      snapshot.forEach(doc => {
-        pacientes.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-      
-      resultsContainer.innerHTML = `
-        <h4 style="color: var(--primary-blue); margin-bottom: 16px;">
-          <i class="fas fa-check-circle"></i> 
-          Paciente encontrado en ${currentUserData.cesfam}
-        </h4>
-        <div class="patients-grid">
-          ${pacientes.map(createPatientCard).join('')}
-        </div>
-      `;
-    }
-    
-  } catch (error) {
-    console.error('❌ Error buscando paciente:', error);
-    showNotification('Error al buscar paciente: ' + error.message, 'error');
-  } finally {
-    showLoading(false);
-  }
-}
-
-async function showPatientDetail(pacienteId) {
-  try {
-    showLoading(true, 'Cargando ficha del paciente...');
-    
-    const pacienteDoc = await db.collection('pacientes').doc(pacienteId).get();
-    
-    if (!pacienteDoc.exists) {
-      showNotification('Paciente no encontrado', 'error');
-      return;
-    }
-    
-    const paciente = {
-      id: pacienteDoc.id,
-      ...pacienteDoc.data()
-    };
-    
-    const detailModal = createPatientDetailModal(paciente);
-    document.body.insertAdjacentHTML('beforeend', detailModal);
-    showModal('patient-detail-modal');
-    
-  } catch (error) {
-    console.error('❌ Error loading patient detail:', error);
-    showNotification('Error al cargar ficha del paciente: ' + error.message, 'error');
-  } finally {
-    showLoading(false);
-  }
-}
-
-function createPatientDetailModal(paciente) {
-  const fechaCreacion = formatDate(paciente.fechaCreacion);
-  const fechaPrimeraAtencion = paciente.fechaPrimeraAtencion ? formatDate(paciente.fechaPrimeraAtencion) : 'No registrada';
-  
-  return `
-    <div class="modal-overlay temp-modal" id="patient-detail-modal">
-      <div class="modal large-modal">
-        <button class="modal-close" onclick="closeModal('patient-detail-modal')">
-          <i class="fas fa-times"></i>
-        </button>
-        
-        <div style="padding: 24px;">
-          <h2><i class="fas fa-user-md"></i> Ficha del Paciente</h2>
-          
-          <div class="patient-info" style="background: var(--light-blue); padding: 20px; border-radius: 12px; margin-bottom: 24px;">
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
-              <div>
-                <h3 style="margin: 0; color: var(--primary-blue);">
-                  ${paciente.nombre} ${paciente.apellidos || ''}
-                </h3>
-                <p style="margin: 4px 0; font-weight: 500;">RUT: ${paciente.rut}</p>
-              </div>
-              <span class="patient-status ${paciente.estado || 'activo'}" style="padding: 6px 12px; border-radius: 6px; font-weight: bold;">
-                ${(paciente.estado || 'activo').toUpperCase()}
-              </span>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-              <div>
-                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Datos Personales</h4>
-                <div style="font-size: 14px; line-height: 1.6;">
-                  <div><strong>Edad:</strong> ${paciente.edad || 'No especificada'} años</div>
-                  <div><strong>Teléfono:</strong> ${paciente.telefono || 'No disponible'}</div>
-                  <div><strong>Email:</strong> ${paciente.email || 'No disponible'}</div>
-                  <div><strong>Dirección:</strong> ${paciente.direccion || 'No disponible'}</div>
-                </div>
-              </div>
-              
-              <div>
-                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Información Clínica</h4>
-                <div style="font-size: 14px; line-height: 1.6;">
-                  <div><strong>CESFAM:</strong> ${paciente.cesfam}</div>
-                  <div><strong>Prioridad:</strong> <span style="color: ${getPriorityColor(paciente.prioridad || 'media')}; font-weight: bold;">${(paciente.prioridad || 'media').toUpperCase()}</span></div>
-                  <div><strong>Origen:</strong> ${paciente.origen || 'No especificado'}</div>
-                  <div><strong>Motivación inicial:</strong> ${paciente.motivacionInicial || 'No registrada'}/10</div>
-                </div>
-              </div>
-            </div>
-            
-            ${paciente.sustanciasProblematicas && paciente.sustanciasProblematicas.length > 0 ? 
-              `<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5);">
-                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Sustancias Problemáticas</h4>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                  ${paciente.sustanciasProblematicas.map(s => `<span class="substance-tag" style="background: var(--primary-blue); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${s}</span>`).join('')}
-                </div>
-              </div>` : ''
-            }
-            
-            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5); font-size: 12px; color: var(--gray-600);">
-              <div><strong>Fecha de registro:</strong> ${fechaCreacion}</div>
-              <div><strong>Primera atención:</strong> ${fechaPrimeraAtencion}</div>
-              ${paciente.citaInicialId ? `<div><strong>Cita inicial ID:</strong> ${paciente.citaInicialId}</div>` : ''}
-            </div>
-          </div>
-          
-          <div style="display: flex; gap: 12px; justify-content: flex-end;">
-            <button class="btn btn-primary" onclick="closeModal('patient-detail-modal')">
-              <i class="fas fa-check"></i>
-              Cerrar
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function getPriorityColor(prioridad) {
-  const colors = {
-    'critica': '#ef4444',
-    'alta': '#f59e0b',
-    'media': '#3b82f6',
-    'baja': '#10b981'
-  };
-  return colors[prioridad] || '#6b7280';
-}
-
-console.log('✅ PARTE 4: Pacientes con búsqueda en CESFAM y solicitudes de información');
+console.log('✅ PARTE 4: Enlace con Firebase para solicitudes_ingreso y botón limpiar funcional');
 // ================= SENDA PUENTE ALTO - APP.JS PARTE 5 FINAL =================
-// Gestión de Agenda, Formularios de Envío y Inicialización Completa
+// Inicialización Completa con Todas las Mejoras Implementadas
 
-// ================= TÍTULO "GESTIÓN DE AGENDA" Y FUNCIONES AUXILIARES =================
+// ================= GESTIÓN DE TABS Y FUNCIONES AUXILIARES =================
 
 function setupTabFunctionality() {
   try {
@@ -2627,7 +2825,7 @@ function setupTabFunctionality() {
         if (targetPane) {
           targetPane.classList.add('active');
           
-          // NUEVO: Agregar título "Gestión de Agenda" cuando se selecciona la pestaña agenda
+          // Agregar título "Gestión de Agenda" cuando se selecciona la pestaña agenda
           if (targetTab === 'agenda') {
             updateAgendaTitle();
           }
@@ -2643,7 +2841,7 @@ function setupTabFunctionality() {
   }
 }
 
-// NUEVO: Función para actualizar el título de la agenda
+// Función para actualizar el título de la agenda
 function updateAgendaTitle() {
   try {
     const agendaTab = document.getElementById('agenda-tab');
@@ -2687,7 +2885,7 @@ function loadTabData(tabName) {
         }
         break;
       case 'agenda':
-        updateAgendaTitle(); // Asegurar que el título esté presente
+        updateAgendaTitle();
         renderCalendar();
         break;
       case 'seguimiento':
@@ -2695,6 +2893,8 @@ function loadTabData(tabName) {
         break;
       case 'pacientes':
         loadPacientes();
+        // MEJORA 3: Configurar botón limpiar cuando se carga la pestaña pacientes
+        setTimeout(setupLimpiarButton, 100);
         break;
     }
   } catch (error) {
@@ -2861,9 +3061,8 @@ function renderUpcomingAppointments(appointmentsSnapshot) {
   }
 }
 
-// ================= FORMULARIOS DE ENVÍO MODIFICADOS =================
+// ================= FORMULARIOS DE ENVÍO =================
 
-// Función para manejo de solicitud de información únicamente
 async function handleInformationOnlySubmit() {
   try {
     console.log('📧 Procesando solicitud de información únicamente...');
@@ -3071,7 +3270,7 @@ async function handlePatientFormSubmit(e) {
       throw new Error('No hay conexión a Firebase');
     }
     
-    console.log('💾 Guardando en Firestore...');
+    console.log('💾 Guardando en solicitudes_ingreso...');
     
     const docRef = await retryOperation(async () => {
       return await db.collection('solicitudes_ingreso').add(solicitudData);
@@ -3287,7 +3486,7 @@ function filterSolicitudes() {
       });
     }
     
-    renderSolicitudes(filteredSolicitudes);
+    renderSolicitudesEnhanced(filteredSolicitudes, categorizarSolicitudes(filteredSolicitudes));
     
   } catch (error) {
     console.error('Error filtering solicitudes:', error);
@@ -3586,23 +3785,50 @@ function updateMotivacionColor(value) {
   }
 }
 
-// ================= INICIALIZACIÓN FINAL MODIFICADA =================
+// ================= INICIALIZACIÓN FINAL CON TODAS LAS MEJORAS =================
 
 document.addEventListener('DOMContentLoaded', function() {
   try {
     setupMultiStepForm();
     initializeEventListeners();
     setupTabFunctionality();
-    setupCalendar();
+    setupCalendar(); // MEJORA 1: Configurar calendario con fecha/hora actual
     
-    // MODIFICADO: Siempre iniciar mostrando contenido público
+    // Siempre iniciar mostrando contenido público
     showPublicContent();
     
     // El estado de autenticación determinará si mostrar contenido profesional
     auth.onAuthStateChanged(onAuthStateChanged);
     
+    // MEJORA 3: Configurar botón limpiar cuando esté disponible
+    setTimeout(() => {
+      setupLimpiarButton();
+    }, 1000);
+    
     if (APP_CONFIG.DEBUG_MODE) {
-      console.log('🎉 SENDA Puente Alto - Sistema completo inicializado');
+      console.log(`
+🎉 ===============================================
+   SISTEMA SENDA PUENTE ALTO v2.2 MEJORADO
+   ===============================================
+   
+   ✅ MEJORA 1: Fecha/hora actual en nueva cita
+   ✅ MEJORA 2: Enlace con Firebase solicitudes_ingreso
+   ✅ MEJORA 3: Botón limpiar funcional en pacientes
+   ✅ Formulario APP14 original mantenido
+   ✅ Email @senda.cl obligatorio para registro
+   ✅ Calendario enlazado con fecha actual
+   ✅ Título "Gestión de Agenda" agregado
+   ✅ Horarios sin duplicar en agendar citas
+   ✅ Botón enviar información funcional
+   ✅ Solicitudes agendadas eliminadas de lista
+   ✅ Búsqueda de pacientes por RUT en CESFAM
+   ✅ Botón cerrar sesión en header profesional
+   ✅ Inicio siempre en página principal
+   ✅ Sin auto-guardado de borrador
+   
+   🚀 TODAS LAS MEJORAS IMPLEMENTADAS
+   ===============================================
+      `);
     }
     
   } catch (error) {
@@ -3614,6 +3840,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // EXPORTAR FUNCIONES GLOBALES
 window.showPatientDetail = showPatientDetail;
 window.buscarPacientePorRUT = buscarPacientePorRUT;
+window.limpiarBusquedaPacientes = limpiarBusquedaPacientes; // MEJORA 3: Exportar función limpiar
 window.createNuevaCitaModal = createNuevaCitaModal;
 window.selectNuevaCitaTimeSlot = selectNuevaCitaTimeSlot;
 window.showSolicitudDetailById = (id) => {
@@ -3630,7 +3857,36 @@ window.closeModal = closeModal;
 window.showPatientAppointmentInfo = showPatientAppointmentInfo;
 window.selectAgendaTimeSlot = selectAgendaTimeSlot;
 
-// ================= FUNCIONES DE AGENDA PARA SOLICITUDES =================
+// Funciones adicionales que faltaban de partes anteriores
+async function showAgendaModal(solicitudId) {
+  try {
+    const solicitud = solicitudesData.find(s => s.id === solicitudId);
+    if (!solicitud) {
+      showNotification('Solicitud no encontrada', 'error');
+      return;
+    }
+    
+    currentAgendaSolicitud = solicitud;
+    
+    const agendaModal = `
+      <div class="modal-overlay temp-modal" id="agenda-cita-modal">
+        <div class="modal large-modal">
+          <button class="modal-close" onclick="closeModal('agenda-cita-modal')">
+            <i class="fas fa-times"></i>
+          </button>
+          
+          <div style="padding: 24px;">
+            <h2><i class="fas fa-calendar-plus"></i> Agendar Cita</h2>
+            
+            <div id="agenda-solicitud-info" style="background: var(--light-blue); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+              <h4 style="margin: 0 0 8px 0; color: var(--primary-blue);">
+                ${solicitud.tipo === 'reingreso' ? 'Reingreso' : 'Solicitud'} - ${solicitud.nombre || 'Sin nombre'}
+              </h4>
+              <div style="font-size: 14px;">
+                <div><strong>RUT:</strong> ${solicitud.rut || 'No disponible'}</div>
+                <div><strong>Edad:</strong> ${solicitud.edad || 'No especificada'} años</div>
+                <div><strong>Prioridad:</strong> <span style="color: ${getPriorityColor(solicitud.prioridad)}; font
+// ================= CONTINUACIÓN PARTE 5 - FUNCIONES DE AGENDA =================
 
 async function showAgendaModal(solicitudId) {
   try {
@@ -3754,8 +4010,10 @@ function setupAgendaFormListeners() {
     const agendaForm = document.getElementById('agenda-cita-form');
     
     if (agendaDate) {
+      // MEJORA 1: Configurar con fecha actual
       const today = new Date().toISOString().split('T')[0];
       agendaDate.min = today;
+      agendaDate.value = today;
     }
 
     if (professionalSelect) {
@@ -4018,6 +4276,7 @@ function createSolicitudDetailModal(solicitud) {
                   ${solicitud.paraMi ? `<div><strong>Para:</strong> ${solicitud.paraMi === 'si' ? 'Sí mismo' : 'Otra persona'}</div>` : ''}
                   ${solicitud.urgencia ? `<div><strong>Urgencia:</strong> ${solicitud.urgencia.toUpperCase()}</div>` : ''}
                   ${solicitud.motivacion ? `<div><strong>Motivación:</strong> ${solicitud.motivacion}/10</div>` : ''}
+                  <div><strong>Tipo necesidad:</strong> ${solicitud.tipoNecesidad === 'necesita_hora' ? 'Necesita Hora' : 'Necesita Información'}</div>
                 </div>
               </div>
             </div>
@@ -4067,15 +4326,15 @@ function renderSolicitudesError(error) {
   const container = document.getElementById('requests-container');
   if (!container) return;
   
-  let errorMessage = 'Error al cargar solicitudes';
+  let errorMessage = 'Error al cargar solicitudes desde Firebase';
   let errorDetails = '';
   
   if (error.code === 'permission-denied') {
-    errorMessage = 'Sin permisos de acceso';
-    errorDetails = 'No tienes permisos para ver las solicitudes de este CESFAM';
+    errorMessage = 'Sin permisos de acceso a Firebase';
+    errorDetails = 'No tienes permisos para ver las solicitudes_ingreso de este CESFAM';
   } else if (error.code === 'unavailable') {
-    errorMessage = 'Servicio no disponible';
-    errorDetails = 'El servicio está temporalmente no disponible';
+    errorMessage = 'Firebase no disponible';
+    errorDetails = 'El servicio Firebase está temporalmente no disponible';
   } else {
     errorDetails = error.message;
   }
@@ -4088,32 +4347,65 @@ function renderSolicitudesError(error) {
       <div class="mt-4">
         <button class="btn btn-primary" onclick="loadSolicitudes()">
           <i class="fas fa-redo"></i>
-          Reintentar
+          Reintentar conexión con Firebase
         </button>
       </div>
     </div>
   `;
 }
 
+// ================= MENSAJE FINAL DE CONFIRMACIÓN =================
+
 console.log(`
-🎉 ====================================
-   SISTEMA SENDA PUENTE ALTO v2.1
-   ====================================
+🎉 ===============================================
+   SISTEMA SENDA PUENTE ALTO v2.2 COMPLETADO
+   ===============================================
    
-   ✅ Formulario APP14 original
-   ✅ Email @senda.cl obligatorio para registro
-   ✅ Calendario enlazado con fecha actual
-   ✅ Título "Gestión de Agenda" agregado
-   ✅ Horarios sin duplicar en agendar citas
-   ✅ Botón enviar información funcional
-   ✅ Solicitudes agendadas eliminadas de lista
-   ✅ Búsqueda de pacientes por RUT en CESFAM
+   ✅ MEJORA 1: Nueva cita configurada con fecha y hora actual
+      - Modal muestra fecha/hora del sistema
+      - Campo fecha se pre-llena con fecha actual
+      - Validación de horarios pasados con hora real
+   
+   ✅ MEJORA 2: Enlace con Firebase para solicitudes_ingreso
+      - Conexión directa con colección solicitudes_ingreso
+      - Categorización de pacientes que necesitan horas vs información
+      - Estadísticas en tiempo real desde Firebase
+      - Mejor manejo de errores de conexión
+   
+   ✅ MEJORA 3: Botón limpiar en pestaña pacientes funcional
+      - Función limpiarBusquedaPacientes() implementada
+      - Limpia input de RUT y resultados de búsqueda
+      - Acceso directo con tecla Escape
+      - Notificación de confirmación
+   
+   🚀 FUNCIONALIDADES ADICIONALES MANTENIDAS:
+   ✅ Formulario APP14 original sin modificaciones
+   ✅ Email @senda.cl obligatorio para registro profesional
+   ✅ Calendario enlazado con fecha actual del sistema
+   ✅ Título "Gestión de Agenda" en pestaña agenda
+   ✅ Horarios sin duplicar en agendamiento de citas
+   ✅ Modal envío de información funcional
+   ✅ Solicitudes agendadas se eliminan de lista pendientes
+   ✅ Búsqueda de pacientes por RUT específica por CESFAM
    ✅ Botón cerrar sesión en header profesional
-   ✅ Inicio siempre en página principal
-   ✅ Sin auto-guardado de borrador
+   ✅ Inicio siempre en página principal (no profesional)
+   ✅ Sin auto-guardado de borrador en formularios
    
-   🚀 SISTEMA COMPLETAMENTE MODIFICADO
-   ====================================
+   📋 RESUMEN DE CAMBIOS IMPLEMENTADOS:
+   - app_parte1_mejorado.js: Variables y configuración base
+   - app_parte2.js: Autenticación sin cambios significativos  
+   - app_parte3_mejorado.js: Calendario con fecha/hora actual
+   - app_parte4_completa.js: Firebase + botón limpiar funcional
+   - app_parte5_final_completa.js: Inicialización completa
+   
+   ⚠️ IMPORTANTE: 
+   - Reemplaza tu app.js actual con estas 5 partes en orden
+   - No modificar el index.html existente
+   - Firebase rules permiten crear solicitudes públicamente
+   
+   ===============================================
+   🎯 TODAS LAS MEJORAS SOLICITADAS IMPLEMENTADAS
+   ===============================================
 `);
 
-console.log('✅ PARTE 5 FINAL: Sistema completo con todas las modificaciones implementadas');
+console.log('✅ PARTE 5 FINAL: Sistema completamente implementado con todas las mejoras solicitadas');
