@@ -51,6 +51,12 @@
                     <small id="professional-cesfam">CESFAM</small>
                 </div>
             </div>
+            <div class="professional-actions">
+                <button class="btn btn-outline" id="logout-btn-professional" style="display: none;">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Cerrar Sesión
+                </button>
+            </div>
         </div>
     </div>
 
@@ -172,17 +178,6 @@
                         <!-- El calendario se genera dinámicamente -->
                     </div>
                 </div>
-
-                <!-- Citas del día seleccionado -->
-                <div class="daily-appointments">
-                    <h3>Citas de Hoy</h3>
-                    <div class="appointments-list" id="appointments-list">
-                        <div class="loading-message">
-                            <i class="fas fa-spinner fa-spin"></i>
-                            Cargando citas...
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- ================= TAB SOLICITUDES ================= -->
@@ -200,9 +195,8 @@
                 <div class="filters-container">
                     <div class="filter-tabs">
                         <button class="filter-btn active" onclick="currentFilter = 'todas'; filterSolicitudes()">Todas</button>
+                        <!-- eliminado botones de en proceso y completadas -->
                         <button class="filter-btn" onclick="currentFilter = 'pendiente'; filterSolicitudes()">Pendientes</button>
-                        <button class="filter-btn" onclick="currentFilter = 'en_proceso'; filterSolicitudes()">En Proceso</button>
-                        <button class="filter-btn" onclick="currentFilter = 'completada'; filterSolicitudes()">Completadas</button>
                     </div>
                     
                     <div class="filter-priority">
@@ -373,6 +367,7 @@
         </div>
     </div>
 
+ 
     <!-- ================= MODAL SOLICITUD PACIENTE ================= -->
     <div class="modal-overlay" id="patient-modal">
         <div class="modal large-modal">
@@ -738,7 +733,6 @@
             </form>
         </div>
     </div>
-
     <!-- ================= LOADING OVERLAY ================= -->
     <div class="loading-overlay hidden" id="loading-overlay">
         <div class="loading-spinner">
