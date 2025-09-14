@@ -3616,21 +3616,4 @@ window.loadSolicitudes = loadSolicitudes;
 window.dataCache = dataCache;
 
 console.log(`
-✅ ====================================
-   SISTEMA SENDA PUENTE ALTO COMPLETO
-   ====================================
-   
-   🎯 RESUELVE LOS PROBLEMAS IDENTIFICADOS:
-   
-   ✅ Firebase inicialización única
-   ✅ Eliminados errores de persistencia
-   ✅ showInformationModal definida
-   ✅ Persistencia múltiples tabs solucionada
-   ✅ Modal patient-modal funcional
-   ✅ Solicitudes se cargan correctamente
-   
-   👨‍💻 Desarrollado por: CamiMoralesM
-   📅 2025-09-14 20:39:26 UTC
-   🚀 SISTEMA 100% OPERATIVO
-   ====================================
 `);
