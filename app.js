@@ -4040,7 +4040,10 @@ function renderSolicitudesError(error) {
 
 document.addEventListener('DOMContentLoaded', function() {
   try {
+    console.log(' Iniciando sistema SENDA...');
+    
     setupMultiStepForm();
+    setupAuthForms(); // ← AGREGAR ESTA LÍNEA
     initializeEventListeners();
     setupTabFunctionality();
     setupCalendar();
