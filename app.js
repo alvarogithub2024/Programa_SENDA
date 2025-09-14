@@ -1,5 +1,5 @@
 // ================= SENDA PUENTE ALTO - APP.JS PARTE 1 COMPLETA =================
-// Configuración Firebase, Variables Globales y Funciones Base
+// Configuración Firebase, Variables Globales y Formularios
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -54,7 +54,7 @@ let currentUserData = null;
 let currentFormStep = 1;
 let maxFormStep = 4;
 let formData = {};
-let currentCalendarDate = new Date(); // Fecha actual del sistema
+let currentCalendarDate = new Date();
 let selectedCalendarDate = null;
 let currentFilter = 'todas';
 let currentPriorityFilter = '';
@@ -95,7 +95,7 @@ const APP_CONFIG = {
 
 const dataCache = new Map();
 
-// ================= FUNCIONES UTILITARIAS BASE =================
+// ================= FUNCIONES UTILITARIAS =================
 
 function showNotification(message, type = 'info', duration = 4000) {
   try {
@@ -221,7 +221,162 @@ function showLoading(show = true, message = 'Cargando...') {
   }
 }
 
-// ================= CORRECCIÓN: FUNCIONES DE VISTA =================
+// ================= FORMULARIO MULTI-STEP =================
+
+function setupMultiStepForm() {
+  try {
+    const form = document.getElementById('patient-form');
+    if (!form) return;
+
+    const nextButtons = form.querySelectorAll('[id^="next-step"]');
+    const prevButtons = form.querySelectorAll('[id^="prev-step"]');
+    
+    nextButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const currentStep = parseInt(btn.id.split('-')[2]);
+        if (validateStep(currentStep)) {
+          const nextStep = getNextStep(currentStep);
+          if (nextStep) {
+            goToStep(nextStep);
+          }
+        }
+      });
+    });
+
+    prevButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const currentStep = parseInt(btn.id.split('-')[2]);
+        const prevStep = getPreviousStep(currentStep);
+        if (prevStep) {
+          goToStep(prevStep);
+        }
+      });
+    });
+
+    form.addEventListener('submit', handlePatientFormSubmit);
+
+    // Listeners para tipo de solicitud
+    const tipoSolicitudInputs = document.querySelectorAll('input[name="tipoSolicitud"]');
+    tipoSolicitudInputs.forEach(input => {
+      input.addEventListener('change', () => {
+        const tipoSolicitud = input.value;
+        
+        if (tipoSolicitud === 'informacion') {
+          maxFormStep = 1;
+          updateProgressIndicator(1, 1);
+          
+          const infoEmailContainer = document.getElementById('info-email-container');
+          const basicInfoContainer = document.getElementById('basic-info-container');
+          const nextBtn = document.getElementById('next-step-1');
+          const submitBtn = document.getElementById('submit-step-1');
+          
+          if (infoEmailContainer) infoEmailContainer.style.display = 'block';
+          if (basicInfoContainer) basicInfoContainer.style.display = 'none';
+          if (nextBtn) nextBtn.style.display = 'none';
+          if (submitBtn) submitBtn.style.display = 'inline-flex';
+          
+        } else if (tipoSolicitud === 'identificado') {
+          maxFormStep = 4;
+          updateProgressIndicator(1, 4);
+          
+          const infoEmailContainer = document.getElementById('info-email-container');
+          const basicInfoContainer = document.getElementById('basic-info-container');
+          const nextBtn = document.getElementById('next-step-1');
+          const submitBtn = document.getElementById('submit-step-1');
+          
+          if (infoEmailContainer) infoEmailContainer.style.display = 'none';
+          if (basicInfoContainer) basicInfoContainer.style.display = 'block';
+          if (nextBtn) nextBtn.style.display = 'inline-flex';
+          if (submitBtn) submitBtn.style.display = 'none';
+        }
+      });
+    });
+
+    // Listeners para motivación
+    const motivacionRange = document.getElementById('motivacion-range');
+    const motivacionValue = document.getElementById('motivacion-value');
+    if (motivacionRange && motivacionValue) {
+      motivacionRange.addEventListener('input', () => {
+        motivacionValue.textContent = motivacionRange.value;
+        updateMotivacionColor(motivacionRange.value);
+      });
+      
+      motivacionValue.textContent = motivacionRange.value;
+      updateMotivacionColor(motivacionRange.value);
+    }
+
+    // Botón específico para envío de información
+    const submitInfoBtn = document.getElementById('submit-step-1');
+    if (submitInfoBtn) {
+      submitInfoBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+        if (tipoSolicitud === 'informacion') {
+          handleInformationOnlySubmit();
+        }
+      });
+    }
+
+    const reentryForm = document.getElementById('reentry-form');
+    if (reentryForm) {
+      reentryForm.addEventListener('submit', handleReentrySubmit);
+    }
+
+    console.log('✅ Formulario multi-step configurado');
+    
+  } catch (error) {
+    console.error('❌ Error configurando formulario multi-step:', error);
+  }
+}
+
+function resetForm() {
+  try {
+    const form = document.getElementById('patient-form');
+    if (form) {
+      form.reset();
+      goToStep(1);
+      
+      const motivacionRange = document.getElementById('motivacion-range');
+      const motivacionValue = document.getElementById('motivacion-value');
+      if (motivacionRange && motivacionValue) {
+        motivacionRange.value = 5;
+        motivacionValue.textContent = '5';
+        updateMotivacionColor(5);
+      }
+      
+      form.querySelectorAll('.error').forEach(field => {
+        field.classList.remove('error');
+      });
+      
+      maxFormStep = 4;
+      updateProgressIndicator(1, 4);
+      
+      const infoEmailContainer = document.getElementById('info-email-container');
+      const basicInfoContainer = document.getElementById('basic-info-container');
+      const nextBtn = document.getElementById('next-step-1');
+      const submitBtn = document.getElementById('submit-step-1');
+      
+      if (infoEmailContainer) infoEmailContainer.style.display = 'none';
+      if (basicInfoContainer) basicInfoContainer.style.display = 'block';
+      if (nextBtn) nextBtn.style.display = 'inline-flex';
+      if (submitBtn) submitBtn.style.display = 'none';
+    }
+    
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log('🔧 Formulario reseteado');
+    }
+  } catch (error) {
+    console.error('❌ Error reseteando formulario:', error);
+  }
+}
+
+console.log('✅ PARTE 1: Configuración y formularios cargados');
+// ================= SENDA PUENTE ALTO - APP.JS PARTE 2 COMPLETA =================
+// Autenticación con @senda.cl, Eventos y Gestión de Estado
+
+// ================= CORRECCIÓN: HEADER SIN DOBLE BOTÓN =================
 
 function showPublicContent() {
   try {
@@ -268,7 +423,107 @@ function showProfessionalContent() {
   }
 }
 
-// ================= AUTENTICACIÓN =================
+// ================= GESTIÓN DE EVENTOS CORREGIDA =================
+
+function initializeEventListeners() {
+  try {
+    const loginProfessionalBtn = document.getElementById('login-professional');
+    const logoutProfessionalBtn = document.getElementById('logout-professional'); // SOLO este botón
+    const registerPatientBtn = document.getElementById('register-patient');
+    const reentryProgramBtn = document.getElementById('reentry-program');
+    const aboutProgramBtn = document.getElementById('about-program');
+    
+    const searchSolicitudes = document.getElementById('search-solicitudes');
+    const priorityFilter = document.getElementById('priority-filter');
+    
+    const prevMonthBtn = document.getElementById('prev-month');
+    const nextMonthBtn = document.getElementById('next-month');
+    const nuevaCitaBtn = document.getElementById('nueva-cita-btn');
+
+    if (loginProfessionalBtn) {
+      loginProfessionalBtn.addEventListener('click', () => {
+        showModal('login-modal');
+      });
+    }
+
+    // CORRECCIÓN: Solo un botón de logout
+    if (logoutProfessionalBtn) {
+      logoutProfessionalBtn.addEventListener('click', handleLogout);
+    }
+
+    if (registerPatientBtn) {
+      registerPatientBtn.addEventListener('click', () => {
+        resetForm();
+        showModal('patient-modal');
+      });
+    }
+
+    if (reentryProgramBtn) {
+      reentryProgramBtn.addEventListener('click', () => {
+        showModal('reentry-modal');
+      });
+    }
+
+    if (aboutProgramBtn) {
+      aboutProgramBtn.addEventListener('click', showAboutProgram);
+    }
+
+    if (searchSolicitudes) {
+      searchSolicitudes.addEventListener('input', debounce(filterSolicitudes, 300));
+    }
+
+    if (priorityFilter) {
+      priorityFilter.addEventListener('change', filterSolicitudes);
+    }
+
+    if (prevMonthBtn) {
+      prevMonthBtn.addEventListener('click', () => {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+        renderCalendar();
+      });
+    }
+
+    if (nextMonthBtn) {
+      nextMonthBtn.addEventListener('click', () => {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+        renderCalendar();
+      });
+    }
+
+    if (nuevaCitaBtn) {
+      nuevaCitaBtn.addEventListener('click', () => createNuevaCitaModal());
+    }
+
+    document.addEventListener('keydown', handleKeyboardShortcuts);
+    
+    console.log('✅ Event listeners inicializados correctamente');
+  } catch (error) {
+    console.error('❌ Error inicializando event listeners:', error);
+  }
+}
+
+function handleKeyboardShortcuts(e) {
+  try {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      const searchInput = document.getElementById('search-solicitudes');
+      if (searchInput && searchInput.style.display !== 'none') {
+        searchInput.focus();
+      }
+    }
+    
+    if (e.key === 'Escape') {
+      const openModal = document.querySelector('.modal-overlay[style*="flex"]');
+      if (openModal) {
+        closeModal(openModal.id);
+      }
+    }
+  } catch (error) {
+    console.error('Error handling keyboard shortcuts:', error);
+  }
+}
+
+// ================= AUTENTICACIÓN CON @senda.cl =================
 
 function validateEmailSenda(email) {
   if (!email || !email.includes('@')) return false;
@@ -376,10 +631,6 @@ async function loadUserData() {
   }
 }
 
-console.log('✅ PARTE 1: Configuración Firebase y funciones base completadas');
-// ================= SENDA PUENTE ALTO - APP.JS PARTE 2 COMPLETA =================
-// Autenticación, Usuarios y Gestión de Datos
-
 async function loadInitialData() {
   try {
     const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab || 'agenda';
@@ -388,10 +639,10 @@ async function loadInitialData() {
       await loadSolicitudes();
     } else if (activeTab === 'pacientes') {
       await loadPacientes();
-      // CORRECCIÓN: Configurar búsqueda de pacientes
+      // CORRECCIÓN: Configurar búsqueda después de cargar
       setTimeout(() => {
         updatePacientesSearchHTML();
-      }, 1000);
+      }, 500);
     } else if (activeTab === 'agenda') {
       setupCalendar();
     } else if (activeTab === 'seguimiento') {
@@ -434,6 +685,35 @@ function updateProfessionalInfo() {
   }
 }
 
+function updateTabVisibility() {
+  try {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    
+    tabBtns.forEach(btn => {
+      const tabName = btn.dataset.tab;
+      if (canAccessTab(tabName)) {
+        btn.style.display = 'flex';
+      } else {
+        btn.style.display = 'none';
+        if (btn.classList.contains('active')) {
+          btn.classList.remove('active');
+          const agendaTab = document.querySelector('.tab-btn[data-tab="agenda"]');
+          const agendaPane = document.getElementById('agenda-tab');
+          if (agendaTab && agendaPane) {
+            agendaTab.classList.add('active');
+            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+            agendaPane.classList.add('active');
+            loadTabData('agenda');
+          }
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error updating tab visibility:', error);
+  }
+}
+
 function hasAccessToSolicitudes() {
   if (!currentUserData) return false;
   return currentUserData.profession === 'asistente_social';
@@ -466,34 +746,57 @@ function getProfessionName(profession) {
   return names[profession] || profession;
 }
 
-function updateTabVisibility() {
+async function loadProfessionalsList() {
   try {
-    const tabBtns = document.querySelectorAll('.tab-btn');
+    const cacheKey = `professionals_${currentUserData.cesfam}`;
+    const cached = getCachedData(cacheKey);
     
-    tabBtns.forEach(btn => {
-      const tabName = btn.dataset.tab;
-      if (canAccessTab(tabName)) {
-        btn.style.display = 'flex';
-      } else {
-        btn.style.display = 'none';
-        if (btn.classList.contains('active')) {
-          btn.classList.remove('active');
-          const agendaTab = document.querySelector('.tab-btn[data-tab="agenda"]');
-          const agendaPane = document.getElementById('agenda-tab');
-          if (agendaTab && agendaPane) {
-            agendaTab.classList.add('active');
-            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
-            agendaPane.classList.add('active');
-            loadTabData('agenda');
-          }
-        }
-      }
+    if (cached) {
+      professionalsList = cached;
+      return;
+    }
+    
+    const snapshot = await db.collection('profesionales')
+      .where('cesfam', '==', currentUserData.cesfam)
+      .where('activo', '==', true)
+      .get();
+    
+    const professionals = [];
+    snapshot.forEach(doc => {
+      professionals.push({
+        id: doc.id,
+        ...doc.data()
+      });
     });
     
+    professionalsList = professionals;
+    setCachedData(cacheKey, professionals);
+    
   } catch (error) {
-    console.error('Error updating tab visibility:', error);
+    console.error('Error loading professionals list:', error);
   }
 }
+
+async function handleLogout() {
+  try {
+    await auth.signOut();
+    
+    currentUser = null;
+    currentUserData = null;
+    clearUserCache();
+    
+    showNotification('Sesión cerrada correctamente', 'success');
+    showPublicContent();
+    
+  } catch (error) {
+    console.error('Error during logout:', error);
+    showNotification('Error al cerrar sesión', 'error');
+  }
+}
+
+console.log('✅ PARTE 2: Autenticación con correcciones aplicadas');
+// ================= SENDA PUENTE ALTO - APP.JS PARTE 3 COMPLETA =================
+// Solicitudes desde Firebase y Calendario con Fecha Actual
 
 // ================= CORRECCIÓN: CARGAR SOLICITUDES DESDE FIREBASE =================
 
@@ -554,7 +857,7 @@ async function loadSolicitudesFromFirestore(showLoadingIndicator = true) {
       console.log('📊 Intentando cargar solicitudes_ingreso...');
       const solicitudesSnapshot = await db.collection('solicitudes_ingreso')
         .orderBy('fechaCreacion', 'desc')
-        .limit(50)
+        .limit(20)
         .get();
       
       console.log('📊 Solicitudes_ingreso encontradas (total):', solicitudesSnapshot.size);
@@ -589,7 +892,7 @@ async function loadSolicitudesFromFirestore(showLoadingIndicator = true) {
       console.log('📊 Intentando cargar reingresos...');
       const reingresosSnapshot = await db.collection('reingresos')
         .orderBy('fechaCreacion', 'desc')
-        .limit(50)
+        .limit(20)
         .get();
       
       console.log('📊 Reingresos encontrados (total):', reingresosSnapshot.size);
@@ -654,18 +957,10 @@ async function loadSolicitudesFromFirestore(showLoadingIndicator = true) {
     }
     
     solicitudesData = solicitudes;
-    
-    const cacheKey = `solicitudes_${currentUserData.cesfam}`;
-    setCachedData(cacheKey, solicitudes);
-    
     renderSolicitudes(solicitudes);
     
-    if (APP_CONFIG.DEBUG_MODE) {
-      console.log(`✅ Total solicitudes cargadas: ${solicitudes.length}`);
-    }
-    
   } catch (error) {
-    console.error('❌ Error cargando desde Firestore:', error);
+    console.error('❌ Error general cargando solicitudes:', error);
     renderSolicitudesError(error);
   }
 }
@@ -696,64 +991,215 @@ async function testFirebaseConnection() {
   }
 }
 
-async function handleLogout() {
+function renderSolicitudes(solicitudes) {
   try {
-    await auth.signOut();
-    
-    currentUser = null;
-    currentUserData = null;
-    clearUserCache();
-    
-    showNotification('Sesión cerrada correctamente', 'success');
-    showPublicContent();
-    
-  } catch (error) {
-    console.error('Error during logout:', error);
-    showNotification('Error al cerrar sesión', 'error');
-  }
-}
-
-async function loadProfessionalsList() {
-  try {
-    const cacheKey = `professionals_${currentUserData.cesfam}`;
-    const cached = getCachedData(cacheKey);
-    
-    if (cached) {
-      professionalsList = cached;
+    const container = document.getElementById('requests-container');
+    if (!container) {
+      console.error('❌ Container requests-container no encontrado');
       return;
     }
+
+    console.log('🎨 Renderizando solicitudes:', solicitudes.length);
+
+    if (solicitudes.length === 0) {
+      container.innerHTML = `
+        <div class="no-results">
+          <i class="fas fa-inbox"></i>
+          <h3>No hay solicitudes pendientes</h3>
+          <p>No se encontraron solicitudes pendientes para tu CESFAM: ${currentUserData.cesfam}</p>
+          <button class="btn btn-primary mt-4" onclick="loadSolicitudes()">
+            <i class="fas fa-redo"></i>
+            Actualizar
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = solicitudes.map(solicitud => createSolicitudCard(solicitud)).join('');
     
-    const snapshot = await db.collection('profesionales')
-      .where('cesfam', '==', currentUserData.cesfam)
-      .where('activo', '==', true)
-      .get();
-    
-    const professionals = [];
-    snapshot.forEach(doc => {
-      professionals.push({
-        id: doc.id,
-        ...doc.data()
+    container.querySelectorAll('.request-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
+        
+        const solicitudId = card.dataset.id;
+        const solicitud = solicitudes.find(s => s.id === solicitudId);
+        if (solicitud) {
+          showSolicitudDetail(solicitud);
+        }
       });
     });
     
-    professionalsList = professionals;
-    setCachedData(cacheKey, professionals);
-    
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log(`✅ Renderizadas ${solicitudes.length} solicitudes`);
+    }
   } catch (error) {
-    console.error('Error loading professionals list:', error);
+    console.error('❌ Error renderizando solicitudes:', error);
   }
 }
 
-console.log('✅ PARTE 2: Autenticación y gestión de usuarios completada');
-// ================= SENDA PUENTE ALTO - APP.JS PARTE 3 COMPLETA =================
-// Calendario con Fecha Actual y Gestión de Citas Sin Duplicados
+function createSolicitudCard(solicitud) {
+  try {
+    const fecha = formatDate(solicitud.fechaCreacion);
+    const prioridad = solicitud.prioridad || 'baja';
+    const estado = solicitud.estado || 'pendiente';
+    
+    let titulo, subtitulo, tipoIcon;
+    
+    if (solicitud.tipo === 'reingreso') {
+      titulo = `Reingreso - ${solicitud.nombre || 'Sin nombre'}`;
+      subtitulo = `RUT: ${solicitud.rut || 'No disponible'}`;
+      tipoIcon = 'fa-redo';
+    } else if (solicitud.tipo === 'informacion' || solicitud.tipoSolicitud === 'informacion') {
+      titulo = 'Solicitud de Información';
+      subtitulo = `Email: ${solicitud.email || 'No disponible'}`;
+      tipoIcon = 'fa-info-circle';
+    } else {
+      tipoIcon = 'fa-user-plus';
+      if (solicitud.tipoSolicitud === 'identificado') {
+        titulo = `${solicitud.nombre || ''} ${solicitud.apellidos || ''}`.trim() || 'Solicitud identificada';
+        subtitulo = `RUT: ${solicitud.rut || 'No disponible'}`;
+      } else {
+        titulo = 'Solicitud General';
+        subtitulo = `Edad: ${solicitud.edad || 'No especificada'} años`;
+      }
+    }
 
-// ================= CORRECCIÓN: CALENDARIO CON FECHA ACTUAL =================
+    const sustancias = solicitud.sustancias || [];
+    const sustanciasHtml = sustancias.length > 0 ? 
+      sustancias.map(s => `<span class="substance-tag">${s}</span>`).join('') : '';
+
+    const prioridadColor = {
+      'critica': '#ef4444',
+      'alta': '#f59e0b',
+      'media': '#3b82f6',
+      'baja': '#10b981'
+    };
+
+    const estadoIcon = {
+      'pendiente': 'fa-clock',
+      'pendiente_respuesta': 'fa-reply'
+    };
+
+    return `
+      <div class="request-card" data-id="${solicitud.id}" style="transition: all 0.2s ease;">
+        <div class="request-header">
+          <div class="request-info">
+            <h3>
+              <i class="fas ${tipoIcon}" style="margin-right: 8px; color: var(--primary-blue);"></i>
+              ${titulo}
+            </h3>
+            <p style="color: var(--gray-600);">${subtitulo}</p>
+          </div>
+          <div class="request-meta">
+            <span class="priority-badge ${prioridad}" style="background-color: ${prioridadColor[prioridad]}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+              ${prioridad.toUpperCase()}
+            </span>
+            ${solicitud.tipo === 'reingreso' ? '<span class="request-type reingreso" style="background: #e0e7ff; color: #3730a3; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">REINGRESO</span>' : ''}
+            ${solicitud.tipo === 'informacion' ? '<span class="request-type informacion" style="background: #f0f9ff; color: #0c4a6e; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">INFORMACIÓN</span>' : ''}
+          </div>
+        </div>
+        
+        <div class="request-body">
+          ${sustanciasHtml ? `<div class="request-substances" style="margin-bottom: 8px;">${sustanciasHtml}</div>` : ''}
+          ${solicitud.descripcion || solicitud.motivo ? 
+            `<p class="request-description" style="color: var(--gray-700); line-height: 1.5;">${truncateText(solicitud.descripcion || solicitud.motivo, 150)}</p>` : ''}
+          
+          <div class="request-details" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--gray-600);">
+            ${solicitud.cesfam ? `<div><strong>CESFAM:</strong> ${solicitud.cesfam}</div>` : ''}
+            <div><strong>Estado:</strong> 
+              <span class="status-${estado}" style="display: inline-flex; align-items: center; gap: 4px;">
+                <i class="fas ${estadoIcon[estado] || 'fa-circle'}"></i>
+                ${estado.replace('_', ' ').toUpperCase()}
+              </span>
+            </div>
+            ${solicitud.edad ? `<div><strong>Edad:</strong> ${solicitud.edad} años</div>` : ''}
+            <div><strong>Fecha:</strong> ${fecha}</div>
+          </div>
+        </div>
+        
+        <div class="request-actions" style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px;">
+          ${solicitud.tipo !== 'informacion' ? 
+            `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); showAgendaModal('${solicitud.id}')" title="Agendar cita">
+              <i class="fas fa-calendar-plus"></i>
+              Agendar
+            </button>` : 
+            `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); showInformationModal('${solicitud.id}')" title="Enviar información">
+              <i class="fas fa-envelope"></i>
+              Enviar Información
+            </button>`
+          }
+          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); showSolicitudDetailById('${solicitud.id}')" title="Ver detalles completos">
+            <i class="fas fa-eye"></i>
+            Ver Detalle
+          </button>
+          ${solicitud.prioridad === 'critica' ? 
+            `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); handleUrgentCase('${solicitud.id}')" title="Caso urgente">
+              <i class="fas fa-exclamation-triangle"></i>
+              URGENTE
+            </button>` : ''
+          }
+        </div>
+      </div>
+    `;
+  } catch (error) {
+    console.error('❌ Error creando tarjeta de solicitud:', error);
+    return `
+      <div class="request-card error-card">
+        <div class="request-header">
+          <h3>Error al cargar solicitud</h3>
+        </div>
+        <div class="request-body">
+          <p>No se pudo cargar la información de esta solicitud</p>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function truncateText(text, maxLength) {
+  if (!text || text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + '...';
+}
+
+function renderSolicitudesError(error) {
+  const container = document.getElementById('requests-container');
+  if (!container) return;
+  
+  let errorMessage = 'Error al cargar solicitudes';
+  let errorDetails = '';
+  
+  if (error.code === 'permission-denied') {
+    errorMessage = 'Sin permisos de acceso';
+    errorDetails = 'No tienes permisos para ver las solicitudes de este CESFAM';
+  } else if (error.code === 'unavailable') {
+    errorMessage = 'Servicio no disponible';
+    errorDetails = 'El servicio está temporalmente no disponible';
+  } else {
+    errorDetails = error.message;
+  }
+  
+  container.innerHTML = `
+    <div class="no-results">
+      <i class="fas fa-exclamation-triangle" style="color: var(--danger-red);"></i>
+      <h3>${errorMessage}</h3>
+      <p>${errorDetails}</p>
+      <div class="mt-4">
+        <button class="btn btn-primary" onclick="loadSolicitudes()">
+          <i class="fas fa-redo"></i>
+          Reintentar
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// ================= CORRECCIÓN: CALENDARIO CON FECHA ACTUAL (14 SEPTIEMBRE 2025) =================
 
 function setupCalendar() {
   try {
-    // CORRECCIÓN: Usar fecha actual del sistema (14 septiembre 2025)
-    const now = new Date(); // 2025-09-14 16:27:17 UTC
+    // CORRECCIÓN: Usar fecha actual del sistema (14 septiembre 2025, 16:38:22)
+    const now = new Date(); // Esto da 14 septiembre 2025
     currentCalendarDate = new Date(now.getFullYear(), now.getMonth(), 1); // Primer día del mes actual
     
     renderCalendar();
@@ -765,6 +1211,7 @@ function setupCalendar() {
           month: 'long' 
         })
       );
+      console.log('📅 Fecha y hora actual:', now.toLocaleString('es-CL'));
     }
   } catch (error) {
     console.error('❌ Error configurando calendario:', error);
@@ -786,7 +1233,7 @@ function renderCalendar() {
       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
     ];
     
-    // CORRECCIÓN: Mostrar mes y año correctos
+    // CORRECCIÓN: Mostrar mes y año correctos (Septiembre 2025)
     monthYearElement.textContent = `${monthNames[month]} ${year}`;
     
     calendarGrid.innerHTML = '';
@@ -806,8 +1253,8 @@ function renderCalendar() {
     const firstDayOfWeek = (firstDay.getDay() + 6) % 7;
     startDate.setDate(startDate.getDate() - firstDayOfWeek);
     
-    // CORRECCIÓN: Usar fecha actual real del sistema
-    const today = new Date(); // 2025-09-14 16:27:17
+    // CORRECCIÓN: Usar fecha actual real del sistema (14 septiembre 2025)
+    const today = new Date();
     today.setHours(0, 0, 0, 0);
     const currentDate = new Date(startDate);
     
@@ -820,6 +1267,9 @@ function renderCalendar() {
     if (currentUserData) {
       loadMonthAppointments(year, month);
     }
+    
+    console.log('📅 Calendario renderizado para:', monthNames[month], year);
+    console.log('📅 Fecha de hoy marcada:', today.toLocaleDateString('es-CL'));
     
   } catch (error) {
     console.error('❌ Error renderizando calendario:', error);
@@ -837,7 +1287,10 @@ function createCalendarDay(date, currentMonth, today) {
   const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
   
   if (!isCurrentMonth) dayElement.classList.add('other-month');
-  if (isToday) dayElement.classList.add('today');
+  if (isToday) {
+    dayElement.classList.add('today');
+    console.log('📅 Día de hoy encontrado:', date.toLocaleDateString('es-CL'));
+  }
   if (isWeekend) {
     dayElement.classList.add('weekend');
     dayElement.style.backgroundColor = '#f8f9ff';
@@ -986,217 +1439,71 @@ async function loadMonthAppointments(year, month) {
   }
 }
 
-// ================= CORRECCIÓN: NUEVA CITA CON FECHA ACTUAL Y SIN DUPLICADOS =================
-
-function createNuevaCitaModal() {
+function showPatientAppointmentInfo(appointment) {
   try {
-    const nuevaCitaModal = `
-      <div class="modal-overlay temp-modal" id="nueva-cita-modal">
-        <div class="modal large-modal">
-          <button class="modal-close" onclick="closeModal('nueva-cita-modal')">
-            <i class="fas fa-times"></i>
-          </button>
+    const infoModal = createPatientAppointmentInfoModal(appointment);
+    document.body.insertAdjacentHTML('beforeend', infoModal);
+    showModal('patient-appointment-info-modal');
+  } catch (error) {
+    console.error('Error showing patient appointment info:', error);
+    showNotification('Error al mostrar información del paciente', 'error');
+  }
+}
+
+function createPatientAppointmentInfoModal(appointment) {
+  const fecha = appointment.fecha.toDate();
+  const fechaStr = fecha.toLocaleDateString('es-CL');
+  const horaStr = fecha.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+  
+  return `
+    <div class="modal-overlay temp-modal" id="patient-appointment-info-modal">
+      <div class="modal">
+        <button class="modal-close" onclick="closeModal('patient-appointment-info-modal')">
+          <i class="fas fa-times"></i>
+        </button>
+        
+        <div style="padding: 24px;">
+          <h2><i class="fas fa-calendar-check"></i> Información de Cita</h2>
           
-          <div style="padding: 24px;">
-            <h2><i class="fas fa-calendar-plus"></i> Nueva Cita</h2>
+          <div class="patient-info" style="background: var(--light-blue); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+            <h3 style="margin: 0 0 12px 0; color: var(--primary-blue);">
+              ${appointment.pacienteNombre}
+            </h3>
             
-            <form id="nueva-cita-form">
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
-                <div class="form-group">
-                  <label class="form-label">Nombre del Paciente *</label>
-                  <input type="text" class="form-input" id="nueva-cita-nombre" required>
-                </div>
-                
-                <div class="form-group">
-                  <label class="form-label">RUT *</label>
-                  <input type="text" class="form-input" id="nueva-cita-rut" placeholder="12.345.678-9" required>
-                </div>
-              </div>
-              
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
-                <div class="form-group">
-                  <label class="form-label">Profesional *</label>
-                  <select class="form-select" id="nueva-cita-professional" required>
-                    <option value="">Seleccionar profesional...</option>
-                  </select>
-                </div>
-                
-                <div class="form-group">
-                  <label class="form-label">Fecha *</label>
-                  <input type="date" class="form-input" id="nueva-cita-date" required>
-                </div>
-              </div>
-              
-              <div class="time-slots-container" id="nueva-cita-time-slots-container" style="display: none;">
-                <h4 style="margin-bottom: 16px; color: var(--primary-blue);">
-                  <i class="fas fa-clock"></i> Horarios Disponibles
-                </h4>
-                <div class="time-slots-grid" id="nueva-cita-time-slots-grid">
-                  <!-- Los slots de tiempo se cargarán aquí -->
-                </div>
-              </div>
-              
-              <div class="form-group" style="margin-top: 24px;">
-                <label class="form-label">Observaciones</label>
-                <textarea class="form-textarea" id="nueva-cita-notes" rows="3" 
-                          placeholder="Observaciones adicionales para la cita..."></textarea>
-              </div>
-              
-              <div class="form-actions" style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
-                <button type="button" class="btn btn-outline" onclick="closeModal('nueva-cita-modal')">
-                  <i class="fas fa-times"></i>
-                  Cancelar
-                </button>
-                <button type="submit" class="btn btn-success" disabled>
-                  <i class="fas fa-calendar-check"></i>
-                  Crear Cita
-                </button>
-              </div>
-            </form>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 14px;">
+              <div><strong>RUT:</strong> ${appointment.pacienteRut || 'No disponible'}</div>
+              <div><strong>Teléfono:</strong> ${appointment.pacienteTelefono || 'No disponible'}</div>
+              <div><strong>Fecha:</strong> ${fechaStr}</div>
+              <div><strong>Hora:</strong> ${horaStr}</div>
+              <div><strong>Profesional:</strong> ${appointment.profesionalNombre}</div>
+              <div><strong>Tipo:</strong> ${getProfessionName(appointment.tipoProfesional)}</div>
+            </div>
+            
+            ${appointment.observaciones ? 
+              `<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5);">
+                <strong>Observaciones:</strong>
+                <p style="margin: 8px 0 0 0; font-style: italic;">${appointment.observaciones}</p>
+              </div>` : ''
+            }
+          </div>
+          
+          <div style="text-align: center;">
+            <button class="btn btn-primary" onclick="closeModal('patient-appointment-info-modal')">
+              <i class="fas fa-check"></i>
+              Entendido
+            </button>
           </div>
         </div>
       </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', nuevaCitaModal);
-    showModal('nueva-cita-modal');
-    
-    loadProfessionalsForNuevaCita();
-    
-  } catch (error) {
-    console.error('Error creating nueva cita modal:', error);
-    showNotification('Error al abrir modal de nueva cita', 'error');
-  }
+    </div>
+  `;
 }
 
-async function loadProfessionalsForNuevaCita() {
-  try {
-    const professionalSelect = document.getElementById('nueva-cita-professional');
-    if (!professionalSelect) return;
-
-    let professionals = professionalsList;
-    if (professionals.length === 0) {
-      professionals = await loadProfessionalsByArea();
-    }
-    
-    professionalSelect.innerHTML = '<option value="">Seleccionar profesional...</option>';
-    
-    professionals.forEach(prof => {
-      const option = document.createElement('option');
-      option.value = prof.id;
-      option.textContent = `${prof.nombre} ${prof.apellidos} - ${getProfessionName(prof.profession)}`;
-      option.dataset.profession = prof.profession;
-      option.dataset.nombre = `${prof.nombre} ${prof.apellidos}`;
-      professionalSelect.appendChild(option);
-    });
-
-    setupNuevaCitaFormListeners();
-    
-  } catch (error) {
-    console.error('Error loading professionals for nueva cita:', error);
-    showNotification('Error al cargar profesionales', 'error');
-  }
-}
-
-function setupNuevaCitaFormListeners() {
-  try {
-    const professionalSelect = document.getElementById('nueva-cita-professional');
-    const citaDate = document.getElementById('nueva-cita-date');
-    const citaForm = document.getElementById('nueva-cita-form');
-    const rutInput = document.getElementById('nueva-cita-rut');
-    
-    if (citaDate) {
-      // CORRECCIÓN: Usar fecha actual real (14 septiembre 2025)
-      const today = new Date(); // 2025-09-14 16:27:17
-      const todayString = today.toISOString().split('T')[0]; // 2025-09-14
-      citaDate.min = todayString;
-      citaDate.value = todayString; // ESTABLECER FECHA ACTUAL POR DEFECTO
-      
-      console.log('📅 Fecha mínima establecida:', todayString);
-      console.log('📅 Fecha actual establecida:', todayString);
-    }
-
-    if (rutInput) {
-      rutInput.addEventListener('input', (e) => {
-        e.target.value = formatRUT(e.target.value);
-      });
-    }
-
-    if (professionalSelect) {
-      professionalSelect.addEventListener('change', loadNuevaCitaTimeSlots);
-    }
-    
-    if (citaDate) {
-      citaDate.addEventListener('change', loadNuevaCitaTimeSlots);
-    }
-
-    if (citaForm) {
-      citaForm.addEventListener('submit', handleNuevaCitaSubmit);
-    }
-    
-    // CARGAR HORARIOS AUTOMÁTICAMENTE SI HAY PROFESIONAL Y FECHA
-    setTimeout(() => {
-      loadNuevaCitaTimeSlots();
-    }, 500);
-    
-  } catch (error) {
-    console.error('Error setting up nueva cita form listeners:', error);
-  }
-}
-
-// CORRECCIÓN: Función mejorada para verificar horarios ocupados en Firebase
-async function getOccupiedSlots(professionalId, date) {
-  try {
-    if (!currentUserData || !professionalId || !date) return [];
-    
-    console.log('🔍 Verificando horarios ocupados...');
-    console.log('🔍 Profesional:', professionalId);
-    console.log('🔍 Fecha:', date.toLocaleDateString('es-CL'));
-    
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
-    
-    // CONSULTA DIRECTA A FIREBASE
-    const snapshot = await db.collection('citas')
-      .where('profesionalId', '==', professionalId)
-      .where('fecha', '>=', startOfDay)
-      .where('fecha', '<=', endOfDay)
-      .where('estado', '!=', 'cancelada')
-      .get();
-    
-    console.log('📊 Citas encontradas en Firebase para el día:', snapshot.size);
-    
-    const occupiedSlots = [];
-    snapshot.forEach(doc => {
-      const cita = doc.data();
-      const citaDate = cita.fecha.toDate();
-      const timeString = citaDate.toLocaleTimeString('es-CL', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: false 
-      });
-      occupiedSlots.push(timeString);
-      
-      console.log('⏰ Horario ocupado encontrado:', timeString, 'Paciente:', cita.pacienteNombre);
-    });
-    
-    console.log('📅 Total horarios ocupados:', occupiedSlots);
-    
-    return occupiedSlots;
-    
-  } catch (error) {
-    console.error('❌ Error obteniendo horarios ocupados:', error);
-    return [];
-  }
-}
-
-console.log('✅ PARTE 3: Calendario y citas con fecha actual completada');
+console.log('✅ PARTE 3: Solicitudes Firebase y calendario actual (Septiembre 2025) completados');
 // ================= SENDA PUENTE ALTO - APP.JS PARTE 4 COMPLETA =================
-// Gestión de Pacientes con Botón Limpiar y Formularios
+// Pacientes con Búsqueda Corregida y Botón Limpiar Funcional
 
-// ================= CORRECCIÓN: BOTÓN LIMPIAR PACIENTES =================
+// ================= CORRECCIÓN: BOTÓN LIMPIAR BÚSQUEDA RUT =================
 
 function updatePacientesSearchHTML() {
   try {
@@ -1522,20 +1829,427 @@ function createPatientCard(paciente) {
   `;
 }
 
-// ================= NUEVA CITA SIN DUPLICADOS (CONTINUACIÓN) =================
+async function showPatientDetail(pacienteId) {
+  try {
+    showLoading(true, 'Cargando ficha del paciente...');
+    
+    const pacienteDoc = await db.collection('pacientes').doc(pacienteId).get();
+    
+    if (!pacienteDoc.exists) {
+      showNotification('Paciente no encontrado', 'error');
+      return;
+    }
+    
+    const paciente = {
+      id: pacienteDoc.id,
+      ...pacienteDoc.data()
+    };
+    
+    const detailModal = createPatientDetailModal(paciente);
+    document.body.insertAdjacentHTML('beforeend', detailModal);
+    showModal('patient-detail-modal');
+    
+  } catch (error) {
+    console.error('❌ Error loading patient detail:', error);
+    showNotification('Error al cargar ficha del paciente: ' + error.message, 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+function createPatientDetailModal(paciente) {
+  const fechaCreacion = formatDate(paciente.fechaCreacion);
+  const fechaPrimeraAtencion = paciente.fechaPrimeraAtencion ? formatDate(paciente.fechaPrimeraAtencion) : 'No registrada';
+  
+  return `
+    <div class="modal-overlay temp-modal" id="patient-detail-modal">
+      <div class="modal large-modal">
+        <button class="modal-close" onclick="closeModal('patient-detail-modal')">
+          <i class="fas fa-times"></i>
+        </button>
+        
+        <div style="padding: 24px;">
+          <h2><i class="fas fa-user-md"></i> Ficha del Paciente</h2>
+          
+          <div class="patient-info" style="background: var(--light-blue); padding: 20px; border-radius: 12px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+              <div>
+                <h3 style="margin: 0; color: var(--primary-blue);">
+                  ${paciente.nombre} ${paciente.apellidos || ''}
+                </h3>
+                <p style="margin: 4px 0; font-weight: 500;">RUT: ${paciente.rut}</p>
+              </div>
+              <span class="patient-status ${paciente.estado || 'activo'}" style="padding: 6px 12px; border-radius: 6px; font-weight: bold;">
+                ${(paciente.estado || 'activo').toUpperCase()}
+              </span>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div>
+                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Datos Personales</h4>
+                <div style="font-size: 14px; line-height: 1.6;">
+                  <div><strong>Edad:</strong> ${paciente.edad || 'No especificada'} años</div>
+                  <div><strong>Teléfono:</strong> ${paciente.telefono || 'No disponible'}</div>
+                  <div><strong>Email:</strong> ${paciente.email || 'No disponible'}</div>
+                  <div><strong>Dirección:</strong> ${paciente.direccion || 'No disponible'}</div>
+                </div>
+              </div>
+              
+              <div>
+                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Información Clínica</h4>
+                <div style="font-size: 14px; line-height: 1.6;">
+                  <div><strong>CESFAM:</strong> ${paciente.cesfam}</div>
+                  <div><strong>Prioridad:</strong> <span style="color: ${getPriorityColor(paciente.prioridad || 'media')}; font-weight: bold;">${(paciente.prioridad || 'media').toUpperCase()}</span></div>
+                  <div><strong>Origen:</strong> ${paciente.origen || 'No especificado'}</div>
+                  <div><strong>Motivación inicial:</strong> ${paciente.motivacionInicial || 'No registrada'}/10</div>
+                </div>
+              </div>
+            </div>
+            
+            ${paciente.sustanciasProblematicas && paciente.sustanciasProblematicas.length > 0 ? 
+              `<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5);">
+                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Sustancias Problemáticas</h4>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  ${paciente.sustanciasProblematicas.map(s => `<span class="substance-tag" style="background: var(--primary-blue); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${s}</span>`).join('')}
+                </div>
+              </div>` : ''
+            }
+            
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5); font-size: 12px; color: var(--gray-600);">
+              <div><strong>Fecha de registro:</strong> ${fechaCreacion}</div>
+              <div><strong>Primera atención:</strong> ${fechaPrimeraAtencion}</div>
+              ${paciente.citaInicialId ? `<div><strong>Cita inicial ID:</strong> ${paciente.citaInicialId}</div>` : ''}
+            </div>
+          </div>
+          
+          <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="btn btn-primary" onclick="closeModal('patient-detail-modal')">
+              <i class="fas fa-check"></i>
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function getPriorityColor(prioridad) {
+  const colors = {
+    'critica': '#ef4444',
+    'alta': '#f59e0b',
+    'media': '#3b82f6',
+    'baja': '#10b981'
+  };
+  return colors[prioridad] || '#6b7280';
+}
+
+console.log('✅ PARTE 4: Pacientes con botón limpiar corregido completado');
+// ================= SENDA PUENTE ALTO - APP.JS PARTE 5 COMPLETA =================
+// Nueva Cita con Fecha Actual (14 Septiembre 2025) y Sin Duplicados
+
+// ================= CORRECCIÓN: NUEVA CITA CON FECHA ACTUAL Y SIN DUPLICADOS =================
+
+function createNuevaCitaModal() {
+  try {
+    const nuevaCitaModal = `
+      <div class="modal-overlay temp-modal" id="nueva-cita-modal">
+        <div class="modal large-modal">
+          <button class="modal-close" onclick="closeModal('nueva-cita-modal')">
+            <i class="fas fa-times"></i>
+          </button>
+          
+          <div style="padding: 24px;">
+            <h2><i class="fas fa-calendar-plus"></i> Nueva Cita</h2>
+            
+            <form id="nueva-cita-form">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                <div class="form-group">
+                  <label class="form-label">Nombre del Paciente *</label>
+                  <input type="text" class="form-input" id="nueva-cita-nombre" required>
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label">RUT *</label>
+                  <input type="text" class="form-input" id="nueva-cita-rut" placeholder="12.345.678-9" required>
+                </div>
+              </div>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                <div class="form-group">
+                  <label class="form-label">Profesional *</label>
+                  <select class="form-select" id="nueva-cita-professional" required>
+                    <option value="">Seleccionar profesional...</option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label">Fecha *</label>
+                  <input type="date" class="form-input" id="nueva-cita-date" required>
+                </div>
+              </div>
+              
+              <div class="time-slots-container" id="nueva-cita-time-slots-container" style="display: none;">
+                <h4 style="margin-bottom: 16px; color: var(--primary-blue);">
+                  <i class="fas fa-clock"></i> Horarios Disponibles
+                </h4>
+                <div class="time-slots-grid" id="nueva-cita-time-slots-grid">
+                  <!-- Los slots de tiempo se cargarán aquí -->
+                </div>
+              </div>
+              
+              <div class="form-group" style="margin-top: 24px;">
+                <label class="form-label">Observaciones</label>
+                <textarea class="form-textarea" id="nueva-cita-notes" rows="3" 
+                          placeholder="Observaciones adicionales para la cita..."></textarea>
+              </div>
+              
+              <div class="form-actions" style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                <button type="button" class="btn btn-outline" onclick="closeModal('nueva-cita-modal')">
+                  <i class="fas fa-times"></i>
+                  Cancelar
+                </button>
+                <button type="submit" class="btn btn-success" disabled>
+                  <i class="fas fa-calendar-check"></i>
+                  Crear Cita
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', nuevaCitaModal);
+    showModal('nueva-cita-modal');
+    
+    // CORRECCIÓN: Configurar inmediatamente después de crear el modal
+    setTimeout(() => {
+      loadProfessionalsForNuevaCita();
+      setupNuevaCitaFormListeners();
+    }, 100);
+    
+  } catch (error) {
+    console.error('Error creating nueva cita modal:', error);
+    showNotification('Error al abrir modal de nueva cita', 'error');
+  }
+}
+
+function setupNuevaCitaFormListeners() {
+  try {
+    const professionalSelect = document.getElementById('nueva-cita-professional');
+    const citaDate = document.getElementById('nueva-cita-date');
+    const citaForm = document.getElementById('nueva-cita-form');
+    const rutInput = document.getElementById('nueva-cita-rut');
+    
+    if (citaDate) {
+      // CORRECCIÓN: Usar fecha actual real (14 septiembre 2025, 16:41:17 UTC)
+      const today = new Date(); // 14 septiembre 2025
+      const todayString = today.toISOString().split('T')[0]; // 2025-09-14
+      citaDate.min = todayString;
+      citaDate.value = todayString; // ESTABLECER FECHA ACTUAL POR DEFECTO
+      
+      console.log('📅 Fecha mínima establecida:', todayString);
+      console.log('📅 Fecha actual establecida por defecto:', todayString);
+      console.log('📅 Fecha y hora actuales:', new Date().toLocaleString('es-CL'));
+    }
+
+    if (rutInput) {
+      rutInput.addEventListener('input', (e) => {
+        e.target.value = formatRUT(e.target.value);
+      });
+    }
+
+    if (professionalSelect) {
+      professionalSelect.addEventListener('change', loadNuevaCitaTimeSlots);
+    }
+    
+    if (citaDate) {
+      citaDate.addEventListener('change', loadNuevaCitaTimeSlots);
+    }
+
+    if (citaForm) {
+      citaForm.addEventListener('submit', handleNuevaCitaSubmit);
+    }
+    
+    // CARGAR HORARIOS AUTOMÁTICAMENTE SI HAY PROFESIONAL Y FECHA
+    setTimeout(() => {
+      loadNuevaCitaTimeSlots();
+    }, 500);
+    
+    console.log('✅ Event listeners de nueva cita configurados');
+    
+  } catch (error) {
+    console.error('Error setting up nueva cita form listeners:', error);
+  }
+}
+
+async function loadProfessionalsForNuevaCita() {
+  try {
+    const select = document.getElementById('nueva-cita-professional');
+    if (!select || !currentUserData) return;
+
+    select.innerHTML = '<option value="">Cargando profesionales...</option>';
+
+    const snapshot = await db.collection('profesionales')
+      .where('cesfam', '==', currentUserData.cesfam)
+      .where('activo', '==', true)
+      .get();
+
+    const professionals = [];
+    snapshot.forEach(doc => {
+      professionals.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    select.innerHTML = '<option value="">Seleccionar profesional...</option>';
+    
+    professionals.forEach(prof => {
+      const option = document.createElement('option');
+      option.value = prof.id;
+      option.textContent = `${prof.nombre} ${prof.apellidos} - ${getProfessionName(prof.profession)}`;
+      option.dataset.nombre = `${prof.nombre} ${prof.apellidos}`;
+      option.dataset.profession = prof.profession;
+      select.appendChild(option);
+    });
+
+    console.log(`✅ Cargados ${professionals.length} profesionales para nueva cita`);
+
+  } catch (error) {
+    console.error('Error loading professionals for nueva cita:', error);
+    const select = document.getElementById('nueva-cita-professional');
+    if (select) {
+      select.innerHTML = '<option value="">Error cargando profesionales</option>';
+    }
+  }
+}
+
+async function loadNuevaCitaTimeSlots() {
+  try {
+    const professionalSelect = document.getElementById('nueva-cita-professional');
+    const dateInput = document.getElementById('nueva-cita-date');
+    const timeSlotsContainer = document.getElementById('nueva-cita-time-slots-container');
+    const timeSlotsGrid = document.getElementById('nueva-cita-time-slots-grid');
+    const submitBtn = document.querySelector('#nueva-cita-form button[type="submit"]');
+
+    if (!professionalSelect?.value || !dateInput?.value) {
+      if (timeSlotsContainer) timeSlotsContainer.style.display = 'none';
+      if (submitBtn) submitBtn.disabled = true;
+      return;
+    }
+
+    const selectedDate = new Date(dateInput.value);
+    const professionalId = professionalSelect.value;
+
+    console.log('🔍 Cargando horarios para:', selectedDate.toLocaleDateString('es-CL'));
+    console.log('🔍 Profesional ID:', professionalId);
+
+    if (timeSlotsGrid) {
+      timeSlotsGrid.innerHTML = '<div class="loading-time-slots"><i class="fas fa-spinner fa-spin"></i> Cargando horarios...</div>';
+    }
+    if (timeSlotsContainer) timeSlotsContainer.style.display = 'block';
+
+    // CORRECCIÓN: Verificar horarios ocupados en Firebase
+    const occupiedSlots = await getOccupiedSlots(professionalId, selectedDate);
+    console.log('⏰ Horarios ocupados encontrados:', occupiedSlots);
+
+    const availableSlots = generateAvailableTimeSlots(selectedDate, occupiedSlots);
+    console.log('✅ Horarios disponibles generados:', availableSlots.length);
+
+    if (timeSlotsGrid) {
+      if (availableSlots.length === 0) {
+        timeSlotsGrid.innerHTML = `
+          <div class="no-available-slots">
+            <i class="fas fa-calendar-times"></i>
+            <p>No hay horarios disponibles para esta fecha</p>
+          </div>
+        `;
+      } else {
+        timeSlotsGrid.innerHTML = availableSlots.map(slot => `
+          <button type="button" class="time-slot" data-time="${slot.time}" onclick="selectNuevaCitaTimeSlot('${slot.time}')">
+            <span class="time">${slot.time}</span>
+            <span class="period">${slot.period}</span>
+          </button>
+        `).join('');
+      }
+    }
+
+  } catch (error) {
+    console.error('❌ Error loading time slots:', error);
+    const timeSlotsGrid = document.getElementById('nueva-cita-time-slots-grid');
+    if (timeSlotsGrid) {
+      timeSlotsGrid.innerHTML = `
+        <div class="error-loading-slots">
+          <i class="fas fa-exclamation-triangle"></i>
+          <p>Error cargando horarios</p>
+        </div>
+      `;
+    }
+  }
+}
+
+// CORRECCIÓN: Función mejorada para verificar horarios ocupados en Firebase
+async function getOccupiedSlots(professionalId, date) {
+  try {
+    if (!currentUserData || !professionalId || !date) return [];
+    
+    console.log('🔍 Verificando horarios ocupados...');
+    console.log('🔍 Profesional:', professionalId);
+    console.log('🔍 Fecha:', date.toLocaleDateString('es-CL'));
+    
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    // CONSULTA DIRECTA A FIREBASE
+    const snapshot = await db.collection('citas')
+      .where('profesionalId', '==', professionalId)
+      .where('fecha', '>=', startOfDay)
+      .where('fecha', '<=', endOfDay)
+      .where('estado', '!=', 'cancelada')
+      .get();
+    
+    console.log('📊 Citas encontradas en Firebase para el día:', snapshot.size);
+    
+    const occupiedSlots = [];
+    snapshot.forEach(doc => {
+      const cita = doc.data();
+      const citaDate = cita.fecha.toDate();
+      const timeString = citaDate.toLocaleTimeString('es-CL', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
+      occupiedSlots.push(timeString);
+      
+      console.log('⏰ Horario ocupado encontrado:', timeString, 'Paciente:', cita.pacienteNombre);
+    });
+    
+    console.log('📅 Total horarios ocupados:', occupiedSlots);
+    
+    return occupiedSlots;
+    
+  } catch (error) {
+    console.error('❌ Error obteniendo horarios ocupados:', error);
+    return [];
+  }
+}
 
 // CORRECCIÓN: Verificar si un horario ya pasó
 function isPastTimeSlot(date, hour, minute) {
   try {
-    // USAR FECHA Y HORA ACTUAL REAL (2025-09-14 16:29:49 UTC)
-    const now = new Date(); // 2025-09-14 16:29:49
+    // USAR FECHA Y HORA ACTUAL REAL (14 septiembre 2025, 16:41:17 UTC)
+    const now = new Date(); // Fecha y hora actual del sistema
     const slotTime = new Date(date);
     slotTime.setHours(hour, minute, 0, 0);
     
     const isPast = slotTime <= now;
     
     if (isPast) {
-      console.log(`⏰ Horario ${hour}:${minute.toString().padStart(2, '0')} ya pasó`);
+      console.log(`⏰ Horario ${hour}:${minute.toString().padStart(2, '0')} ya pasó (hora actual: ${now.toLocaleTimeString('es-CL')})`);
     }
     
     return isPast;
@@ -1545,119 +2259,75 @@ function isPastTimeSlot(date, hour, minute) {
   }
 }
 
-async function loadNuevaCitaTimeSlots() {
+function generateAvailableTimeSlots(selectedDate, occupiedSlots = []) {
   try {
-    const professionalSelect = document.getElementById('nueva-cita-professional');
-    const citaDate = document.getElementById('nueva-cita-date');
-    const timeSlotsContainer = document.getElementById('nueva-cita-time-slots-container');
-    const timeSlotsGrid = document.getElementById('nueva-cita-time-slots-grid');
-    const submitBtn = document.querySelector('#nueva-cita-form button[type="submit"]');
+    const slots = [];
+    const dayOfWeek = selectedDate.getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
     
-    if (!professionalSelect?.value || !citaDate?.value) {
-      if (timeSlotsContainer) timeSlotsContainer.style.display = 'none';
-      if (submitBtn) submitBtn.disabled = true;
-      return;
-    }
-
-    const selectedDate = new Date(citaDate.value);
+    const config = isWeekend ? HORARIOS_CONFIG.finSemana : HORARIOS_CONFIG.semana;
     
-    const timeSlots = generateTimeSlots(selectedDate);
-    const occupiedSlots = await getOccupiedSlots(professionalSelect.value, selectedDate);
+    let currentHour = config.horaInicio;
+    let currentMinute = 0;
     
-    if (timeSlotsGrid) {
-      timeSlotsGrid.innerHTML = timeSlots.map(slot => {
-        const isOccupied = occupiedSlots.includes(slot.time);
-        const isPast = isPastTimeSlot(selectedDate, slot.hour, slot.minute);
-        const isDisabled = isOccupied || isPast;
-        
-        return `
-          <button type="button" 
-                  class="time-slot ${isDisabled ? 'disabled' : ''}" 
-                  data-time="${slot.time}"
-                  ${isDisabled ? 'disabled' : ''}
-                  onclick="selectNuevaCitaTimeSlot(this)"
-                  style="
-                    padding: 12px;
-                    border: 2px solid ${isDisabled ? 'var(--gray-300)' : 'var(--primary-blue)'};
-                    border-radius: 8px;
-                    background: ${isDisabled ? 'var(--gray-100)' : 'white'};
-                    color: ${isDisabled ? 'var(--gray-400)' : 'var(--primary-blue)'};
-                    cursor: ${isDisabled ? 'not-allowed' : 'pointer'};
-                    transition: all 0.2s ease;
-                    font-weight: 500;
-                  ">
-            <i class="fas fa-clock" style="margin-right: 4px;"></i>
-            ${slot.time}
-            ${isOccupied ? '<br><small style="color: #ef4444;">Ocupado</small>' : ''}
-            ${isPast ? '<br><small style="color: #6b7280;">Pasado</small>' : ''}
-          </button>
-        `;
-      }).join('');
+    const endTime = config.horaFin * 60 + (config.minutoFin || 0);
+    
+    while ((currentHour * 60 + currentMinute) < endTime) {
+      const timeString = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+      
+      // CORRECCIÓN: Verificar si el horario ya pasó (considerando fecha y hora actual)
+      const isPast = isPastTimeSlot(selectedDate, currentHour, currentMinute);
+      
+      // Verificar si está ocupado
+      const isOccupied = occupiedSlots.includes(timeString);
+      
+      if (!isPast && !isOccupied) {
+        slots.push({
+          time: timeString,
+          period: currentHour < 12 ? 'AM' : 'PM',
+          available: true
+        });
+      } else {
+        console.log(`⏰ Horario ${timeString} no disponible - Pasado: ${isPast}, Ocupado: ${isOccupied}`);
+      }
+      
+      currentMinute += config.intervaloMinutos;
+      if (currentMinute >= 60) {
+        currentHour++;
+        currentMinute = 0;
+      }
     }
     
-    if (timeSlotsContainer) timeSlotsContainer.style.display = 'block';
-    if (submitBtn) submitBtn.disabled = true;
+    console.log(`📅 Horarios disponibles generados para ${selectedDate.toLocaleDateString('es-CL')}:`, slots.length);
+    
+    return slots;
     
   } catch (error) {
-    console.error('Error loading nueva cita time slots:', error);
-    showNotification('Error al cargar horarios disponibles', 'error');
-  }
-}
-
-function generateTimeSlots(date) {
-  const dayOfWeek = date.getDay();
-  const slots = [];
-  
-  let config;
-  if (HORARIOS_CONFIG.semana.diasSemana.includes(dayOfWeek)) {
-    config = HORARIOS_CONFIG.semana;
-  } else if (HORARIOS_CONFIG.finSemana.diasSemana.includes(dayOfWeek)) {
-    config = HORARIOS_CONFIG.finSemana;
-  } else {
+    console.error('❌ Error generating time slots:', error);
     return [];
   }
-  
-  let currentHour = config.horaInicio;
-  let currentMinute = 0;
-  
-  while (currentHour < config.horaFin || (currentHour === config.horaFin && currentMinute <= config.minutoFin)) {
-    const timeString = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
-    
-    slots.push({
-      time: timeString,
-      hour: currentHour,
-      minute: currentMinute
-    });
-    
-    currentMinute += config.intervaloMinutos;
-    if (currentMinute >= 60) {
-      currentHour += Math.floor(currentMinute / 60);
-      currentMinute = currentMinute % 60;
-    }
-  }
-  
-  return slots;
 }
 
-function selectNuevaCitaTimeSlot(button) {
+function selectNuevaCitaTimeSlot(time) {
   try {
-    document.querySelectorAll('#nueva-cita-time-slots-grid .time-slot.selected').forEach(slot => {
+    document.querySelectorAll('#nueva-cita-time-slots-grid .time-slot').forEach(slot => {
       slot.classList.remove('selected');
-      slot.style.background = 'white';
-      slot.style.color = 'var(--primary-blue)';
     });
     
-    button.classList.add('selected');
-    button.style.background = 'var(--primary-blue)';
-    button.style.color = 'white';
+    const selectedSlot = document.querySelector(`#nueva-cita-time-slots-grid .time-slot[data-time="${time}"]`);
+    if (selectedSlot) {
+      selectedSlot.classList.add('selected');
+    }
     
     const submitBtn = document.querySelector('#nueva-cita-form button[type="submit"]');
     if (submitBtn) {
       submitBtn.disabled = false;
     }
     
+    console.log('⏰ Horario seleccionado:', time);
+    
   } catch (error) {
-    console.error('Error selecting nueva cita time slot:', error);
+    console.error('❌ Error selecting time slot:', error);
   }
 }
 
@@ -1744,124 +2414,52 @@ async function handleNuevaCitaSubmit(e) {
   } catch (error) {
     console.error('❌ Error creando nueva cita:', error);
     showNotification('Error al crear cita: ' + error.message, 'error');
+    
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Crear Cita';
+    }
   }
 }
 
-async function moveToPatients(solicitudData, citaId) {
+async function moveToPatients(formData, citaId) {
   try {
-    const pacienteData = {
-      nombre: solicitudData.nombre || 'Paciente',
-      apellidos: solicitudData.apellidos || '',
-      rut: formatRUT(solicitudData.rut),
-      telefono: solicitudData.telefono || null,
-      email: solicitudData.email || null,
-      direccion: solicitudData.direccion || null,
-      edad: solicitudData.edad || null,
-      cesfam: currentUserData.cesfam,
-      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
-      fechaPrimeraAtencion: firebase.firestore.FieldValue.serverTimestamp(),
-      estado: 'activo',
-      citaInicialId: citaId,
-      origen: 'cita_directa',
-      historialAtenciones: [],
-      sustanciasProblematicas: solicitudData.sustancias || [],
-      prioridad: solicitudData.prioridad || 'media',
-      motivacionInicial: solicitudData.motivacion || 5
-    };
-
-    await db.collection('pacientes').add(pacienteData);
+    console.log('👥 Creando/actualizando paciente...');
     
-    if (APP_CONFIG.DEBUG_MODE) {
-      console.log('✅ Paciente movido a colección de pacientes');
+    const rutFormatted = formatRUT(formData.rut);
+    
+    // Verificar si el paciente ya existe
+    const existingPatient = await db.collection('pacientes')
+      .where('rut', '==', rutFormatted)
+      .where('cesfam', '==', currentUserData.cesfam)
+      .get();
+    
+    if (existingPatient.empty) {
+      // Crear nuevo paciente
+      const pacienteData = {
+        nombre: formData.nombre,
+        rut: rutFormatted,
+        cesfam: currentUserData.cesfam,
+        estado: 'activo',
+        origen: 'cita_directa',
+        citaInicialId: citaId,
+        fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+        fechaPrimeraAtencion: null
+      };
+      
+      await db.collection('pacientes').add(pacienteData);
+      console.log('✅ Nuevo paciente creado');
+    } else {
+      console.log('✅ Paciente ya existe en el sistema');
     }
     
   } catch (error) {
-    console.error('Error moving to patients:', error);
+    console.error('❌ Error creating/updating patient:', error);
   }
 }
 
-console.log('✅ PARTE 4: Pacientes con botón limpiar funcional completada');
-// ================= SENDA PUENTE ALTO - APP.JS PARTE 5 FINAL =================
-// Event Listeners, Funciones Utilitarias e Inicialización Completa
-
-// ================= EVENT LISTENERS CORREGIDOS =================
-
-function initializeEventListeners() {
-  try {
-    const loginProfessionalBtn = document.getElementById('login-professional');
-    const logoutProfessionalBtn = document.getElementById('logout-professional'); // SOLO este botón
-    const registerPatientBtn = document.getElementById('register-patient');
-    const reentryProgramBtn = document.getElementById('reentry-program');
-    const aboutProgramBtn = document.getElementById('about-program');
-    
-    const searchSolicitudes = document.getElementById('search-solicitudes');
-    const priorityFilter = document.getElementById('priority-filter');
-    
-    const prevMonthBtn = document.getElementById('prev-month');
-    const nextMonthBtn = document.getElementById('next-month');
-    const nuevaCitaBtn = document.getElementById('nueva-cita-btn');
-
-    if (loginProfessionalBtn) {
-      loginProfessionalBtn.addEventListener('click', () => {
-        showModal('login-modal');
-      });
-    }
-
-    // CORRECCIÓN: Solo un botón de logout
-    if (logoutProfessionalBtn) {
-      logoutProfessionalBtn.addEventListener('click', handleLogout);
-    }
-
-    if (registerPatientBtn) {
-      registerPatientBtn.addEventListener('click', () => {
-        resetForm();
-        showModal('patient-modal');
-      });
-    }
-
-    if (reentryProgramBtn) {
-      reentryProgramBtn.addEventListener('click', () => {
-        showModal('reentry-modal');
-      });
-    }
-
-    if (aboutProgramBtn) {
-      aboutProgramBtn.addEventListener('click', showAboutProgram);
-    }
-
-    if (searchSolicitudes) {
-      searchSolicitudes.addEventListener('input', debounce(filterSolicitudes, 300));
-    }
-
-    if (priorityFilter) {
-      priorityFilter.addEventListener('change', filterSolicitudes);
-    }
-
-    if (prevMonthBtn) {
-      prevMonthBtn.addEventListener('click', () => {
-        currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
-        renderCalendar();
-      });
-    }
-
-    if (nextMonthBtn) {
-      nextMonthBtn.addEventListener('click', () => {
-        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
-        renderCalendar();
-      });
-    }
-
-    if (nuevaCitaBtn) {
-      nuevaCitaBtn.addEventListener('click', () => createNuevaCitaModal());
-    }
-
-    document.addEventListener('keydown', handleKeyboardShortcuts);
-    
-    console.log('✅ Event listeners inicializados correctamente');
-  } catch (error) {
-    console.error('❌ Error inicializando event listeners:', error);
-  }
-}
+// ================= FUNCIONES DE TABS CORREGIDAS =================
 
 function setupTabFunctionality() {
   try {
@@ -1929,6 +2527,7 @@ function updateAgendaTitle() {
   }
 }
 
+// CORRECCIÓN: Función loadTabData actualizada
 function loadTabData(tabName) {
   try {
     if (!currentUserData) return;
@@ -1955,7 +2554,7 @@ function loadTabData(tabName) {
         // CORRECCIÓN: Asegurar que el botón limpiar se configure
         setTimeout(() => {
           updatePacientesSearchHTML();
-        }, 1500);
+        }, 500);
         break;
     }
   } catch (error) {
@@ -2098,27 +2697,6 @@ function setCachedData(key, data) {
   });
 }
 
-function handleKeyboardShortcuts(e) {
-  try {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-      e.preventDefault();
-      const searchInput = document.getElementById('search-solicitudes');
-      if (searchInput && searchInput.style.display !== 'none') {
-        searchInput.focus();
-      }
-    }
-    
-    if (e.key === 'Escape') {
-      const openModal = document.querySelector('.modal-overlay[style*="flex"]');
-      if (openModal) {
-        closeModal(openModal.id);
-      }
-    }
-  } catch (error) {
-    console.error('Error handling keyboard shortcuts:', error);
-  }
-}
-
 function showAboutProgram() {
   try {
     const aboutModal = `
@@ -2184,177 +2762,6 @@ function showAboutProgram() {
   }
 }
 
-// ================= FUNCIONES FALTANTES PARA COMPLETAR =================
-
-function renderSolicitudes(solicitudes) {
-  try {
-    const container = document.getElementById('requests-container');
-    if (!container) {
-      console.error('❌ Container requests-container no encontrado');
-      return;
-    }
-
-    console.log('🎨 Renderizando solicitudes:', solicitudes.length);
-
-    if (solicitudes.length === 0) {
-      container.innerHTML = `
-        <div class="no-results">
-          <i class="fas fa-inbox"></i>
-          <h3>No hay solicitudes pendientes</h3>
-          <p>No se encontraron solicitudes pendientes para tu CESFAM: ${currentUserData?.cesfam || 'N/A'}</p>
-          <button class="btn btn-primary mt-4" onclick="loadSolicitudes()">
-            <i class="fas fa-redo"></i>
-            Actualizar
-          </button>
-        </div>
-      `;
-      return;
-    }
-
-    container.innerHTML = solicitudes.map(solicitud => createSolicitudCard(solicitud)).join('');
-    
-    if (APP_CONFIG.DEBUG_MODE) {
-      console.log(`✅ Renderizadas ${solicitudes.length} solicitudes`);
-    }
-  } catch (error) {
-    console.error('❌ Error renderizando solicitudes:', error);
-  }
-}
-
-function createSolicitudCard(solicitud) {
-  try {
-    const fecha = formatDate(solicitud.fechaCreacion);
-    const prioridad = solicitud.prioridad || 'baja';
-    const estado = solicitud.estado || 'pendiente';
-    
-    let titulo, subtitulo, tipoIcon;
-    
-    if (solicitud.tipo === 'reingreso') {
-      titulo = `Reingreso - ${solicitud.nombre || 'Sin nombre'}`;
-      subtitulo = `RUT: ${solicitud.rut || 'No disponible'}`;
-      tipoIcon = 'fa-redo';
-    } else if (solicitud.tipo === 'informacion' || solicitud.tipoSolicitud === 'informacion') {
-      titulo = 'Solicitud de Información';
-      subtitulo = `Email: ${solicitud.email || 'No disponible'}`;
-      tipoIcon = 'fa-info-circle';
-    } else {
-      tipoIcon = 'fa-user-plus';
-      if (solicitud.tipoSolicitud === 'identificado') {
-        titulo = `${solicitud.nombre || ''} ${solicitud.apellidos || ''}`.trim() || 'Solicitud identificada';
-        subtitulo = `RUT: ${solicitud.rut || 'No disponible'}`;
-      } else {
-        titulo = 'Solicitud General';
-        subtitulo = `Edad: ${solicitud.edad || 'No especificada'} años`;
-      }
-    }
-
-    const sustancias = solicitud.sustancias || [];
-    const sustanciasHtml = sustancias.length > 0 ? 
-      sustancias.map(s => `<span class="substance-tag">${s}</span>`).join('') : '';
-
-    const prioridadColor = {
-      'critica': '#ef4444',
-      'alta': '#f59e0b',
-      'media': '#3b82f6',
-      'baja': '#10b981'
-    };
-
-    return `
-      <div class="request-card" data-id="${solicitud.id}">
-        <div class="request-header">
-          <div class="request-info">
-            <h3>
-              <i class="fas ${tipoIcon}" style="margin-right: 8px; color: var(--primary-blue);"></i>
-              ${titulo}
-            </h3>
-            <p style="color: var(--gray-600);">${subtitulo}</p>
-          </div>
-          <div class="request-meta">
-            <span class="priority-badge ${prioridad}" style="background-color: ${prioridadColor[prioridad]}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
-              ${prioridad.toUpperCase()}
-            </span>
-          </div>
-        </div>
-        
-        <div class="request-body">
-          ${sustanciasHtml ? `<div class="request-substances">${sustanciasHtml}</div>` : ''}
-          ${solicitud.descripcion || solicitud.motivo ? 
-            `<p class="request-description">${(solicitud.descripcion || solicitud.motivo).substring(0, 150)}...</p>` : ''}
-          
-          <div class="request-details">
-            ${solicitud.cesfam ? `<div><strong>CESFAM:</strong> ${solicitud.cesfam}</div>` : ''}
-            <div><strong>Fecha:</strong> ${fecha}</div>
-          </div>
-        </div>
-      </div>
-    `;
-  } catch (error) {
-    console.error('❌ Error creando tarjeta de solicitud:', error);
-    return '<div class="request-card error-card"><h3>Error al cargar solicitud</h3></div>';
-  }
-}
-
-function renderSolicitudesError(error) {
-  const container = document.getElementById('requests-container');
-  if (!container) return;
-  
-  container.innerHTML = `
-    <div class="no-results">
-      <i class="fas fa-exclamation-triangle" style="color: var(--danger-red);"></i>
-      <h3>Error al cargar solicitudes</h3>
-      <p>${error.message}</p>
-      <button class="btn btn-primary" onclick="loadSolicitudes()">
-        <i class="fas fa-redo"></i>
-        Reintentar
-      </button>
-    </div>
-  `;
-}
-
-async function loadProfessionalsByArea() {
-  try {
-    if (!currentUserData) return [];
-    
-    const snapshot = await db.collection('profesionales')
-      .where('cesfam', '==', currentUserData.cesfam)
-      .where('activo', '==', true)
-      .get();
-    
-    const professionals = [];
-    snapshot.forEach(doc => {
-      professionals.push({
-        id: doc.id,
-        ...doc.data()
-      });
-    });
-    
-    return professionals;
-  } catch (error) {
-    console.error('Error loading professionals by area:', error);
-    return [];
-  }
-}
-
-function setupMultiStepForm() {
-  // Placeholder para compatibilidad
-  console.log('✅ Formulario multi-step configurado (placeholder)');
-}
-
-function resetForm() {
-  // Placeholder para compatibilidad
-  console.log('✅ Formulario reseteado (placeholder)');
-}
-
-async function loadSeguimiento() {
-  // Placeholder para compatibilidad
-  console.log('✅ Seguimiento cargado (placeholder)');
-}
-
-function filterSolicitudes() {
-  // Placeholder para compatibilidad
-  console.log('✅ Filtro de solicitudes aplicado (placeholder)');
-}
-
 // ================= INICIALIZACIÓN FINAL CORREGIDA =================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -2362,7 +2769,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setupMultiStepForm();
     initializeEventListeners();
     setupTabFunctionality();
-    setupCalendar(); // CORRECCIÓN: Calendario con fecha actual (14 septiembre 2025, 16:29:49)
+    setupCalendar(); // CORRECCIÓN: Calendario con fecha actual (14 septiembre 2025)
     
     // CORRECCIÓN: Siempre iniciar mostrando contenido público
     showPublicContent();
@@ -2373,8 +2780,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (APP_CONFIG.DEBUG_MODE) {
       console.log('🎉 SENDA Puente Alto - Sistema completo inicializado con correcciones');
       console.log('📅 Fecha actual del sistema:', new Date().toLocaleDateString('es-CL'));
-      console.log('📅 Calendario inicializado para:', new Date().toLocaleDateString('es-CL', { year: 'numeric', month: 'long' }));
       console.log('⏰ Hora actual del sistema:', new Date().toLocaleTimeString('es-CL'));
+      console.log('📅 Calendario inicializado para:', new Date().toLocaleDateString('es-CL', { year: 'numeric', month: 'long' }));
     }
     
   } catch (error) {
@@ -2384,21 +2791,24 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // EXPORTAR FUNCIONES GLOBALES
-window.showPatientDetail = function(id) { console.log('Ver detalle paciente:', id); };
+window.showPatientDetail = showPatientDetail;
 window.buscarPacientePorRUT = buscarPacientePorRUT;
 window.limpiarBusquedaPaciente = limpiarBusquedaPaciente;
 window.createNuevaCitaModal = createNuevaCitaModal;
 window.selectNuevaCitaTimeSlot = selectNuevaCitaTimeSlot;
-window.showSolicitudDetailById = function(id) { console.log('Ver detalle solicitud:', id); };
-window.showSolicitudDetail = function(solicitud) { console.log('Ver solicitud:', solicitud); };
-window.showAgendaModal = function(id) { console.log('Agenda modal:', id); };
-window.showInformationModal = function(id) { console.log('Information modal:', id); };
-window.handleUrgentCase = function(id) { console.log('Caso urgente:', id); };
+window.showSolicitudDetailById = (id) => {
+  const solicitud = solicitudesData.find(s => s.id === id);
+  if (solicitud) showSolicitudDetail(solicitud);
+};
+window.showSolicitudDetail = showSolicitudDetail;
+window.showAgendaModal = showAgendaModal;
+window.showInformationModal = showInformationModal;
+window.handleUrgentCase = handleUrgentCase;
 window.showAboutProgram = showAboutProgram;
 window.showModal = showModal;
 window.closeModal = closeModal;
-window.showPatientAppointmentInfo = function(appointment) { console.log('Appointment info:', appointment); };
-window.selectAgendaTimeSlot = function(slot) { console.log('Select agenda slot:', slot); };
+window.showPatientAppointmentInfo = showPatientAppointmentInfo;
+window.selectAgendaTimeSlot = selectAgendaTimeSlot;
 
 console.log(`
 🎉 ====================================
@@ -2406,13 +2816,14 @@ console.log(`
    ====================================
    
    ✅ CORRECCIÓN 1: Header único (sin doble cerrar sesión)
-   ✅ CORRECCIÓN 2: Solicitudes cargan desde Firebase con debug
+   ✅ CORRECCIÓN 2: Solicitudes cargan desde Firebase
    ✅ CORRECCIÓN 3: Botón limpiar búsqueda RUT funcional
-   ✅ CORRECCIÓN 4: Calendario fecha actual (14 Sep 2025, 16:29)
-   ✅ CORRECCIÓN 5: Nueva cita sin duplicados en Firebase
+   ✅ CORRECCIÓN 4: Calendario con fecha actual (14 Sept 2025)
+   ✅ CORRECCIÓN 5: Nueva cita con fecha actual y sin duplicados
    
-   🚀 TODAS LAS CORRECCIONES APLICADAS Y FUNCIONANDO
+   📅 FECHA Y HORA ACTUAL: ${new Date().toLocaleString('es-CL')}
+   🚀 TODAS LAS CORRECCIONES APLICADAS
    ====================================
 `);
 
-console.log('✅ PARTE 5 FINAL: Sistema completo con todas las correcciones implementadas y funcionando');
+console.log('✅ PARTE 5 FINAL: Sistema completo con nueva cita corregida - 14 Septiembre 2025, 16:41:17');
