@@ -930,6 +930,896 @@ function setCachedData(key, data) {
 }
 
 console.log('✅ APP14: Parte 1 cargada - Formulario original configurado');
+// ================= PARTE 2: AUTENTICACIÓN, EVENTOS Y CARGA CORREGIDA FIREBASE =================
+
+// ================= GESTIÓN DE EVENTOS =================
+
+function initializeEventListeners() {
+  try {
+    const loginProfessionalBtn = document.getElementById('login-professional');
+    const logoutBtn = document.getElementById('logout-btn');
+    const registerPatientBtn = document.getElementById('register-patient');
+    const reentryProgramBtn = document.getElementById('reentry-program');
+    const aboutProgramBtn = document.getElementById('about-program');
+    
+    const searchSolicitudes = document.getElementById('search-solicitudes');
+    const searchPacientesRut = document.getElementById('search-pacientes-rut');
+    const buscarPacienteBtn = document.getElementById('buscar-paciente-btn');
+    
+    const priorityFilter = document.getElementById('priority-filter');
+    
+    const prevMonthBtn = document.getElementById('prev-month');
+    const nextMonthBtn = document.getElementById('next-month');
+    const nuevaCitaBtn = document.getElementById('nueva-cita-btn');
+
+    if (loginProfessionalBtn) {
+      loginProfessionalBtn.addEventListener('click', () => {
+        showModal('login-modal');
+      });
+    }
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', handleLogout);
+    }
+
+    if (registerPatientBtn) {
+      registerPatientBtn.addEventListener('click', () => {
+        resetForm();
+        showModal('patient-modal');
+      });
+    }
+
+    if (reentryProgramBtn) {
+      reentryProgramBtn.addEventListener('click', () => {
+        showModal('reentry-modal');
+      });
+    }
+
+    if (aboutProgramBtn) {
+      aboutProgramBtn.addEventListener('click', showAboutProgram);
+    }
+
+    if (searchSolicitudes) {
+      searchSolicitudes.addEventListener('input', debounce(filterSolicitudes, 300));
+    }
+
+    if (buscarPacienteBtn) {
+      buscarPacienteBtn.addEventListener('click', buscarPacientePorRUT);
+    }
+
+    if (searchPacientesRut) {
+      searchPacientesRut.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          buscarPacientePorRUT();
+        }
+      });
+      
+      searchPacientesRut.addEventListener('input', (e) => {
+        e.target.value = formatRUT(e.target.value);
+      });
+    }
+
+    if (priorityFilter) {
+      priorityFilter.addEventListener('change', filterSolicitudes);
+    }
+
+    if (prevMonthBtn) {
+      prevMonthBtn.addEventListener('click', () => {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+        renderCalendar();
+      });
+    }
+
+    if (nextMonthBtn) {
+      nextMonthBtn.addEventListener('click', () => {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+        renderCalendar();
+      });
+    }
+
+    if (nuevaCitaBtn) {
+      nuevaCitaBtn.addEventListener('click', () => createNuevaCitaModal());
+    }
+
+    document.addEventListener('keydown', handleKeyboardShortcuts);
+    
+    console.log('✅ Event listeners inicializados correctamente');
+  } catch (error) {
+    console.error('❌ Error inicializando event listeners:', error);
+  }
+}
+
+function handleKeyboardShortcuts(e) {
+  try {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      const searchInput = document.getElementById('search-solicitudes');
+      if (searchInput && searchInput.style.display !== 'none') {
+        searchInput.focus();
+      }
+    }
+    
+    if (e.key === 'Escape') {
+      const openModal = document.querySelector('.modal-overlay[style*="flex"]');
+      if (openModal) {
+        closeModal(openModal.id);
+      }
+    }
+  } catch (error) {
+    console.error('Error handling keyboard shortcuts:', error);
+  }
+}
+
+// ================= AUTENTICACIÓN CORREGIDA =================
+
+function onAuthStateChanged(user) {
+  try {
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log('🔧 Estado de autenticación cambió:', user ? user.email : 'No autenticado');
+    }
+    
+    if (user) {
+      currentUser = user;
+      loadUserData();
+    } else {
+      currentUser = null;
+      currentUserData = null;
+      clearUserCache();
+      showPublicContent();
+    }
+  } catch (error) {
+    console.error('❌ Error en cambio de estado de autenticación:', error);
+    showNotification('Error en autenticación', 'error');
+  }
+}
+
+function clearUserCache() {
+  try {
+    solicitudesData = [];
+    pacientesData = [];
+    citasData = [];
+    professionalsList = [];
+    solicitudesInformacionData = [];
+    
+    dataCache.clear();
+    
+    const containers = [
+      'requests-container',
+      'patients-grid',
+      'appointments-list',
+      'upcoming-appointments-grid',
+      'patients-timeline'
+    ];
+    
+    containers.forEach(containerId => {
+      const container = document.getElementById(containerId);
+      if (container) {
+        container.innerHTML = '';
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error clearing user cache:', error);
+  }
+}
+
+async function loadUserData() {
+  try {
+    showLoading(true, 'Cargando datos del usuario...');
+    
+    if (!currentUser) {
+      throw new Error('Usuario no autenticado');
+    }
+
+    const cacheKey = `user_${currentUser.uid}`;
+    const cachedData = getCachedData(cacheKey);
+    
+    if (cachedData) {
+      currentUserData = cachedData;
+      showProfessionalContent();
+      await loadInitialData();
+      return;
+    }
+
+    const userData = await retryOperation(async () => {
+      const userDoc = await db.collection('profesionales').doc(currentUser.uid).get();
+      
+      if (!userDoc.exists) {
+        throw new Error('No se encontraron datos del profesional');
+      }
+      
+      return userDoc.data();
+    });
+    
+    currentUserData = userData;
+    setCachedData(cacheKey, userData);
+    
+    showProfessionalContent();
+    await loadInitialData();
+    
+  } catch (error) {
+    console.error('❌ Error cargando datos del usuario:', error);
+    
+    if (error.code === 'permission-denied') {
+      showNotification('Sin permisos para acceder a los datos', 'error');
+    } else if (error.message.includes('No se encontraron datos')) {
+      showNotification('Perfil de profesional no encontrado. Contacta al administrador.', 'error');
+    } else {
+      showNotification('Error al cargar datos del usuario: ' + error.message, 'error');
+    }
+    
+    await handleLogout();
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function loadInitialData() {
+  try {
+    const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab || 'agenda';
+    
+    if (activeTab === 'solicitudes' && hasAccessToSolicitudes()) {
+      await loadSolicitudes();
+    } else if (activeTab === 'pacientes') {
+      await loadPacientes();
+    } else if (activeTab === 'agenda') {
+      await loadTodayAppointments();
+      renderCalendar(); // CORREGIDO: Cargar calendario inmediatamente
+    } else if (activeTab === 'seguimiento') {
+      await loadSeguimiento();
+    }
+    
+    await loadProfessionalsList();
+    
+  } catch (error) {
+    console.error('❌ Error cargando datos iniciales:', error);
+  }
+}
+
+function showPublicContent() {
+  try {
+    const publicContent = document.getElementById('public-content');
+    const professionalContent = document.getElementById('professional-content');
+    const professionalHeader = document.getElementById('professional-header');
+    const loginBtn = document.getElementById('login-professional');
+
+    if (publicContent) publicContent.style.display = 'block';
+    if (professionalContent) professionalContent.style.display = 'none';
+    if (professionalHeader) professionalHeader.style.display = 'none';
+    if (loginBtn) loginBtn.style.display = 'flex';
+    
+    console.log('📄 Mostrando contenido público');
+  } catch (error) {
+    console.error('❌ Error mostrando contenido público:', error);
+  }
+}
+
+function showProfessionalContent() {
+  try {
+    const publicContent = document.getElementById('public-content');
+    const professionalContent = document.getElementById('professional-content');
+    const professionalHeader = document.getElementById('professional-header');
+    const loginBtn = document.getElementById('login-professional');
+
+    if (publicContent) publicContent.style.display = 'none';
+    if (professionalContent) professionalContent.style.display = 'block';
+    if (professionalHeader) professionalHeader.style.display = 'block';
+    if (loginBtn) loginBtn.style.display = 'none';
+    
+    if (currentUserData) {
+      updateProfessionalInfo();
+      updateTabVisibility();
+    }
+    
+    console.log('👨‍⚕️ Mostrando contenido profesional');
+  } catch (error) {
+    console.error('❌ Error mostrando contenido profesional:', error);
+  }
+}
+
+function updateTabVisibility() {
+  try {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    
+    tabBtns.forEach(btn => {
+      const tabName = btn.dataset.tab;
+      if (canAccessTab(tabName)) {
+        btn.style.display = 'flex';
+      } else {
+        btn.style.display = 'none';
+        if (btn.classList.contains('active')) {
+          btn.classList.remove('active');
+          const agendaTab = document.querySelector('.tab-btn[data-tab="agenda"]');
+          const agendaPane = document.getElementById('agenda-tab');
+          if (agendaTab && agendaPane) {
+            agendaTab.classList.add('active');
+            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+            agendaPane.classList.add('active');
+            loadTabData('agenda');
+          }
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error updating tab visibility:', error);
+  }
+}
+
+function updateProfessionalInfo() {
+  try {
+    const professionalName = document.getElementById('professional-name');
+    const professionalProfession = document.getElementById('professional-profession');
+    const professionalCesfam = document.getElementById('professional-cesfam');
+
+    if (professionalName) {
+      professionalName.textContent = `${currentUserData.nombre} ${currentUserData.apellidos}`;
+    }
+    
+    if (professionalProfession) {
+      professionalProfession.textContent = getProfessionName(currentUserData.profession);
+    }
+    
+    if (professionalCesfam) {
+      professionalCesfam.textContent = currentUserData.cesfam;
+    }
+    
+    const avatar = document.querySelector('.professional-avatar');
+    if (avatar) {
+      const initials = `${currentUserData.nombre.charAt(0)}${currentUserData.apellidos.charAt(0)}`.toUpperCase();
+      avatar.textContent = initials;
+    }
+    
+  } catch (error) {
+    console.error('Error updating professional info:', error);
+  }
+}
+
+function hasAccessToSolicitudes() {
+  if (!currentUserData) return false;
+  return currentUserData.profession === 'asistente_social';
+}
+
+function canAccessTab(tabName) {
+  if (!currentUserData) return false;
+  
+  switch (tabName) {
+    case 'solicitudes':
+      return currentUserData.profession === 'asistente_social';
+    case 'agenda':
+    case 'seguimiento':
+    case 'pacientes':
+      return true;
+    default:
+      return false;
+  }
+}
+
+function getProfessionName(profession) {
+  const names = {
+    'asistente_social': 'Asistente Social',
+    'medico': 'Médico',
+    'psicologo': 'Psicólogo',
+    'terapeuta': 'Terapeuta Ocupacional',
+    'coordinador': 'Coordinador Regional',
+    'admin': 'Administrador'
+  };
+  return names[profession] || profession;
+}
+
+async function loadProfessionalsList() {
+  try {
+    const cacheKey = `professionals_${currentUserData.cesfam}`;
+    const cached = getCachedData(cacheKey);
+    
+    if (cached) {
+      professionalsList = cached;
+      return;
+    }
+    
+    const snapshot = await db.collection('profesionales')
+      .where('cesfam', '==', currentUserData.cesfam)
+      .where('activo', '==', true)
+      .get();
+    
+    const professionals = [];
+    snapshot.forEach(doc => {
+      professionals.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    professionalsList = professionals;
+    setCachedData(cacheKey, professionals);
+    
+  } catch (error) {
+    console.error('Error loading professionals list:', error);
+  }
+}
+
+// ================= CARGA CORREGIDA DE SOLICITUDES DESDE FIREBASE =================
+
+async function loadSolicitudes() {
+  if (!currentUserData || !hasAccessToSolicitudes()) {
+    console.log('⚠️ Usuario no tiene acceso a solicitudes');
+    return;
+  }
+
+  try {
+    showLoading(true, 'Cargando solicitudes...');
+    const container = document.getElementById('requests-container');
+    
+    if (!container) {
+      console.error('❌ Container requests-container no encontrado');
+      return;
+    }
+    
+    // CORREGIDO: Limpiar cache antes de cargar nuevos datos
+    const cacheKey = `solicitudes_${currentUserData.cesfam}`;
+    dataCache.delete(cacheKey);
+    
+    await loadSolicitudesFromFirestore(true);
+    
+  } catch (error) {
+    console.error('❌ Error general cargando solicitudes:', error);
+    renderSolicitudesError(error);
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function loadSolicitudesFromFirestore(showLoadingIndicator = true) {
+  try {
+    if (showLoadingIndicator) {
+      const container = document.getElementById('requests-container');
+      if (container) {
+        container.innerHTML = `
+          <div class="loading-message">
+            <i class="fas fa-spinner fa-spin"></i>
+            Cargando solicitudes...
+          </div>
+        `;
+      }
+    }
+    
+    const solicitudes = [];
+    
+    console.log('🔍 Cargando solicitudes para CESFAM:', currentUserData.cesfam);
+    
+    // CORREGIDO: Cargar solicitudes_ingreso SIN filtro de estado
+    try {
+      const solicitudesSnapshot = await db.collection('solicitudes_ingreso')
+        .where('cesfam', '==', currentUserData.cesfam)
+        .orderBy('fechaCreacion', 'desc')
+        .limit(APP_CONFIG.PAGINATION_LIMIT)
+        .get();
+      
+      console.log('📊 Solicitudes_ingreso encontradas:', solicitudesSnapshot.size);
+      
+      solicitudesSnapshot.forEach(doc => {
+        const data = doc.data();
+        solicitudes.push({
+          id: doc.id,
+          tipo: 'solicitud',
+          ...data
+        });
+      });
+      
+    } catch (error) {
+      console.error('❌ Error cargando solicitudes_ingreso:', error);
+      if (error.code !== 'permission-denied') {
+        throw error;
+      }
+    }
+    
+    // CORREGIDO: Cargar reingresos
+    try {
+      const reingresosSnapshot = await db.collection('reingresos')
+        .where('cesfam', '==', currentUserData.cesfam)
+        .orderBy('fechaCreacion', 'desc')
+        .limit(APP_CONFIG.PAGINATION_LIMIT)
+        .get();
+      
+      console.log('📊 Reingresos encontrados:', reingresosSnapshot.size);
+      
+      reingresosSnapshot.forEach(doc => {
+        const data = doc.data();
+        solicitudes.push({
+          id: doc.id,
+          tipo: 'reingreso',
+          ...data
+        });
+      });
+      
+    } catch (error) {
+      console.error('❌ Error cargando reingresos:', error);
+      if (error.code !== 'permission-denied') {
+        throw error;
+      }
+    }
+    
+    // CORREGIDO: Cargar solicitudes_informacion
+    try {
+      const informacionSnapshot = await db.collection('solicitudes_informacion')
+        .orderBy('fechaCreacion', 'desc')
+        .limit(50)
+        .get();
+      
+      console.log('📊 Solicitudes información encontradas:', informacionSnapshot.size);
+      
+      informacionSnapshot.forEach(doc => {
+        const data = doc.data();
+        solicitudes.push({
+          id: doc.id,
+          tipo: 'informacion',
+          tipoSolicitud: 'informacion',
+          ...data
+        });
+      });
+      
+    } catch (error) {
+      console.error('❌ Error cargando solicitudes_informacion:', error);
+      if (error.code !== 'permission-denied') {
+        throw error;
+      }
+    }
+    
+    // Ordenar por fecha de creación (más recientes primero)
+    solicitudes.sort((a, b) => {
+      const fechaA = a.fechaCreacion?.toDate() || new Date(0);
+      const fechaB = b.fechaCreacion?.toDate() || new Date(0);
+      return fechaB - fechaA;
+    });
+    
+    console.log('📋 Total solicitudes procesadas:', solicitudes.length);
+    
+    solicitudesData = solicitudes;
+    
+    const cacheKey = `solicitudes_${currentUserData.cesfam}`;
+    setCachedData(cacheKey, solicitudes);
+    
+    renderSolicitudes(solicitudes);
+    
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log(`✅ Total solicitudes cargadas: ${solicitudes.length}`);
+    }
+    
+  } catch (error) {
+    console.error('❌ Error cargando desde Firestore:', error);
+    renderSolicitudesError(error);
+  }
+}
+
+function renderSolicitudes(solicitudes) {
+  try {
+    const container = document.getElementById('requests-container');
+    if (!container) {
+      console.error('❌ Container requests-container no encontrado');
+      return;
+    }
+
+    console.log('🎨 Renderizando solicitudes:', solicitudes.length);
+
+    if (solicitudes.length === 0) {
+      container.innerHTML = `
+        <div class="no-results">
+          <i class="fas fa-inbox"></i>
+          <h3>No hay solicitudes</h3>
+          <p>No se encontraron solicitudes para tu CESFAM: ${currentUserData.cesfam}</p>
+          <button class="btn btn-primary mt-4" onclick="loadSolicitudes()">
+            <i class="fas fa-redo"></i>
+            Actualizar
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = solicitudes.map(solicitud => createSolicitudCard(solicitud)).join('');
+    
+    // CORREGIDO: Agregar event listeners a las tarjetas
+    container.querySelectorAll('.request-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
+        
+        const solicitudId = card.dataset.id;
+        const solicitud = solicitudes.find(s => s.id === solicitudId);
+        if (solicitud) {
+          showSolicitudDetail(solicitud);
+        }
+      });
+    });
+    
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log(`✅ Renderizadas ${solicitudes.length} solicitudes`);
+    }
+  } catch (error) {
+    console.error('❌ Error renderizando solicitudes:', error);
+  }
+}
+
+function createSolicitudCard(solicitud) {
+  try {
+    const fecha = formatDate(solicitud.fechaCreacion);
+    const prioridad = solicitud.prioridad || 'baja';
+    const estado = solicitud.estado || 'pendiente';
+    
+    let titulo, subtitulo, tipoIcon;
+    
+    if (solicitud.tipo === 'reingreso') {
+      titulo = `Reingreso - ${solicitud.nombre || 'Sin nombre'}`;
+      subtitulo = `RUT: ${solicitud.rut || 'No disponible'}`;
+      tipoIcon = 'fa-redo';
+    } else if (solicitud.tipo === 'informacion' || solicitud.tipoSolicitud === 'informacion') {
+      titulo = 'Solicitud de Información';
+      subtitulo = `Email: ${solicitud.email || 'No disponible'}`;
+      tipoIcon = 'fa-info-circle';
+    } else {
+      tipoIcon = 'fa-user-plus';
+      if (solicitud.tipoSolicitud === 'identificado') {
+        titulo = `${solicitud.nombre || ''} ${solicitud.apellidos || ''}`.trim() || 'Solicitud identificada';
+        subtitulo = `RUT: ${solicitud.rut || 'No disponible'}`;
+      } else {
+        titulo = 'Solicitud General';
+        subtitulo = `Edad: ${solicitud.edad || 'No especificada'} años`;
+      }
+    }
+
+    const sustancias = solicitud.sustancias || [];
+    const sustanciasHtml = sustancias.length > 0 ? 
+      sustancias.map(s => `<span class="substance-tag">${s}</span>`).join('') : '';
+
+    const prioridadColor = {
+      'critica': '#ef4444',
+      'alta': '#f59e0b',
+      'media': '#3b82f6',
+      'baja': '#10b981'
+    };
+
+    const estadoIcon = {
+      'pendiente': 'fa-clock',
+      'en_proceso': 'fa-spinner',
+      'agendada': 'fa-calendar-check',
+      'completada': 'fa-check-circle',
+      'pendiente_respuesta': 'fa-reply'
+    };
+
+    return `
+      <div class="request-card" data-id="${solicitud.id}" style="transition: all 0.2s ease;">
+        <div class="request-header">
+          <div class="request-info">
+            <h3>
+              <i class="fas ${tipoIcon}" style="margin-right: 8px; color: var(--primary-blue);"></i>
+              ${titulo}
+            </h3>
+            <p style="color: var(--gray-600);">${subtitulo}</p>
+          </div>
+          <div class="request-meta">
+            <span class="priority-badge ${prioridad}" style="background-color: ${prioridadColor[prioridad]}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+              ${prioridad.toUpperCase()}
+            </span>
+            ${solicitud.tipo === 'reingreso' ? '<span class="request-type reingreso" style="background: #e0e7ff; color: #3730a3; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">REINGRESO</span>' : ''}
+            ${solicitud.tipo === 'informacion' ? '<span class="request-type informacion" style="background: #f0f9ff; color: #0c4a6e; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">INFORMACIÓN</span>' : ''}
+          </div>
+        </div>
+        
+        <div class="request-body">
+          ${sustanciasHtml ? `<div class="request-substances" style="margin-bottom: 8px;">${sustanciasHtml}</div>` : ''}
+          ${solicitud.descripcion || solicitud.motivo ? 
+            `<p class="request-description" style="color: var(--gray-700); line-height: 1.5;">${truncateText(solicitud.descripcion || solicitud.motivo, 150)}</p>` : ''}
+          
+          <div class="request-details" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--gray-600);">
+            ${solicitud.cesfam ? `<div><strong>CESFAM:</strong> ${solicitud.cesfam}</div>` : ''}
+            <div><strong>Estado:</strong> 
+              <span class="status-${estado}" style="display: inline-flex; align-items: center; gap: 4px;">
+                <i class="fas ${estadoIcon[estado] || 'fa-circle'}"></i>
+                ${estado.replace('_', ' ').toUpperCase()}
+              </span>
+            </div>
+            ${solicitud.edad ? `<div><strong>Edad:</strong> ${solicitud.edad} años</div>` : ''}
+            <div><strong>Fecha:</strong> ${fecha}</div>
+          </div>
+        </div>
+        
+        <div class="request-actions" style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px;">
+          ${solicitud.tipo !== 'informacion' ? 
+            `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); showAgendaModal('${solicitud.id}')" title="Agendar cita">
+              <i class="fas fa-calendar-plus"></i>
+              Agendar
+            </button>` : ''
+          }
+          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); showSolicitudDetailById('${solicitud.id}')" title="Ver detalles completos">
+            <i class="fas fa-eye"></i>
+            Ver Detalle
+          </button>
+          ${solicitud.prioridad === 'critica' ? 
+            `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); handleUrgentCase('${solicitud.id}')" title="Caso urgente">
+              <i class="fas fa-exclamation-triangle"></i>
+              URGENTE
+            </button>` : ''
+          }
+        </div>
+      </div>
+    `;
+  } catch (error) {
+    console.error('❌ Error creando tarjeta de solicitud:', error);
+    return `
+      <div class="request-card error-card">
+        <div class="request-header">
+          <h3>Error al cargar solicitud</h3>
+        </div>
+        <div class="request-body">
+          <p>No se pudo cargar la información de esta solicitud</p>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function truncateText(text, maxLength) {
+  if (!text || text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + '...';
+}
+
+function renderSolicitudesError(error) {
+  const container = document.getElementById('requests-container');
+  if (!container) return;
+  
+  let errorMessage = 'Error al cargar solicitudes';
+  let errorDetails = '';
+  
+  if (error.code === 'permission-denied') {
+    errorMessage = 'Sin permisos de acceso';
+    errorDetails = 'No tienes permisos para ver las solicitudes de este CESFAM';
+  } else if (error.code === 'unavailable') {
+    errorMessage = 'Servicio no disponible';
+    errorDetails = 'El servicio está temporalmente no disponible';
+  } else {
+    errorDetails = error.message;
+  }
+  
+  container.innerHTML = `
+    <div class="no-results">
+      <i class="fas fa-exclamation-triangle" style="color: var(--danger-red);"></i>
+      <h3>${errorMessage}</h3>
+      <p>${errorDetails}</p>
+      <div class="mt-4">
+        <button class="btn btn-primary" onclick="loadSolicitudes()">
+          <i class="fas fa-redo"></i>
+          Reintentar
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// ================= CARGA CORREGIDA DE PACIENTES DESDE FIREBASE =================
+
+async function loadPacientes() {
+  if (!currentUserData) return;
+
+  try {
+    showLoading(true, 'Cargando pacientes...');
+    
+    // CORREGIDO: Limpiar cache antes de cargar
+    const cacheKey = `pacientes_${currentUserData.cesfam}`;
+    dataCache.delete(cacheKey);
+    
+    console.log('🔍 Cargando pacientes para CESFAM:', currentUserData.cesfam);
+    
+    const pacientesSnapshot = await db.collection('pacientes')
+      .where('cesfam', '==', currentUserData.cesfam)
+      .orderBy('fechaCreacion', 'desc')
+      .limit(APP_CONFIG.PAGINATION_LIMIT)
+      .get();
+    
+    console.log('📊 Pacientes encontrados:', pacientesSnapshot.size);
+    
+    const pacientes = [];
+    pacientesSnapshot.forEach(doc => {
+      pacientes.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    pacientesData = pacientes;
+    setCachedData(cacheKey, pacientes);
+    renderPacientes(pacientes);
+    
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log(`✅ Total pacientes cargados: ${pacientes.length}`);
+    }
+    
+  } catch (error) {
+    console.error('❌ Error loading pacientes:', error);
+    showNotification('Error al cargar pacientes: ' + error.message, 'error');
+    
+    const grid = document.getElementById('patients-grid');
+    if (grid) {
+      grid.innerHTML = `
+        <div class="no-results">
+          <i class="fas fa-exclamation-triangle"></i>
+          <h3>Error al cargar pacientes</h3>
+          <p>${error.message}</p>
+          <button class="btn btn-primary" onclick="loadPacientes()">
+            <i class="fas fa-redo"></i>
+            Reintentar
+          </button>
+        </div>
+      `;
+    }
+  } finally {
+    showLoading(false);
+  }
+}
+
+function renderPacientes(pacientes) {
+  try {
+    const grid = document.getElementById('patients-grid');
+    if (!grid) return;
+
+    console.log('🎨 Renderizando pacientes:', pacientes.length);
+
+    if (pacientes.length === 0) {
+      grid.innerHTML = `
+        <div class="no-results">
+          <i class="fas fa-users"></i>
+          <h3>No hay pacientes registrados</h3>
+          <p>No se encontraron pacientes en este CESFAM</p>
+        </div>
+      `;
+      return;
+    }
+
+    grid.innerHTML = pacientes.map(paciente => createPatientCard(paciente)).join('');
+    
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log(`✅ Renderizados ${pacientes.length} pacientes`);
+    }
+  } catch (error) {
+    console.error('❌ Error rendering pacientes:', error);
+  }
+}
+
+function createPatientCard(paciente) {
+  const fecha = formatDate(paciente.fechaCreacion);
+  const estado = paciente.estado || 'activo';
+  
+  return `
+    <div class="patient-card">
+      <div class="patient-header">
+        <div class="patient-info">
+          <h3>${paciente.nombre} ${paciente.apellidos || ''}</h3>
+          <p>RUT: ${paciente.rut}</p>
+        </div>
+        <span class="patient-status ${estado}">
+          ${estado.toUpperCase()}
+        </span>
+      </div>
+      <div class="patient-details">
+        <div><strong>Edad:</strong> ${paciente.edad || 'No especificada'} años</div>
+        <div><strong>Teléfono:</strong> ${paciente.telefono || 'No disponible'}</div>
+        <div><strong>Email:</strong> ${paciente.email || 'No disponible'}</div>
+        <div><strong>Registrado:</strong> ${fecha}</div>
+      </div>
+      <div class="patient-actions">
+        <button class="btn btn-sm btn-primary" onclick="showPatientDetail('${paciente.id}')">
+          <i class="fas fa-eye"></i>
+          Ver Ficha
+        </button>
+        <button class="btn btn-sm btn-success" onclick="downloadPatientPDF('${paciente.id}')">
+          <i class="fas fa-download"></i>
+          Descargar PDF
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+console.log('✅ Parte 2 cargada - Autenticación y carga de datos corregida');
 // ================= PARTE 3: CALENDARIO CORREGIDO Y GESTIÓN DE CITAS =================
 
 // ================= CALENDARIO FUNCIONAL CORREGIDO =================
