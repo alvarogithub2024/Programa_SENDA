@@ -286,7 +286,7 @@ function setupMultiStepForm() {
 
     form.addEventListener('submit', handlePatientFormSubmit);
 
-    // ORIGINAL APP14: Listeners para tipo de solicitud EXACTO
+    // Listeners para tipo de solicitud EXACTO
     const tipoSolicitudInputs = document.querySelectorAll('input[name="tipoSolicitud"]');
     tipoSolicitudInputs.forEach(input => {
       input.addEventListener('change', () => {
@@ -449,7 +449,7 @@ function updateProgressIndicator(current, total) {
   }
 }
 
-// ORIGINAL APP14: Validación de pasos SIN CAMBIOS
+// Validación de pasos SIN CAMBIOS
 function validateStep(step) {
   try {
     const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
@@ -473,7 +473,7 @@ function validateStep(step) {
       }
     });
 
-    // ORIGINAL APP14: Validaciones específicas por paso
+    // Validaciones específicas por paso
     if (step === 1) {
       if (!tipoSolicitud) {
         errors.push('Selecciona un tipo de solicitud');
