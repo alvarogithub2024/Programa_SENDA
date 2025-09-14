@@ -1145,7 +1145,7 @@ function updateMaxFormStep() {
   if (tipoSolicitud === 'informacion') {
     maxFormStep = 1; // Solo necesita el primer paso
   } else if (tipoSolicitud === 'anonimo') {
-    maxFormStep = 3; // Paso 1 y 3 (salta el 2)
+    maxFormStep = 3; // Paso 1 , 3 y 4 (salta el 2)
   } else {
     maxFormStep = 4; // Todos los pasos
   }
