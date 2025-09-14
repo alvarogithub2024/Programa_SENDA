@@ -149,7 +149,12 @@ body {
 
 .logo img {
   height: 40px;
-  filter: brightness(0) invert(1);
+  /* Eliminamos el filtro que convertía la imagen a blanco */
+  /* filter: brightness(0) invert(1); */
+  
+  /* Agregamos un respaldo en caso de que la imagen no cargue */
+  object-fit: contain;
+  max-width: 40px;
 }
 
 .nav {
