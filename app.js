@@ -23,8 +23,8 @@ try {
   
   db.enablePersistence({
     synchronizeTabs: true
-  }).catch((err) => {
-    if (err.code === 'failed-precondition') {
+  }).catch((error) => {
+    if (error.code === 'failed-precondition') {
       console.warn('Persistencia falló: múltiples tabs abiertas');
     } else if (err.code === 'unimplemented') {
       console.warn('Persistencia no soportada en este navegador');
