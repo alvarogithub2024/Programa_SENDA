@@ -404,7 +404,7 @@
     </div>
   </div>
 
-  <!-- Patient Registration Modal -->
+  <!-- Patient Registration Modal CORREGIDO -->
   <div class="modal-overlay" id="patient-modal">
     <div class="modal large-modal">
       <button class="modal-close" data-close="patient-modal">
@@ -412,49 +412,64 @@
       </button>
       <h2>Solicitud de Ayuda - Confidencial</h2>
       
-      <div class="form-progress">
+      <!-- CORREGIDO: Progress dinámico -->
+      <div class="form-progress" id="form-progress-container">
         <div class="progress-bar">
           <div class="progress-fill" id="form-progress"></div>
         </div>
-        <span class="progress-text" id="progress-text">Paso 1 de 3</span>
+        <span class="progress-text" id="progress-text">Paso 1 de 1</span>
       </div>
 
       <form id="patient-form" class="multi-step-form">
-        <!-- PASO 1: Tipo de solicitud -->
+        <!-- PASO 1: Tipo de solicitud CORREGIDO -->
         <div class="form-step active" data-step="1">
-          <h3>Tipo de solicitud</h3>
+          <h3>¿Cómo podemos ayudarte?</h3>
           
           <div class="form-group">
-            <label class="form-label">¿Cómo te gustaría proceder? *</label>
+            <label class="form-label">Selecciona el tipo de ayuda que necesitas *</label>
             <div class="radio-group">
               <label class="radio-option">
                 <input type="radio" name="tipoSolicitud" value="identificado" required>
                 <span class="radio-custom"></span>
-                Proporcionar mis datos para contacto directo
+                <div class="radio-content">
+                  <strong>Solicitar tratamiento</strong>
+                  <p>Proporcionar mis datos para ser contactado y agendar una cita</p>
+                </div>
               </label>
               <label class="radio-option">
                 <input type="radio" name="tipoSolicitud" value="informacion" required>
                 <span class="radio-custom"></span>
-                Solo necesito información sobre el programa
+                <div class="radio-content">
+                  <strong>Solicitar información</strong>
+                  <p>Solo necesito información sobre el programa SENDA</p>
+                </div>
               </label>
             </div>
           </div>
 
-          <!-- Campo de email para solo información -->
+          <!-- CORREGIDO: Email para información únicamente -->
           <div class="form-group" id="info-email-container" style="display: none;">
             <label class="form-label">Email para recibir información *</label>
             <input type="email" class="form-input" id="info-email" placeholder="tu@email.com">
-            <small style="color: var(--gray-600);">Te enviaremos información completa sobre el programa SENDA</small>
+            <small style="color: var(--gray-600);">Te enviaremos información completa sobre el programa SENDA a tu correo</small>
+            
+            <div class="form-navigation" style="margin-top: 20px;">
+              <button type="button" class="btn btn-success" id="submit-info-btn">
+                <i class="fas fa-paper-plane"></i>
+                Solicitar Información
+              </button>
+            </div>
           </div>
 
-          <div id="basic-info-container">
+          <!-- CORREGIDO: Campos básicos solo para tratamiento -->
+          <div id="treatment-fields-container" style="display: none;">
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label">Tu edad *</label>
                 <input type="number" class="form-input" id="patient-age" min="12" max="120" required>
               </div>
               <div class="form-group">
-                <label class="form-label">CESFAM *</label>
+                <label class="form-label">CESFAM más cercano *</label>
                 <select class="form-select" id="patient-cesfam" required>
                   <option value="">Seleccionar CESFAM...</option>
                   <option value="CESFAM Alejandro del Río">CESFAM Alejandro del Río</option>
@@ -489,12 +504,12 @@
                 </label>
               </div>
             </div>
-          </div>
 
-          <div class="form-navigation">
-            <button type="button" class="btn btn-primary" id="next-step-1">
-              <span id="next-btn-text">Siguiente</span> <i class="fas fa-arrow-right"></i>
-            </button>
+            <div class="form-navigation">
+              <button type="button" class="btn btn-primary" id="next-step-1">
+                Siguiente <i class="fas fa-arrow-right"></i>
+              </button>
+            </div>
           </div>
         </div>
 
