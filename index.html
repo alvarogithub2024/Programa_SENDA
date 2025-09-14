@@ -16,6 +16,14 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p>Cargando...</p>
+        </div>
+    </div>
 
     <!-- Notifications Container -->
     <div id="notifications" class="notifications-container"></div>
@@ -407,7 +415,7 @@
         </div>
     </div>
 
-    <!-- Modal Solicitud Paciente -->
+    <!-- Modal Solicitud Paciente CORREGIDO -->
     <div id="patient-modal" class="modal-overlay">
         <div class="modal large-modal">
             <button class="modal-close" onclick="closeModal('patient-modal')">
@@ -420,7 +428,7 @@
                 <!-- Progress Indicator -->
                 <div class="progress-indicator">
                     <div class="progress-bar">
-                        <div id="form-progress" class="progress-fill"></div>
+                        <div id="form-progress" class="progress-fill" style="width: 25%;"></div>
                     </div>
                     <span id="progress-text">Paso 1 de 4</span>
                 </div>
@@ -452,8 +460,8 @@
                             </div>
                         </div>
                         
-                        <!-- Container para email de información -->
-                        <div id="info-email-container" class="form-group">
+                        <!-- Container para email de información (oculto por defecto) -->
+                        <div id="info-email-container" class="form-group" style="display: none;">
                             <label class="form-label">Email para recibir información</label>
                             <input type="email" id="info-email" class="form-input" placeholder="tu@email.com">
                         </div>
@@ -499,7 +507,7 @@
                         </div>
                         
                         <div class="form-actions">
-                            <button type="button" id="submit-step-1" class="btn btn-success">
+                            <button type="button" id="submit-step-1" class="btn btn-success" style="display: none;">
                                 <i class="fas fa-paper-plane"></i>
                                 Enviar Solicitud
                             </button>
@@ -511,7 +519,7 @@
                     </div>
                     
                     <!-- Paso 2: Datos Personales -->
-                    <div class="form-step" data-step="2">
+                    <div class="form-step" data-step="2" style="display: none;">
                         <h3>Datos Personales</h3>
                         
                         <div class="form-row">
@@ -560,7 +568,7 @@
                     </div>
                     
                     <!-- Paso 3: Información sobre el Consumo -->
-                    <div class="form-step" data-step="3">
+                    <div class="form-step" data-step="3" style="display: none;">
                         <h3>Información sobre el Consumo</h3>
                         
                         <div class="form-group">
@@ -685,7 +693,7 @@
                     </div>
                     
                     <!-- Paso 4: Información Adicional -->
-                    <div class="form-step" data-step="4">
+                    <div class="form-step" data-step="4" style="display: none;">
                         <h3>Información Adicional</h3>
                         
                         <div class="form-group">
@@ -790,7 +798,7 @@
         </div>
     </div>
 
-    <!-- JavaScript en línea para funcionalidad básica -->
+    <!-- JavaScript CORREGIDO -->
     <script>
         // Funciones básicas necesarias antes de cargar app.js
         function showNotification(message, type = 'info', duration = 4000) {
@@ -814,6 +822,34 @@
             }
         }
 
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'flex';
+            }
+        }
+
+        // Funcionalidad del formulario multi-step
+        function showStep(stepNumber) {
+            // Ocultar todos los steps
+            document.querySelectorAll('.form-step').forEach(step => {
+                step.style.display = 'none';
+                step.classList.remove('active');
+            });
+            
+            // Mostrar step actual
+            const currentStep = document.querySelector(`[data-step="${stepNumber}"]`);
+            if (currentStep) {
+                currentStep.style.display = 'block';
+                currentStep.classList.add('active');
+            }
+            
+            // Actualizar barra de progreso
+            const progress = (stepNumber / 4) * 100;
+            document.getElementById('form-progress').style.width = progress + '%';
+            document.getElementById('progress-text').textContent = `Paso ${stepNumber} de 4`;
+        }
+
         // Modal tabs functionality
         document.addEventListener('DOMContentLoaded', function() {
             const modalTabBtns = document.querySelectorAll('.modal-tab-btn');
@@ -831,11 +867,60 @@
                 });
             });
 
+            // Event listener para abrir modal de solicitud
+            document.getElementById('register-patient')?.addEventListener('click', () => {
+                openModal('patient-modal');
+                showStep(1);
+            });
+
+            // Event listeners para navegación del formulario
+            document.getElementById('next-step-1')?.addEventListener('click', () => {
+                const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked');
+                if (tipoSolicitud && tipoSolicitud.value === 'informacion') {
+                    // Si es solo información, mostrar campo email y botón enviar
+                    document.getElementById('info-email-container').style.display = 'block';
+                    document.getElementById('basic-info-container').style.display = 'none';
+                    document.getElementById('submit-step-1').style.display = 'inline-flex';
+                    document.getElementById('next-step-1').style.display = 'none';
+                } else if (tipoSolicitud) {
+                    showStep(2);
+                }
+            });
+
+            document.getElementById('next-step-2')?.addEventListener('click', () => showStep(3));
+            document.getElementById('next-step-3')?.addEventListener('click', () => showStep(4));
+            
+            document.getElementById('prev-step-2')?.addEventListener('click', () => showStep(1));
+            document.getElementById('prev-step-3')?.addEventListener('click', () => showStep(2));
+            document.getElementById('prev-step-4')?.addEventListener('click', () => showStep(3));
+
+            // Event listener para cambio en tipo de solicitud
+            document.querySelectorAll('input[name="tipoSolicitud"]').forEach(radio => {
+                radio.addEventListener('change', () => {
+                    if (radio.value === 'informacion') {
+                        document.getElementById('info-email-container').style.display = 'block';
+                        document.getElementById('basic-info-container').style.display = 'none';
+                        document.getElementById('submit-step-1').style.display = 'inline-flex';
+                        document.getElementById('next-step-1').style.display = 'none';
+                    } else {
+                        document.getElementById('info-email-container').style.display = 'none';
+                        document.getElementById('basic-info-container').style.display = 'block';
+                        document.getElementById('submit-step-1').style.display = 'none';
+                        document.getElementById('next-step-1').style.display = 'inline-flex';
+                    }
+                });
+            });
+
             // Event listener para formatear RUT automáticamente
             document.addEventListener('input', (e) => {
                 if (e.target.id && (e.target.id.includes('rut') || e.target.id.includes('RUT'))) {
                     e.target.value = formatRUT(e.target.value);
                 }
+            });
+
+            // Event listener para el rango de motivación
+            document.getElementById('motivacion-range')?.addEventListener('input', (e) => {
+                document.getElementById('motivacion-value').textContent = e.target.value;
             });
         });
     </script>
