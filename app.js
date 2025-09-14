@@ -2395,10 +2395,8 @@ async function moveToPatients(solicitudData, citaId) {
     console.error('Error moving to patients:', error);
   }
 }
-
-console.log('✅ PARTE 4 CORREGIDA: Gestión de solicitudes Firebase y pacientes con botón limpiar - SINTAXIS ARREGLADA');
-// ================= SENDA PUENTE ALTO - APP.JS PARTE 5 FINAL CORREGIDA =================
-// Inicialización, Eventos, Formularios y Funciones Finales
+// ================= SENDA PUENTE ALTO - APP.JS PARTE 5A =================
+// Eventos, Tabs, Seguimiento y Formularios
 
 // ================= GESTIÓN DE EVENTOS =================
 
@@ -2927,6 +2925,126 @@ function formatPhoneNumber(phone) {
   return phone;
 }
 
+// ================= FUNCIONES AUXILIARES =================
+
+function filterSolicitudes() {
+  try {
+    const searchTerm = document.getElementById('search-solicitudes')?.value?.toLowerCase() || '';
+    const priorityFilter = document.getElementById('priority-filter')?.value || '';
+    
+    let filteredSolicitudes = solicitudesData;
+    
+    if (currentFilter !== 'todas') {
+      filteredSolicitudes = filteredSolicitudes.filter(s => s.estado === currentFilter);
+    }
+    
+    if (priorityFilter) {
+      filteredSolicitudes = filteredSolicitudes.filter(s => s.prioridad === priorityFilter);
+    }
+    
+    if (searchTerm) {
+      filteredSolicitudes = filteredSolicitudes.filter(s => {
+        const searchableText = `
+          ${s.nombre || ''} 
+          ${s.apellidos || ''} 
+          ${s.rut || ''} 
+          ${s.email || ''} 
+          ${s.descripcion || ''} 
+          ${s.motivo || ''}
+        `.toLowerCase();
+        
+        return searchableText.includes(searchTerm);
+      });
+    }
+    
+    renderSolicitudesEnhanced(filteredSolicitudes, categorizarSolicitudes(filteredSolicitudes));
+    
+  } catch (error) {
+    console.error('Error filtering solicitudes:', error);
+  }
+}
+
+function handleUrgentCase(solicitudId) { 
+  try {
+    showNotification('Caso urgente identificado. Se notificará al coordinador.', 'warning');
+    
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log('🚨 Caso urgente identificado:', solicitudId);
+    }
+  } catch (error) {
+    console.error('Error handling urgent case:', error);
+  }
+}
+
+function showAboutProgram() {
+  try {
+    const aboutModal = `
+      <div class="modal-overlay temp-modal" id="about-modal">
+        <div class="modal large-modal">
+          <button class="modal-close" onclick="closeModal('about-modal')">
+            <i class="fas fa-times"></i>
+          </button>
+          
+          <div style="padding: 24px;">
+            <h2><i class="fas fa-info-circle"></i> Sobre el Programa SENDA</h2>
+            
+            <div style="line-height: 1.6; color: var(--text-dark);">
+              <p><strong>SENDA (Servicio Nacional para la Prevención y Rehabilitación del Consumo de Drogas y Alcohol)</strong> es el organismo del Gobierno de Chile encargado de elaborar las políticas de prevención del consumo de drogas y alcohol, así como de tratamiento, rehabilitación e integración social de las personas afectadas por estas sustancias.</p>
+              
+              <h3 style="color: var(--primary-blue); margin-top: 24px;">Nuestros Servicios</h3>
+              <ul style="margin-left: 20px;">
+                <li>Tratamiento ambulatorio básico e intensivo</li>
+                <li>Tratamiento residencial</li>
+                <li>Programas de reinserción social</li>
+                <li>Apoyo familiar y comunitario</li>
+                <li>Prevención en establecimientos educacionales</li>
+                <li>Capacitación a profesionales</li>
+              </ul>
+              
+              <h3 style="color: var(--primary-blue); margin-top: 24px;">Horarios de Atención</h3>
+              <ul style="margin-left: 20px;">
+                <li><strong>Lunes a Viernes:</strong> 08:00 - 16:30</li>
+                <li><strong>Sábados y Domingos:</strong> 09:00 - 12:30</li>
+              </ul>
+              
+              <h3 style="color: var(--primary-blue); margin-top: 24px;">Contacto</h3>
+              <ul style="margin-left: 20px;">
+                <li><strong>Teléfono:</strong> 1412 (gratuito)</li>
+                <li><strong>Emergencias:</strong> 131</li>
+                <li><strong>Web:</strong> <a href="https://www.senda.gob.cl" target="_blank">www.senda.gob.cl</a></li>
+              </ul>
+              
+              <div style="background: var(--light-blue); padding: 16px; border-radius: 8px; margin-top: 24px;">
+                <p style="margin: 0; font-style: italic; text-align: center;">
+                  "Tu recuperación es posible. Estamos aquí para acompañarte en cada paso del camino."
+                </p>
+              </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 24px;">
+              <button class="btn btn-primary" onclick="closeModal('about-modal')">
+                <i class="fas fa-check"></i>
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', aboutModal);
+    showModal('about-modal');
+    
+  } catch (error) {
+    console.error('Error showing about program:', error);
+    showNotification('Error al mostrar información del programa', 'error');
+  }
+}
+
+console.log('✅ PARTE 5A: Eventos, tabs y seguimiento cargados');
+// ================= SENDA PUENTE ALTO - APP.JS PARTE 5B =================
+// Validaciones, Modales, Autenticación e Inicialización Final
+
 // ================= VALIDACIONES DE FORMULARIO =================
 
 function validateStep(step) {
@@ -3237,7 +3355,7 @@ async function handleReentrySubmit(e) {
       version: '2.0'
     };
 
-    const docRef = await db.collection('reingresos').add(reingresoData);
+    await db.collection('reingresos').add(reingresoData);
     
     closeModal('reentry-modal');
     e.target.reset();
@@ -3291,823 +3409,6 @@ async function createCriticalAlert(solicitudData, solicitudId) {
   } catch (error) {
     console.error('❌ Error creando alerta crítica:', error);
   }
-}
-
-// ================= FUNCIONES AUXILIARES FINALES =================
-
-function filterSolicitudes() {
-  try {
-    const searchTerm = document.getElementById('search-solicitudes')?.value?.toLowerCase() || '';
-    const priorityFilter = document.getElementById('priority-filter')?.value || '';
-    
-    let filteredSolicitudes = solicitudesData;
-    
-    if (currentFilter !== 'todas') {
-      filteredSolicitudes = filteredSolicitudes.filter(s => s.estado === currentFilter);
-    }
-    
-    if (priorityFilter) {
-      filteredSolicitudes = filteredSolicitudes.filter(s => s.prioridad === priorityFilter);
-    }
-    
-    if (searchTerm) {
-      filteredSolicitudes = filteredSolicitudes.filter(s => {
-        const searchableText = `
-          ${s.nombre || ''} 
-          ${s.apellidos || ''} 
-          ${s.rut || ''} 
-          ${s.email || ''} 
-          ${s.descripcion || ''} 
-          ${s.motivo || ''}
-        `.toLowerCase();
-        
-        return searchableText.includes(searchTerm);
-      });
-    }
-    
-    renderSolicitudesEnhanced(filteredSolicitudes, categorizarSolicitudes(filteredSolicitudes));
-    
-  } catch (error) {
-    console.error('Error filtering solicitudes:', error);
-  }
-}
-
-function handleUrgentCase(solicitudId) { 
-  try {
-    showNotification('Caso urgente identificado. Se notificará al coordinador.', 'warning');
-    
-    if (APP_CONFIG.DEBUG_MODE) {
-      console.log('🚨 Caso urgente identificado:', solicitudId);
-    }
-  } catch (error) {
-    console.error('Error handling urgent case:', error);
-  }
-}
-
-function showAboutProgram() {
-  try {
-    const aboutModal = `
-      <div class="modal-overlay temp-modal" id="about-modal">
-        <div class="modal large-modal">
-          <button class="modal-close" onclick="closeModal('about-modal')">
-            <i class="fas fa-times"></i>
-          </button>
-          
-          <div style="padding: 24px;">
-            <h2><i class="fas fa-info-circle"></i> Sobre el Programa SENDA</h2>
-            
-            <div style="line-height: 1.6; color: var(--text-dark);">
-              <p><strong>SENDA (Servicio Nacional para la Prevención y Rehabilitación del Consumo de Drogas y Alcohol)</strong> es el organismo del Gobierno de Chile encargado de elaborar las políticas de prevención del consumo de drogas y alcohol, así como de tratamiento, rehabilitación e integración social de las personas afectadas por estas sustancias.</p>
-              
-              <h3 style="color: var(--primary-blue); margin-top: 24px;">Nuestros Servicios</h3>
-              <ul style="margin-left: 20px;">
-                <li>Tratamiento ambulatorio básico e intensivo</li>
-                <li>Tratamiento residencial</li>
-                <li>Programas de reinserción social</li>
-                <li>Apoyo familiar y comunitario</li>
-                <li>Prevención en establecimientos educacionales</li>
-                <li>Capacitación a profesionales</li>
-              </ul>
-              
-              <h3 style="color: var(--primary-blue); margin-top: 24px;">Horarios de Atención</h3>
-              <ul style="margin-left: 20px;">
-                <li><strong>Lunes a Viernes:</strong> 08:00 - 16:30</li>
-                <li><strong>Sábados y Domingos:</strong> 09:00 - 12:30</li>
-              </ul>
-              
-              <h3 style="color: var(--primary-blue); margin-top: 24px;">Contacto</h3>
-              <ul style="margin-left: 20px;">
-                <li><strong>Teléfono:</strong> 1412 (gratuito)</li>
-                <li><strong>Emergencias:</strong> 131</li>
-                <li><strong>Web:</strong> <a href="https://www.senda.gob.cl" target="_blank">www.senda.gob.cl</a></li>
-              </ul>
-              
-              <div style="background: var(--light-blue); padding: 16px; border-radius: 8px; margin-top: 24px;">
-                <p style="margin: 0; font-style: italic; text-align: center;">
-                  "Tu recuperación es posible. Estamos aquí para acompañarte en cada paso del camino."
-                </p>
-              </div>
-            </div>
-            
-            <div style="text-align: center; margin-top: 24px;">
-              <button class="btn btn-primary" onclick="closeModal('about-modal')">
-                <i class="fas fa-check"></i>
-                Entendido
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', aboutModal);
-    showModal('about-modal');
-    
-  } catch (error) {
-    console.error('Error showing about program:', error);
-    showNotification('Error al mostrar información del programa', 'error');
-  }
-}
-
-// ================= FUNCIONES DE AGENDA Y MODALES =================
-
-async function showAgendaModal(solicitudId) {
-  try {
-    const solicitud = solicitudesData.find(s => s.id === solicitudId);
-    if (!solicitud) {
-      showNotification('Solicitud no encontrada', 'error');
-      return;
-    }
-    
-    currentAgendaSolicitud = solicitud;
-    
-    const agendaModal = `
-      <div class="modal-overlay temp-modal" id="agenda-cita-modal">
-        <div class="modal large-modal">
-          <button class="modal-close" onclick="closeModal('agenda-cita-modal')">
-            <i class="fas fa-times"></i>
-          </button>
-          
-          <div style="padding: 24px;">
-            <h2><i class="fas fa-calendar-plus"></i> Agendar Cita</h2>
-            
-            <div id="agenda-solicitud-info" style="background: var(--light-blue); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
-              <h4 style="margin: 0 0 8px 0; color: var(--primary-blue);">
-                ${solicitud.tipo === 'reingreso' ? 'Reingreso' : 'Solicitud'} - ${solicitud.nombre || 'Sin nombre'}
-              </h4>
-              <div style="font-size: 14px;">
-                <div><strong>RUT:</strong> ${solicitud.rut || 'No disponible'}</div>
-                <div><strong>Edad:</strong> ${solicitud.edad || 'No especificada'} años</div>
-                <div><strong>Prioridad:</strong> <span style="color: ${getPriorityColor(solicitud.prioridad)}; font-weight: bold;">${(solicitud.prioridad || 'media').toUpperCase()}</span></div>
-                <div><strong>CESFAM:</strong> ${solicitud.cesfam}</div>
-              </div>
-            </div>
-
-            <form id="agenda-cita-form">
-              <div class="form-group">
-                <label class="form-label">Profesional *</label>
-                <select class="form-select" id="agenda-professional" required>
-                  <option value="">Seleccionar profesional...</option>
-                </select>
-              </div>
-              
-              <div class="form-group">
-                <label class="form-label">Fecha *</label>
-                <input type="date" class="form-input" id="agenda-date" required>
-              </div>
-              
-              <div class="time-slots-container" id="agenda-time-slots-container" style="display: none;">
-                <h4 style="margin-bottom: 16px; color: var(--primary-blue);">
-                  <i class="fas fa-clock"></i> Horarios Disponibles
-                </h4>
-                <div class="time-slots-grid" id="agenda-time-slots-grid">
-                  <!-- Los slots de tiempo se cargarán aquí -->
-                </div>
-              </div>
-              
-              <div class="form-group">
-                <label class="form-label">Observaciones</label>
-                <textarea class="form-textarea" id="agenda-notes" rows="3" 
-                          placeholder="Observaciones adicionales..."></textarea>
-              </div>
-              
-              <div class="form-actions">
-                <button type="button" class="btn btn-outline" onclick="closeModal('agenda-cita-modal')">
-                  <i class="fas fa-times"></i>
-                  Cancelar
-                </button>
-                <button type="submit" class="btn btn-success" disabled>
-                  <i class="fas fa-calendar-check"></i>
-                  Agendar Cita
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', agendaModal);
-    showModal('agenda-cita-modal');
-    
-    await loadProfessionalsForAgenda();
-    setupAgendaFormListeners();
-    
-  } catch (error) {
-    console.error('Error showing agenda modal:', error);
-    showNotification('Error al abrir modal de agenda', 'error');
-  }
-}
-
-async function loadProfessionalsForAgenda() {
-  try {
-    const professionalSelect = document.getElementById('agenda-professional');
-    if (!professionalSelect) return;
-
-    let professionals = professionalsList;
-    if (professionals.length === 0) {
-      professionals = await loadProfessionalsByArea();
-    }
-    
-    professionalSelect.innerHTML = '<option value="">Seleccionar profesional...</option>';
-    
-    professionals.forEach(prof => {
-      const option = document.createElement('option');
-      option.value = prof.id;
-      option.textContent = `${prof.nombre} ${prof.apellidos} - ${getProfessionName(prof.profession)}`;
-      option.dataset.profession = prof.profession;
-      option.dataset.nombre = `${prof.nombre} ${prof.apellidos}`;
-      professionalSelect.appendChild(option);
-    });
-    
-  } catch (error) {
-    console.error('Error loading professionals for agenda:', error);
-    showNotification('Error al cargar profesionales', 'error');
-  }
-}
-
-function setupAgendaFormListeners() {
-  try {
-    const professionalSelect = document.getElementById('agenda-professional');
-    const agendaDate = document.getElementById('agenda-date');
-    const agendaForm = document.getElementById('agenda-cita-form');
-    
-    if (agendaDate) {
-      const today = new Date().toISOString().split('T')[0];
-      agendaDate.min = today;
-      agendaDate.value = today;
-    }
-
-    if (professionalSelect) {
-      professionalSelect.addEventListener('change', loadAgendaTimeSlots);
-    }
-    
-    if (agendaDate) {
-      agendaDate.addEventListener('change', loadAgendaTimeSlots);
-    }
-
-    if (agendaForm) {
-      agendaForm.addEventListener('submit', handleAgendaCitaSubmit);
-    }
-    
-  } catch (error) {
-    console.error('Error setting up agenda form listeners:', error);
-  }
-}
-
-async function loadAgendaTimeSlots() {
-  try {
-    const professionalSelect = document.getElementById('agenda-professional');
-    const agendaDate = document.getElementById('agenda-date');
-    const timeSlotsContainer = document.getElementById('agenda-time-slots-container');
-    const timeSlotsGrid = document.getElementById('agenda-time-slots-grid');
-    const submitBtn = document.querySelector('#agenda-cita-form button[type="submit"]');
-    
-    if (!professionalSelect?.value || !agendaDate?.value) {
-      if (timeSlotsContainer) timeSlotsContainer.style.display = 'none';
-      if (submitBtn) submitBtn.disabled = true;
-      return;
-    }
-
-    const selectedDate = new Date(agendaDate.value);
-    
-    const timeSlots = generateTimeSlots(selectedDate);
-    const occupiedSlots = await getOccupiedSlots(professionalSelect.value, selectedDate);
-    
-    if (timeSlotsGrid) {
-      timeSlotsGrid.innerHTML = timeSlots.map(slot => {
-        const isOccupied = occupiedSlots.includes(slot.time);
-        const isPast = isPastTimeSlot(selectedDate, slot.hour, slot.minute);
-        const isDisabled = isOccupied || isPast;
-        
-        return `
-          <button type="button" 
-                  class="time-slot ${isDisabled ? 'disabled' : ''}" 
-                  data-time="${slot.time}"
-                  ${isDisabled ? 'disabled' : ''}
-                  onclick="selectAgendaTimeSlot(this)"
-                  style="
-                    padding: 12px;
-                    border: 2px solid ${isDisabled ? 'var(--gray-300)' : 'var(--primary-blue)'};
-                    border-radius: 8px;
-                    background: ${isDisabled ? 'var(--gray-100)' : 'white'};
-                    color: ${isDisabled ? 'var(--gray-400)' : 'var(--primary-blue)'};
-                    cursor: ${isDisabled ? 'not-allowed' : 'pointer'};
-                    transition: all 0.2s ease;
-                    font-weight: 500;
-                  ">
-            <i class="fas fa-clock" style="margin-right: 4px;"></i>
-            ${slot.time}
-            ${isOccupied ? '<br><small>Ocupado</small>' : ''}
-            ${isPast ? '<br><small>Pasado</small>' : ''}
-          </button>
-        `;
-      }).join('');
-    }
-    
-    if (timeSlotsContainer) timeSlotsContainer.style.display = 'block';
-    if (submitBtn) submitBtn.disabled = true;
-    
-  } catch (error) {
-    console.error('Error loading agenda time slots:', error);
-    showNotification('Error al cargar horarios disponibles', 'error');
-  }
-}
-
-function selectAgendaTimeSlot(button) {
-  try {
-    document.querySelectorAll('#agenda-time-slots-grid .time-slot.selected').forEach(slot => {
-      slot.classList.remove('selected');
-      slot.style.background = 'white';
-      slot.style.color = 'var(--primary-blue)';
-    });
-    
-    button.classList.add('selected');
-    button.style.background = 'var(--primary-blue)';
-    button.style.color = 'white';
-    
-    const submitBtn = document.querySelector('#agenda-cita-form button[type="submit"]');
-    if (submitBtn) {
-      submitBtn.disabled = false;
-    }
-    
-  } catch (error) {
-    console.error('Error selecting agenda time slot:', error);
-  }
-}
-
-async function handleAgendaCitaSubmit(e) {
-  e.preventDefault();
-  
-  if (!currentAgendaSolicitud) {
-    showNotification('No hay solicitud seleccionada', 'error');
-    return;
-  }
-  
-  try {
-    const formData = {
-      professionalId: document.getElementById('agenda-professional')?.value,
-      fecha: document.getElementById('agenda-date')?.value,
-      hora: document.querySelector('#agenda-time-slots-grid .time-slot.selected')?.dataset.time,
-      observaciones: document.getElementById('agenda-notes')?.value?.trim() || ''
-    };
-    
-    if (!formData.professionalId || !formData.fecha || !formData.hora) {
-      showNotification('Completa todos los campos obligatorios', 'warning');
-      return;
-    }
-    
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Agendando...';
-    
-    const professionalSelect = document.getElementById('agenda-professional');
-    const selectedOption = professionalSelect.options[professionalSelect.selectedIndex];
-    const profesionalNombre = selectedOption.dataset.nombre;
-    const tipoProfesional = selectedOption.dataset.profession;
-    
-    const fechaCompleta = new Date(`${formData.fecha}T${formData.hora}:00`);
-    
-    const citaData = {
-      profesionalId: formData.professionalId,
-      profesionalNombre: profesionalNombre,
-      tipoProfesional: tipoProfesional,
-      pacienteNombre: currentAgendaSolicitud.nombre || 'Paciente',
-      pacienteRut: currentAgendaSolicitud.rut || '',
-      pacienteTelefono: currentAgendaSolicitud.telefono || '',
-      fecha: fechaCompleta,
-      estado: 'programada',
-      tipo: 'solicitud_agendada',
-      cesfam: currentUserData.cesfam,
-      observaciones: formData.observaciones,
-      solicitudId: currentAgendaSolicitud.id,
-      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
-      creadoPor: currentUser.uid
-    };
-    
-    const citaRef = await db.collection('citas').add(citaData);
-    
-    const collectionName = currentAgendaSolicitud.tipo === 'reingreso' ? 'reingresos' : 'solicitudes_ingreso';
-    await db.collection(collectionName).doc(currentAgendaSolicitud.id).update({
-      estado: 'agendada',
-      citaId: citaRef.id,
-      fechaAgendamiento: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    
-    await moveToPatients({
-      nombre: currentAgendaSolicitud.nombre,
-      apellidos: currentAgendaSolicitud.apellidos || '',
-      rut: currentAgendaSolicitud.rut,
-      telefono: currentAgendaSolicitud.telefono,
-      email: currentAgendaSolicitud.email,
-      edad: currentAgendaSolicitud.edad,
-      sustancias: currentAgendaSolicitud.sustancias,
-      prioridad: currentAgendaSolicitud.prioridad,
-      motivacion: currentAgendaSolicitud.motivacion
-    }, citaRef.id);
-    
-    closeModal('agenda-cita-modal');
-    currentAgendaSolicitud = null;
-    
-    showNotification(`Cita agendada exitosamente para ${fechaCompleta.toLocaleDateString('es-CL')} a las ${formData.hora}`, 'success', 5000);
-    
-    await loadSolicitudes();
-    renderCalendar();
-    
-  } catch (error) {
-    console.error('Error agendando cita:', error);
-    showNotification('Error al agendar cita: ' + error.message, 'error');
-  }
-}
-
-function showSolicitudDetail(solicitud) {
-  try {
-    const detailModal = createSolicitudDetailModal(solicitud);
-    document.body.insertAdjacentHTML('beforeend', detailModal);
-    showModal('solicitud-detail-modal');
-  } catch (error) {
-    console.error('Error showing solicitud detail:', error);
-    showNotification('Error al mostrar detalle de solicitud', 'error');
-  }
-}
-
-function createSolicitudDetailModal(solicitud) {
-  const fecha = formatDate(solicitud.fechaCreacion);
-  const prioridad = solicitud.prioridad || 'baja';
-  const estado = solicitud.estado || 'pendiente';
-  
-  let tipoSolicitud = 'Solicitud General';
-  if (solicitud.tipo === 'reingreso') {
-    tipoSolicitud = 'Reingreso';
-  } else if (solicitud.tipoSolicitud === 'identificado') {
-    tipoSolicitud = 'Solicitud Identificada';
-  } else if (solicitud.tipoSolicitud === 'informacion') {
-    tipoSolicitud = 'Solicitud de Información';
-  }
-  
-  return `
-    <div class="modal-overlay temp-modal" id="solicitud-detail-modal">
-      <div class="modal large-modal">
-        <button class="modal-close" onclick="closeModal('solicitud-detail-modal')">
-          <i class="fas fa-times"></i>
-        </button>
-        
-        <div style="padding: 24px;">
-          <h2><i class="fas fa-file-alt"></i> Detalle de Solicitud</h2>
-          
-          <div class="solicitud-info" style="background: var(--light-blue); padding: 20px; border-radius: 12px; margin-bottom: 24px;">
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
-              <div>
-                <h3 style="margin: 0; color: var(--primary-blue);">
-                  ${tipoSolicitud}
-                </h3>
-                <p style="margin: 4px 0; font-weight: 500;">ID: ${solicitud.id}</p>
-              </div>
-              <div style="display: flex; gap: 8px;">
-                <span class="priority-badge ${prioridad}" style="padding: 6px 12px; border-radius: 6px; font-weight: bold; color: white; background-color: ${getPriorityColor(prioridad)};">
-                  ${prioridad.toUpperCase()}
-                </span>
-                <span class="status-badge ${estado}" style="padding: 6px 12px; border-radius: 6px; font-weight: bold;">
-                  ${estado.replace('_', ' ').toUpperCase()}
-                </span>
-              </div>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-              <div>
-                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Datos Personales</h4>
-                <div style="font-size: 14px; line-height: 1.6;">
-                  ${solicitud.nombre ? `<div><strong>Nombre:</strong> ${solicitud.nombre} ${solicitud.apellidos || ''}</div>` : ''}
-                  ${solicitud.rut ? `<div><strong>RUT:</strong> ${solicitud.rut}</div>` : ''}
-                  ${solicitud.email ? `<div><strong>Email:</strong> ${solicitud.email}</div>` : ''}
-                  ${solicitud.telefono ? `<div><strong>Teléfono:</strong> ${solicitud.telefono}</div>` : ''}
-                  ${solicitud.edad ? `<div><strong>Edad:</strong> ${solicitud.edad} años</div>` : ''}
-                  ${solicitud.direccion ? `<div><strong>Dirección:</strong> ${solicitud.direccion}</div>` : ''}
-                </div>
-              </div>
-              
-              <div>
-                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Información de Solicitud</h4>
-                <div style="font-size: 14px; line-height: 1.6;">
-                  <div><strong>CESFAM:</strong> ${solicitud.cesfam || 'No especificado'}</div>
-                  <div><strong>Fecha:</strong> ${fecha}</div>
-                  <div><strong>Origen:</strong> ${solicitud.origen || 'Web pública'}</div>
-                  ${solicitud.paraMi ? `<div><strong>Para:</strong> ${solicitud.paraMi === 'si' ? 'Sí mismo' : 'Otra persona'}</div>` : ''}
-                  ${solicitud.urgencia ? `<div><strong>Urgencia:</strong> ${solicitud.urgencia.toUpperCase()}</div>` : ''}
-                  ${solicitud.motivacion ? `<div><strong>Motivación:</strong> ${solicitud.motivacion}/10</div>` : ''}
-                  <div><strong>Tipo necesidad:</strong> ${solicitud.tipoNecesidad === 'necesita_hora' ? 'Necesita Hora' : 'Necesita Información'}</div>
-                </div>
-              </div>
-            </div>
-            
-            ${solicitud.sustancias && solicitud.sustancias.length > 0 ? 
-              `<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5);">
-                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Sustancias Problemáticas</h4>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                  ${solicitud.sustancias.map(s => `<span class="substance-tag" style="background: var(--primary-blue); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${s}</span>`).join('')}
-                </div>
-              </div>` : ''
-            }
-            
-            ${solicitud.descripcion || solicitud.motivo ? 
-              `<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5);">
-                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Descripción/Motivo</h4>
-                <p style="margin: 0; background: rgba(255,255,255,0.7); padding: 12px; border-radius: 6px; line-height: 1.5;">
-                  ${solicitud.descripcion || solicitud.motivo}
-                </p>
-              </div>` : ''
-            }
-          </div>
-          
-          <div style="display: flex; gap: 12px; justify-content: flex-end;">
-            <button class="btn btn-outline" onclick="closeModal('solicitud-detail-modal')">
-              <i class="fas fa-times"></i>
-              Cerrar
-            </button>
-            ${solicitud.tipo === 'informacion' || solicitud.tipoSolicitud === 'informacion' ? 
-              `<button class="btn btn-success" onclick="showInformationModal('${solicitud.id}')">
-                <i class="fas fa-envelope"></i>
-                Enviar Información
-              </button>` : 
-              `<button class="btn btn-success" onclick="showAgendaModal('${solicitud.id}')">
-                <i class="fas fa-calendar-plus"></i>
-// ================= CONTINUACIÓN FINAL DE LA PARTE 5 =================
-
-              `<button class="btn btn-success" onclick="showAgendaModal('${solicitud.id}')">
-                <i class="fas fa-calendar-plus"></i>
-                Agendar Cita
-              </button>`
-            }
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function getPriorityColor(prioridad) {
-  const colors = {
-    'critica': '#ef4444',
-    'alta': '#f59e0b',
-    'media': '#3b82f6',
-    'baja': '#10b981'
-  };
-  return colors[prioridad] || '#6b7280';
-}
-
-// ================= MODAL DE INFORMACIÓN =================
-
-function showInformationModal(solicitudId) {
-  try {
-    const solicitud = solicitudesData.find(s => s.id === solicitudId);
-    if (!solicitud) {
-      showNotification('Solicitud de información no encontrada', 'error');
-      return;
-    }
-    
-    const informationModal = `
-      <div class="modal-overlay temp-modal" id="information-modal">
-        <div class="modal large-modal">
-          <button class="modal-close" onclick="closeModal('information-modal')">
-            <i class="fas fa-times"></i>
-          </button>
-          
-          <div style="padding: 24px;">
-            <h2><i class="fas fa-envelope"></i> Enviar Información</h2>
-            
-            <div class="solicitud-info" style="background: var(--light-blue); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
-              <h4 style="margin: 0 0 8px 0; color: var(--primary-blue);">Solicitud de Información</h4>
-              <div style="font-size: 14px;">
-                <div><strong>Email destinatario:</strong> ${solicitud.email}</div>
-                <div><strong>Fecha solicitud:</strong> ${formatDate(solicitud.fechaCreacion)}</div>
-                <div><strong>Profesional:</strong> ${currentUserData.nombre} ${currentUserData.apellidos}</div>
-                <div><strong>CESFAM:</strong> ${currentUserData.cesfam}</div>
-              </div>
-            </div>
-            
-            <form id="information-form">
-              <div class="form-group">
-                <label class="form-label">Información a enviar *</label>
-                <textarea class="form-textarea" id="information-content" rows="8" required 
-                          placeholder="Escribe aquí la información que deseas enviar al solicitante...">${getDefaultInformationText()}</textarea>
-              </div>
-              
-              <div class="form-actions" style="display: flex; gap: 12px; justify-content: flex-end;">
-                <button type="button" class="btn btn-outline" onclick="closeModal('information-modal')">
-                  <i class="fas fa-times"></i>
-                  Cancelar
-                </button>
-                <button type="submit" class="btn btn-success">
-                  <i class="fas fa-paper-plane"></i>
-                  Enviar Información
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', informationModal);
-    showModal('information-modal');
-    
-    const form = document.getElementById('information-form');
-    if (form) {
-      form.addEventListener('submit', (e) => handleInformationSubmit(e, solicitudId));
-    }
-    
-  } catch (error) {
-    console.error('Error showing information modal:', error);
-    showNotification('Error al abrir modal de información', 'error');
-  }
-}
-
-function getDefaultInformationText() {
-  return `Estimado/a usuario/a,
-
-Gracias por tu interés en el Programa SENDA Puente Alto.
-
-INFORMACIÓN DEL PROGRAMA:
-
-🏥 SERVICIOS DISPONIBLES:
-• Tratamiento ambulatorio básico e intensivo
-• Tratamiento residencial  
-• Programas de reinserción social
-• Apoyo familiar y comunitario
-• Prevención en establecimientos educacionales
-
-📅 HORARIOS DE ATENCIÓN:
-• Lunes a Viernes: 08:00 - 16:30
-• Sábados y Domingos: 09:00 - 12:30
-
-📞 CONTACTO:
-• Línea SENDA: 1412 (gratuito)
-• SAPU: 131
-• Emergencias: 132
-• Web: www.senda.gob.cl
-
-🔐 CONFIDENCIALIDAD:
-Todos nuestros servicios son confidenciales y están diseñados para brindarte el apoyo que necesitas en un ambiente seguro y profesional.
-
-Si deseas solicitar una evaluación o agendar una cita, puedes:
-1. Llamar al 1412
-2. Acercarte directamente a cualquier CESFAM
-3. Completar el formulario de solicitud en nuestro sitio web
-
-Tu recuperación es posible. Estamos aquí para acompañarte.
-
-Atentamente,
-${currentUserData.nombre} ${currentUserData.apellidos}
-${getProfessionName(currentUserData.profession)}
-${currentUserData.cesfam}
-Programa SENDA Puente Alto`;
-}
-
-async function handleInformationSubmit(e, solicitudId) {
-  e.preventDefault();
-  
-  try {
-    const content = document.getElementById('information-content')?.value?.trim();
-    
-    if (!content) {
-      showNotification('Ingresa el contenido de la información', 'warning');
-      return;
-    }
-    
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
-    
-    // Simular envío de email (aquí iría la integración con EmailJS o servicio de email)
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Marcar como enviada y actualizar estado
-    await db.collection('solicitudes_informacion').doc(solicitudId).update({
-      estado: 'enviada',
-      fechaEnvio: firebase.firestore.FieldValue.serverTimestamp(),
-      enviadoPor: currentUser.uid,
-      profesionalEnviador: `${currentUserData.nombre} ${currentUserData.apellidos}`,
-      contenidoEnviado: content
-    });
-    
-    // Eliminar de la lista local
-    solicitudesData = solicitudesData.filter(s => s.id !== solicitudId);
-    renderSolicitudesEnhanced(solicitudesData, categorizarSolicitudes(solicitudesData));
-    
-    closeModal('information-modal');
-    showNotification('Información enviada exitosamente', 'success', 5000);
-    
-  } catch (error) {
-    console.error('Error enviando información:', error);
-    showNotification('Error al enviar la información: ' + error.message, 'error');
-  }
-}
-
-// ================= FUNCIONES DE PACIENTES ADICIONALES =================
-
-async function showPatientDetail(pacienteId) {
-  try {
-    showLoading(true, 'Cargando ficha del paciente...');
-    
-    const pacienteDoc = await db.collection('pacientes').doc(pacienteId).get();
-    
-    if (!pacienteDoc.exists) {
-      showNotification('Paciente no encontrado', 'error');
-      return;
-    }
-    
-    const paciente = {
-      id: pacienteDoc.id,
-      ...pacienteDoc.data()
-    };
-    
-    const detailModal = createPatientDetailModal(paciente);
-    document.body.insertAdjacentHTML('beforeend', detailModal);
-    showModal('patient-detail-modal');
-    
-  } catch (error) {
-    console.error('❌ Error loading patient detail:', error);
-    showNotification('Error al cargar ficha del paciente: ' + error.message, 'error');
-  } finally {
-    showLoading(false);
-  }
-}
-
-function createPatientDetailModal(paciente) {
-  const fechaCreacion = formatDate(paciente.fechaCreacion);
-  const fechaPrimeraAtencion = paciente.fechaPrimeraAtencion ? formatDate(paciente.fechaPrimeraAtencion) : 'No registrada';
-  
-  return `
-    <div class="modal-overlay temp-modal" id="patient-detail-modal">
-      <div class="modal large-modal">
-        <button class="modal-close" onclick="closeModal('patient-detail-modal')">
-          <i class="fas fa-times"></i>
-        </button>
-        
-        <div style="padding: 24px;">
-          <h2><i class="fas fa-user-md"></i> Ficha del Paciente</h2>
-          
-          <div class="patient-info" style="background: var(--light-blue); padding: 20px; border-radius: 12px; margin-bottom: 24px;">
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
-              <div>
-                <h3 style="margin: 0; color: var(--primary-blue);">
-                  ${paciente.nombre} ${paciente.apellidos || ''}
-                </h3>
-                <p style="margin: 4px 0; font-weight: 500;">RUT: ${paciente.rut}</p>
-              </div>
-              <span class="patient-status ${paciente.estado || 'activo'}" style="padding: 6px 12px; border-radius: 6px; font-weight: bold;">
-                ${(paciente.estado || 'activo').toUpperCase()}
-              </span>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-              <div>
-                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Datos Personales</h4>
-                <div style="font-size: 14px; line-height: 1.6;">
-                  <div><strong>Edad:</strong> ${paciente.edad || 'No especificada'} años</div>
-                  <div><strong>Teléfono:</strong> ${paciente.telefono || 'No disponible'}</div>
-                  <div><strong>Email:</strong> ${paciente.email || 'No disponible'}</div>
-                  <div><strong>Dirección:</strong> ${paciente.direccion || 'No disponible'}</div>
-                </div>
-              </div>
-              
-              <div>
-                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Información Clínica</h4>
-                <div style="font-size: 14px; line-height: 1.6;">
-                  <div><strong>CESFAM:</strong> ${paciente.cesfam}</div>
-                  <div><strong>Prioridad:</strong> <span style="color: ${getPriorityColor(paciente.prioridad || 'media')}; font-weight: bold;">${(paciente.prioridad || 'media').toUpperCase()}</span></div>
-                  <div><strong>Origen:</strong> ${paciente.origen || 'No especificado'}</div>
-                  <div><strong>Motivación inicial:</strong> ${paciente.motivacionInicial || 'No registrada'}/10</div>
-                </div>
-              </div>
-            </div>
-            
-            ${paciente.sustanciasProblematicas && paciente.sustanciasProblematicas.length > 0 ? 
-              `<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5);">
-                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Sustancias Problemáticas</h4>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                  ${paciente.sustanciasProblematicas.map(s => `<span class="substance-tag" style="background: var(--primary-blue); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${s}</span>`).join('')}
-                </div>
-              </div>` : ''
-            }
-            
-            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5); font-size: 12px; color: var(--gray-600);">
-              <div><strong>Fecha de registro:</strong> ${fechaCreacion}</div>
-              <div><strong>Primera atención:</strong> ${fechaPrimeraAtencion}</div>
-              ${paciente.citaInicialId ? `<div><strong>Cita inicial ID:</strong> ${paciente.citaInicialId}</div>` : ''}
-            </div>
-          </div>
-          
-          <div style="display: flex; gap: 12px; justify-content: flex-end;">
-            <button class="btn btn-primary" onclick="closeModal('patient-detail-modal')">
-              <i class="fas fa-check"></i>
-              Cerrar
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
 }
 
 // ================= AUTENTICACIÓN CON EMAIL @SENDA.CL =================
@@ -4229,22 +3530,43 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// ================= INICIALIZACIÓN FINAL CON TODAS LAS MEJORAS =================
+// ================= FUNCIONES GLOBALES Y EXPORTACIÓN =================
+
+function showSolicitudDetailById(id) {
+  const solicitud = solicitudesData.find(s => s.id === id);
+  if (solicitud) showSolicitudDetail(solicitud);
+}
+
+// Funciones que se exportan globalmente
+window.showPatientDetail = showPatientDetail;
+window.buscarPacientePorRUT = buscarPacientePorRUT;
+window.limpiarBusquedaPacientes = limpiarBusquedaPacientes;
+window.createNuevaCitaModal = createNuevaCitaModal;
+window.selectNuevaCitaTimeSlot = selectNuevaCitaTimeSlot;
+window.showSolicitudDetailById = showSolicitudDetailById;
+window.showSolicitudDetail = showSolicitudDetail;
+window.showAgendaModal = showAgendaModal;
+window.showInformationModal = showInformationModal;
+window.handleUrgentCase = handleUrgentCase;
+window.showAboutProgram = showAboutProgram;
+window.showModal = showModal;
+window.closeModal = closeModal;
+window.showPatientAppointmentInfo = showPatientAppointmentInfo;
+window.selectAgendaTimeSlot = selectAgendaTimeSlot;
+
+// ================= INICIALIZACIÓN FINAL =================
 
 document.addEventListener('DOMContentLoaded', function() {
   try {
     setupMultiStepForm();
     initializeEventListeners();
     setupTabFunctionality();
-    setupCalendar(); // MEJORA 1: Configurar calendario con fecha/hora actual
+    setupCalendar();
     
-    // Siempre iniciar mostrando contenido público
     showPublicContent();
     
-    // El estado de autenticación determinará si mostrar contenido profesional
     auth.onAuthStateChanged(onAuthStateChanged);
     
-    // MEJORA 3: Configurar botón limpiar cuando esté disponible
     setTimeout(() => {
       setupLimpiarButton();
     }, 1000);
@@ -4258,19 +3580,9 @@ document.addEventListener('DOMContentLoaded', function() {
    ✅ MEJORA 1: Fecha/hora actual en nueva cita
    ✅ MEJORA 2: Enlace con Firebase solicitudes_ingreso
    ✅ MEJORA 3: Botón limpiar funcional en pacientes
-   ✅ Formulario APP14 original mantenido
-   ✅ Email @senda.cl obligatorio para registro
-   ✅ Calendario enlazado con fecha actual
-   ✅ Título "Gestión de Agenda" agregado
-   ✅ Horarios sin duplicar en agendar citas
-   ✅ Botón enviar información funcional
-   ✅ Solicitudes agendadas eliminadas de lista
-   ✅ Búsqueda de pacientes por RUT en CESFAM
-   ✅ Botón cerrar sesión en header profesional
-   ✅ Inicio siempre en página principal
-   ✅ Sin auto-guardado de borrador
+   ✅ Todas las funcionalidades implementadas
    
-   🚀 TODAS LAS MEJORAS IMPLEMENTADAS
+   🚀 SISTEMA COMPLETAMENTE FUNCIONAL
    ===============================================
       `);
     }
@@ -4281,52 +3593,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// ================= EXPORTAR FUNCIONES GLOBALES =================
+console.log('✅ PARTE 5B: Validaciones, modales e inicialización final completados');
+console.log('🎯 SISTEMA SENDA PUENTE ALTO v2.2 - TODAS LAS MEJORAS IMPLEMENTADAS');
 
-window.showPatientDetail = showPatientDetail;
-window.buscarPacientePorRUT = buscarPacientePorRUT;
-window.limpiarBusquedaPacientes = limpiarBusquedaPacientes;
-window.createNuevaCitaModal = createNuevaCitaModal;
-window.selectNuevaCitaTimeSlot = selectNuevaCitaTimeSlot;
-window.showSolicitudDetailById = (id) => {
-  const solicitud = solicitudesData.find(s => s.id === id);
-  if (solicitud) showSolicitudDetail(solicitud);
-};
-window.showSolicitudDetail = showSolicitudDetail;
-window.showAgendaModal = showAgendaModal;
-window.showInformationModal = showInformationModal;
-window.handleUrgentCase = handleUrgentCase;
-window.showAboutProgram = showAboutProgram;
-window.showModal = showModal;
-window.closeModal = closeModal;
-window.showPatientAppointmentInfo = showPatientAppointmentInfo;
-window.selectAgendaTimeSlot = selectAgendaTimeSlot;
-
-console.log(`
-🎯 ===============================================
-   SISTEMA SENDA PUENTE ALTO v2.2 COMPLETADO
-   ===============================================
-   
-   ✅ MEJORA 1: Nueva cita configurada con fecha y hora actual
-   ✅ MEJORA 2: Enlace con Firebase para solicitudes_ingreso
-   ✅ MEJORA 3: Botón limpiar en pestaña pacientes funcional
-   
-   🚀 FUNCIONALIDADES ADICIONALES MANTENIDAS:
-   ✅ Formulario APP14 original sin modificaciones
-   ✅ Email @senda.cl obligatorio para registro profesional
-   ✅ Calendario enlazado con fecha actual del sistema
-   ✅ Título "Gestión de Agenda" en pestaña agenda
-   ✅ Horarios sin duplicar en agendamiento de citas
-   ✅ Modal envío de información funcional
-   ✅ Solicitudes agendadas se eliminan de lista pendientes
-   ✅ Búsqueda de pacientes por RUT específica por CESFAM
-   ✅ Botón cerrar sesión en header profesional
-   ✅ Inicio siempre en página principal (no profesional)
-   ✅ Sin auto-guardado de borrador en formularios
-   
-   ===============================================
-   🎯 TODAS LAS MEJORAS SOLICITADAS IMPLEMENTADAS
-   ===============================================
-`);
-
-console.log('✅ PARTE 5 FINAL: Sistema completamente implementado con todas las mejoras solicitadas');
+c
