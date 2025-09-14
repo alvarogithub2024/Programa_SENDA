@@ -1,4 +1,4 @@
-/* ================= SENDA PUENTE ALTO - CSS COMPLETO =================
+/* ================= SENDA PUENTE ALTO - CSS CON LOGO SIMPLE =================
    Sistema de Gestión con Paleta de Colores de Salud
    ================================================================== */
 
@@ -122,7 +122,7 @@ body {
 
 /* ================= HEADER PRINCIPAL ================= */
 .header {
-  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
+  background: linear-gradient(135deg, #4285f4 0%, #3367d6 100%);
   color: var(--text-white);
   padding: var(--spacing-md) 0;
   box-shadow: var(--shadow-md);
@@ -138,102 +138,43 @@ body {
   gap: var(--spacing-lg);
 }
 
+/* ================= LOGO ESTILO SENDA ================= */
 .logo {
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
-  font-size: var(--font-size-xl);
+  font-family: 'Segoe UI', sans-serif;
   font-weight: 700;
   color: var(--text-white);
-  position: relative;
-}
-
-/* ================= LOGO MÉDICO CON SVG INTEGRADO ================= */
-.logo::before {
-  content: '';
-  width: 48px;
-  height: 48px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3C!-- Fondo circular con gradiente de salud --%3E%3Cdefs%3E%3ClinearGradient id='healthGradient' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%2310b981;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%23059669;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='45' fill='url(%23healthGradient)' stroke='%23ffffff' stroke-width='3'/%3E%3C!-- Cruz médica principal --%3E%3Crect x='40' y='25' width='20' height='50' fill='%23ffffff' rx='3'/%3E%3Crect x='25' y='40' width='50' height='20' fill='%23ffffff' rx='3'/%3E%3C!-- Corazón pequeño en el centro --%3E%3Cpath d='M50 45 C47 42, 42 42, 42 47 C42 52, 50 58, 50 58 C50 58, 58 52, 58 47 C58 42, 53 42, 50 45 Z' fill='%23dc2626'/%3E%3C!-- Elementos decorativos de salud --%3E%3Ccircle cx='30' cy='30' r='3' fill='%23ffffff' opacity='0.8'/%3E%3Ccircle cx='70' cy='30' r='3' fill='%23ffffff' opacity='0.8'/%3E%3Ccircle cx='30' cy='70' r='3' fill='%23ffffff' opacity='0.8'/%3E%3Ccircle cx='70' cy='70' r='3' fill='%23ffffff' opacity='0.8'/%3E%3C/svg%3E");
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  flex-shrink: 0;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
-  transition: var(--transition-normal);
-}
-
-.logo:hover::before {
-  transform: scale(1.1);
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
-}
-
-/* Texto del logo con efectos */
-.logo-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.2;
-}
-
-.logo-main {
-  font-size: var(--font-size-2xl);
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.logo-subtitle {
-  font-size: var(--font-size-sm);
-  font-weight: 400;
-  opacity: 0.9;
-  color: #e0f2fe;
+  font-size: var(--font-size-xl);
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
 
-/* Versión alternativa del logo con ícono médico diferente */
-.logo.alt-design::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3C!-- Escudo médico con cruz --%3E%3Cdefs%3E%3ClinearGradient id='shieldGradient' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23ffffff;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%23e0f2fe;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M50 10 C65 10, 80 20, 80 35 C80 60, 50 90, 50 90 C50 90, 20 60, 20 35 C20 20, 35 10, 50 10 Z' fill='url(%23shieldGradient)' stroke='%2310b981' stroke-width='2'/%3E%3C!-- Cruz médica --%3E%3Crect x='42' y='25' width='16' height='40' fill='%23059669' rx='2'/%3E%3Crect x='30' y='37' width='40' height='16' fill='%23059669' rx='2'/%3E%3C!-- Pulso cardíaco --%3E%3Cpath d='M25 65 L35 65 L40 55 L45 75 L50 45 L55 65 L75 65' stroke='%23dc2626' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-}
-
-/* Logo responsivo para móviles */
-@media (max-width: 768px) {
-  .logo::before {
-    width: 40px;
-    height: 40px;
-  }
-  
-  .logo-main {
-    font-size: var(--font-size-xl);
-  }
-  
-  .logo-subtitle {
-    font-size: var(--font-size-xs);
-  }
-}
-
-/* ================= VARIANTE DE LOGO CON ÍCONO FLOTANTE ================= */
-.logo.floating-icon {
-  position: relative;
-}
-
-.logo.floating-icon::after {
+/* Ícono de corazón médico simple */
+.logo::before {
   content: '';
-  position: absolute;
-  top: -5px;
-  right: -10px;
-  width: 20px;
-  height: 20px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%2310b981'/%3E%3Cpath d='M12 6v12M6 12h12' stroke='%23ffffff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  width: 32px;
+  height: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffffff'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E");
   background-size: contain;
-  border-radius: 50%;
-  animation: pulse 2s infinite;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+  background-repeat: no-repeat;
+  background-position: center;
+  flex-shrink: 0;
+  margin-right: var(--spacing-xs);
 }
 
-@keyframes pulse {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.1); opacity: 0.8; }
-  100% { transform: scale(1); opacity: 1; }
+.logo-text {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Hover effect sutil */
+.logo:hover {
+  opacity: 0.9;
+  transition: var(--transition-fast);
 }
 
 .nav {
@@ -530,8 +471,57 @@ body {
   width: 100%;
 }
 
-/* ================= RESTO DEL CSS (SIN CAMBIOS) ================= */
-/* ... (continúa con el resto del CSS original sin modificaciones) ... */
+/* ================= RESPONSIVE DESIGN ================= */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 var(--spacing-sm);
+  }
+  
+  .header-content {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    text-align: center;
+  }
+  
+  .logo {
+    font-size: var(--font-size-lg);
+  }
+  
+  .logo::before {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .professional-header .container {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    text-align: center;
+  }
+  
+  .hero {
+    padding: var(--spacing-xl);
+  }
+  
+  .hero-content h1 {
+    font-size: var(--font-size-3xl);
+  }
+  
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ================= RESTO DEL CSS ORIGINAL ================= */
+/* ... (aquí iría el resto de tu CSS original sin cambios) ... */
 
 /* ================= PESTAÑAS (TABS) ================= */
 .tabs {
@@ -586,6 +576,142 @@ body {
 
 .tab-pane.active {
   display: block;
+}
+
+/* ================= FORMULARIOS ================= */
+.form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.form-label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: var(--spacing-xs);
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--gray-300);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+  background: var(--bg-primary);
+  transition: var(--transition-fast);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+/* ================= MODALES ================= */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: var(--spacing-md);
+}
+
+.modal {
+  background: var(--bg-primary);
+  border-radius: var(--border-radius-xl);
+  box-shadow: var(--shadow-xl);
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.large-modal {
+  max-width: 800px;
+}
+
+.modal-close {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  background: var(--gray-200);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-medium);
+  transition: var(--transition-fast);
+  z-index: 1;
+}
+
+.modal-close:hover {
+  background: var(--danger-red);
+  color: var(--text-white);
+}
+
+.modal-content {
+  padding: var(--spacing-xl);
+}
+
+/* ================= FOOTER ================= */
+.footer {
+  background: var(--gray-800);
+  color: var(--text-white);
+  padding: var(--spacing-2xl) 0 var(--spacing-lg);
+  margin-top: var(--spacing-2xl);
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-lg);
+}
+
+.footer-section h4 {
+  color: var(--health-green-light);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  margin-bottom: var(--spacing-md);
+}
+
+.footer-section p {
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--gray-300);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.footer-bottom {
+  text-align: center;
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--gray-700);
+  color: var(--gray-400);
+  font-size: var(--font-size-sm);
 }
 
 /* ================= FIN DEL CSS ================= */
