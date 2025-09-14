@@ -3812,7 +3812,7 @@ window.selectNuevaCitaTimeSlot = selectNuevaCitaTimeSlot;
 window.createNuevaCitaModalForDate = createNuevaCitaModalForDate;
 window.showPatientFollowup = showPatientFollowup;
 window.guardarSeguimiento = guardarSeguimiento;
-window.createNuevaCitaModal = createNuevaCitaModal;: 24px;">
+window.createNuevaCitaModal = createNuevaCitaModal; 24px;">
                 <div class="form-group">
                   <label class="form-label">Nombre del Paciente *</label>
                   <input type="text" class="form-input" id="nueva-cita-nombre" required>
