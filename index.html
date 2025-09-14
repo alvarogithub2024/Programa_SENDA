@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SENDA Puente Alto - Sistema de Gestión</title>
     
-    <!-- ENLACE AL CSS CORREGIDO -->
+    <!-- ENLACE AL CSS CORREGIDO CON LOGO DE SALUD -->
     <link rel="stylesheet" href="styles.css">
     
     <!-- Firebase SDK -->
@@ -28,13 +28,16 @@
     <!-- Notifications Container -->
     <div id="notifications" class="notifications-container"></div>
 
-    <!-- Header Principal - SIN BOTÓN CERRAR SESIÓN -->
+    <!-- Header Principal -->
     <header class="header">
         <div class="container">
             <div class="header-content">
+                <!-- Logo con diseño de salud integrado en CSS -->
                 <div class="logo">
-                    <img src="https://www.senda.gob.cl/wp-content/themes/senda/assets/img/logo-senda.png" alt="SENDA" height="40">
-                    <span>Puente Alto</span>
+                    <div class="logo-text">
+                        <div class="logo-main">SENDA</div>
+                        <div class="logo-subtitle">Puente Alto</div>
+                    </div>
                 </div>
                 
                 <nav class="nav">
@@ -42,13 +45,12 @@
                         <i class="fas fa-user-md"></i>
                         Acceso Profesional
                     </button>
-                    <!-- BOTÓN CERRAR SESIÓN REMOVIDO DE AQUÍ -->
                 </nav>
             </div>
         </div>
     </header>
 
-    <!-- Header Profesional - CON UN SOLO BOTÓN CERRAR SESIÓN -->
+    <!-- Header Profesional -->
     <div id="professional-header" class="professional-header">
         <div class="container">
             <div class="professional-info">
@@ -119,7 +121,7 @@
                             <h3>Prevención</h3>
                             <p>Programas de prevención en establecimientos educacionales y comunitarios.</p>
                         </div>
-                        
+                    </div>
                 </section>
 
                 <!-- Estadísticas -->
@@ -221,7 +223,7 @@
                         </div>
                     </div>
 
-                    <!-- Pacientes Tab CON BOTÓN LIMPIAR -->
+                    <!-- Pacientes Tab -->
                     <div id="pacientes-tab" class="tab-pane">
                         <div class="pacientes-section">
                             <div class="pacientes-header">
@@ -314,6 +316,7 @@
             </div>
         </div>
     </footer>
+
     <!-- Modal Login/Registro -->
     <div id="login-modal" class="modal-overlay">
         <div class="modal">
@@ -815,6 +818,13 @@
             return `${formattedBody}-${dv}`;
         }
 
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
         // Modal tabs functionality
         document.addEventListener('DOMContentLoaded', function() {
             const modalTabBtns = document.querySelectorAll('.modal-tab-btn');
@@ -845,4 +855,3 @@
     <script src="app.js"></script>
 </body>
 </html>
-
