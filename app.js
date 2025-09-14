@@ -1,11 +1,4 @@
-// ================= SENDA PUENTE ALTO - APP.JS COMPLETO CORREGIDO =================
-// Solución a errores de inicialización múltiple de Firebase
-
-// ================= VERIFICACIÓN INICIAL Y CONFIGURACIÓN =================
-
-// CRÍTICO: Verificar que Firebase no esté ya inicializado
-let app, auth, db;
-let isSystemInitialized = false;
+// PARTE 1: Configuración, Variables Globales y Formulario Original - CORREGIDO
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -18,6 +11,30 @@ const firebaseConfig = {
   measurementId: "G-82DCLW5R2W"
 };
 
+// Initialize Firebase
+let auth, db;
+try {
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+  auth = firebase.auth();
+  db = firebase.firestore();
+  
+  db.enablePersistence({
+    synchronizeTabs: true
+  }).catch((err) => {
+    if (err.code === 'failed-precondition') {
+      console.warn('Persistencia falló: múltiples tabs abiertas');
+    } else if (err.code === 'unimplemented') {
+      console.warn('Persistencia no soportada en este navegador');
+    }
+  });
+  
+  console.log('✅ Firebase inicializado correctamente');
+} catch (error) {
+  console.error('❌ Error inicializando Firebase:', error);
+}
+
 // Lista de CESFAM de Puente Alto
 const cesfamPuenteAlto = [
   "CESFAM Alejandro del Río",
@@ -27,7 +44,7 @@ const cesfamPuenteAlto = [
   "CESFAM San Gerónimo",
   "CESFAM Vista Hermosa",
   "CESFAM Bernardo Leighton",
-  "CESFAM Cardenal Raúl Silva Henríquez"
+  "CESFAM Cardenal Raúl Silva Henriquez"
 ];
 
 // Variables globales
@@ -35,27 +52,21 @@ let currentUser = null;
 let currentUserData = null;
 let currentFormStep = 1;
 let maxFormStep = 4;
+let formData = {};
+let isDraftSaved = false;
 let currentCalendarDate = new Date();
 let selectedCalendarDate = null;
+let currentFilter = 'todas';
+let currentPriorityFilter = '';
 let solicitudesData = [];
 let pacientesData = [];
 let citasData = [];
 let professionalsList = [];
-let currentAgendaSolicitud = null;
+let selectedProfessional = null;
 let isLoading = false;
+let solicitudesInformacionData = [];
 
-// Configuración de la aplicación
-const APP_CONFIG = {
-  MAX_RETRY_ATTEMPTS: 3,
-  RETRY_DELAY: 1000,
-  PAGINATION_LIMIT: 50,
-  CACHE_DURATION: 5 * 60 * 1000,
-  DEBUG_MODE: true
-};
-
-const dataCache = new Map();
-
-// Configuración de horarios
+// CORREGIDO: Configuración de horarios
 const HORARIOS_CONFIG = {
   semana: {
     horaInicio: 8,
@@ -73,74 +84,17 @@ const HORARIOS_CONFIG = {
   }
 };
 
-// ================= INICIALIZACIÓN FIREBASE ÚNICA =================
+const APP_CONFIG = {
+  MAX_RETRY_ATTEMPTS: 3,
+  RETRY_DELAY: 1000,
+  PAGINATION_LIMIT: 100,
+  CACHE_DURATION: 5 * 60 * 1000,
+  DEBUG_MODE: true
+};
 
-function initializeFirebaseOnce() {
-  try {
-    console.log('🔥 Verificando estado de Firebase...');
-    
-    // CRÍTICO: Verificar si Firebase ya está inicializado
-    if (firebase.apps && firebase.apps.length > 0) {
-      console.log('⚠️ Firebase ya está inicializado, usando instancia existente');
-      app = firebase.app();
-      auth = firebase.auth();
-      db = firebase.firestore();
-      
-      // NO intentar configurar persistencia si ya está activa
-      console.log('✅ Usando Firebase existente');
-      return true;
-    }
-    
-    // Inicializar Firebase por primera vez
-    console.log('🆕 Inicializando Firebase por primera vez...');
-    app = firebase.initializeApp(firebaseConfig);
-    auth = firebase.auth();
-    db = firebase.firestore();
-    
-    // Configurar persistencia solo una vez
-    configurePersistence();
-    
-    console.log('✅ Firebase inicializado correctamente');
-    return true;
-    
-  } catch (error) {
-    console.error('❌ Error inicializando Firebase:', error);
-    
-    if (error.code === 'app/duplicate-app') {
-      console.log('🔄 App duplicada detectada, usando existente...');
-      app = firebase.app();
-      auth = firebase.auth();
-      db = firebase.firestore();
-      return true;
-    }
-    
-    showNotification('Error crítico de conexión. Recarga la página.', 'error', 10000);
-    return false;
-  }
-}
+const dataCache = new Map();
 
-function configurePersistence() {
-  try {
-    // Solo configurar persistencia si no está ya configurada
-    db.enablePersistence({
-      synchronizeTabs: true
-    }).then(() => {
-      console.log('✅ Persistencia offline habilitada');
-    }).catch((err) => {
-      if (err.code === 'failed-precondition') {
-        console.warn('⚠️ Persistencia falló: múltiples tabs abiertas');
-      } else if (err.code === 'unimplemented') {
-        console.warn('⚠️ Persistencia no soportada en este navegador');
-      } else {
-        console.warn('⚠️ Error configurando persistencia:', err);
-      }
-    });
-  } catch (error) {
-    console.warn('⚠️ Error configurando persistencia:', error);
-  }
-}
-
-// ================= FUNCIONES UTILITARIAS BÁSICAS =================
+// ================= FUNCIONES UTILITARIAS =================
 
 function showNotification(message, type = 'info', duration = 4000) {
   try {
@@ -156,25 +110,15 @@ function showNotification(message, type = 'info', duration = 4000) {
       </button>
     `;
     
-    // Aplicar estilos inline para asegurar visualización
-    notification.style.cssText = `
-      background: ${getNotificationColor(type)};
-      color: white;
-      padding: 12px 16px;
-      margin: 8px 0;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      animation: slideIn 0.3s ease-out;
-    `;
-    
     container.appendChild(notification);
+    
+    requestAnimationFrame(() => {
+      notification.classList.add('show');
+    });
     
     setTimeout(() => {
       if (notification.parentElement) {
-        notification.style.animation = 'slideOut 0.3s ease-in';
+        notification.classList.remove('show');
         setTimeout(() => {
           if (notification.parentElement) {
             notification.remove();
@@ -184,7 +128,7 @@ function showNotification(message, type = 'info', duration = 4000) {
     }, duration);
     
     if (APP_CONFIG.DEBUG_MODE) {
-      console.log(`📢 ${type.toUpperCase()}: ${message}`);
+      console.log(`📢 Notification [${type.toUpperCase()}]: ${message}`);
     }
     
   } catch (error) {
@@ -203,120 +147,12 @@ function getNotificationIcon(type) {
   return icons[type] || 'info-circle';
 }
 
-function getNotificationColor(type) {
-  const colors = {
-    'success': '#10b981',
-    'error': '#ef4444',
-    'warning': '#f59e0b',
-    'info': '#3b82f6'
-  };
-  return colors[type] || '#3b82f6';
-}
-
 function createNotificationsContainer() {
-  const existing = document.getElementById('notifications');
-  if (existing) return existing;
-  
   const container = document.createElement('div');
   container.id = 'notifications';
-  container.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 10000;
-    max-width: 400px;
-    pointer-events: none;
-  `;
-  
-  container.innerHTML = `
-    <style>
-      @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-      }
-      @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-      }
-      .notification {
-        pointer-events: auto;
-      }
-      .notification-close {
-        background: transparent;
-        border: none;
-        color: inherit;
-        cursor: pointer;
-        padding: 0;
-        margin-left: auto;
-      }
-    </style>
-  `;
-  
+  container.className = 'notifications-container';
   document.body.appendChild(container);
   return container;
-}
-
-function showLoading(show = true, message = 'Cargando...') {
-  try {
-    let overlay = document.getElementById('loading-overlay');
-    
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.id = 'loading-overlay';
-      overlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-      `;
-      
-      overlay.innerHTML = `
-        <div style="
-          background: white;
-          padding: 32px;
-          border-radius: 12px;
-          text-align: center;
-          box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-        ">
-          <div style="
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3b82f6;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 16px auto;
-          "></div>
-          <p style="margin: 0; color: #374151; font-weight: 500;">${message}</p>
-        </div>
-        <style>
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        </style>
-      `;
-      
-      document.body.appendChild(overlay);
-    }
-    
-    const messageElement = overlay.querySelector('p');
-    if (messageElement) {
-      messageElement.textContent = message;
-    }
-    
-    overlay.style.display = show ? 'flex' : 'none';
-    isLoading = show;
-    
-  } catch (error) {
-    console.error('Error with loading overlay:', error);
-  }
 }
 
 function showModal(modalId) {
@@ -346,6 +182,14 @@ function closeModal(modalId) {
   try {
     const modal = document.getElementById(modalId);
     if (modal) {
+      if (modalId === 'patient-modal' && !isDraftSaved) {
+        const hasChanges = checkFormChanges();
+        if (hasChanges && !confirm('¿Estás seguro de cerrar? Los cambios no guardados se perderán.')) {
+          return;
+        }
+        resetForm();
+      }
+      
       modal.style.display = 'none';
       document.body.style.overflow = 'auto';
       
@@ -362,1154 +206,568 @@ function closeModal(modalId) {
   }
 }
 
-console.log('✅ PARTE 1: Configuración básica y Firebase corregida');
-// ================= SENDA PUENTE ALTO - APP.JS PARTE 2 =================
-// Autenticación y Gestión de Usuarios Corregida
-
-// ================= AUTENTICACIÓN Y ESTADO DE USUARIO =================
-
-function onAuthStateChanged(user) {
+function checkFormChanges() {
   try {
-    if (APP_CONFIG.DEBUG_MODE) {
-      console.log('🔧 Estado de autenticación cambió:', user ? user.email : 'No autenticado');
+    const form = document.getElementById('patient-form');
+    if (!form) return false;
+    
+    const formData = new FormData(form);
+    let hasData = false;
+    
+    for (let [key, value] of formData.entries()) {
+      if (value && value.trim() !== '') {
+        hasData = true;
+        break;
+      }
     }
     
-    if (user) {
-      currentUser = user;
-      console.log('👤 Usuario autenticado:', user.email);
-      loadUserData();
-    } else {
-      currentUser = null;
-      currentUserData = null;
-      clearUserCache();
-      showPublicContent();
-      console.log('👤 Usuario desconectado');
-    }
+    return hasData;
   } catch (error) {
-    console.error('❌ Error en cambio de estado de autenticación:', error);
-    showNotification('Error en autenticación', 'error');
+    console.error('Error checking form changes:', error);
+    return false;
   }
 }
 
-// FUNCIÓN CRÍTICA: Validación de email @senda.cl
-function validateEmailSenda(email) {
-  if (!email || !email.includes('@')) return false;
-  return email.toLowerCase().endsWith('@senda.cl');
-}
-
-async function loadUserData() {
+function showLoading(show = true, message = 'Cargando...') {
   try {
-    showLoading(true, 'Cargando datos del usuario...');
-    console.log('👤 Cargando datos para usuario:', currentUser.email);
-    
-    if (!currentUser) {
-      throw new Error('Usuario no autenticado');
-    }
-
-    // Verificar cache primero
-    const cacheKey = `user_${currentUser.uid}`;
-    const cachedData = getCachedData(cacheKey);
-    
-    if (cachedData) {
-      console.log('📋 Datos de usuario obtenidos del cache');
-      currentUserData = cachedData;
-      showProfessionalContent();
-      await loadInitialData();
-      return;
-    }
-
-    // Cargar desde Firestore con reintentos
-    const userData = await retryOperation(async () => {
-      console.log('🔍 Buscando datos del profesional en Firestore...');
-      const userDoc = await db.collection('profesionales').doc(currentUser.uid).get();
-      
-      if (!userDoc.exists) {
-        console.error('❌ No se encontró el documento del profesional');
-        throw new Error('No se encontraron datos del profesional');
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) {
+      const messageElement = overlay.querySelector('p');
+      if (messageElement) {
+        messageElement.textContent = message;
       }
       
-      const data = userDoc.data();
-      console.log('✅ Datos del profesional cargados:', data);
-      return data;
-    }, 3, 'carga de datos de usuario');
-    
-    currentUserData = userData;
-    setCachedData(cacheKey, userData);
-    
-    console.log('🎉 Usuario cargado correctamente:', userData.nombre, userData.apellidos);
-    
-    showProfessionalContent();
-    await loadInitialData();
-    
-  } catch (error) {
-    console.error('❌ Error cargando datos del usuario:', error);
-    
-    let errorMessage = 'Error al cargar datos del usuario';
-    
-    if (error.code === 'permission-denied') {
-      errorMessage = 'Sin permisos para acceder a los datos de profesional';
-    } else if (error.message.includes('No se encontraron datos')) {
-      errorMessage = 'Perfil de profesional no encontrado. Contacta al administrador.';
-    } else {
-      errorMessage = `Error al cargar datos: ${error.message}`;
-    }
-    
-    showNotification(errorMessage, 'error', 8000);
-    await handleLogout();
-  } finally {
-    showLoading(false);
-  }
-}
-
-async function loadInitialData() {
-  try {
-    console.log('🔄 Cargando datos iniciales...');
-    
-    // Obtener pestaña activa
-    const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab || 'agenda';
-    console.log('📊 Pestaña activa:', activeTab);
-    
-    // Cargar datos según la pestaña activa
-    if (activeTab === 'solicitudes' && hasAccessToSolicitudes()) {
-      console.log('📋 Cargando solicitudes (usuario tiene acceso)');
-      await loadSolicitudes();
-    } else if (activeTab === 'pacientes') {
-      console.log('👥 Cargando pacientes');
-      await loadPacientes();
-    } else if (activeTab === 'agenda') {
-      console.log('📅 Cargando calendario');
-      renderCalendar();
-    } else if (activeTab === 'seguimiento') {
-      console.log('📈 Cargando seguimiento');
-      await loadSeguimiento();
-    }
-    
-    // Siempre cargar lista de profesionales
-    await loadProfessionalsList();
-    
-    console.log('✅ Datos iniciales cargados completamente');
-    
-  } catch (error) {
-    console.error('❌ Error cargando datos iniciales:', error);
-    showNotification('Error al cargar algunos datos iniciales', 'warning');
-  }
-}
-
-// ================= CARGA DE SOLICITUDES CORREGIDA =================
-
-async function loadSolicitudes() {
-  // VERIFICACIÓN CRÍTICA: Usuario debe tener acceso a solicitudes
-  if (!currentUserData || !hasAccessToSolicitudes()) {
-    console.log('⚠️ Usuario no tiene acceso a solicitudes');
-    const container = document.getElementById('requests-container');
-    if (container) {
-      container.innerHTML = `
-        <div class="no-results" style="text-align: center; padding: 60px 20px;">
-          <i class="fas fa-lock" style="font-size: 3rem; color: var(--gray-400); margin-bottom: 20px;"></i>
-          <h3>Acceso Restringido</h3>
-          <p>Solo los Asistentes Sociales pueden ver las solicitudes pendientes.</p>
-          <p>Tu rol actual: <strong>${getProfessionName(currentUserData.profession)}</strong></p>
-        </div>
-      `;
-    }
-    return;
-  }
-
-  try {
-    showLoading(true, 'Cargando solicitudes pendientes...');
-    console.log('🔍 Iniciando carga de solicitudes para:', currentUserData.cesfam);
-    
-    const container = document.getElementById('requests-container');
-    if (!container) {
-      console.error('❌ Container requests-container no encontrado');
-      return;
-    }
-    
-    // Limpiar cache para forzar carga fresh
-    const cacheKey = `solicitudes_${currentUserData.cesfam}`;
-    dataCache.delete(cacheKey);
-    
-    // Mostrar indicador de carga
-    container.innerHTML = `
-      <div class="loading-message" style="text-align: center; padding: 40px;">
-        <div style="
-          border: 4px solid #f3f3f3;
-          border-top: 4px solid #3b82f6;
-          border-radius: 50%;
-          width: 40px;
-          height: 40px;
-          animation: spin 1s linear infinite;
-          margin: 0 auto 16px auto;
-        "></div>
-        <h3>Cargando solicitudes...</h3>
-        <p>Obteniendo datos desde Firebase...</p>
-      </div>
-    `;
-    
-    await loadSolicitudesFromFirestore();
-    
-  } catch (error) {
-    console.error('❌ Error general cargando solicitudes:', error);
-    renderSolicitudesError(error);
-  } finally {
-    showLoading(false);
-  }
-}
-
-async function loadSolicitudesFromFirestore() {
-  try {
-    console.log('🔥 Cargando desde Firestore para CESFAM:', currentUserData.cesfam);
-    
-    const solicitudes = [];
-    let totalCargadas = 0;
-    
-    // 1. CARGAR SOLICITUDES DE INGRESO
-    try {
-      console.log('📋 Cargando solicitudes_ingreso...');
-      
-      const solicitudesQuery = db.collection('solicitudes_ingreso')
-        .where('cesfam', '==', currentUserData.cesfam)
-        .where('estado', 'in', ['pendiente', 'en_revision'])
-        .orderBy('fechaCreacion', 'desc')
-        .limit(APP_CONFIG.PAGINATION_LIMIT);
-      
-      const solicitudesSnapshot = await retryOperation(
-        () => solicitudesQuery.get(),
-        3,
-        'carga de solicitudes_ingreso'
-      );
-      
-      console.log(`📊 Solicitudes_ingreso encontradas: ${solicitudesSnapshot.size}`);
-      
-      solicitudesSnapshot.forEach(doc => {
-        const data = doc.data();
-        solicitudes.push({
-          id: doc.id,
-          tipo: 'solicitud',
-          ...data
-        });
-        totalCargadas++;
-      });
-      
-    } catch (error) {
-      console.error('❌ Error cargando solicitudes_ingreso:', error);
-      handleFirestoreError(error, 'carga de solicitudes de ingreso');
-    }
-    
-    // 2. CARGAR REINGRESOS
-    try {
-      console.log('🔄 Cargando reingresos...');
-      
-      const reingresosQuery = db.collection('reingresos')
-        .where('cesfam', '==', currentUserData.cesfam)
-        .where('estado', 'in', ['pendiente', 'en_revision'])
-        .orderBy('fechaCreacion', 'desc')
-        .limit(APP_CONFIG.PAGINATION_LIMIT);
-      
-      const reingresosSnapshot = await retryOperation(
-        () => reingresosQuery.get(),
-        3,
-        'carga de reingresos'
-      );
-      
-      console.log(`📊 Reingresos encontrados: ${reingresosSnapshot.size}`);
-      
-      reingresosSnapshot.forEach(doc => {
-        const data = doc.data();
-        solicitudes.push({
-          id: doc.id,
-          tipo: 'reingreso',
-          ...data
-        });
-        totalCargadas++;
-      });
-      
-    } catch (error) {
-      console.error('❌ Error cargando reingresos:', error);
-      handleFirestoreError(error, 'carga de reingresos');
-    }
-    
-    // 3. CARGAR SOLICITUDES DE INFORMACIÓN
-    try {
-      console.log('📧 Cargando solicitudes_informacion...');
-      
-      const informacionQuery = db.collection('solicitudes_informacion')
-        .where('estado', '==', 'pendiente_respuesta')
-        .orderBy('fechaCreacion', 'desc')
-        .limit(25);
-      
-      const informacionSnapshot = await retryOperation(
-        () => informacionQuery.get(),
-        3,
-        'carga de solicitudes de información'
-      );
-      
-      console.log(`📊 Solicitudes información encontradas: ${informacionSnapshot.size}`);
-      
-      informacionSnapshot.forEach(doc => {
-        const data = doc.data();
-        solicitudes.push({
-          id: doc.id,
-          tipo: 'informacion',
-          tipoSolicitud: 'informacion',
-          ...data
-        });
-        totalCargadas++;
-      });
-      
-    } catch (error) {
-      console.error('❌ Error cargando solicitudes_informacion:', error);
-      handleFirestoreError(error, 'carga de solicitudes de información');
-    }
-    
-    // 4. PROCESAR Y MOSTRAR RESULTADOS
-    console.log(`📈 Total solicitudes cargadas: ${totalCargadas}`);
-    
-    // Ordenar por fecha de creación (más recientes primero)
-    solicitudes.sort((a, b) => {
-      const fechaA = a.fechaCreacion?.toDate() || new Date(0);
-      const fechaB = b.fechaCreacion?.toDate() || new Date(0);
-      return fechaB - fechaA;
-    });
-    
-    // Guardar en variables globales
-    solicitudesData = solicitudes;
-    
-    // Guardar en cache
-    const cacheKey = `solicitudes_${currentUserData.cesfam}`;
-    setCachedData(cacheKey, solicitudes);
-    
-    // Renderizar solicitudes
-    renderSolicitudes(solicitudes);
-    
-    console.log(`🎉 Proceso de carga completado: ${solicitudes.length} solicitudes totales`);
-    
-  } catch (error) {
-    console.error('❌ Error crítico cargando desde Firestore:', error);
-    renderSolicitudesError(error);
-  }
-}
-
-// ================= FUNCIONES DE MANEJO DE CONTENIDO =================
-
-function showPublicContent() {
-  try {
-    const publicContent = document.getElementById('public-content');
-    const professionalContent = document.getElementById('professional-content');
-    const professionalHeader = document.getElementById('professional-header');
-    const loginBtn = document.getElementById('login-professional');
-
-    if (publicContent) publicContent.style.display = 'block';
-    if (professionalContent) professionalContent.style.display = 'none';
-    if (professionalHeader) professionalHeader.style.display = 'none';
-    if (loginBtn) loginBtn.style.display = 'flex';
-    
-    console.log('📄 Mostrando contenido público');
-  } catch (error) {
-    console.error('❌ Error mostrando contenido público:', error);
-  }
-}
-
-function showProfessionalContent() {
-  try {
-    const publicContent = document.getElementById('public-content');
-    const professionalContent = document.getElementById('professional-content');
-    const professionalHeader = document.getElementById('professional-header');
-    const loginBtn = document.getElementById('login-professional');
-
-    if (publicContent) publicContent.style.display = 'none';
-    if (professionalContent) professionalContent.style.display = 'block';
-    if (professionalHeader) professionalHeader.style.display = 'block';
-    if (loginBtn) loginBtn.style.display = 'none';
-    
-    if (currentUserData) {
-      updateProfessionalInfo();
-      updateTabVisibility();
-    }
-    
-    console.log('👨‍⚕️ Mostrando contenido profesional');
-  } catch (error) {
-    console.error('❌ Error mostrando contenido profesional:', error);
-  }
-}
-
-function updateProfessionalInfo() {
-  try {
-    const professionalName = document.getElementById('professional-name');
-    const professionalProfession = document.getElementById('professional-profession');
-    const professionalCesfam = document.getElementById('professional-cesfam');
-
-    if (professionalName) {
-      professionalName.textContent = `${currentUserData.nombre} ${currentUserData.apellidos}`;
-    }
-    
-    if (professionalProfession) {
-      professionalProfession.textContent = getProfessionName(currentUserData.profession);
-    }
-    
-    if (professionalCesfam) {
-      professionalCesfam.textContent = currentUserData.cesfam;
-    }
-    
-    const avatar = document.querySelector('.professional-avatar');
-    if (avatar) {
-      const initials = `${currentUserData.nombre.charAt(0)}${currentUserData.apellidos.charAt(0)}`.toUpperCase();
-      avatar.textContent = initials;
-    }
-    
-  } catch (error) {
-    console.error('❌ Error actualizando información profesional:', error);
-  }
-}
-
-function updateTabVisibility() {
-  try {
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    
-    tabBtns.forEach(btn => {
-      const tabName = btn.dataset.tab;
-      if (canAccessTab(tabName)) {
-        btn.style.display = 'flex';
+      if (show) {
+        overlay.classList.remove('hidden');
+        isLoading = true;
       } else {
-        btn.style.display = 'none';
-        if (btn.classList.contains('active')) {
-          btn.classList.remove('active');
-          const agendaTab = document.querySelector('.tab-btn[data-tab="agenda"]');
-          const agendaPane = document.getElementById('agenda-tab');
-          if (agendaTab && agendaPane) {
-            agendaTab.classList.add('active');
-            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
-            agendaPane.classList.add('active');
-            loadTabData('agenda');
+        overlay.classList.add('hidden');
+        isLoading = false;
+      }
+    }
+  } catch (error) {
+    console.error('Error with loading overlay:', error);
+  }
+}
+
+// ================= FORMULARIO ORIGINAL APP14 - SIN MODIFICACIONES =================
+
+function setupMultiStepForm() {
+  try {
+    const form = document.getElementById('patient-form');
+    if (!form) return;
+
+    const nextButtons = form.querySelectorAll('[id^="next-step"]');
+    const prevButtons = form.querySelectorAll('[id^="prev-step"]');
+    
+    nextButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const currentStep = parseInt(btn.id.split('-')[2]);
+        if (validateStep(currentStep)) {
+          const nextStep = getNextStep(currentStep);
+          if (nextStep) {
+            goToStep(nextStep);
           }
         }
-      }
-    });
-    
-  } catch (error) {
-    console.error('❌ Error actualizando visibilidad de pestañas:', error);
-  }
-}
-
-// ================= FUNCIONES DE PERMISOS Y ACCESO =================
-
-function hasAccessToSolicitudes() {
-  if (!currentUserData) return false;
-  return currentUserData.profession === 'asistente_social';
-}
-
-function canAccessTab(tabName) {
-  if (!currentUserData) return false;
-  
-  switch (tabName) {
-    case 'solicitudes':
-      return currentUserData.profession === 'asistente_social';
-    case 'agenda':
-    case 'seguimiento':
-    case 'pacientes':
-      return true;
-    default:
-      return false;
-  }
-}
-
-function getProfessionName(profession) {
-  const names = {
-    'asistente_social': 'Asistente Social',
-    'medico': 'Médico',
-    'psicologo': 'Psicólogo',
-    'terapeuta': 'Terapeuta Ocupacional',
-    'coordinador': 'Coordinador Regional',
-    'admin': 'Administrador'
-  };
-  return names[profession] || profession;
-}
-
-async function loadProfessionalsList() {
-  try {
-    if (!currentUserData) return;
-    
-    const cacheKey = `professionals_${currentUserData.cesfam}`;
-    const cached = getCachedData(cacheKey);
-    
-    if (cached) {
-      professionalsList = cached;
-      return;
-    }
-    
-    const snapshot = await db.collection('profesionales')
-      .where('cesfam', '==', currentUserData.cesfam)
-      .where('activo', '==', true)
-      .get();
-    
-    const professionals = [];
-    snapshot.forEach(doc => {
-      professionals.push({
-        id: doc.id,
-        ...doc.data()
       });
     });
-    
-    professionalsList = professionals;
-    setCachedData(cacheKey, professionals);
-    
-  } catch (error) {
-    console.error('❌ Error loading professionals list:', error);
-  }
-}
 
-// ================= FUNCIONES AUXILIARES =================
-
-function clearUserCache() {
-  try {
-    solicitudesData = [];
-    pacientesData = [];
-    citasData = [];
-    professionalsList = [];
-    
-    dataCache.clear();
-    
-    const containers = [
-      'requests-container',
-      'patients-grid',
-      'upcoming-appointments-grid',
-      'patients-timeline',
-      'pacientes-search-results'
-    ];
-    
-    containers.forEach(containerId => {
-      const container = document.getElementById(containerId);
-      if (container) {
-        container.innerHTML = '';
-      }
+    prevButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const currentStep = parseInt(btn.id.split('-')[2]);
+        const prevStep = getPreviousStep(currentStep);
+        if (prevStep) {
+          goToStep(prevStep);
+        }
+      });
     });
+
+    form.addEventListener('submit', handlePatientFormSubmit);
+
+    // ORIGINAL APP14: Listeners para tipo de solicitud EXACTO
+    const tipoSolicitudInputs = document.querySelectorAll('input[name="tipoSolicitud"]');
+    tipoSolicitudInputs.forEach(input => {
+      input.addEventListener('change', () => {
+        const tipoSolicitud = input.value;
+        
+        // ORIGINAL APP14: Lógica exacta del formulario
+        if (tipoSolicitud === 'informacion') {
+          // Solo información: mostrar email y enviar directamente
+          maxFormStep = 1;
+          updateProgressIndicator(1, 1);
+          
+          // Mostrar campo de email para información
+          const infoEmailContainer = document.getElementById('info-email-container');
+          const basicInfoContainer = document.getElementById('basic-info-container');
+          const nextBtn = document.getElementById('next-step-1');
+          const submitBtn = document.getElementById('submit-step-1');
+          
+          if (infoEmailContainer) infoEmailContainer.style.display = 'block';
+          if (basicInfoContainer) basicInfoContainer.style.display = 'none';
+          if (nextBtn) nextBtn.style.display = 'none';
+          if (submitBtn) submitBtn.style.display = 'inline-flex';
+          
+        } else if (tipoSolicitud === 'identificado') {
+          // Mis datos: 4 pasos completos
+          maxFormStep = 4;
+          updateProgressIndicator(1, 4);
+          
+          // Ocultar campo de email y mostrar campos básicos
+          const infoEmailContainer = document.getElementById('info-email-container');
+          const basicInfoContainer = document.getElementById('basic-info-container');
+          const nextBtn = document.getElementById('next-step-1');
+          const submitBtn = document.getElementById('submit-step-1');
+          
+          if (infoEmailContainer) infoEmailContainer.style.display = 'none';
+          if (basicInfoContainer) basicInfoContainer.style.display = 'block';
+          if (nextBtn) nextBtn.style.display = 'inline-flex';
+          if (submitBtn) submitBtn.style.display = 'none';
+        }
+        
+        saveFormDraft();
+      });
+    });
+
+    // ORIGINAL APP14: Listeners para motivación
+    const motivacionRange = document.getElementById('motivacion-range');
+    const motivacionValue = document.getElementById('motivacion-value');
+    if (motivacionRange && motivacionValue) {
+      motivacionRange.addEventListener('input', () => {
+        motivacionValue.textContent = motivacionRange.value;
+        updateMotivacionColor(motivacionRange.value);
+      });
+      
+      motivacionValue.textContent = motivacionRange.value;
+      updateMotivacionColor(motivacionRange.value);
+    }
+
+    // Botón específico para envío de información
+    const submitInfoBtn = document.getElementById('submit-step-1');
+    if (submitInfoBtn) {
+      submitInfoBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+        if (tipoSolicitud === 'informacion') {
+          handleInformationOnlySubmit();
+        }
+      });
+    }
+
+    const reentryForm = document.getElementById('reentry-form');
+    if (reentryForm) {
+      reentryForm.addEventListener('submit', handleReentrySubmit);
+    }
+
+    setupAutoSave();
+    console.log('✅ Formulario multi-step original APP14 configurado');
     
-    console.log('🗑️ Cache de usuario limpiado');
   } catch (error) {
-    console.error('❌ Error limpiando cache de usuario:', error);
+    console.error('❌ Error configurando formulario multi-step:', error);
   }
 }
 
-function getCachedData(key) {
-  const cached = dataCache.get(key);
-  if (cached && (Date.now() - cached.timestamp) < APP_CONFIG.CACHE_DURATION) {
-    if (APP_CONFIG.DEBUG_MODE) {
-      console.log(`📋 Datos obtenidos del cache: ${key}`);
-    }
-    return cached.data;
+// ORIGINAL APP14: Funciones de navegación de pasos SIN CAMBIOS
+function getNextStep(currentStep) {
+  const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+  
+  if (tipoSolicitud === 'informacion') {
+    return null; // Solo 1 paso para información
+  }
+  
+  // Para "identificado" - 4 pasos
+  switch (currentStep) {
+    case 1: return 2; // Paso 1 → Paso 2 (Datos personales)
+    case 2: return 3; // Paso 2 → Paso 3 (Evaluación)
+    case 3: return 4; // Paso 3 → Paso 4 (Finalización)
+    case 4: return null; // No hay más pasos
   }
   return null;
 }
 
-function setCachedData(key, data) {
-  dataCache.set(key, {
-    data,
-    timestamp: Date.now()
-  });
-  
-  if (APP_CONFIG.DEBUG_MODE) {
-    console.log(`💾 Datos guardados en cache: ${key}`);
+function getPreviousStep(currentStep) {
+  switch (currentStep) {
+    case 2: return 1; // Paso 2 → Paso 1
+    case 3: return 2; // Paso 3 → Paso 2
+    case 4: return 3; // Paso 4 → Paso 3
   }
+  return null;
 }
 
-function handleFirestoreError(error, operation = 'operación') {
-  console.error(`❌ Error en ${operation}:`, error);
-  
-  let userMessage = '';
-  
-  switch (error.code) {
-    case 'permission-denied':
-      userMessage = `Sin permisos para realizar esta ${operation}. Verifica tu autenticación.`;
-      break;
-    case 'unavailable':
-      userMessage = 'Servicio temporalmente no disponible. Intenta en unos momentos.';
-      break;
-    case 'deadline-exceeded':
-    case 'timeout':
-      userMessage = 'La operación tardó demasiado. Verifica tu conexión.';
-      break;
-    case 'resource-exhausted':
-      userMessage = 'Límite de operaciones excedido. Intenta más tarde.';
-      break;
-    case 'failed-precondition':
-      userMessage = 'No se cumplieron las condiciones para esta operación.';
-      break;
-    case 'not-found':
-      userMessage = 'Documento o colección no encontrada.';
-      break;
-    default:
-      userMessage = `Error en ${operation}: ${error.message || 'Error desconocido'}`;
-  }
-  
-  showNotification(userMessage, 'error', 8000);
-  return userMessage;
-}
-
-async function retryOperation(operation, maxAttempts = APP_CONFIG.MAX_RETRY_ATTEMPTS, operationName = 'operación') {
-  let lastError;
-  
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      if (APP_CONFIG.DEBUG_MODE && attempt > 1) {
-        console.log(`🔄 Reintentando ${operationName} (intento ${attempt}/${maxAttempts})`);
-      }
-      
-      const result = await operation();
-      
-      if (APP_CONFIG.DEBUG_MODE && attempt > 1) {
-        console.log(`✅ ${operationName} exitosa en intento ${attempt}`);
-      }
-      
-      return result;
-      
-    } catch (error) {
-      lastError = error;
-      console.warn(`⚠️ Intento ${attempt}/${maxAttempts} de ${operationName} falló:`, error.code || error.message);
-      
-      // No reintentar en ciertos errores
-      if (error.code === 'permission-denied' || 
-          error.code === 'unauthenticated' || 
-          error.code === 'not-found') {
-        console.log(`❌ Error no recuperable en ${operationName}, no reintentando`);
-        break;
-      }
-      
-      if (attempt === maxAttempts) {
-        break;
-      }
-      
-      // Esperar antes del siguiente intento
-      const delay = APP_CONFIG.RETRY_DELAY * Math.pow(2, attempt - 1);
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-  }
-  
-  throw lastError;
-}
-
-console.log('✅ PARTE 2: Autenticación y gestión de usuarios corregida');
-// ================= SENDA PUENTE ALTO - APP.JS PARTE 3 =================
-// Formularios y Renderizado de Solicitudes Corregido
-
-// ================= RENDERIZADO DE SOLICITUDES CORREGIDO =================
-
-function renderSolicitudes(solicitudes) {
+function goToStep(step) {
   try {
-    const container = document.getElementById('requests-container');
-    if (!container) {
-      console.error('❌ Container requests-container no encontrado');
-      return;
-    }
+    if (step < 1 || step > maxFormStep) return;
 
-    console.log('🎨 Renderizando solicitudes:', solicitudes.length);
-
-    // Caso: No hay solicitudes
-    if (solicitudes.length === 0) {
-      container.innerHTML = `
-        <div class="no-results" style="text-align: center; padding: 60px 20px;">
-          <i class="fas fa-inbox" style="font-size: 4rem; color: #9ca3af; margin-bottom: 20px;"></i>
-          <h3 style="color: #374151; margin-bottom: 12px;">No hay solicitudes pendientes</h3>
-          <p style="color: #6b7280; margin-bottom: 24px;">
-            No se encontraron solicitudes pendientes para tu CESFAM: <strong>${currentUserData.cesfam}</strong>
-          </p>
-          <div style="display: flex; gap: 12px; justify-content: center;">
-            <button class="btn btn-primary" onclick="loadSolicitudes()" style="
-              background: #3b82f6; 
-              color: white; 
-              border: none; 
-              padding: 12px 24px; 
-              border-radius: 8px; 
-              cursor: pointer;
-              display: flex;
-              align-items: center;
-              gap: 8px;
-            ">
-              <i class="fas fa-redo"></i>
-              Actualizar
-            </button>
-            <button class="btn btn-outline" onclick="dataCache.clear(); loadSolicitudes()" style="
-              background: transparent; 
-              color: #3b82f6; 
-              border: 2px solid #3b82f6; 
-              padding: 12px 24px; 
-              border-radius: 8px; 
-              cursor: pointer;
-              display: flex;
-              align-items: center;
-              gap: 8px;
-            ">
-              <i class="fas fa-sync"></i>
-              Forzar Recarga
-            </button>
-          </div>
-          <div style="margin-top: 20px; padding: 16px; background: #e0f2fe; border-radius: 8px; font-size: 14px;">
-            <strong>💡 Información:</strong><br>
-            • Las solicitudes aparecen aquí cuando tienen estado "pendiente" o "en_revision"<br>
-            • Solo los Asistentes Sociales pueden ver las solicitudes<br>
-            • Las solicitudes agendadas no aparecen en esta lista
-          </div>
-        </div>
-      `;
-      return;
-    }
-
-    // Caso: Hay solicitudes - renderizar tarjetas
-    const solicitudesHTML = solicitudes.map(solicitud => {
-      try {
-        return createSolicitudCard(solicitud);
-      } catch (cardError) {
-        console.error('❌ Error creando tarjeta para solicitud:', solicitud.id, cardError);
-        return createErrorCard(solicitud.id);
-      }
-    }).join('');
-
-    container.innerHTML = `
-      <div class="solicitudes-header" style="margin-bottom: 24px;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <h3 style="color: #3b82f6; margin: 0;">
-            📋 ${solicitudes.length} Solicitud${solicitudes.length !== 1 ? 'es' : ''} Pendiente${solicitudes.length !== 1 ? 's' : ''}
-          </h3>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-outline btn-sm" onclick="dataCache.clear(); loadSolicitudes()" title="Actualizar datos" style="
-              background: transparent; 
-              color: #3b82f6; 
-              border: 1px solid #3b82f6; 
-              padding: 8px 16px; 
-              border-radius: 6px; 
-              cursor: pointer;
-              font-size: 14px;
-            ">
-              <i class="fas fa-sync"></i>
-              Actualizar
-            </button>
-            ${APP_CONFIG.DEBUG_MODE ? `
-            <button class="btn btn-outline btn-sm" onclick="console.log('Solicitudes:', solicitudesData)" title="Debug" style="
-              background: transparent; 
-              color: #6b7280; 
-              border: 1px solid #6b7280; 
-              padding: 8px 16px; 
-              border-radius: 6px; 
-              cursor: pointer;
-              font-size: 14px;
-            ">
-              <i class="fas fa-bug"></i>
-              Debug
-            </button>
-            ` : ''}
-          </div>
-        </div>
-      </div>
-      <div class="solicitudes-grid">
-        ${solicitudesHTML}
-      </div>
-    `;
+    // Ocultar todos los pasos
+    document.querySelectorAll('.form-step').forEach(stepDiv => {
+      stepDiv.classList.remove('active');
+    });
     
-    // Agregar event listeners a las tarjetas
-    container.querySelectorAll('.request-card').forEach(card => {
-      card.addEventListener('click', (e) => {
-        // No abrir detalle si se hizo clic en un botón
-        if (e.target.closest('button')) return;
-        
-        const solicitudId = card.dataset.id;
-        const solicitud = solicitudes.find(s => s.id === solicitudId);
-        if (solicitud) {
-          showSolicitudDetail(solicitud);
+    // Mostrar el paso objetivo
+    const targetStep = document.querySelector(`.form-step[data-step="${step}"]`);
+    if (targetStep) {
+      targetStep.classList.add('active');
+      
+      setTimeout(() => {
+        const firstInput = targetStep.querySelector('input:not([type="hidden"]), select, textarea');
+        if (firstInput && !firstInput.disabled) {
+          firstInput.focus();
         }
-      });
-    });
+      }, 100);
+    }
+
+    // Actualizar indicador de progreso
+    updateProgressIndicator(step, maxFormStep);
     
-    console.log(`✅ Renderizadas ${solicitudes.length} solicitudes correctamente`);
-    
+    currentFormStep = step;
+    saveFormDraft();
+
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log(`🔧 APP14: Navegando a paso ${step} de ${maxFormStep}`);
+    }
   } catch (error) {
-    console.error('❌ Error renderizando solicitudes:', error);
-    renderSolicitudesError(error);
+    console.error('Error going to step:', error);
   }
 }
 
-function createSolicitudCard(solicitud) {
+function updateProgressIndicator(current, total) {
   try {
-    // Validar datos básicos
-    if (!solicitud || !solicitud.id) {
-      console.error('❌ Solicitud inválida:', solicitud);
-      return createErrorCard('unknown');
+    const progressFill = document.getElementById('form-progress');
+    const progressText = document.getElementById('progress-text');
+    
+    if (progressFill) {
+      const progressPercentage = (current / total) * 100;
+      progressFill.style.width = `${progressPercentage}%`;
     }
+    
+    if (progressText) {
+      progressText.textContent = `Paso ${current} de ${total}`;
+    }
+  } catch (error) {
+    console.error('Error updating progress indicator:', error);
+  }
+}
 
-    const fecha = formatDate(solicitud.fechaCreacion);
-    const prioridad = solicitud.prioridad || 'baja';
-    const estado = solicitud.estado || 'pendiente';
-    
-    // Determinar tipo y contenido
-    let titulo, subtitulo, tipoIcon, tipoLabel, tipoClass;
-    
-    if (solicitud.tipo === 'reingreso') {
-      titulo = `Reingreso - ${solicitud.nombre || 'Sin nombre'}`;
-      subtitulo = `RUT: ${solicitud.rut || 'No disponible'}`;
-      tipoIcon = 'fa-redo';
-      tipoLabel = 'REINGRESO';
-      tipoClass = 'reingreso';
-    } else if (solicitud.tipo === 'informacion' || solicitud.tipoSolicitud === 'informacion') {
-      titulo = 'Solicitud de Información';
-      subtitulo = `Email: ${solicitud.email || 'No disponible'}`;
-      tipoIcon = 'fa-info-circle';
-      tipoLabel = 'INFORMACIÓN';
-      tipoClass = 'informacion';
-    } else {
-      // Solicitud normal
-      tipoIcon = 'fa-user-plus';
-      tipoLabel = 'SOLICITUD';
-      tipoClass = 'solicitud';
+// ORIGINAL APP14: Validación de pasos SIN CAMBIOS
+function validateStep(step) {
+  try {
+    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+    const currentStepDiv = document.querySelector(`.form-step[data-step="${step}"]`);
+    if (!currentStepDiv) return false;
+
+    const requiredFields = currentStepDiv.querySelectorAll('[required]:not([style*="display: none"])');
+    let isValid = true;
+    const errors = [];
+
+    // Validar campos requeridos
+    requiredFields.forEach(field => {
+      const value = field.value?.trim() || '';
       
-      if (solicitud.tipoSolicitud === 'identificado') {
-        titulo = `${solicitud.nombre || ''} ${solicitud.apellidos || ''}`.trim() || 'Solicitud identificada';
-        subtitulo = `RUT: ${solicitud.rut || 'No disponible'}`;
+      if (!value) {
+        field.classList.add('error');
+        errors.push(`${getFieldLabel(field)} es obligatorio`);
+        isValid = false;
       } else {
-        titulo = 'Solicitud General';
-        subtitulo = `Edad: ${solicitud.edad || 'No especificada'} años`;
+        field.classList.remove('error');
+      }
+    });
+
+    // ORIGINAL APP14: Validaciones específicas por paso
+    if (step === 1) {
+      if (!tipoSolicitud) {
+        errors.push('Selecciona un tipo de solicitud');
+        isValid = false;
+      } else if (tipoSolicitud === 'informacion') {
+        const email = document.getElementById('info-email');
+        if (!email || !email.value.trim()) {
+          errors.push('Ingresa un email para recibir información');
+          isValid = false;
+        } else if (!isValidEmail(email.value.trim())) {
+          errors.push('Ingresa un email válido');
+          isValid = false;
+        }
+      } else if (tipoSolicitud === 'identificado') {
+        const edad = parseInt(document.getElementById('patient-age')?.value);
+        if (!edad || edad < 12 || edad > 120) {
+          errors.push('La edad debe estar entre 12 y 120 años');
+          isValid = false;
+        }
+
+        const cesfam = document.getElementById('patient-cesfam')?.value;
+        if (!cesfam) {
+          errors.push('Selecciona un CESFAM');
+          isValid = false;
+        }
+
+        const paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
+        if (!paraMi) {
+          errors.push('Indica para quién solicitas ayuda');
+          isValid = false;
+        }
       }
     }
 
-    // Procesar sustancias
-    const sustancias = solicitud.sustancias || [];
-    const sustanciasHtml = sustancias.length > 0 ? 
-      sustancias.slice(0, 3).map(s => `<span class="substance-tag" style="
-        display: inline-block;
-        background: #3b82f6;
-        color: white;
-        padding: 3px 8px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: 500;
-        margin: 2px;
-      ">${s}</span>`).join('') +
-      (sustancias.length > 3 ? `<span class="substance-tag" style="
-        display: inline-block;
-        background: #6b7280;
-        color: white;
-        padding: 3px 8px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: 500;
-        margin: 2px;
-      ">+${sustancias.length - 3}</span>` : '')
-      : '';
+    if (step === 2) {
+      const rut = document.getElementById('patient-rut');
+      if (rut && rut.value.trim() && !validateRUT(rut.value.trim())) {
+        errors.push('RUT inválido');
+        isValid = false;
+      }
 
-    // Colores por prioridad
-    const prioridadColors = {
-      'critica': '#ef4444',
-      'alta': '#f59e0b',
-      'media': '#3b82f6',
-      'baja': '#10b981'
-    };
+      const phone = document.getElementById('patient-phone');
+      if (phone && phone.value.trim() && !validatePhoneNumberString(phone.value.trim())) {
+        errors.push('Teléfono inválido');
+        isValid = false;
+      }
 
-    // Iconos por estado
-    const estadoIcons = {
-      'pendiente': 'fa-clock',
-      'en_revision': 'fa-eye',
-      'pendiente_respuesta': 'fa-reply'
-    };
+      const email = document.getElementById('patient-email');
+      if (email && email.value.trim() && !isValidEmail(email.value.trim())) {
+        errors.push('Email inválido');
+        isValid = false;
+      }
+    }
 
-    // Determinar urgencia visual
-    const isUrgent = prioridad === 'critica';
+    if (step === 3) {
+      const sustancias = document.querySelectorAll('input[name="sustancias"]:checked');
+      if (sustancias.length === 0) {
+        errors.push('Selecciona al menos una sustancia');
+        isValid = false;
+      }
 
-    return `
-      <div class="request-card ${isUrgent ? 'urgent' : ''}" data-id="${solicitud.id}" style="
-        transition: all 0.2s ease;
-        border: 2px solid ${isUrgent ? '#ef4444' : '#e5e7eb'};
-        background: ${isUrgent ? '#fef2f2' : 'white'};
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 16px;
-        cursor: pointer;
-        position: relative;
-        ${isUrgent ? 'box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);' : 'box-shadow: 0 2px 8px rgba(0,0,0,0.1);'}
-      " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='${isUrgent ? '0 4px 12px rgba(239, 68, 68, 0.15)' : '0 2px 8px rgba(0,0,0,0.1)'}';">
-        ${isUrgent ? `<div style="position: absolute; top: -2px; right: -2px; background: #ef4444; color: white; padding: 4px 8px; border-radius: 0 10px 0 10px; font-size: 10px; font-weight: bold;">URGENTE</div>` : ''}
-        
-        <div class="request-header" style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
-          <div class="request-info" style="flex: 1;">
-            <h3 style="margin: 0 0 4px 0; color: #374151; font-size: 1.1rem; font-weight: 600;">
-              <i class="fas ${tipoIcon}" style="margin-right: 8px; color: #3b82f6;"></i>
-              ${titulo}
-            </h3>
-            <p style="margin: 0; color: #6b7280; font-size: 0.9rem;">${subtitulo}</p>
-          </div>
-          
-          <div class="request-meta" style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
-            <span class="priority-badge ${prioridad}" style="
-              background-color: ${prioridadColors[prioridad]};
-              color: white;
-              padding: 4px 8px;
-              border-radius: 6px;
-              font-size: 11px;
-              font-weight: bold;
-              text-transform: uppercase;
-            ">
-              ${prioridad}
-            </span>
-            
-            <span class="request-type ${tipoClass}" style="
-              background: ${tipoClass === 'reingreso' ? '#e0e7ff' : tipoClass === 'informacion' ? '#f0f9ff' : '#e6f3ff'};
-              color: ${tipoClass === 'reingreso' ? '#3730a3' : tipoClass === 'informacion' ? '#0c4a6e' : '#1e40af'};
-              padding: 3px 6px;
-              border-radius: 4px;
-              font-size: 10px;
-              font-weight: 600;
-            ">
-              ${tipoLabel}
-            </span>
-          </div>
-        </div>
-        
-        <div class="request-body">
-          ${sustanciasHtml ? `
-            <div class="request-substances" style="margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 4px;">
-              ${sustanciasHtml}
-            </div>
-          ` : ''}
-          
-          ${solicitud.descripcion || solicitud.motivo ? `
-            <p class="request-description" style="
-              color: #6b7280;
-              line-height: 1.5;
-              margin: 0 0 12px 0;
-              font-size: 0.9rem;
-            ">
-              ${truncateText(solicitud.descripcion || solicitud.motivo, 120)}
-            </p>
-          ` : ''}
-          
-          <div class="request-details" style="
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 16px;
-            font-size: 13px;
-            color: #6b7280;
-          ">
-            ${solicitud.cesfam ? `<div><strong>CESFAM:</strong> ${truncateText(solicitud.cesfam, 25)}</div>` : ''}
-            <div>
-              <strong>Estado:</strong> 
-              <span class="status-${estado}" style="display: inline-flex; align-items: center; gap: 4px;">
-                <i class="fas ${estadoIcons[estado] || 'fa-circle'}"></i>
-                ${estado.replace('_', ' ').toUpperCase()}
-              </span>
-            </div>
-            ${solicitud.edad ? `<div><strong>Edad:</strong> ${solicitud.edad} años</div>` : ''}
-            <div><strong>Fecha:</strong> ${fecha}</div>
-          </div>
-        </div>
-        
-        <div class="request-actions" style="
-          display: flex;
-          gap: 8px;
-          justify-content: flex-end;
-          padding-top: 16px;
-          border-top: 1px solid #e5e7eb;
-        ">
-          ${createActionButtons(solicitud)}
-        </div>
-      </div>
-    `;
+      const urgencia = document.querySelector('input[name="urgencia"]:checked');
+      if (!urgencia) {
+        errors.push('Selecciona el nivel de urgencia');
+        isValid = false;
+      }
+
+      const tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked');
+      if (!tratamientoPrevio) {
+        errors.push('Indica si has recibido tratamiento previo');
+        isValid = false;
+      }
+    }
+
+    if (errors.length > 0) {
+      showNotification(errors.join('\n'), 'warning', 5000);
+    }
+
+    return isValid;
   } catch (error) {
-    console.error('❌ Error creando tarjeta de solicitud:', error, solicitud);
-    return createErrorCard(solicitud?.id || 'unknown');
+    console.error('Error validating step:', error);
+    return false;
   }
 }
 
-function createActionButtons(solicitud) {
+// ORIGINAL APP14: Función para manejo de solicitud de información únicamente
+async function handleInformationOnlySubmit() {
   try {
-    const buttons = [];
+    console.log('🔧 APP14: Procesando solicitud de información únicamente...');
     
-    const buttonStyle = `
-      background: #3b82f6;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 13px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      transition: all 0.2s ease;
-    `;
+    const email = document.getElementById('info-email')?.value?.trim();
     
-    const outlineButtonStyle = `
-      background: transparent;
-      color: #3b82f6;
-      border: 1px solid #3b82f6;
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 13px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      transition: all 0.2s ease;
-    `;
-    
-    if (solicitud.tipo === 'informacion' || solicitud.tipoSolicitud === 'informacion') {
-      // Botones para solicitudes de información
-      buttons.push(`
-        <button onclick="event.stopPropagation(); showInformationModal('${solicitud.id}')" title="Enviar información" style="${buttonStyle.replace('#3b82f6', '#10b981')}" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
-          <i class="fas fa-envelope"></i>
-          Enviar Info
-        </button>
-      `);
-    } else {
-      // Botones para solicitudes normales y reingresos
-      buttons.push(`
-        <button onclick="event.stopPropagation(); showAgendaModal('${solicitud.id}')" title="Agendar cita" style="${buttonStyle}" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
-          <i class="fas fa-calendar-plus"></i>
-          Agendar
-        </button>
-      `);
+    if (!email || !isValidEmail(email)) {
+      showNotification('Email inválido', 'error');
+      return;
     }
     
-    // Botón ver detalle (siempre presente)
-    buttons.push(`
-      <button onclick="event.stopPropagation(); showSolicitudDetailById('${solicitud.id}')" title="Ver detalles completos" style="${outlineButtonStyle}" onmouseover="this.style.background='#3b82f6'; this.style.color='white'" onmouseout="this.style.background='transparent'; this.style.color='#3b82f6'">
-        <i class="fas fa-eye"></i>
-        Ver Detalle
-      </button>
-    `);
+    const informationData = {
+      tipoSolicitud: 'informacion',
+      email: email,
+      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+      estado: 'pendiente_respuesta',
+      origen: 'web_publica',
+      prioridad: 'baja',
+      identificador: `INFO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    };
     
-    // Botón urgente solo para casos críticos
-    if (solicitud.prioridad === 'critica') {
-      buttons.push(`
-        <button onclick="event.stopPropagation(); handleUrgentCase('${solicitud.id}')" title="Marcar como caso urgente" style="${buttonStyle.replace('#3b82f6', '#ef4444')}" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
-          <i class="fas fa-exclamation-triangle"></i>
-          URGENTE
-        </button>
-      `);
-    }
+    console.log('💾 APP14: Guardando solicitud de información...');
     
-    return buttons.join('');
+    await db.collection('solicitudes_informacion').add(informationData);
+    
+    localStorage.removeItem('senda_form_draft');
+    closeModal('patient-modal');
+    resetForm();
+    
+    showNotification('Solicitud de información enviada correctamente. Te responderemos pronto a tu email.', 'success', 6000);
+    
   } catch (error) {
-    console.error('❌ Error creando botones de acción:', error);
-    return `
-      <button onclick="event.stopPropagation(); showSolicitudDetailById('${solicitud.id}')" style="background: #6b7280; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
-        <i class="fas fa-eye"></i>
-        Ver
-      </button>
-    `;
+    console.error('❌ Error enviando información:', error);
+    showNotification('Error al enviar la solicitud: ' + error.message, 'error');
   }
 }
 
-function createErrorCard(solicitudId) {
-  return `
-    <div class="request-card error-card" style="border: 2px solid #ef4444; background: #fef2f2; border-radius: 12px; padding: 20px; margin-bottom: 16px;">
-      <div class="request-header">
-        <h3 style="color: #ef4444; margin: 0;">
-          <i class="fas fa-exclamation-triangle"></i>
-          Error al cargar solicitud
-        </h3>
-      </div>
-      <div class="request-body" style="margin-top: 12px;">
-        <p>ID: ${solicitudId}</p>
-        <p>No se pudo cargar la información de esta solicitud</p>
-      </div>
-    </div>
-  `;
-}
-
-function renderSolicitudesError(error) {
-  const container = document.getElementById('requests-container');
-  if (!container) return;
-  
-  let errorMessage = 'Error al cargar solicitudes';
-  let errorDetails = '';
-  let actionButton = '';
-  
-  if (error.code === 'permission-denied') {
-    errorMessage = 'Sin permisos de acceso';
-    errorDetails = 'No tienes permisos para ver las solicitudes de este CESFAM. Contacta al administrador.';
-    actionButton = `
-      <button onclick="handleLogout()" style="background: #ef4444; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer;">
-        <i class="fas fa-sign-out-alt"></i>
-        Cerrar Sesión
-      </button>
-    `;
-  } else if (error.code === 'unavailable') {
-    errorMessage = 'Servicio no disponible';
-    errorDetails = 'El servicio está temporalmente no disponible. Intenta en unos minutos.';
-    actionButton = `
-      <button onclick="loadSolicitudes()" style="background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer;">
-        <i class="fas fa-redo"></i>
-        Reintentar
-      </button>
-    `;
-  } else {
-    errorDetails = error.message || 'Error desconocido';
-    actionButton = `
-      <div style="display: flex; gap: 12px;">
-        <button onclick="loadSolicitudes()" style="background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer;">
-          <i class="fas fa-redo"></i>
-          Reintentar
-        </button>
-        <button onclick="dataCache.clear(); loadSolicitudes()" style="background: transparent; color: #3b82f6; border: 2px solid #3b82f6; padding: 12px 24px; border-radius: 8px; cursor: pointer;">
-          <i class="fas fa-sync"></i>
-          Forzar Recarga
-        </button>
-      </div>
-    `;
-  }
-  
-  container.innerHTML = `
-    <div class="no-results" style="text-align: center; padding: 60px 20px;">
-      <i class="fas fa-exclamation-triangle" style="font-size: 4rem; color: #ef4444; margin-bottom: 20px;"></i>
-      <h3 style="color: #374151; margin-bottom: 12px;">${errorMessage}</h3>
-      <p style="color: #6b7280; margin-bottom: 24px;">${errorDetails}</p>
-      ${actionButton}
-      
-      ${APP_CONFIG.DEBUG_MODE ? `
-        <div style="margin-top: 20px; padding: 16px; background: #f8f9fa; border-radius: 8px; text-align: left; font-family: monospace; font-size: 12px;">
-          <strong>Debug Info:</strong><br>
-          Error Code: ${error.code || 'N/A'}<br>
-          Error Message: ${error.message || 'N/A'}<br>
-          Timestamp: ${new Date().toISOString()}
-        </div>
-      ` : ''}
-    </div>
-  `;
-}
-
-// ================= FUNCIONES UTILITARIAS =================
-
-function truncateText(text, maxLength) {
-  if (!text || text.length <= maxLength) return text || '';
-  return text.substring(0, maxLength) + '...';
-}
-
-function formatDate(timestamp) {
+// ORIGINAL APP14: Funciones de auto-guardado
+function setupAutoSave() {
   try {
-    if (!timestamp) return 'N/A';
+    const form = document.getElementById('patient-form');
+    if (!form) return;
     
-    let date;
-    if (timestamp.toDate && typeof timestamp.toDate === 'function') {
-      date = timestamp.toDate();
-    } else if (timestamp instanceof Date) {
-      date = timestamp;
-    } else if (typeof timestamp === 'string' || typeof timestamp === 'number') {
-      date = new Date(timestamp);
-    } else {
-      return 'N/A';
-    }
+    let autoSaveTimer;
     
-    if (isNaN(date.getTime())) return 'N/A';
-    
-    return date.toLocaleDateString('es-CL', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
+    form.addEventListener('input', () => {
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(saveFormDraft, 2000);
     });
+    
+    loadFormDraft();
   } catch (error) {
-    console.error('Error formatting date:', error);
-    return 'N/A';
+    console.error('Error setting up auto-save:', error);
   }
 }
+
+function saveFormDraft() {
+  try {
+    const form = document.getElementById('patient-form');
+    if (!form) return;
+    
+    const formData = new FormData(form);
+    const draftData = {};
+    
+    for (let [key, value] of formData.entries()) {
+      draftData[key] = value;
+    }
+    
+    draftData.currentStep = currentFormStep;
+    draftData.maxFormStep = maxFormStep;
+    draftData.timestamp = Date.now();
+    
+    localStorage.setItem('senda_form_draft', JSON.stringify(draftData));
+    isDraftSaved = true;
+    
+  } catch (error) {
+    console.error('Error saving form draft:', error);
+  }
+}
+
+function loadFormDraft() {
+  try {
+    const savedDraft = localStorage.getItem('senda_form_draft');
+    if (!savedDraft) return;
+    
+    const draftData = JSON.parse(savedDraft);
+    
+    if (Date.now() - draftData.timestamp > 24 * 60 * 60 * 1000) {
+      localStorage.removeItem('senda_form_draft');
+      return;
+    }
+    
+    if (confirm('Se encontró un borrador guardado. ¿Deseas continuar donde lo dejaste?')) {
+      restoreFormDraft(draftData);
+    }
+  } catch (error) {
+    console.error('Error loading form draft:', error);
+  }
+}
+
+function restoreFormDraft(draftData) {
+  try {
+    const form = document.getElementById('patient-form');
+    if (!form) return;
+    
+    Object.keys(draftData).forEach(key => {
+      if (key === 'currentStep' || key === 'maxFormStep' || key === 'timestamp') return;
+      
+      const field = form.querySelector(`[name="${key}"]`);
+      if (field) {
+        if (field.type === 'radio' || field.type === 'checkbox') {
+          field.checked = field.value === draftData[key];
+        } else {
+          field.value = draftData[key];
+        }
+      }
+    });
+    
+    if (draftData.maxFormStep) {
+      maxFormStep = draftData.maxFormStep;
+    }
+    
+    if (draftData.currentStep) {
+      goToStep(draftData.currentStep);
+    }
+    
+    // Trigger change event para tipo de solicitud
+    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked');
+    if (tipoSolicitud) {
+      tipoSolicitud.dispatchEvent(new Event('change'));
+    }
+    
+    showNotification('Borrador restaurado correctamente', 'success');
+    
+  } catch (error) {
+    console.error('Error restoring form draft:', error);
+  }
+}
+
+function resetForm() {
+  try {
+    const form = document.getElementById('patient-form');
+    if (form) {
+      form.reset();
+      goToStep(1);
+      
+      const motivacionRange = document.getElementById('motivacion-range');
+      const motivacionValue = document.getElementById('motivacion-value');
+      if (motivacionRange && motivacionValue) {
+        motivacionRange.value = 5;
+        motivacionValue.textContent = '5';
+        updateMotivacionColor(5);
+      }
+      
+      form.querySelectorAll('.error').forEach(field => {
+        field.classList.remove('error');
+      });
+      
+      maxFormStep = 4;
+      updateProgressIndicator(1, 4);
+      
+      // Resetear visibilidad
+      const infoEmailContainer = document.getElementById('info-email-container');
+      const basicInfoContainer = document.getElementById('basic-info-container');
+      const nextBtn = document.getElementById('next-step-1');
+      const submitBtn = document.getElementById('submit-step-1');
+      
+      if (infoEmailContainer) infoEmailContainer.style.display = 'none';
+      if (basicInfoContainer) basicInfoContainer.style.display = 'block';
+      if (nextBtn) nextBtn.style.display = 'inline-flex';
+      if (submitBtn) submitBtn.style.display = 'none';
+    }
+    
+    isDraftSaved = false;
+    localStorage.removeItem('senda_form_draft');
+    
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log('🔧 APP14: Formulario reseteado');
+    }
+  } catch (error) {
+    console.error('❌ Error reseteando formulario:', error);
+  }
+}
+
+function updateMotivacionColor(value) {
+  try {
+    const motivacionValue = document.getElementById('motivacion-value');
+    if (!motivacionValue) return;
+    
+    const numValue = parseInt(value);
+    let color;
+    
+    if (numValue <= 3) {
+      color = 'var(--danger-red)';
+    } else if (numValue <= 6) {
+      color = 'var(--warning-orange)';
+    } else {
+      color = 'var(--success-green)';
+    }
+    
+    motivacionValue.style.backgroundColor = color;
+    motivacionValue.style.color = 'white';
+  } catch (error) {
+    console.error('Error updating motivacion color:', error);
+  }
+}
+
+// ================= FUNCIONES UTILITARIAS BÁSICAS =================
 
 function formatRUT(rut) {
   try {
@@ -1586,605 +844,1877 @@ function validatePhoneNumberString(phone) {
   return cleaned.length >= 8 && cleaned.length <= 12;
 }
 
-// ================= FUNCIONES PLACEHOLDER PARA EVITAR ERRORES =================
-
-// Estas funciones se implementarán en las siguientes partes
-function showSolicitudDetail(solicitud) {
-  console.log('🔍 Mostrando detalle de solicitud:', solicitud.id);
-  showNotification('Función de detalle en desarrollo', 'info');
-}
-
-function showSolicitudDetailById(id) {
-  const solicitud = solicitudesData.find(s => s.id === id);
-  if (solicitud) {
-    showSolicitudDetail(solicitud);
-  }
-}
-
-function showInformationModal(id) {
-  console.log('📧 Mostrando modal de información para:', id);
-  showNotification('Función de información en desarrollo', 'info');
-}
-
-function showAgendaModal(id) {
-  console.log('📅 Mostrando modal de agenda para:', id);
-  showNotification('Función de agenda en desarrollo', 'info');
-}
-
-function handleUrgentCase(id) {
-  console.log('🚨 Caso urgente:', id);
-  showNotification('Caso urgente identificado. Se notificará al coordinador.', 'warning');
-}
-
-function handleLogout() {
-  console.log('🚪 Cerrando sesión...');
-  showNotification('Cerrando sesión...', 'info');
-  // Implementación completa en la siguiente parte
-}
-
-// Funciones de carga que se implementarán
-async function loadPacientes() {
-  console.log('👥 Cargando pacientes...');
-}
-
-async function loadSeguimiento() {
-  console.log('📈 Cargando seguimiento...');
-}
-
-function renderCalendar() {
-  console.log('📅 Renderizando calendario...');
-}
-
-function loadTabData(tab) {
-  console.log('📊 Cargando datos de pestaña:', tab);
-}
-
-console.log('✅ PARTE 3: Formularios y renderizado de solicitudes corregido');
-// ================= SENDA PUENTE ALTO - APP.JS PARTE 4 =================
-// Formularios de Envío y Autenticación Completa
-// Desarrollado por: CamiMoralesM
-// Fecha: 2025-09-14
-
-// ================= CONFIGURACIÓN DE FORMULARIOS =================
-
-function setupMultiStepForm() {
+function getFieldLabel(field) {
   try {
-    const form = document.getElementById('patient-form');
-    if (!form) {
-      console.warn('⚠️ Formulario patient-form no encontrado');
-      return;
-    }
-
-    console.log('📝 Configurando formulario multi-step...');
-
-    // Event listeners para navegación
-    setupFormNavigation();
-    
-    // Event listeners para cambios de tipo de solicitud
-    setupSolicitudTypeChange();
-    
-    // Event listeners para validación en tiempo real
-    setupRealTimeValidation();
-    
-    // Event listeners para formateo automático
-    setupAutoFormatting();
-    
-    // Event listeners para motivación
-    setupMotivationRange();
-    
-    // Event listener para submit principal
-    form.addEventListener('submit', handlePatientFormSubmit);
-
-    // Configurar formulario de reingreso
-    setupReentryForm();
-
-    console.log('✅ Formulario multi-step configurado correctamente');
-    
+    const label = field.closest('.form-group')?.querySelector('label');
+    return label ? label.textContent.replace('*', '').trim() : 'Campo';
   } catch (error) {
-    console.error('❌ Error configurando formulario multi-step:', error);
+    return 'Campo';
   }
 }
 
-function setupFormNavigation() {
-  const form = document.getElementById('patient-form');
-  if (!form) return;
-
-  // Botones de navegación
-  const nextButtons = form.querySelectorAll('[id^="next-step"]');
-  const prevButtons = form.querySelectorAll('[id^="prev-step"]');
-  
-  nextButtons.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      const currentStep = parseInt(btn.id.split('-')[2]);
-      
-      if (validateStep(currentStep)) {
-        const nextStep = getNextStep(currentStep);
-        if (nextStep) {
-          goToStep(nextStep);
-        }
-      }
-    });
-  });
-
-  prevButtons.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      const currentStep = parseInt(btn.id.split('-')[2]);
-      const prevStep = getPreviousStep(currentStep);
-      if (prevStep) {
-        goToStep(prevStep);
-      }
-    });
-  });
-}
-
-function setupSolicitudTypeChange() {
-  const tipoSolicitudInputs = document.querySelectorAll('input[name="tipoSolicitud"]');
-  
-  tipoSolicitudInputs.forEach(input => {
-    input.addEventListener('change', () => {
-      const tipoSolicitud = input.value;
-      console.log('📝 Tipo de solicitud cambiado a:', tipoSolicitud);
-      
-      const infoEmailContainer = document.getElementById('info-email-container');
-      const basicInfoContainer = document.getElementById('basic-info-container');
-      const nextBtn = document.getElementById('next-step-1');
-      const submitBtn = document.getElementById('submit-step-1');
-      
-      if (tipoSolicitud === 'informacion') {
-        // Solo información - formulario simplificado
-        maxFormStep = 1;
-        updateProgressIndicator(1, 1);
-        
-        if (infoEmailContainer) infoEmailContainer.style.display = 'block';
-        if (basicInfoContainer) basicInfoContainer.style.display = 'none';
-        if (nextBtn) nextBtn.style.display = 'none';
-        if (submitBtn) submitBtn.style.display = 'inline-flex';
-        
-      } else if (tipoSolicitud === 'identificado') {
-        // Formulario completo
-        maxFormStep = 4;
-        updateProgressIndicator(1, 4);
-        
-        if (infoEmailContainer) infoEmailContainer.style.display = 'none';
-        if (basicInfoContainer) basicInfoContainer.style.display = 'block';
-        if (nextBtn) nextBtn.style.display = 'inline-flex';
-        if (submitBtn) submitBtn.style.display = 'none';
-      }
-    });
-  });
-}
-
-function setupRealTimeValidation() {
-  // Validación de RUT en tiempo real
-  const rutInputs = document.querySelectorAll('input[id*="rut"], input[id*="RUT"]');
-  rutInputs.forEach(input => {
-    input.addEventListener('blur', () => {
-      const rut = input.value.trim();
-      if (rut && !validateRUT(rut)) {
-        input.style.borderColor = '#ef4444';
-        showFieldError(input, 'RUT inválido');
-      } else {
-        input.style.borderColor = '';
-        hideFieldError(input);
-      }
-    });
-  });
-
-  // Validación de email en tiempo real
-  const emailInputs = document.querySelectorAll('input[type="email"]');
-  emailInputs.forEach(input => {
-    input.addEventListener('blur', () => {
-      const email = input.value.trim();
-      if (email && !isValidEmail(email)) {
-        input.style.borderColor = '#ef4444';
-        showFieldError(input, 'Email inválido');
-      } else {
-        input.style.borderColor = '';
-        hideFieldError(input);
-      }
-    });
-  });
-
-  // Validación de teléfono en tiempo real
-  const phoneInputs = document.querySelectorAll('input[id*="phone"], input[id*="telefono"]');
-  phoneInputs.forEach(input => {
-    input.addEventListener('blur', () => {
-      const phone = input.value.trim();
-      if (phone && !validatePhoneNumberString(phone)) {
-        input.style.borderColor = '#ef4444';
-        showFieldError(input, 'Teléfono inválido');
-      } else {
-        input.style.borderColor = '';
-        hideFieldError(input);
-      }
-    });
-  });
-}
-
-function setupAutoFormatting() {
-  // Auto-formateo de RUT
-  document.addEventListener('input', (e) => {
-    if (e.target.id && (e.target.id.includes('rut') || e.target.id.includes('RUT'))) {
-      const oldValue = e.target.value;
-      const newValue = formatRUT(oldValue);
-      if (oldValue !== newValue) {
-        e.target.value = newValue;
-      }
+function formatDate(timestamp) {
+  try {
+    if (!timestamp) return 'N/A';
+    
+    let date;
+    if (timestamp.toDate && typeof timestamp.toDate === 'function') {
+      date = timestamp.toDate();
+    } else if (timestamp instanceof Date) {
+      date = timestamp;
+    } else if (typeof timestamp === 'string' || typeof timestamp === 'number') {
+      date = new Date(timestamp);
+    } else {
+      return 'N/A';
     }
-  });
-
-  // Auto-formateo de teléfono
-  const phoneInputs = document.querySelectorAll('input[id*="phone"], input[id*="telefono"]');
-  phoneInputs.forEach(input => {
-    input.addEventListener('input', (e) => {
-      let value = e.target.value.replace(/\D/g, '');
-      if (value.length > 0) {
-        if (value.length <= 9) {
-          // Formato: 9 1234 5678
-          value = value.replace(/(\d{1})(\d{0,4})(\d{0,4})/, (match, p1, p2, p3) => {
-            let formatted = p1;
-            if (p2) formatted += ' ' + p2;
-            if (p3) formatted += ' ' + p3;
-            return formatted;
-          });
-        }
-      }
-      e.target.value = value;
-    });
-  });
-}
-
-function setupMotivationRange() {
-  const motivacionRange = document.getElementById('motivacion-range');
-  const motivacionValue = document.getElementById('motivacion-value');
-  
-  if (motivacionRange && motivacionValue) {
-    motivacionRange.addEventListener('input', () => {
-      const value = motivacionRange.value;
-      motivacionValue.textContent = value;
-      updateMotivacionColor(value);
-    });
     
-    // Establecer valor inicial
-    motivacionValue.textContent = motivacionRange.value;
-    updateMotivacionColor(motivacionRange.value);
+    if (isNaN(date.getTime())) return 'N/A';
+    
+    return date.toLocaleDateString('es-CL', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return 'N/A';
   }
 }
 
-function setupReentryForm() {
-  const reentryForm = document.getElementById('reentry-form');
-  if (reentryForm) {
-    reentryForm.addEventListener('submit', handleReentrySubmit);
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+async function retryOperation(operation, maxAttempts = APP_CONFIG.MAX_RETRY_ATTEMPTS) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      console.warn(`Intento ${attempt}/${maxAttempts} falló:`, error.message);
+      
+      if (attempt === maxAttempts) {
+        throw error;
+      }
+      
+      await new Promise(resolve => 
+        setTimeout(resolve, APP_CONFIG.RETRY_DELAY * Math.pow(2, attempt - 1))
+      );
+    }
+  }
+}
+
+function getCachedData(key) {
+  const cached = dataCache.get(key);
+  if (cached && (Date.now() - cached.timestamp) < APP_CONFIG.CACHE_DURATION) {
+    return cached.data;
+  }
+  return null;
+}
+
+function setCachedData(key, data) {
+  dataCache.set(key, {
+    data,
+    timestamp: Date.now()
+  });
+}
+
+// ================= AUTENTICACIÓN, EVENTOS Y CARGA CORREGIDA FIREBASE =================
+
+// ================= GESTIÓN DE EVENTOS =================
+
+function initializeEventListeners() {
+  try {
+    const loginProfessionalBtn = document.getElementById('login-professional');
+    const logoutBtn = document.getElementById('logout-btn');
+    const registerPatientBtn = document.getElementById('register-patient');
+    const reentryProgramBtn = document.getElementById('reentry-program');
+    const aboutProgramBtn = document.getElementById('about-program');
     
-    // Auto-formateo de RUT en formulario de reingreso
-    const reentryRut = document.getElementById('reentry-rut');
-    if (reentryRut) {
-      reentryRut.addEventListener('input', (e) => {
+    const searchSolicitudes = document.getElementById('search-solicitudes');
+    const searchPacientesRut = document.getElementById('search-pacientes-rut');
+    const buscarPacienteBtn = document.getElementById('buscar-paciente-btn');
+    
+    const priorityFilter = document.getElementById('priority-filter');
+    
+    const prevMonthBtn = document.getElementById('prev-month');
+    const nextMonthBtn = document.getElementById('next-month');
+    const nuevaCitaBtn = document.getElementById('nueva-cita-btn');
+
+    if (loginProfessionalBtn) {
+      loginProfessionalBtn.addEventListener('click', () => {
+        showModal('login-modal');
+      });
+    }
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', handleLogout);
+    }
+
+    if (registerPatientBtn) {
+      registerPatientBtn.addEventListener('click', () => {
+        resetForm();
+        showModal('patient-modal');
+      });
+    }
+
+    if (reentryProgramBtn) {
+      reentryProgramBtn.addEventListener('click', () => {
+        showModal('reentry-modal');
+      });
+    }
+
+    if (aboutProgramBtn) {
+      aboutProgramBtn.addEventListener('click', showAboutProgram);
+    }
+
+    if (searchSolicitudes) {
+      searchSolicitudes.addEventListener('input', debounce(filterSolicitudes, 300));
+    }
+
+    if (buscarPacienteBtn) {
+      buscarPacienteBtn.addEventListener('click', buscarPacientePorRUT);
+    }
+
+    if (searchPacientesRut) {
+      searchPacientesRut.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          buscarPacientePorRUT();
+        }
+      });
+      
+      searchPacientesRut.addEventListener('input', (e) => {
         e.target.value = formatRUT(e.target.value);
       });
     }
-  }
-}
 
-// ================= FUNCIONES DE VALIDACIÓN =================
-
-function showFieldError(field, message) {
-  hideFieldError(field); // Limpiar error anterior
-  
-  const errorElement = document.createElement('div');
-  errorElement.className = 'field-error';
-  errorElement.style.cssText = `
-    color: #ef4444;
-    font-size: 12px;
-    margin-top: 4px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  `;
-  errorElement.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
-  
-  field.parentNode.appendChild(errorElement);
-  field.style.borderColor = '#ef4444';
-}
-
-function hideFieldError(field) {
-  const existingError = field.parentNode.querySelector('.field-error');
-  if (existingError) {
-    existingError.remove();
-  }
-  field.style.borderColor = '';
-}
-
-function validateStep(step) {
-  try {
-    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
-    const currentStepDiv = document.querySelector(`.form-step[data-step="${step}"]`);
-    if (!currentStepDiv) return false;
-
-    let isValid = true;
-    const errors = [];
-
-    // Limpiar errores previos
-    currentStepDiv.querySelectorAll('[style*="border-color: rgb(239, 68, 68)"]').forEach(field => {
-      field.style.borderColor = '';
-      hideFieldError(field);
-    });
-
-    if (step === 1) {
-      if (!tipoSolicitud) {
-        errors.push('Selecciona un tipo de solicitud');
-        isValid = false;
-      } else if (tipoSolicitud === 'informacion') {
-        const email = document.getElementById('info-email');
-        if (!email || !email.value.trim()) {
-          errors.push('Ingresa un email para recibir información');
-          if (email) {
-            email.style.borderColor = '#ef4444';
-            showFieldError(email, 'Email es obligatorio');
-          }
-          isValid = false;
-        } else if (!isValidEmail(email.value.trim())) {
-          errors.push('Ingresa un email válido');
-          email.style.borderColor = '#ef4444';
-          showFieldError(email, 'Email inválido');
-          isValid = false;
-        }
-      } else if (tipoSolicitud === 'identificado') {
-        // Validaciones para solicitud identificada
-        const validaciones = [
-          { 
-            field: 'patient-age', 
-            message: 'La edad debe estar entre 12 y 120 años', 
-            validate: (v) => v && parseInt(v) >= 12 && parseInt(v) <= 120 
-          },
-          { 
-            field: 'patient-cesfam', 
-            message: 'Selecciona un CESFAM', 
-            validate: (v) => v 
-          }
-        ];
-
-        validaciones.forEach(({ field, message, validate }) => {
-          const element = document.getElementById(field);
-          const value = element ? element.value : null;
-          
-          if (!validate(value)) {
-            errors.push(message);
-            if (element) {
-              element.style.borderColor = '#ef4444';
-              showFieldError(element, message);
-            }
-            isValid = false;
-          }
-        });
-
-        // Validar paraMi
-        const paraMi = document.querySelector('input[name="paraMi"]:checked');
-        if (!paraMi) {
-          errors.push('Indica para quién solicitas ayuda');
-          isValid = false;
-        }
-      }
+    if (priorityFilter) {
+      priorityFilter.addEventListener('change', filterSolicitudes);
     }
 
-    if (step === 2) {
-      const requiredFields = [
-        { id: 'patient-name', name: 'Nombre' },
-        { id: 'patient-lastname', name: 'Apellidos' },
-        { id: 'patient-rut', name: 'RUT' },
-        { id: 'patient-phone', name: 'Teléfono' }
-      ];
+    if (prevMonthBtn) {
+      prevMonthBtn.addEventListener('click', () => {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+        renderCalendar();
+      });
+    }
 
-      requiredFields.forEach(({ id, name }) => {
-        const field = document.getElementById(id);
-        if (!field || !field.value.trim()) {
-          errors.push(`${name} es obligatorio`);
-          if (field) {
-            field.style.borderColor = '#ef4444';
-            showFieldError(field, `${name} es obligatorio`);
+    if (nextMonthBtn) {
+      nextMonthBtn.addEventListener('click', () => {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+        renderCalendar();
+      });
+    }
+
+    if (nuevaCitaBtn) {
+      nuevaCitaBtn.addEventListener('click', () => createNuevaCitaModal());
+    }
+
+    document.addEventListener('keydown', handleKeyboardShortcuts);
+    
+    console.log('✅ Event listeners inicializados correctamente');
+  } catch (error) {
+    console.error('❌ Error inicializando event listeners:', error);
+  }
+}
+
+function handleKeyboardShortcuts(e) {
+  try {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      const searchInput = document.getElementById('search-solicitudes');
+      if (searchInput && searchInput.style.display !== 'none') {
+        searchInput.focus();
+      }
+    }
+    
+    if (e.key === 'Escape') {
+      const openModal = document.querySelector('.modal-overlay[style*="flex"]');
+      if (openModal) {
+        closeModal(openModal.id);
+      }
+    }
+  } catch (error) {
+    console.error('Error handling keyboard shortcuts:', error);
+  }
+}
+
+// ================= AUTENTICACIÓN CORREGIDA =================
+
+function onAuthStateChanged(user) {
+  try {
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log('🔧 Estado de autenticación cambió:', user ? user.email : 'No autenticado');
+    }
+    
+    if (user) {
+      currentUser = user;
+      loadUserData();
+    } else {
+      currentUser = null;
+      currentUserData = null;
+      clearUserCache();
+      showPublicContent();
+    }
+  } catch (error) {
+    console.error('❌ Error en cambio de estado de autenticación:', error);
+    showNotification('Error en autenticación', 'error');
+  }
+}
+
+function clearUserCache() {
+  try {
+    solicitudesData = [];
+    pacientesData = [];
+    citasData = [];
+    professionalsList = [];
+    solicitudesInformacionData = [];
+    
+    dataCache.clear();
+    
+    const containers = [
+      'requests-container',
+      'patients-grid',
+      'appointments-list',
+      'upcoming-appointments-grid',
+      'patients-timeline'
+    ];
+    
+    containers.forEach(containerId => {
+      const container = document.getElementById(containerId);
+      if (container) {
+        container.innerHTML = '';
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error clearing user cache:', error);
+  }
+}
+
+async function loadUserData() {
+  try {
+    showLoading(true, 'Cargando datos del usuario...');
+    
+    if (!currentUser) {
+      throw new Error('Usuario no autenticado');
+    }
+
+    const cacheKey = `user_${currentUser.uid}`;
+    const cachedData = getCachedData(cacheKey);
+    
+    if (cachedData) {
+      currentUserData = cachedData;
+      showProfessionalContent();
+      await loadInitialData();
+      return;
+    }
+
+    const userData = await retryOperation(async () => {
+      const userDoc = await db.collection('profesionales').doc(currentUser.uid).get();
+      
+      if (!userDoc.exists) {
+        throw new Error('No se encontraron datos del profesional');
+      }
+      
+      return userDoc.data();
+    });
+    
+    currentUserData = userData;
+    setCachedData(cacheKey, userData);
+    
+    showProfessionalContent();
+    await loadInitialData();
+    
+  } catch (error) {
+    console.error('❌ Error cargando datos del usuario:', error);
+    
+    if (error.code === 'permission-denied') {
+      showNotification('Sin permisos para acceder a los datos', 'error');
+    } else if (error.message.includes('No se encontraron datos')) {
+      showNotification('Perfil de profesional no encontrado. Contacta al administrador.', 'error');
+    } else {
+      showNotification('Error al cargar datos del usuario: ' + error.message, 'error');
+    }
+    
+    await handleLogout();
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function loadInitialData() {
+  try {
+    const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab || 'agenda';
+    
+    if (activeTab === 'solicitudes' && hasAccessToSolicitudes()) {
+      await loadSolicitudes();
+    } else if (activeTab === 'pacientes') {
+      await loadPacientes();
+    } else if (activeTab === 'agenda') {
+      await loadTodayAppointments();
+      renderCalendar(); // CORREGIDO: Cargar calendario inmediatamente
+    } else if (activeTab === 'seguimiento') {
+      await loadSeguimiento();
+    }
+    
+    await loadProfessionalsList();
+    
+  } catch (error) {
+    console.error('❌ Error cargando datos iniciales:', error);
+  }
+}
+
+function showPublicContent() {
+  try {
+    const publicContent = document.getElementById('public-content');
+    const professionalContent = document.getElementById('professional-content');
+    const professionalHeader = document.getElementById('professional-header');
+    const loginBtn = document.getElementById('login-professional');
+
+    if (publicContent) publicContent.style.display = 'block';
+    if (professionalContent) professionalContent.style.display = 'none';
+    if (professionalHeader) professionalHeader.style.display = 'none';
+    if (loginBtn) loginBtn.style.display = 'flex';
+    
+    console.log('📄 Mostrando contenido público');
+  } catch (error) {
+    console.error('❌ Error mostrando contenido público:', error);
+  }
+}
+
+function showProfessionalContent() {
+  try {
+    const publicContent = document.getElementById('public-content');
+    const professionalContent = document.getElementById('professional-content');
+    const professionalHeader = document.getElementById('professional-header');
+    const loginBtn = document.getElementById('login-professional');
+
+    if (publicContent) publicContent.style.display = 'none';
+    if (professionalContent) professionalContent.style.display = 'block';
+    if (professionalHeader) professionalHeader.style.display = 'block';
+    if (loginBtn) loginBtn.style.display = 'none';
+    
+    if (currentUserData) {
+      updateProfessionalInfo();
+      updateTabVisibility();
+    }
+    
+    console.log('👨‍⚕️ Mostrando contenido profesional');
+  } catch (error) {
+    console.error('❌ Error mostrando contenido profesional:', error);
+  }
+}
+
+function updateTabVisibility() {
+  try {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    
+    tabBtns.forEach(btn => {
+      const tabName = btn.dataset.tab;
+      if (canAccessTab(tabName)) {
+        btn.style.display = 'flex';
+      } else {
+        btn.style.display = 'none';
+        if (btn.classList.contains('active')) {
+          btn.classList.remove('active');
+          const agendaTab = document.querySelector('.tab-btn[data-tab="agenda"]');
+          const agendaPane = document.getElementById('agenda-tab');
+          if (agendaTab && agendaPane) {
+            agendaTab.classList.add('active');
+            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+            agendaPane.classList.add('active');
+            loadTabData('agenda');
           }
-          isValid = false;
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error updating tab visibility:', error);
+  }
+}
+
+function updateProfessionalInfo() {
+  try {
+    const professionalName = document.getElementById('professional-name');
+    const professionalProfession = document.getElementById('professional-profession');
+    const professionalCesfam = document.getElementById('professional-cesfam');
+
+    if (professionalName) {
+      professionalName.textContent = `${currentUserData.nombre} ${currentUserData.apellidos}`;
+    }
+    
+    if (professionalProfession) {
+      professionalProfession.textContent = getProfessionName(currentUserData.profession);
+    }
+    
+    if (professionalCesfam) {
+      professionalCesfam.textContent = currentUserData.cesfam;
+    }
+    
+    const avatar = document.querySelector('.professional-avatar');
+    if (avatar) {
+      const initials = `${currentUserData.nombre.charAt(0)}${currentUserData.apellidos.charAt(0)}`.toUpperCase();
+      avatar.textContent = initials;
+    }
+    
+  } catch (error) {
+    console.error('Error updating professional info:', error);
+  }
+}
+
+function hasAccessToSolicitudes() {
+  if (!currentUserData) return false;
+  return currentUserData.profession === 'asistente_social';
+}
+
+function canAccessTab(tabName) {
+  if (!currentUserData) return false;
+  
+  switch (tabName) {
+    case 'solicitudes':
+      return currentUserData.profession === 'asistente_social';
+    case 'agenda':
+    case 'seguimiento':
+    case 'pacientes':
+      return true;
+    default:
+      return false;
+  }
+}
+
+function getProfessionName(profession) {
+  const names = {
+    'asistente_social': 'Asistente Social',
+    'medico': 'Médico',
+    'psicologo': 'Psicólogo',
+    'terapeuta': 'Terapeuta Ocupacional',
+    'coordinador': 'Coordinador Regional',
+    'admin': 'Administrador'
+  };
+  return names[profession] || profession;
+}
+
+async function loadProfessionalsList() {
+  try {
+    const cacheKey = `professionals_${currentUserData.cesfam}`;
+    const cached = getCachedData(cacheKey);
+    
+    if (cached) {
+      professionalsList = cached;
+      return;
+    }
+    
+    const snapshot = await db.collection('profesionales')
+      .where('cesfam', '==', currentUserData.cesfam)
+      .where('activo', '==', true)
+      .get();
+    
+    const professionals = [];
+    snapshot.forEach(doc => {
+      professionals.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    professionalsList = professionals;
+    setCachedData(cacheKey, professionals);
+    
+  } catch (error) {
+    console.error('Error loading professionals list:', error);
+  }
+}
+
+// ================= CARGA CORREGIDA DE SOLICITUDES DESDE FIREBASE =================
+
+async function loadSolicitudes() {
+  if (!currentUserData || !hasAccessToSolicitudes()) {
+    console.log('⚠️ Usuario no tiene acceso a solicitudes');
+    return;
+  }
+
+  try {
+    showLoading(true, 'Cargando solicitudes...');
+    const container = document.getElementById('requests-container');
+    
+    if (!container) {
+      console.error('❌ Container requests-container no encontrado');
+      return;
+    }
+    
+    // CORREGIDO: Limpiar cache antes de cargar nuevos datos
+    const cacheKey = `solicitudes_${currentUserData.cesfam}`;
+    dataCache.delete(cacheKey);
+    
+    await loadSolicitudesFromFirestore(true);
+    
+  } catch (error) {
+    console.error('❌ Error general cargando solicitudes:', error);
+    renderSolicitudesError(error);
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function loadSolicitudesFromFirestore(showLoadingIndicator = true) {
+  try {
+    if (showLoadingIndicator) {
+      const container = document.getElementById('requests-container');
+      if (container) {
+        container.innerHTML = `
+          <div class="loading-message">
+            <i class="fas fa-spinner fa-spin"></i>
+            Cargando solicitudes...
+          </div>
+        `;
+      }
+    }
+    
+    const solicitudes = [];
+    
+    console.log('🔍 Cargando solicitudes para CESFAM:', currentUserData.cesfam);
+    
+    // CORREGIDO: Cargar solicitudes_ingreso SIN filtro de estado
+    try {
+      const solicitudesSnapshot = await db.collection('solicitudes_ingreso')
+        .where('cesfam', '==', currentUserData.cesfam)
+        .orderBy('fechaCreacion', 'desc')
+        .limit(APP_CONFIG.PAGINATION_LIMIT)
+        .get();
+      
+      console.log('📊 Solicitudes_ingreso encontradas:', solicitudesSnapshot.size);
+      
+      solicitudesSnapshot.forEach(doc => {
+        const data = doc.data();
+        solicitudes.push({
+          id: doc.id,
+          tipo: 'solicitud',
+          ...data
+        });
+      });
+      
+    } catch (error) {
+      console.error('❌ Error cargando solicitudes_ingreso:', error);
+      if (error.code !== 'permission-denied') {
+        throw error;
+      }
+    }
+    
+    // CORREGIDO: Cargar reingresos
+    try {
+      const reingresosSnapshot = await db.collection('reingresos')
+        .where('cesfam', '==', currentUserData.cesfam)
+        .orderBy('fechaCreacion', 'desc')
+        .limit(APP_CONFIG.PAGINATION_LIMIT)
+        .get();
+      
+      console.log('📊 Reingresos encontrados:', reingresosSnapshot.size);
+      
+      reingresosSnapshot.forEach(doc => {
+        const data = doc.data();
+        solicitudes.push({
+          id: doc.id,
+          tipo: 'reingreso',
+          ...data
+        });
+      });
+      
+    } catch (error) {
+      console.error('❌ Error cargando reingresos:', error);
+      if (error.code !== 'permission-denied') {
+        throw error;
+      }
+    }
+    
+    // CORREGIDO: Cargar solicitudes_informacion
+    try {
+      const informacionSnapshot = await db.collection('solicitudes_informacion')
+        .orderBy('fechaCreacion', 'desc')
+        .limit(50)
+        .get();
+      
+      console.log('📊 Solicitudes información encontradas:', informacionSnapshot.size);
+      
+      informacionSnapshot.forEach(doc => {
+        const data = doc.data();
+        solicitudes.push({
+          id: doc.id,
+          tipo: 'informacion',
+          tipoSolicitud: 'informacion',
+          ...data
+        });
+      });
+      
+    } catch (error) {
+      console.error('❌ Error cargando solicitudes_informacion:', error);
+      if (error.code !== 'permission-denied') {
+        throw error;
+      }
+    }
+    
+    // Ordenar por fecha de creación (más recientes primero)
+    solicitudes.sort((a, b) => {
+      const fechaA = a.fechaCreacion?.toDate() || new Date(0);
+      const fechaB = b.fechaCreacion?.toDate() || new Date(0);
+      return fechaB - fechaA;
+    });
+    
+    console.log('📋 Total solicitudes procesadas:', solicitudes.length);
+    
+    solicitudesData = solicitudes;
+    
+    const cacheKey = `solicitudes_${currentUserData.cesfam}`;
+    setCachedData(cacheKey, solicitudes);
+    
+    renderSolicitudes(solicitudes);
+    
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log(`✅ Total solicitudes cargadas: ${solicitudes.length}`);
+    }
+    
+  } catch (error) {
+    console.error('❌ Error cargando desde Firestore:', error);
+    renderSolicitudesError(error);
+  }
+}
+
+function renderSolicitudes(solicitudes) {
+  try {
+    const container = document.getElementById('requests-container');
+    if (!container) {
+      console.error('❌ Container requests-container no encontrado');
+      return;
+    }
+
+    console.log('🎨 Renderizando solicitudes:', solicitudes.length);
+
+    if (solicitudes.length === 0) {
+      container.innerHTML = `
+        <div class="no-results">
+          <i class="fas fa-inbox"></i>
+          <h3>No hay solicitudes</h3>
+          <p>No se encontraron solicitudes para tu CESFAM: ${currentUserData.cesfam}</p>
+          <button class="btn btn-primary mt-4" onclick="loadSolicitudes()">
+            <i class="fas fa-redo"></i>
+            Actualizar
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = solicitudes.map(solicitud => createSolicitudCard(solicitud)).join('');
+    
+    // CORREGIDO: Agregar event listeners a las tarjetas
+    container.querySelectorAll('.request-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
+        
+        const solicitudId = card.dataset.id;
+        const solicitud = solicitudes.find(s => s.id === solicitudId);
+        if (solicitud) {
+          showSolicitudDetail(solicitud);
         }
       });
-
-      // Validaciones específicas
-      const rut = document.getElementById('patient-rut');
-      if (rut && rut.value.trim() && !validateRUT(rut.value.trim())) {
-        errors.push('RUT inválido');
-        rut.style.borderColor = '#ef4444';
-        showFieldError(rut, 'RUT inválido');
-        isValid = false;
-      }
-
-      const phone = document.getElementById('patient-phone');
-      if (phone && phone.value.trim() && !validatePhoneNumberString(phone.value.trim())) {
-        errors.push('Teléfono inválido');
-        phone.style.borderColor = '#ef4444';
-        showFieldError(phone, 'Teléfono inválido');
-        isValid = false;
-      }
+    });
+    
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log(`✅ Renderizadas ${solicitudes.length} solicitudes`);
     }
-
-    if (step === 3) {
-      const sustancias = document.querySelectorAll('input[name="sustancias"]:checked');
-      if (sustancias.length === 0) {
-        errors.push('Selecciona al menos una sustancia');
-        isValid = false;
-      }
-
-      const urgencia = document.querySelector('input[name="urgencia"]:checked');
-      if (!urgencia) {
-        errors.push('Selecciona el nivel de urgencia');
-        isValid = false;
-      }
-
-      const tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked');
-      if (!tratamientoPrevio) {
-        errors.push('Indica si has recibido tratamiento previo');
-        isValid = false;
-      }
-    }
-
-    if (errors.length > 0) {
-      showNotification(errors.join('\n'), 'warning', 5000);
-    }
-
-    return isValid;
   } catch (error) {
-    console.error('Error validating step:', error);
-    return false;
+    console.error('❌ Error renderizando solicitudes:', error);
   }
 }
 
-// ================= MANEJO DE ENVÍO DE FORMULARIOS =================
+function createSolicitudCard(solicitud) {
+  try {
+    const fecha = formatDate(solicitud.fechaCreacion);
+    const prioridad = solicitud.prioridad || 'baja';
+    const estado = solicitud.estado || 'pendiente';
+    
+    let titulo, subtitulo, tipoIcon;
+    
+    if (solicitud.tipo === 'reingreso') {
+      titulo = `Reingreso - ${solicitud.nombre || 'Sin nombre'}`;
+      subtitulo = `RUT: ${solicitud.rut || 'No disponible'}`;
+      tipoIcon = 'fa-redo';
+    } else if (solicitud.tipo === 'informacion' || solicitud.tipoSolicitud === 'informacion') {
+      titulo = 'Solicitud de Información';
+      subtitulo = `Email: ${solicitud.email || 'No disponible'}`;
+      tipoIcon = 'fa-info-circle';
+    } else {
+      tipoIcon = 'fa-user-plus';
+      if (solicitud.tipoSolicitud === 'identificado') {
+        titulo = `${solicitud.nombre || ''} ${solicitud.apellidos || ''}`.trim() || 'Solicitud identificada';
+        subtitulo = `RUT: ${solicitud.rut || 'No disponible'}`;
+      } else {
+        titulo = 'Solicitud General';
+        subtitulo = `Edad: ${solicitud.edad || 'No especificada'} años`;
+      }
+    }
 
-async function handlePatientFormSubmit(e) {
-  e.preventDefault();
-  console.log('📄 Iniciando envío de solicitud...');
+    const sustancias = solicitud.sustancias || [];
+    const sustanciasHtml = sustancias.length > 0 ? 
+      sustancias.map(s => `<span class="substance-tag">${s}</span>`).join('') : '';
+
+    const prioridadColor = {
+      'critica': '#ef4444',
+      'alta': '#f59e0b',
+      'media': '#3b82f6',
+      'baja': '#10b981'
+    };
+
+    const estadoIcon = {
+      'pendiente': 'fa-clock',
+      'en_proceso': 'fa-spinner',
+      'agendada': 'fa-calendar-check',
+      'completada': 'fa-check-circle',
+      'pendiente_respuesta': 'fa-reply'
+    };
+
+    return `
+      <div class="request-card" data-id="${solicitud.id}" style="transition: all 0.2s ease;">
+        <div class="request-header">
+          <div class="request-info">
+            <h3>
+              <i class="fas ${tipoIcon}" style="margin-right: 8px; color: var(--primary-blue);"></i>
+              ${titulo}
+            </h3>
+            <p style="color: var(--gray-600);">${subtitulo}</p>
+          </div>
+          <div class="request-meta">
+            <span class="priority-badge ${prioridad}" style="background-color: ${prioridadColor[prioridad]}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+              ${prioridad.toUpperCase()}
+            </span>
+            ${solicitud.tipo === 'reingreso' ? '<span class="request-type reingreso" style="background: #e0e7ff; color: #3730a3; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">REINGRESO</span>' : ''}
+            ${solicitud.tipo === 'informacion' ? '<span class="request-type informacion" style="background: #f0f9ff; color: #0c4a6e; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">INFORMACIÓN</span>' : ''}
+          </div>
+        </div>
+        
+        <div class="request-body">
+          ${sustanciasHtml ? `<div class="request-substances" style="margin-bottom: 8px;">${sustanciasHtml}</div>` : ''}
+          ${solicitud.descripcion || solicitud.motivo ? 
+            `<p class="request-description" style="color: var(--gray-700); line-height: 1.5;">${truncateText(solicitud.descripcion || solicitud.motivo, 150)}</p>` : ''}
+          
+          <div class="request-details" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--gray-600);">
+            ${solicitud.cesfam ? `<div><strong>CESFAM:</strong> ${solicitud.cesfam}</div>` : ''}
+            <div><strong>Estado:</strong> 
+              <span class="status-${estado}" style="display: inline-flex; align-items: center; gap: 4px;">
+                <i class="fas ${estadoIcon[estado] || 'fa-circle'}"></i>
+                ${estado.replace('_', ' ').toUpperCase()}
+              </span>
+            </div>
+            ${solicitud.edad ? `<div><strong>Edad:</strong> ${solicitud.edad} años</div>` : ''}
+            <div><strong>Fecha:</strong> ${fecha}</div>
+          </div>
+        </div>
+        
+        <div class="request-actions" style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px;">
+          ${solicitud.tipo !== 'informacion' ? 
+            `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); showAgendaModal('${solicitud.id}')" title="Agendar cita">
+              <i class="fas fa-calendar-plus"></i>
+              Agendar
+            </button>` : ''
+          }
+          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); showSolicitudDetailById('${solicitud.id}')" title="Ver detalles completos">
+            <i class="fas fa-eye"></i>
+            Ver Detalle
+          </button>
+          ${solicitud.prioridad === 'critica' ? 
+            `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); handleUrgentCase('${solicitud.id}')" title="Caso urgente">
+              <i class="fas fa-exclamation-triangle"></i>
+              URGENTE
+            </button>` : ''
+          }
+        </div>
+      </div>
+    `;
+  } catch (error) {
+    console.error('❌ Error creando tarjeta de solicitud:', error);
+    return `
+      <div class="request-card error-card">
+        <div class="request-header">
+          <h3>Error al cargar solicitud</h3>
+        </div>
+        <div class="request-body">
+          <p>No se pudo cargar la información de esta solicitud</p>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function truncateText(text, maxLength) {
+  if (!text || text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + '...';
+}
+
+function renderSolicitudesError(error) {
+  const container = document.getElementById('requests-container');
+  if (!container) return;
   
-  const submitBtn = document.getElementById('submit-form');
+  let errorMessage = 'Error al cargar solicitudes';
+  let errorDetails = '';
+  
+  if (error.code === 'permission-denied') {
+    errorMessage = 'Sin permisos de acceso';
+    errorDetails = 'No tienes permisos para ver las solicitudes de este CESFAM';
+  } else if (error.code === 'unavailable') {
+    errorMessage = 'Servicio no disponible';
+    errorDetails = 'El servicio está temporalmente no disponible';
+  } else {
+    errorDetails = error.message;
+  }
+  
+  container.innerHTML = `
+    <div class="no-results">
+      <i class="fas fa-exclamation-triangle" style="color: var(--danger-red);"></i>
+      <h3>${errorMessage}</h3>
+      <p>${errorDetails}</p>
+      <div class="mt-4">
+        <button class="btn btn-primary" onclick="loadSolicitudes()">
+          <i class="fas fa-redo"></i>
+          Reintentar
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// ================= CARGA CORREGIDA DE PACIENTES DESDE FIREBASE =================
+
+async function loadPacientes() {
+  if (!currentUserData) return;
+
+  try {
+    showLoading(true, 'Cargando pacientes...');
+    
+    // CORREGIDO: Limpiar cache antes de cargar
+    const cacheKey = `pacientes_${currentUserData.cesfam}`;
+    dataCache.delete(cacheKey);
+    
+    console.log('🔍 Cargando pacientes para CESFAM:', currentUserData.cesfam);
+    
+    const pacientesSnapshot = await db.collection('pacientes')
+      .where('cesfam', '==', currentUserData.cesfam)
+      .orderBy('fechaCreacion', 'desc')
+      .limit(APP_CONFIG.PAGINATION_LIMIT)
+      .get();
+    
+    console.log('📊 Pacientes encontrados:', pacientesSnapshot.size);
+    
+    const pacientes = [];
+    pacientesSnapshot.forEach(doc => {
+      pacientes.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    pacientesData = pacientes;
+    setCachedData(cacheKey, pacientes);
+    renderPacientes(pacientes);
+    
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log(`✅ Total pacientes cargados: ${pacientes.length}`);
+    }
+    
+  } catch (error) {
+    console.error('❌ Error loading pacientes:', error);
+    showNotification('Error al cargar pacientes: ' + error.message, 'error');
+    
+    const grid = document.getElementById('patients-grid');
+    if (grid) {
+      grid.innerHTML = `
+        <div class="no-results">
+          <i class="fas fa-exclamation-triangle"></i>
+          <h3>Error al cargar pacientes</h3>
+          <p>${error.message}</p>
+          <button class="btn btn-primary" onclick="loadPacientes()">
+            <i class="fas fa-redo"></i>
+            Reintentar
+          </button>
+        </div>
+      `;
+    }
+  } finally {
+    showLoading(false);
+  }
+}
+
+function renderPacientes(pacientes) {
+  try {
+    const grid = document.getElementById('patients-grid');
+    if (!grid) return;
+
+    console.log('🎨 Renderizando pacientes:', pacientes.length);
+
+    if (pacientes.length === 0) {
+      grid.innerHTML = `
+        <div class="no-results">
+          <i class="fas fa-users"></i>
+          <h3>No hay pacientes registrados</h3>
+          <p>No se encontraron pacientes en este CESFAM</p>
+        </div>
+      `;
+      return;
+    }
+
+    grid.innerHTML = pacientes.map(paciente => createPatientCard(paciente)).join('');
+    
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log(`✅ Renderizados ${pacientes.length} pacientes`);
+    }
+  } catch (error) {
+    console.error('❌ Error rendering pacientes:', error);
+  }
+}
+
+function createPatientCard(paciente) {
+  const fecha = formatDate(paciente.fechaCreacion);
+  const estado = paciente.estado || 'activo';
+  
+  return `
+    <div class="patient-card">
+      <div class="patient-header">
+        <div class="patient-info">
+          <h3>${paciente.nombre} ${paciente.apellidos || ''}</h3>
+          <p>RUT: ${paciente.rut}</p>
+        </div>
+        <span class="patient-status ${estado}">
+          ${estado.toUpperCase()}
+        </span>
+      </div>
+      <div class="patient-details">
+        <div><strong>Edad:</strong> ${paciente.edad || 'No especificada'} años</div>
+        <div><strong>Teléfono:</strong> ${paciente.telefono || 'No disponible'}</div>
+        <div><strong>Email:</strong> ${paciente.email || 'No disponible'}</div>
+        <div><strong>Registrado:</strong> ${fecha}</div>
+      </div>
+      <div class="patient-actions">
+        <button class="btn btn-sm btn-primary" onclick="showPatientDetail('${paciente.id}')">
+          <i class="fas fa-eye"></i>
+          Ver Ficha
+        </button>
+        <button class="btn btn-sm btn-success" onclick="downloadPatientPDF('${paciente.id}')">
+          <i class="fas fa-download"></i>
+          Descargar PDF
+        </button>
+      </div>
+    </div>
+  `;
+}
+// ================= CALENDARIO CORREGIDO Y GESTIÓN DE CITAS =================
+
+// ================= CALENDARIO FUNCIONAL CORREGIDO =================
+
+function setupCalendar() {
+  try {
+    currentCalendarDate = new Date();
+    renderCalendar();
+    
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log('✅ Calendario configurado');
+    }
+  } catch (error) {
+    console.error('❌ Error configurando calendario:', error);
+  }
+}
+
+// CORREGIDO: Renderizar calendario y cargar citas automáticamente
+function renderCalendar() {
+  try {
+    const calendarGrid = document.getElementById('calendar-grid');
+    const monthYearElement = document.getElementById('calendar-month-year');
+    
+    if (!calendarGrid || !monthYearElement) return;
+
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+    
+    const monthNames = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+    
+    monthYearElement.textContent = `${monthNames[month]} ${year}`;
+    
+    calendarGrid.innerHTML = '';
+    
+    const dayHeaders = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    dayHeaders.forEach(day => {
+      const dayHeader = document.createElement('div');
+      dayHeader.className = 'calendar-day-header';
+      dayHeader.textContent = day;
+      calendarGrid.appendChild(dayHeader);
+    });
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    
+    const startDate = new Date(firstDay);
+    const firstDayOfWeek = (firstDay.getDay() + 6) % 7;
+    startDate.setDate(startDate.getDate() - firstDayOfWeek);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const currentDate = new Date(startDate);
+    
+    for (let i = 0; i < 42; i++) {
+      const dayElement = createCalendarDay(currentDate, month, today);
+      calendarGrid.appendChild(dayElement);
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    // CORREGIDO: Cargar citas del mes inmediatamente
+    if (currentUserData) {
+      loadMonthAppointments(year, month);
+    }
+    
+  } catch (error) {
+    console.error('❌ Error renderizando calendario:', error);
+  }
+}
+
+function createCalendarDay(date, currentMonth, today) {
+  const dayElement = document.createElement('div');
+  dayElement.className = 'calendar-day';
+  
+  const isCurrentMonth = date.getMonth() === currentMonth;
+  const isToday = date.toDateString() === today.toDateString();
+  const isPast = date < today;
+  const dayOfWeek = date.getDay();
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+  
+  if (!isCurrentMonth) dayElement.classList.add('other-month');
+  if (isToday) dayElement.classList.add('today');
+  if (isWeekend) {
+    dayElement.classList.add('weekend');
+    dayElement.style.backgroundColor = '#f8f9ff';
+  }
+  
+  dayElement.innerHTML = `
+    <div class="calendar-day-number">${date.getDate()}</div>
+    <div class="calendar-appointments" id="appointments-${date.toISOString().split('T')[0]}"></div>
+  `;
+  
+  if (isCurrentMonth && !isPast) {
+    dayElement.addEventListener('click', () => selectCalendarDay(new Date(date)));
+    dayElement.style.cursor = 'pointer';
+  }
+  
+  return dayElement;
+}
+
+function selectCalendarDay(date) {
+  try {
+    document.querySelectorAll('.calendar-day.selected').forEach(day => {
+      day.classList.remove('selected');
+    });
+    
+    const dayElements = document.querySelectorAll('.calendar-day');
+    dayElements.forEach(dayEl => {
+      const dayNumber = dayEl.querySelector('.calendar-day-number').textContent;
+      if (parseInt(dayNumber) === date.getDate() && !dayEl.classList.contains('other-month')) {
+        dayEl.classList.add('selected');
+      }
+    });
+    
+    selectedCalendarDate = date;
+    loadDayAppointments(date);
+    
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log('📅 Día seleccionado:', date.toLocaleDateString('es-CL'));
+    }
+  } catch (error) {
+    console.error('❌ Error seleccionando día del calendario:', error);
+  }
+}
+
+// CORREGIDO: Cargar citas del mes y mostrarlas inmediatamente
+async function loadMonthAppointments(year, month) {
+  if (!currentUserData) return;
   
   try {
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
-    }
+    console.log(`🔍 Cargando citas para ${monthNames[month]} ${year} - CESFAM: ${currentUserData.cesfam}`);
     
-    // Verificar tipo de solicitud
-    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
-    if (!tipoSolicitud) {
-      showNotification('Selecciona un tipo de solicitud', 'warning');
-      return;
-    }
-
-    console.log('📝 Tipo de solicitud:', tipoSolicitud);
-
-    if (tipoSolicitud !== 'identificado') {
-      showNotification('Tipo de solicitud no válido para este flujo', 'error');
-      return;
-    }
-
-    // Validaciones básicas críticas
-    const validacionesCriticas = validateCriticalFields();
-    if (!validacionesCriticas.valid) {
-      showNotification(validacionesCriticas.message, 'warning');
-      return;
-    }
-
-    // Recopilar datos del formulario
-    const solicitudData = collectFormDataSafe();
-    console.log('📋 Datos recopilados:', solicitudData);
+    const startOfMonth = new Date(year, month, 1);
+    const endOfMonth = new Date(year, month + 1, 0);
+    endOfMonth.setHours(23, 59, 59, 999);
     
-    // Calcular prioridad
-    solicitudData.prioridad = calculatePriority(solicitudData);
-    console.log('⚡ Prioridad calculada:', solicitudData.prioridad);
+    // CORREGIDO: Cargar citas con mejor consulta
+    const appointmentsSnapshot = await db.collection('citas')
+      .where('cesfam', '==', currentUserData.cesfam)
+      .where('fecha', '>=', startOfMonth)
+      .where('fecha', '<=', endOfMonth)
+      .get();
     
-    // Verificar conexión a Firebase
-    if (!db) {
-      throw new Error('No hay conexión a Firebase');
-    }
+    console.log(`📊 Citas encontradas en ${monthNames[month]}: ${appointmentsSnapshot.size}`);
     
-    console.log('💾 Guardando en Firestore...');
+    // CORREGIDO: Limpiar contenedores de citas anteriores
+    document.querySelectorAll('.calendar-appointments').forEach(container => {
+      container.innerHTML = '';
+    });
     
-    // Enviar a Firebase con reintentos
-    const docRef = await retryOperation(async () => {
-      return await db.collection('solicitudes_ingreso').add(solicitudData);
-    }, 3, 'envío de solicitud');
+    const appointmentsByDate = {};
     
-    console.log('✅ Solicitud guardada con ID:', docRef.id);
-    
-    // Crear alerta crítica si es necesario
-    if (solicitudData.prioridad === 'critica') {
-      try {
-        await createCriticalAlert(solicitudData, docRef.id);
-        console.log('🚨 Alerta crítica creada');
-      } catch (alertError) {
-        console.warn('⚠️ Error creando alerta crítica:', alertError);
+    appointmentsSnapshot.forEach(doc => {
+      const appointment = doc.data();
+      const appointmentDate = appointment.fecha.toDate();
+      const dateString = appointmentDate.toISOString().split('T')[0];
+      
+      if (!appointmentsByDate[dateString]) {
+        appointmentsByDate[dateString] = [];
       }
+      
+      appointmentsByDate[dateString].push({
+        id: doc.id,
+        ...appointment
+      });
+    });
+    
+    // CORREGIDO: Mostrar citas en el calendario inmediatamente
+    Object.keys(appointmentsByDate).forEach(dateString => {
+      const container = document.getElementById(`appointments-${dateString}`);
+      if (container) {
+        const appointments = appointmentsByDate[dateString];
+        
+        appointments.slice(0, 3).forEach((appointment, index) => {
+          const appointmentEl = document.createElement('div');
+          appointmentEl.className = 'calendar-appointment';
+          appointmentEl.textContent = appointment.pacienteNombre || 'Cita';
+          appointmentEl.title = `${appointment.pacienteNombre} - ${appointment.fecha.toDate().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
+          
+          // CORREGIDO: Estilos mejorados para las citas
+          appointmentEl.style.cssText = `
+            background: var(--primary-blue);
+            color: white;
+            padding: 2px 4px;
+            margin: 1px 0;
+            border-radius: 3px;
+            font-size: 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+          `;
+          
+          appointmentEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showPatientAppointmentInfo(appointment);
+          });
+          
+          container.appendChild(appointmentEl);
+        });
+        
+        if (appointments.length > 3) {
+          const moreEl = document.createElement('div');
+          moreEl.className = 'calendar-appointment more';
+          moreEl.textContent = `+${appointments.length - 3} más`;
+          moreEl.style.cssText = `
+            background: var(--gray-400);
+            color: white;
+            padding: 2px 4px;
+            margin: 1px 0;
+            border-radius: 3px;
+            font-size: 9px;
+            text-align: center;
+            cursor: pointer;
+          `;
+          
+          moreEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const date = new Date(dateString);
+            selectCalendarDay(date);
+          });
+          
+          container.appendChild(moreEl);
+        }
+      }
+    });
+    
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log(`✅ Citas del mes cargadas y mostradas: ${appointmentsSnapshot.size}`);
     }
-    
-    // Cerrar modal y resetear formulario
-    closeModal('patient-modal');
-    resetForm();
-    
-    // Mostrar mensaje de éxito
-    const successMessage = `Solicitud enviada correctamente. 
-ID: ${docRef.id}
-Prioridad: ${solicitudData.prioridad.toUpperCase()}
-Te contactaremos pronto para coordinar una cita.`;
-    
-    showNotification(successMessage, 'success', 8000);
-    console.log('🎉 Proceso completado exitosamente');
     
   } catch (error) {
-    console.error('❌ Error enviando solicitud:', error);
-    handleFormSubmissionError(error);
-  } finally {
+    console.error('❌ Error cargando citas del mes:', error);
+  }
+}
+
+// Definir monthNames para usar en loadMonthAppointments
+const monthNames = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
+function showPatientAppointmentInfo(appointment) {
+  try {
+    const infoModal = createPatientAppointmentInfoModal(appointment);
+    document.body.insertAdjacentHTML('beforeend', infoModal);
+    showModal('patient-appointment-info-modal');
+  } catch (error) {
+    console.error('Error showing patient appointment info:', error);
+    showNotification('Error al mostrar información del paciente', 'error');
+  }
+}
+
+function createPatientAppointmentInfoModal(appointment) {
+  const fecha = appointment.fecha.toDate();
+  const fechaStr = fecha.toLocaleDateString('es-CL');
+  const horaStr = fecha.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+  
+  return `
+    <div class="modal-overlay temp-modal" id="patient-appointment-info-modal">
+      <div class="modal">
+        <button class="modal-close" onclick="closeModal('patient-appointment-info-modal')">
+          <i class="fas fa-times"></i>
+        </button>
+        
+        <div style="padding: 24px;">
+          <h2><i class="fas fa-calendar-check"></i> Información de Cita</h2>
+          
+          <div class="patient-info" style="background: var(--light-blue); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+            <h3 style="margin: 0 0 12px 0; color: var(--primary-blue);">
+              ${appointment.pacienteNombre}
+            </h3>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 14px;">
+              <div><strong>RUT:</strong> ${appointment.pacienteRut || 'No disponible'}</div>
+              <div><strong>Teléfono:</strong> ${appointment.pacienteTelefono || 'No disponible'}</div>
+              <div><strong>Fecha:</strong> ${fechaStr}</div>
+              <div><strong>Hora:</strong> ${horaStr}</div>
+              <div><strong>Profesional:</strong> ${appointment.profesionalNombre}</div>
+              <div><strong>Tipo:</strong> ${getProfessionName(appointment.tipoProfesional)}</div>
+            </div>
+            
+            ${appointment.observaciones ? 
+              `<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5);">
+                <strong>Observaciones:</strong>
+                <p style="margin: 8px 0 0 0; font-style: italic;">${appointment.observaciones}</p>
+              </div>` : ''
+            }
+          </div>
+          
+          <div style="text-align: center;">
+            <button class="btn btn-primary" onclick="closeModal('patient-appointment-info-modal')">
+              <i class="fas fa-check"></i>
+              Entendido
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function loadDayAppointments(date) {
+  const appointmentsList = document.getElementById('appointments-list');
+  if (!appointmentsList || !currentUserData) return;
+  
+  try {
+    appointmentsList.innerHTML = '<div class="loading-message"><i class="fas fa-spinner fa-spin"></i> Cargando citas...</div>';
+    
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    const appointmentsSnapshot = await db.collection('citas')
+      .where('cesfam', '==', currentUserData.cesfam)
+      .where('fecha', '>=', startOfDay)
+      .where('fecha', '<=', endOfDay)
+      .orderBy('fecha', 'asc')
+      .get();
+    
+    if (appointmentsSnapshot.empty) {
+      const dayName = date.toLocaleDateString('es-CL', { weekday: 'long' });
+      const workingHours = getWorkingHours(date);
+      
+      appointmentsList.innerHTML = `
+        <div class="no-results">
+          <i class="fas fa-calendar-day"></i>
+          <p>No hay citas programadas para ${date.toLocaleDateString('es-CL')}</p>
+          <p><small>${dayName} - Horario: ${workingHours.inicio} a ${workingHours.fin}</small></p>
+          <button class="btn btn-primary btn-sm mt-2" onclick="createNuevaCitaModalForDate('${date.toISOString()}')">
+            <i class="fas fa-plus"></i>
+            Agregar Cita
+          </button>
+        </div>
+      `;
+      return;
+    }
+    
+    const appointments = [];
+    appointmentsSnapshot.forEach(doc => {
+      appointments.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    appointmentsList.innerHTML = appointments.map(appointment => createAppointmentItem(appointment)).join('');
+    
+  } catch (error) {
+    console.error('❌ Error cargando citas del día:', error);
+    appointmentsList.innerHTML = `
+      <div class="no-results">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>Error al cargar las citas</p>
+        <button class="btn btn-outline btn-sm" onclick="loadDayAppointments(new Date('${date.toISOString()}'))">
+          <i class="fas fa-redo"></i>
+          Reintentar
+        </button>
+      </div>
+    `;
+  }
+}
+
+function createAppointmentItem(appointment) {
+  const time = appointment.fecha.toDate().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+  const statusIcon = {
+    'programada': 'fa-clock',
+    'confirmada': 'fa-check',
+    'en_curso': 'fa-play',
+    'completada': 'fa-check-circle',
+    'cancelada': 'fa-times-circle'
+  };
+  
+  return `
+    <div class="appointment-item" data-id="${appointment.id}">
+      <div class="appointment-time">${time}</div>
+      <div class="appointment-details">
+        <div class="appointment-patient" onclick="showPatientAppointmentInfo(${JSON.stringify(appointment).replace(/"/g, '&quot;')})" 
+             style="cursor: pointer; color: var(--primary-blue); text-decoration: underline;">
+          ${appointment.pacienteNombre}
+        </div>
+        <div class="appointment-professional">${appointment.profesionalNombre}</div>
+        <div class="appointment-type">${getProfessionName(appointment.tipoProfesional)}</div>
+      </div>
+      <div class="appointment-status">
+        <span class="status-badge ${appointment.estado || 'programada'}">
+          <i class="fas ${statusIcon[appointment.estado] || 'fa-circle'}"></i>
+          ${(appointment.estado || 'programada').toUpperCase()}
+        </span>
+      </div>
+    </div>
+  `;
+}
+
+async function loadTodayAppointments() {
+  try {
+    const today = new Date();
+    await loadDayAppointments(today);
+    
+    // CORREGIDO: También renderizar el calendario con las citas de hoy
+    if (!selectedCalendarDate) {
+      selectedCalendarDate = today;
+      selectCalendarDay(today);
+    }
+  } catch (error) {
+    console.error('❌ Error cargando citas de hoy:', error);
+  }
+}
+
+function getWorkingHours(date) {
+  const dayOfWeek = date.getDay();
+  
+  if (HORARIOS_CONFIG.semana.diasSemana.includes(dayOfWeek)) {
+    return {
+      inicio: `${HORARIOS_CONFIG.semana.horaInicio}:00`,
+      fin: `${HORARIOS_CONFIG.semana.horaFin}:${HORARIOS_CONFIG.semana.minutoFin.toString().padStart(2, '0')}`
+    };
+  } else if (HORARIOS_CONFIG.finSemana.diasSemana.includes(dayOfWeek)) {
+    return {
+      inicio: `${HORARIOS_CONFIG.finSemana.horaInicio}:00`,
+      fin: `${HORARIOS_CONFIG.finSemana.horaFin}:${HORARIOS_CONFIG.finSemana.minutoFin.toString().padStart(2, '0')}`
+    };
+  } else {
+    return {
+      inicio: 'Cerrado',
+      fin: 'Cerrado'
+    };
+  }
+}
+
+// ================= NUEVA CITA MODAL COMPLETO =================
+
+function createNuevaCitaModal() {
+  try {
+    const nuevaCitaModal = `
+      <div class="modal-overlay temp-modal" id="nueva-cita-modal">
+        <div class="modal large-modal">
+          <button class="modal-close" onclick="closeModal('nueva-cita-modal')">
+            <i class="fas fa-times"></i>
+          </button>
+          
+          <div style="padding: 24px;">
+            <h2><i class="fas fa-calendar-plus"></i> Nueva Cita</h2>
+            
+            <form id="nueva-cita-form">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                <div class="form-group">
+                  <label class="form-label">Nombre del Paciente *</label>
+                  <input type="text" class="form-input" id="nueva-cita-nombre" required>
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label">RUT *</label>
+                  <input type="text" class="form-input" id="nueva-cita-rut" placeholder="12.345.678-9" required>
+                </div>
+              </div>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                <div class="form-group">
+                  <label class="form-label">Profesional *</label>
+                  <select class="form-select" id="nueva-cita-professional" required>
+                    <option value="">Seleccionar profesional...</option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label">Fecha *</label>
+                  <input type="date" class="form-input" id="nueva-cita-date" required>
+                </div>
+              </div>
+              
+              <div class="time-slots-container" id="nueva-cita-time-slots-container" style="display: none;">
+                <h4 style="margin-bottom: 16px; color: var(--primary-blue);">
+                  <i class="fas fa-clock"></i> Horarios Disponibles
+                </h4>
+                <div class="time-slots-grid" id="nueva-cita-time-slots-grid">
+                  <!-- Los slots de tiempo se cargarán aquí -->
+                </div>
+              </div>
+              
+              <div class="form-group" style="margin-top: 24px;">
+                <label class="form-label">Observaciones</label>
+                <textarea class="form-textarea" id="nueva-cita-notes" rows="3" 
+                          placeholder="Observaciones adicionales para la cita..."></textarea>
+              </div>
+              
+              <div class="form-actions" style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                <button type="button" class="btn btn-outline" onclick="closeModal('nueva-cita-modal')">
+                  <i class="fas fa-times"></i>
+                  Cancelar
+                </button>
+                <button type="submit" class="btn btn-success" disabled>
+                  <i class="fas fa-calendar-check"></i>
+                  Crear Cita
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', nuevaCitaModal);
+    showModal('nueva-cita-modal');
+    
+    loadProfessionalsForNuevaCita();
+    
+  } catch (error) {
+    console.error('Error creating nueva cita modal:', error);
+    showNotification('Error al abrir modal de nueva cita', 'error');
+  }
+}
+
+async function loadProfessionalsForNuevaCita() {
+  try {
+    const professionalSelect = document.getElementById('nueva-cita-professional');
+    if (!professionalSelect) return;
+
+    // Usar la lista ya cargada o cargar si no existe
+    let professionals = professionalsList;
+    if (professionals.length === 0) {
+      professionals = await loadProfessionalsByArea();
+    }
+    
+    professionalSelect.innerHTML = '<option value="">Seleccionar profesional...</option>';
+    
+    professionals.forEach(prof => {
+      const option = document.createElement('option');
+      option.value = prof.id;
+      option.textContent = `${prof.nombre} ${prof.apellidos} - ${getProfessionName(prof.profession)}`;
+      option.dataset.profession = prof.profession;
+      option.dataset.nombre = `${prof.nombre} ${prof.apellidos}`;
+      professionalSelect.appendChild(option);
+    });
+
+    setupNuevaCitaFormListeners();
+    
+  } catch (error) {
+    console.error('Error loading professionals for nueva cita:', error);
+    showNotification('Error al cargar profesionales', 'error');
+  }
+}
+
+async function loadProfessionalsByArea() {
+  try {
+    if (!currentUserData) return [];
+    
+    const snapshot = await db.collection('profesionales')
+      .where('cesfam', '==', currentUserData.cesfam)
+      .where('activo', '==', true)
+      .get();
+    
+    const professionals = [];
+    snapshot.forEach(doc => {
+      professionals.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    return professionals;
+  } catch (error) {
+    console.error('Error loading professionals by area:', error);
+    return [];
+  }
+}
+
+function setupNuevaCitaFormListeners() {
+  try {
+    const professionalSelect = document.getElementById('nueva-cita-professional');
+    const citaDate = document.getElementById('nueva-cita-date');
+    const citaForm = document.getElementById('nueva-cita-form');
+    const rutInput = document.getElementById('nueva-cita-rut');
+    
+    if (citaDate) {
+      const today = new Date().toISOString().split('T')[0];
+      citaDate.min = today;
+    }
+
+    if (rutInput) {
+      rutInput.addEventListener('input', (e) => {
+        e.target.value = formatRUT(e.target.value);
+      });
+    }
+
+    if (professionalSelect) {
+      professionalSelect.addEventListener('change', loadNuevaCitaTimeSlots);
+    }
+    
+    if (citaDate) {
+      citaDate.addEventListener('change', loadNuevaCitaTimeSlots);
+    }
+
+    if (citaForm) {
+      citaForm.addEventListener('submit', handleNuevaCitaSubmit);
+    }
+    
+  } catch (error) {
+    console.error('Error setting up nueva cita form listeners:', error);
+  }
+}
+
+async function loadNuevaCitaTimeSlots() {
+  try {
+    const professionalSelect = document.getElementById('nueva-cita-professional');
+    const citaDate = document.getElementById('nueva-cita-date');
+    const timeSlotsContainer = document.getElementById('nueva-cita-time-slots-container');
+    const timeSlotsGrid = document.getElementById('nueva-cita-time-slots-grid');
+    const submitBtn = document.querySelector('#nueva-cita-form button[type="submit"]');
+    
+    if (!professionalSelect?.value || !citaDate?.value) {
+      if (timeSlotsContainer) timeSlotsContainer.style.display = 'none';
+      if (submitBtn) submitBtn.disabled = true;
+      return;
+    }
+
+    const selectedDate = new Date(citaDate.value);
+    
+    const timeSlots = generateTimeSlots(selectedDate);
+    const occupiedSlots = await getOccupiedSlots(professionalSelect.value, selectedDate);
+    
+    if (timeSlotsGrid) {
+      timeSlotsGrid.innerHTML = timeSlots.map(slot => {
+        const isOccupied = occupiedSlots.includes(slot.time);
+        const isPast = isPastTimeSlot(selectedDate, slot.hour, slot.minute);
+        const isDisabled = isOccupied || isPast;
+        
+        return `
+          <button type="button" 
+                  class="time-slot ${isDisabled ? 'disabled' : ''}" 
+                  data-time="${slot.time}"
+                  ${isDisabled ? 'disabled' : ''}
+                  onclick="selectNuevaCitaTimeSlot(this)"
+                  style="
+                    padding: 12px;
+                    border: 2px solid ${isDisabled ? 'var(--gray-300)' : 'var(--primary-blue)'};
+                    border-radius: 8px;
+                    background: ${isDisabled ? 'var(--gray-100)' : 'white'};
+                    color: ${isDisabled ? 'var(--gray-400)' : 'var(--primary-blue)'};
+                    cursor: ${isDisabled ? 'not-allowed' : 'pointer'};
+                    transition: all 0.2s ease;
+                    font-weight: 500;
+                  ">
+            <i class="fas fa-clock" style="margin-right: 4px;"></i>
+            ${slot.time}
+            ${isOccupied ? '<br><small>Ocupado</small>' : ''}
+            ${isPast ? '<br><small>Pasado</small>' : ''}
+          </button>
+        `;
+      }).join('');
+    }
+    
+    if (timeSlotsContainer) timeSlotsContainer.style.display = 'block';
+    if (submitBtn) submitBtn.disabled = true;
+    
+  } catch (error) {
+    console.error('Error loading nueva cita time slots:', error);
+    showNotification('Error al cargar horarios disponibles', 'error');
+  }
+}
+
+function generateTimeSlots(date) {
+  const dayOfWeek = date.getDay();
+  const slots = [];
+  
+  let config;
+  if (HORARIOS_CONFIG.semana.diasSemana.includes(dayOfWeek)) {
+    config = HORARIOS_CONFIG.semana;
+  } else if (HORARIOS_CONFIG.finSemana.diasSemana.includes(dayOfWeek)) {
+    config = HORARIOS_CONFIG.finSemana;
+  } else {
+    return []; // No hay horarios para este día
+  }
+  
+  let currentHour = config.horaInicio;
+  let currentMinute = 0;
+  
+  while (currentHour < config.horaFin || (currentHour === config.horaFin && currentMinute <= config.minutoFin)) {
+    const timeString = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+    
+    slots.push({
+      time: timeString,
+      hour: currentHour,
+      minute: currentMinute
+    });
+    
+    currentMinute += config.intervaloMinutos;
+    if (currentMinute >= 60) {
+      currentHour += Math.floor(currentMinute / 60);
+      currentMinute = currentMinute % 60;
+    }
+  }
+  
+  return slots;
+}
+
+function isPastTimeSlot(date, hour, minute) {
+  const now = new Date();
+  const slotTime = new Date(date);
+  slotTime.setHours(hour, minute, 0, 0);
+  return slotTime <= now;
+}
+
+async function getOccupiedSlots(professionalId, date) {
+  try {
+    if (!currentUserData) return [];
+    
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    const snapshot = await db.collection('citas')
+      .where('profesionalId', '==', professionalId)
+      .where('fecha', '>=', startOfDay)
+      .where('fecha', '<=', endOfDay)
+      .where('estado', '!=', 'cancelada')
+      .get();
+    
+    const occupiedSlots = [];
+    snapshot.forEach(doc => {
+      const cita = doc.data();
+      const citaDate = cita.fecha.toDate();
+      const timeString = citaDate.toLocaleTimeString('es-CL', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
+      occupiedSlots.push(timeString);
+    });
+    
+    return occupiedSlots;
+    
+  } catch (error) {
+    console.error('Error getting occupied slots:', error);
+    return [];
+  }
+}
+
+function selectNuevaCitaTimeSlot(button) {
+  try {
+    document.querySelectorAll('#nueva-cita-time-slots-grid .time-slot.selected').forEach(slot => {
+      slot.classList.remove('selected');
+      slot.style.background = 'white';
+      slot.style.color = 'var(--primary-blue)';
+    });
+    
+    button.classList.add('selected');
+    button.style.background = 'var(--primary-blue)';
+    button.style.color = 'white';
+    
+    const submitBtn = document.querySelector('#nueva-cita-form button[type="submit"]');
     if (submitBtn) {
       submitBtn.disabled = false;
-      submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar Solicitud';
     }
-  }
-}
-
-function validateCriticalFields() {
-  const requiredFields = [
-    { id: 'patient-age', name: 'Edad', validate: (v) => v && parseInt(v) >= 12 && parseInt(v) <= 120 },
-    { id: 'patient-cesfam', name: 'CESFAM', validate: (v) => v },
-    { id: 'patient-name', name: 'Nombre', validate: (v) => v && v.trim().length >= 2 },
-    { id: 'patient-lastname', name: 'Apellidos', validate: (v) => v && v.trim().length >= 2 },
-    { id: 'patient-rut', name: 'RUT', validate: (v) => v && validateRUT(v) },
-    { id: 'patient-phone', name: 'Teléfono', validate: (v) => v && validatePhoneNumberString(v) }
-  ];
-
-  for (const field of requiredFields) {
-    const element = document.getElementById(field.id);
-    const value = element ? element.value.trim() : '';
     
-    if (!field.validate(value)) {
-      if (element) {
-        element.style.borderColor = '#ef4444';
-        element.focus();
-        showFieldError(element, `${field.name} es obligatorio y debe ser válido`);
-      }
-      return {
-        valid: false,
-        message: `${field.name} es obligatorio y debe ser válido`
-      };
-    }
+  } catch (error) {
+    console.error('Error selecting nueva cita time slot:', error);
   }
-
-  // Validar sustancias
-  const sustancias = document.querySelectorAll('input[name="sustancias"]:checked');
-  if (sustancias.length === 0) {
-    return {
-      valid: false,
-      message: 'Selecciona al menos una sustancia problemática'
-    };
-  }
-
-  // Validar urgencia
-  const urgencia = document.querySelector('input[name="urgencia"]:checked');
-  if (!urgencia) {
-    return {
-      valid: false,
-      message: 'Selecciona el nivel de urgencia'
-    };
-  }
-
-  // Validar tratamiento previo
-  const tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked');
-  if (!tratamientoPrevio) {
-    return {
-      valid: false,
-      message: 'Indica si has recibido tratamiento previo'
-    };
-  }
-
-  return { valid: true };
 }
+
+function createNuevaCitaModalForDate(dateIso) {
+  createNuevaCitaModal();
+  
+  setTimeout(() => {
+    const dateInput = document.getElementById('nueva-cita-date');
+    if (dateInput) {
+      const date = new Date(dateIso);
+      dateInput.value = date.toISOString().split('T')[0];
+    }
+  }, 100);
+}
+
+// ================= FORMULARIOS APP14, PACIENTES CORREGIDOS Y SISTEMA COMPLETO =================
+
+// ================= ENVÍO DE FORMULARIOS APP14 ORIGINAL =================
+
+async function handleNuevaCitaSubmit(e) {
+  e.preventDefault();
+  
+  try {
+    const formData = {
+      nombre: document.getElementById('nueva-cita-nombre')?.value?.trim(),
+      rut: document.getElementById('nueva-cita-rut')?.value?.trim(),
+      professionalId: document.getElementById('nueva-cita-professional')?.value,
+      fecha: document.getElementById('nueva-cita-date')?.value,
+      hora: document.querySelector('#nueva-cita-time-slots-grid .time-slot.selected')?.dataset.time,
+      observaciones: document.getElementById('nueva-cita-notes')?.value?.trim() || ''
+    };
+    
+    if (!formData.nombre || !formData.rut || !formData.professionalId || !formData.fecha || !formData.hora) {
+      showNotification('Completa todos los campos obligatorios', 'warning');
+      return;
+    }
+    
+    if (!validateRUT(formData.rut)) {
+      showNotification('RUT inválido', 'warning');
+      return;
+    }
+    
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    toggleSubmitButton(submitBtn, true);
+    
+    const professionalSelect = document.getElementById('nueva-cita-professional');
+    const selectedOption = professionalSelect.options[professionalSelect.selectedIndex];
+    const profesionalNombre = selectedOption.dataset.nombre;
+    const tipoProfesional = selectedOption.dataset.profession;
+    
+    const fechaCompleta = new Date(`${formData.fecha}T${formData.hora}:00`);
+    
+    const citaData = {
+      profesionalId: formData.professionalId,
+      profesionalNombre: profesionalNombre,
+      tipoProfesional: tipoProfesional,
+      pacienteNombre: formData.nombre,
+      pacienteRut: formatRUT(formData.rut),
+      fecha: fechaCompleta,
+      estado: 'programada',
+      tipo: 'cita_directa',
+      cesfam: currentUserData.cesfam,
+      observaciones: formData.observaciones,
+      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+      creadoPor: currentUser.uid
+    };
+    
+    const citaRef = await db.collection('citas').add(citaData);
+    
+    await moveToPatients(formData, citaRef.id);
+    
+    closeModal('nueva-cita-modal');
+    
+    showNotification(`Cita creada exitosamente para ${fechaCompleta.toLocaleDateString('es-CL')} a las ${formData.hora}`, 'success', 5000);
+    
+    // CORREGIDO: Actualizar calendario inmediatamente
+    renderCalendar();
+    if (selectedCalendarDate) {
+      loadDayAppointments(selectedCalendarDate);
+    } else {
+      loadTodayAppointments();
+    }
+    
+  } catch (error) {
+    console.error('Error creando nueva cita:', error);
+    showNotification('Error al crear cita: ' + error.message, 'error');
+  } finally {
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn) toggleSubmitButton(submitBtn, false);
+  }
+}
+
+async function moveToPatients(solicitudData, citaId) {
+  try {
+    const pacienteData = {
+      nombre: solicitudData.nombre || 'Paciente',
+      apellidos: solicitudData.apellidos || '',
+      rut: formatRUT(solicitudData.rut),
+      telefono: solicitudData.telefono || null,
+      email: solicitudData.email || null,
+      direccion: solicitudData.direccion || null,
+      edad: solicitudData.edad || null,
+      cesfam: currentUserData.cesfam,
+      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+      fechaPrimeraAtencion: firebase.firestore.FieldValue.serverTimestamp(),
+      estado: 'activo',
+      citaInicialId: citaId,
+      origen: 'cita_directa',
+      historialAtenciones: [],
+      sustanciasProblematicas: solicitudData.sustancias || [],
+      prioridad: solicitudData.prioridad || 'media',
+      motivacionInicial: solicitudData.motivacion || 5
+    };
+
+    await db.collection('pacientes').add(pacienteData);
+    
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log('✅ Paciente movido a colección de pacientes');
+    }
+    
+  } catch (error) {
+    console.error('Error moving to patients:', error);
+  }
+}
+
+function toggleSubmitButton(button, isLoading) {
+  if (!button) return;
+  
+  if (isLoading) {
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+  } else {
+    button.disabled = false;
+    button.innerHTML = button.getAttribute('data-original-text') || 'Enviar';
+  }
+}
+
+// ================= ENVÍO FORMULARIO PRINCIPAL APP14 ORIGINAL =================
 
 function collectFormDataSafe() {
   try {
@@ -2194,59 +2724,26 @@ function collectFormDataSafe() {
       throw new Error('Tipo de solicitud no seleccionado');
     }
     
-    // Datos base de la solicitud
     const solicitudData = {
       tipoSolicitud,
+      edad: parseInt(document.getElementById('patient-age')?.value) || null,
+      cesfam: document.getElementById('patient-cesfam')?.value || '',
+      paraMi: document.querySelector('input[name="paraMi"]:checked')?.value || '',
       fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
       estado: 'pendiente',
       origen: 'web_publica',
-      version: '2.1',
-      desarrolladoPor: 'CamiMoralesM',
-      fechaDesarrollo: '2025-09-14'
+      version: '2.0'
     };
 
-    // Datos básicos
-    const edad = parseInt(document.getElementById('patient-age')?.value);
-    const cesfam = document.getElementById('patient-cesfam')?.value;
-    const paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
-
-    if (edad) solicitudData.edad = edad;
-    if (cesfam) solicitudData.cesfam = cesfam;
-    if (paraMi) solicitudData.paraMi = paraMi;
-
-    // Datos personales
-    if (tipoSolicitud === 'identificado') {
-      const datosPersonales = {
-        nombre: document.getElementById('patient-name')?.value?.trim(),
-        apellidos: document.getElementById('patient-lastname')?.value?.trim(),
-        rut: document.getElementById('patient-rut')?.value?.trim(),
-        telefono: document.getElementById('patient-phone')?.value?.trim(),
-        email: document.getElementById('patient-email')?.value?.trim(),
-        direccion: document.getElementById('patient-address')?.value?.trim()
-      };
-
-      Object.keys(datosPersonales).forEach(key => {
-        if (datosPersonales[key]) {
-          if (key === 'rut') {
-            solicitudData[key] = formatRUT(datosPersonales[key]);
-          } else if (key === 'telefono') {
-            solicitudData[key] = formatPhoneNumber(datosPersonales[key]);
-          } else {
-            solicitudData[key] = datosPersonales[key];
-          }
-        }
-      });
-    }
-
-    // Datos de consumo
+    // Datos de evaluación
     const sustanciasChecked = document.querySelectorAll('input[name="sustancias"]:checked');
     if (sustanciasChecked.length > 0) {
       solicitudData.sustancias = Array.from(sustanciasChecked).map(cb => cb.value);
     }
 
-    const tiempoConsumo = document.getElementById('tiempo-consumo')?.value;
-    if (tiempoConsumo) {
-      solicitudData.tiempoConsumo = tiempoConsumo;
+    const tiempoConsumo = document.getElementById('tiempo-consumo');
+    if (tiempoConsumo && tiempoConsumo.value) {
+      solicitudData.tiempoConsumo = tiempoConsumo.value;
     }
 
     const urgencia = document.querySelector('input[name="urgencia"]:checked');
@@ -2259,22 +2756,38 @@ function collectFormDataSafe() {
       solicitudData.tratamientoPrevio = tratamientoPrevio.value;
     }
 
-    // Información adicional
-    const descripcion = document.getElementById('patient-description')?.value?.trim();
-    if (descripcion) {
-      solicitudData.descripcion = descripcion;
+    const descripcion = document.getElementById('patient-description');
+    if (descripcion && descripcion.value.trim()) {
+      solicitudData.descripcion = descripcion.value.trim();
     }
 
-    const motivacion = document.getElementById('motivacion-range')?.value;
-    if (motivacion) {
-      solicitudData.motivacion = parseInt(motivacion);
+    const motivacion = document.getElementById('motivacion-range');
+    if (motivacion && motivacion.value) {
+      solicitudData.motivacion = parseInt(motivacion.value);
     }
 
-    console.log('✅ Datos recopilados exitosamente');
+    // Datos específicos para solicitudes identificadas
+    if (tipoSolicitud === 'identificado') {
+      const nombre = document.getElementById('patient-name')?.value?.trim();
+      const apellidos = document.getElementById('patient-lastname')?.value?.trim();
+      const rut = document.getElementById('patient-rut')?.value?.trim();
+      const telefono = document.getElementById('patient-phone')?.value?.trim();
+      const email = document.getElementById('patient-email')?.value?.trim();
+      const direccion = document.getElementById('patient-address')?.value?.trim();
+
+      if (nombre) solicitudData.nombre = nombre;
+      if (apellidos) solicitudData.apellidos = apellidos;
+      if (rut) solicitudData.rut = formatRUT(rut);
+      if (telefono) solicitudData.telefono = formatPhoneNumber(telefono);
+      if (email) solicitudData.email = email;
+      if (direccion) solicitudData.direccion = direccion;
+    }
+
+    console.log('APP14: Datos recopilados exitosamente:', solicitudData);
     return solicitudData;
     
   } catch (error) {
-    console.error('❌ Error recopilando datos del formulario:', error);
+    console.error('Error recopilando datos del formulario:', error);
     throw new Error('Error recopilando datos del formulario: ' + error.message);
   }
 }
@@ -2282,200 +2795,203 @@ function collectFormDataSafe() {
 function calculatePriority(solicitudData) {
   let score = 0;
   
-  // Factor urgencia (peso alto)
-  if (solicitudData.urgencia === 'alta') score += 4;
+  // Urgencia
+  if (solicitudData.urgencia === 'alta') score += 3;
   else if (solicitudData.urgencia === 'media') score += 2;
   else score += 1;
   
-  // Factor edad
+  // Edad
   if (solicitudData.edad) {
-    if (solicitudData.edad < 18) score += 3; // Menores de edad
-    else if (solicitudData.edad > 65) score += 2; // Adultos mayores
-    else if (solicitudData.edad < 25) score += 1; // Jóvenes adultos
-  }
-  
-  // Factor sustancias
-  if (solicitudData.sustancias) {
-    if (solicitudData.sustancias.length > 3) score += 3;
-    else if (solicitudData.sustancias.length > 1) score += 2;
+    if (solicitudData.edad < 18 || solicitudData.edad > 65) score += 2;
     else score += 1;
-    
-    // Sustancias de alto riesgo
-    const sustanciasAltoRiesgo = ['Pasta Base', 'Cocaína', 'Opiáceos'];
-    const tieneAltoRiesgo = solicitudData.sustancias.some(s => sustanciasAltoRiesgo.includes(s));
-    if (tieneAltoRiesgo) score += 2;
   }
   
-  // Factor motivación
+  // Sustancias
+  if (solicitudData.sustancias && solicitudData.sustancias.length > 2) score += 2;
+  else if (solicitudData.sustancias && solicitudData.sustancias.length > 0) score += 1;
+  
+  // Motivación
   if (solicitudData.motivacion) {
-    if (solicitudData.motivacion <= 3) score += 2; // Baja motivación
-    else if (solicitudData.motivacion >= 8) score += 1; // Alta motivación
+    if (solicitudData.motivacion >= 8) score += 2;
+    else if (solicitudData.motivacion >= 5) score += 1;
   }
   
-  // Factor tratamiento previo incompleto
-  if (solicitudData.tratamientoPrevio === 'si_incompleto') {
-    score += 2;
-  }
-  
-  // Determinar prioridad final
-  if (score >= 10) return 'critica';
-  else if (score >= 7) return 'alta';
+  // Determinar prioridad
+  if (score >= 8) return 'critica';
+  else if (score >= 6) return 'alta';
   else if (score >= 4) return 'media';
   else return 'baja';
 }
 
-function handleFormSubmissionError(error) {
-  let errorMessage = 'Error al enviar la solicitud: ';
-  
-  switch (error.code) {
-    case 'permission-denied':
-      errorMessage += 'Sin permisos para crear solicitudes. Verifica las reglas de Firebase.';
-      break;
-    case 'network-request-failed':
-      errorMessage += 'Problema de conexión. Verifica tu internet y reintenta.';
-      break;
-    case 'unavailable':
-      errorMessage += 'Servicio no disponible temporalmente. Intenta en unos minutos.';
-      break;
-    case 'resource-exhausted':
-      errorMessage += 'Límite de operaciones excedido. Intenta más tarde.';
-      break;
-    case 'deadline-exceeded':
-    case 'timeout':
-      errorMessage += 'La operación tardó demasiado. Verifica tu conexión.';
-      break;
-    default:
-      if (error.message.includes('Firebase')) {
-        errorMessage += 'Error de configuración de Firebase. Contacta al administrador.';
-      } else {
-        errorMessage += error.message || 'Intenta nuevamente en unos momentos.';
-      }
+function formatPhoneNumber(phone) {
+  if (!phone) return '';
+  const cleaned = phone.replace(/\D/g, '');
+  if (cleaned.length === 9) {
+    return `${cleaned.slice(0, 1)} ${cleaned.slice(1, 5)} ${cleaned.slice(5)}`;
   }
-  
-  showNotification(errorMessage, 'error', 10000);
+  return phone;
 }
 
-// ================= MANEJO DE SOLICITUD DE INFORMACIÓN =================
-
-async function handleInformationOnlySubmit() {
+async function handlePatientFormSubmit(e) {
+  e.preventDefault();
+  console.log('📄 APP14: Iniciando envío de solicitud...');
+  
+  const submitBtn = document.getElementById('submit-form');
+  
   try {
-    console.log('📧 Procesando solicitud de información únicamente...');
+    toggleSubmitButton(submitBtn, true);
     
-    const email = document.getElementById('info-email')?.value?.trim();
+    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+    if (!tipoSolicitud) {
+      showNotification('Selecciona un tipo de solicitud', 'warning');
+      return;
+    }
+
+    // Solo procesar solicitudes identificadas aquí (las de información ya se procesaron)
+    if (tipoSolicitud !== 'identificado') {
+      showNotification('Tipo de solicitud no válido para este flujo', 'error');
+      return;
+    }
+
+    const edad = document.getElementById('patient-age')?.value;
+    const cesfam = document.getElementById('patient-cesfam')?.value;
+    const paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
     
-    if (!email || !isValidEmail(email)) {
-      showNotification('Ingresa un email válido para recibir información', 'error');
+    if (!edad || !cesfam || !paraMi) {
+      showNotification('Completa todos los campos básicos obligatorios', 'warning');
+      return;
+    }
+
+    // Validar campos específicos para solicitudes identificadas
+    const nombre = document.getElementById('patient-name')?.value?.trim();
+    const apellidos = document.getElementById('patient-lastname')?.value?.trim();
+    const rut = document.getElementById('patient-rut')?.value?.trim();
+    const telefono = document.getElementById('patient-phone')?.value?.trim();
+    
+    if (!nombre || !apellidos || !rut || !telefono) {
+      showNotification('Para solicitud identificada, completa todos los datos personales', 'warning');
       return;
     }
     
-    const submitBtn = document.getElementById('submit-step-1');
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+    if (!validateRUT(rut)) {
+      showNotification('RUT inválido', 'warning');
+      return;
     }
     
-    const informationData = {
-      tipoSolicitud: 'informacion',
-      email: email,
-      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
-      estado: 'pendiente_respuesta',
-      origen: 'web_publica',
-      prioridad: 'baja',
-      identificador: `INFO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      desarrolladoPor: 'CamiMoralesM',
-      version: '2.1'
-    };
+    if (!validatePhoneNumberString(telefono)) {
+      showNotification('Teléfono inválido', 'warning');
+      return;
+    }
+
+    const solicitudData = collectFormDataSafe();
+    console.log('📋 APP14: Datos recopilados:', solicitudData);
     
-    console.log('💾 Guardando solicitud de información...');
+    solicitudData.prioridad = calculatePriority(solicitudData);
+    console.log('⚡ APP14: Prioridad calculada:', solicitudData.prioridad);
+    
+    if (!db) {
+      throw new Error('No hay conexión a Firebase');
+    }
+    
+    console.log('💾 APP14: Guardando en Firestore...');
     
     const docRef = await retryOperation(async () => {
-      return await db.collection('solicitudes_informacion').add(informationData);
-    }, 3, 'envío de solicitud de información');
+      return await db.collection('solicitudes_ingreso').add(solicitudData);
+    });
     
-    console.log('✅ Solicitud de información guardada con ID:', docRef.id);
+    console.log('✅ APP14: Solicitud guardada con ID:', docRef.id);
     
+    if (solicitudData.prioridad === 'critica') {
+      try {
+        await createCriticalAlert(solicitudData, docRef.id);
+        console.log('🚨 APP14: Alerta crítica creada');
+      } catch (alertError) {
+        console.warn('⚠️ Error creando alerta crítica:', alertError);
+      }
+    }
+    
+    localStorage.removeItem('senda_form_draft');
     closeModal('patient-modal');
     resetForm();
     
-    showNotification(`Solicitud de información enviada correctamente.
-ID: ${docRef.id}
-Te responderemos pronto a: ${email}`, 'success', 8000);
+    showNotification('Solicitud enviada correctamente. Te contactaremos pronto para coordinar una cita.', 'success', 6000);
+    console.log('🎉 APP14: Proceso completado exitosamente');
     
   } catch (error) {
-    console.error('❌ Error enviando información:', error);
-    handleFormSubmissionError(error);
-  } finally {
-    const submitBtn = document.getElementById('submit-step-1');
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar Solicitud';
+    console.error('❌ APP14: Error enviando solicitud:', error);
+    
+    let errorMessage = 'Error al enviar la solicitud: ';
+    
+    if (error.code === 'permission-denied') {
+      errorMessage += 'Sin permisos para crear solicitudes. Verifica las reglas de Firebase.';
+    } else if (error.code === 'network-request-failed') {
+      errorMessage += 'Problema de conexión. Verifica tu internet.';
+    } else if (error.code === 'unavailable') {
+      errorMessage += 'Servicio no disponible temporalmente.';
+    } else if (error.message.includes('Firebase')) {
+      errorMessage += 'Error de configuración de Firebase.';
+    } else {
+      errorMessage += error.message || 'Intenta nuevamente en unos momentos.';
     }
+    
+    showNotification(errorMessage, 'error', 8000);
+  } finally {
+    toggleSubmitButton(submitBtn, false);
   }
 }
 
-// ================= MANEJO DE REINGRESO =================
-
 async function handleReentrySubmit(e) {
   e.preventDefault();
-  console.log('📄 Iniciando envío de reingreso...');
+  console.log('📄 APP14: Iniciando envío de reingreso...');
+  
+  const formData = {
+    nombre: document.getElementById('reentry-name')?.value?.trim() || '',
+    rut: document.getElementById('reentry-rut')?.value?.trim() || '',
+    cesfam: document.getElementById('reentry-cesfam')?.value || '',
+    motivo: document.getElementById('reentry-reason')?.value?.trim() || '',
+    telefono: document.getElementById('reentry-phone')?.value?.trim() || ''
+  };
   
   const submitBtn = e.target.querySelector('button[type="submit"]');
   
-  try {
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
-    }
-    
-    const formData = {
-      nombre: document.getElementById('reentry-name')?.value?.trim() || '',
-      rut: document.getElementById('reentry-rut')?.value?.trim() || '',
-      cesfam: document.getElementById('reentry-cesfam')?.value || '',
-      motivo: document.getElementById('reentry-reason')?.value?.trim() || '',
-      telefono: document.getElementById('reentry-phone')?.value?.trim() || ''
-    };
-    
-    // Validaciones críticas
-    const requiredFields = [
-      { field: 'nombre', name: 'Nombre', minLength: 2 },
-      { field: 'rut', name: 'RUT', validate: validateRUT },
-      { field: 'cesfam', name: 'CESFAM' },
-      { field: 'motivo', name: 'Motivo', minLength: 10 },
-      { field: 'telefono', name: 'Teléfono', validate: validatePhoneNumberString }
-    ];
+  const requiredFields = [
+    { field: 'nombre', name: 'Nombre' },
+    { field: 'rut', name: 'RUT' },
+    { field: 'cesfam', name: 'CESFAM' },
+    { field: 'motivo', name: 'Motivo' },
+    { field: 'telefono', name: 'Teléfono' }
+  ];
 
-    for (const { field, name, minLength, validate } of requiredFields) {
-      const value = formData[field];
-      
-      if (!value) {
-        showNotification(`El campo ${name} es obligatorio`, 'warning');
-        document.getElementById(`reentry-${field}`)?.focus();
-        return;
-      }
-      
-      if (minLength && value.length < minLength) {
-        showNotification(`${name} debe tener al menos ${minLength} caracteres`, 'warning');
-        return;
-      }
-      
-      if (validate && !validate(value)) {
-        showNotification(`${name} no es válido`, 'warning');
-        return;
-      }
+  for (const { field, name } of requiredFields) {
+    if (!formData[field]) {
+      showNotification(`El campo ${name} es obligatorio`, 'warning');
+      return;
     }
+  }
+
+  if (!validateRUT(formData.rut)) {
+    showNotification('RUT inválido', 'warning');
+    return;
+  }
+
+  const phoneClean = formData.telefono.replace(/\D/g, '');
+  if (phoneClean.length < 8) {
+    showNotification('Teléfono inválido', 'warning');
+    return;
+  }
+
+  try {
+    toggleSubmitButton(submitBtn, true);
     
     if (!db) {
       throw new Error('No hay conexión a Firebase');
     }
     
     const rutFormatted = formatRUT(formData.rut);
-    
-    // Verificar duplicados
     try {
       const existingReingreso = await db.collection('reingresos')
         .where('rut', '==', rutFormatted)
-        .where('estado', 'in', ['pendiente', 'en_revision'])
-        .limit(1)
+        .where('estado', '==', 'pendiente')
         .get();
       
       if (!existingReingreso.empty) {
@@ -2497,37 +3013,32 @@ async function handleReentrySubmit(e) {
       prioridad: 'media',
       tipo: 'reingreso',
       origen: 'web_publica',
-      version: '2.1',
-      desarrolladoPor: 'CamiMoralesM'
+      version: '2.0'
     };
 
-    console.log('💾 Guardando reingreso...');
-    
-    const docRef = await retryOperation(async () => {
-      return await db.collection('reingresos').add(reingresoData);
-    }, 3, 'envío de reingreso');
-    
-    console.log('✅ Reingreso guardado con ID:', docRef.id);
+    const docRef = await db.collection('reingresos').add(reingresoData);
     
     closeModal('reentry-modal');
     e.target.reset();
-    
-    showNotification(`Solicitud de reingreso enviada correctamente.
-ID: ${docRef.id}
-Te contactaremos pronto al: ${formData.telefono}`, 'success', 8000);
+    showNotification('Solicitud de reingreso enviada correctamente. Te contactaremos pronto.', 'success', 5000);
     
   } catch (error) {
     console.error('❌ Error enviando reingreso:', error);
-    handleFormSubmissionError(error);
-  } finally {
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = '<i class="fas fa-redo"></i> Enviar Solicitud';
+    
+    let errorMessage = 'Error al enviar la solicitud de reingreso: ';
+    if (error.code === 'permission-denied') {
+      errorMessage += 'Sin permisos para crear reingresos.';
+    } else if (error.code === 'network-request-failed') {
+      errorMessage += 'Problema de conexión. Verifica tu internet.';
+    } else {
+      errorMessage += error.message || 'Intenta nuevamente.';
     }
+    
+    showNotification(errorMessage, 'error', 8000);
+  } finally {
+    toggleSubmitButton(submitBtn, false);
   }
 }
-
-// ================= FUNCIONES AUXILIARES =================
 
 async function createCriticalAlert(solicitudData, solicitudId) {
   try {
@@ -2544,593 +3055,266 @@ async function createCriticalAlert(solicitudData, solicitudId) {
         edad: solicitudData.edad,
         sustancias: solicitudData.sustancias,
         urgencia: solicitudData.urgencia,
-        motivacion: solicitudData.motivacion,
-        rut: solicitudData.rut,
-        nombre: solicitudData.nombre
-      },
-      desarrolladoPor: 'CamiMoralesM'
+        motivacion: solicitudData.motivacion
+      }
     };
     
     await db.collection('alertas_criticas').add(alertData);
     
-    console.log('🚨 Alerta crítica creada para solicitud:', solicitudId);
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log('🚨 Alerta crítica creada para solicitud:', solicitudId);
+    }
   } catch (error) {
     console.error('❌ Error creando alerta crítica:', error);
   }
 }
 
-function formatPhoneNumber(phone) {
-  if (!phone) return '';
-  const cleaned = phone.replace(/\D/g, '');
-  if (cleaned.length === 9) {
-    return `${cleaned.slice(0, 1)} ${cleaned.slice(1, 5)} ${cleaned.slice(5)}`;
-  }
-  return phone;
-}
+// ================= GESTIÓN DE PACIENTES CORREGIDA =================
 
-// ================= NAVEGACIÓN DE FORMULARIO =================
-
-function resetForm() {
+// CORREGIDO: Función para mostrar detalle del paciente
+async function showPatientDetail(pacienteId) {
   try {
-    const form = document.getElementById('patient-form');
-    if (form) {
-      form.reset();
-      goToStep(1);
-      
-      // Resetear motivación
-      const motivacionRange = document.getElementById('motivacion-range');
-      const motivacionValue = document.getElementById('motivacion-value');
-      if (motivacionRange && motivacionValue) {
-        motivacionRange.value = 5;
-        motivacionValue.textContent = '5';
-        updateMotivacionColor(5);
-      }
-      
-      // Limpiar errores
-      form.querySelectorAll('[style*="border-color: rgb(239, 68, 68)"]').forEach(field => {
-        field.style.borderColor = '';
-        hideFieldError(field);
-      });
-      
-      // Resetear configuración del formulario
-      maxFormStep = 4;
-      updateProgressIndicator(1, 4);
-      
-      // Resetear visibilidad de contenedores
-      const infoEmailContainer = document.getElementById('info-email-container');
-      const basicInfoContainer = document.getElementById('basic-info-container');
-      const nextBtn = document.getElementById('next-step-1');
-      const submitBtn = document.getElementById('submit-step-1');
-      
-      if (infoEmailContainer) infoEmailContainer.style.display = 'none';
-      if (basicInfoContainer) basicInfoContainer.style.display = 'block';
-      if (nextBtn) nextBtn.style.display = 'inline-flex';
-      if (submitBtn) submitBtn.style.display = 'none';
+    showLoading(true, 'Cargando ficha del paciente...');
+    
+    const pacienteDoc = await db.collection('pacientes').doc(pacienteId).get();
+    
+    if (!pacienteDoc.exists) {
+      showNotification('Paciente no encontrado', 'error');
+      return;
     }
     
-    console.log('🔧 Formulario reseteado completamente');
-  } catch (error) {
-    console.error('❌ Error reseteando formulario:', error);
-  }
-}
-
-function goToStep(step) {
-  try {
-    if (step < 1 || step > maxFormStep) return;
-
-    // Ocultar todos los pasos
-    document.querySelectorAll('.form-step').forEach(stepDiv => {
-      stepDiv.style.display = 'none';
-    });
+    const paciente = {
+      id: pacienteDoc.id,
+      ...pacienteDoc.data()
+    };
     
-    // Mostrar paso actual
-    const targetStep = document.querySelector(`.form-step[data-step="${step}"]`);
-    if (targetStep) {
-      targetStep.style.display = 'block';
-      
-      // Focus en el primer campo del paso
-      setTimeout(() => {
-        const firstInput = targetStep.querySelector('input:not([type="hidden"]), select, textarea');
-        if (firstInput && !firstInput.disabled) {
-          firstInput.focus();
-        }
-      }, 100);
-    }
-
-    // Actualizar indicador de progreso
-    updateProgressIndicator(step, maxFormStep);
-    currentFormStep = step;
-
-    console.log(`🔧 Navegando a paso ${step} de ${maxFormStep}`);
-  } catch (error) {
-    console.error('❌ Error navegando a paso:', error);
-  }
-}
-
-function updateProgressIndicator(current, total) {
-  try {
-    const progressFill = document.getElementById('form-progress');
-    const progressText = document.getElementById('progress-text');
-    
-    if (progressFill) {
-      const progressPercentage = (current / total) * 100;
-      progressFill.style.width = `${progressPercentage}%`;
-    }
-    
-    if (progressText) {
-      progressText.textContent = `Paso ${current} de ${total}`;
-    }
-  } catch (error) {
-    console.error('❌ Error actualizando indicador de progreso:', error);
-  }
-}
-
-function getNextStep(currentStep) {
-  const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
-  
-  if (tipoSolicitud === 'informacion') {
-    return null;
-  }
-  
-  switch (currentStep) {
-    case 1: return 2;
-    case 2: return 3;
-    case 3: return 4;
-    case 4: return null;
-  }
-  return null;
-}
-
-function getPreviousStep(currentStep) {
-  switch (currentStep) {
-    case 2: return 1;
-    case 3: return 2;
-    case 4: return 3;
-  }
-  return null;
-}
-
-function updateMotivacionColor(value) {
-  try {
-    const motivacionValue = document.getElementById('motivacion-value');
-    if (!motivacionValue) return;
-    
-    const numValue = parseInt(value);
-    let color;
-    
-    if (numValue <= 3) {
-      color = '#ef4444'; // Rojo
-    } else if (numValue <= 6) {
-      color = '#f59e0b'; // Amarillo
-    } else {
-      color = '#10b981'; // Verde
-    }
-    
-    motivacionValue.style.backgroundColor = color;
-    motivacionValue.style.color = 'white';
-    motivacionValue.style.padding = '4px 8px';
-    motivacionValue.style.borderRadius = '4px';
-    motivacionValue.style.fontWeight = 'bold';
-  } catch (error) {
-    console.error('❌ Error actualizando color de motivación:', error);
-  }
-}
-
-// ================= CONFIGURACIÓN DE EVENTO PARA BOTÓN DE INFORMACIÓN =================
-
-document.addEventListener('DOMContentLoaded', function() {
-  // Configurar botón específico para envío de información
-  const submitInfoBtn = document.getElementById('submit-step-1');
-  if (submitInfoBtn) {
-    submitInfoBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
-      if (tipoSolicitud === 'informacion') {
-        handleInformationOnlySubmit();
-      }
-    });
-  }
-});
-
-console.log('✅ PARTE 4: Formularios de envío y autenticación completa - Desarrollado por CamiMoralesM');
-// ================= SENDA PUENTE ALTO - APP.JS PARTE 5 FINAL =================
-// Autenticación Completa, Logout y Inicialización del Sistema
-// Desarrollado por: CamiMoralesM
-// Fecha de desarrollo: 2025-09-14
-// Hora UTC: 20:39:26
-
-// ================= AUTENTICACIÓN COMPLETA CON @senda.cl =================
-
-function setupAuthenticationForms() {
-  const loginForm = document.getElementById('login-form');
-  const registerForm = document.getElementById('register-form');
-  
-  if (loginForm) {
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const email = document.getElementById('login-email').value.trim();
-      const password = document.getElementById('login-password').value;
-      
-      // CRÍTICO: Validar email @senda.cl para login
-      if (!validateEmailSenda(email)) {
-        showNotification('Solo se permite el acceso con correos @senda.cl', 'error');
-        return;
-      }
-      
-      try {
-        showLoading(true, 'Iniciando sesión...');
-        console.log('🔐 Intentando login para:', email);
-        
-        await auth.signInWithEmailAndPassword(email, password);
-        closeModal('login-modal');
-        showNotification('Sesión iniciada correctamente', 'success');
-        
-      } catch (error) {
-        console.error('❌ Error en login:', error);
-        handleAuthError(error, 'login');
-      } finally {
-        showLoading(false);
-      }
-    });
-  }
-  
-  if (registerForm) {
-    registerForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const formData = {
-        email: document.getElementById('register-email').value.trim(),
-        password: document.getElementById('register-password').value,
-        nombre: document.getElementById('register-nombre').value.trim(),
-        apellidos: document.getElementById('register-apellidos').value.trim(),
-        profession: document.getElementById('register-profession').value,
-        cesfam: document.getElementById('register-cesfam').value
-      };
-      
-      // CRÍTICO: Validar email @senda.cl obligatorio para registro
-      if (!validateEmailSenda(formData.email)) {
-        showNotification('El registro requiere un correo @senda.cl', 'error');
-        return;
-      }
-      
-      if (formData.password.length < 6) {
-        showNotification('La contraseña debe tener al menos 6 caracteres', 'warning');
-        return;
-      }
-      
-      if (!formData.nombre || !formData.apellidos || !formData.profession || !formData.cesfam) {
-        showNotification('Completa todos los campos obligatorios', 'warning');
-        return;
-      }
-      
-      try {
-        showLoading(true, 'Registrando usuario...');
-        console.log('📝 Registrando usuario:', formData.email);
-        
-        const userCredential = await auth.createUserWithEmailAndPassword(formData.email, formData.password);
-        const user = userCredential.user;
-        
-        // Crear documento de profesional
-        await db.collection('profesionales').doc(user.uid).set({
-          nombre: formData.nombre,
-          apellidos: formData.apellidos,
-          email: formData.email,
-          profession: formData.profession,
-          cesfam: formData.cesfam,
-          activo: true,
-          fechaRegistro: firebase.firestore.FieldValue.serverTimestamp(),
-          verificado: false,
-          version: '2.1',
-          desarrolladoPor: 'CamiMoralesM',
-          fechaDesarrollo: '2025-09-14',
-          horaCreacion: '20:39:26 UTC'
-        });
-        
-        closeModal('login-modal');
-        showNotification('Registro exitoso. Tu cuenta será verificada por un administrador.', 'success', 8000);
-        
-      } catch (error) {
-        console.error('❌ Error en registro:', error);
-        handleAuthError(error, 'registro');
-      } finally {
-        showLoading(false);
-      }
-    });
-  }
-}
-
-function handleAuthError(error, operation) {
-  let errorMessage = `Error en ${operation}`;
-  
-  switch (error.code) {
-    case 'auth/user-not-found':
-      errorMessage = 'Usuario no encontrado';
-      break;
-    case 'auth/wrong-password':
-      errorMessage = 'Contraseña incorrecta';
-      break;
-    case 'auth/invalid-email':
-      errorMessage = 'Email inválido';
-      break;
-    case 'auth/too-many-requests':
-      errorMessage = 'Demasiados intentos. Intenta más tarde';
-      break;
-    case 'auth/email-already-in-use':
-      errorMessage = 'El email ya está registrado';
-      break;
-    case 'auth/weak-password':
-      errorMessage = 'La contraseña es muy débil';
-      break;
-    case 'auth/network-request-failed':
-      errorMessage = 'Error de conexión. Verifica tu internet';
-      break;
-    default:
-      errorMessage = error.message || `Error desconocido en ${operation}`;
-  }
-  
-  showNotification(errorMessage, 'error');
-}
-
-async function handleLogout() {
-  try {
-    console.log('🚪 Cerrando sesión...');
-    showLoading(true, 'Cerrando sesión...');
-    
-    await auth.signOut();
-    
-    currentUser = null;
-    currentUserData = null;
-    clearUserCache();
-    
-    showNotification('Sesión cerrada correctamente', 'success');
-    showPublicContent();
+    const detailModal = createPatientDetailModal(paciente);
+    document.body.insertAdjacentHTML('beforeend', detailModal);
+    showModal('patient-detail-modal');
     
   } catch (error) {
-    console.error('❌ Error cerrando sesión:', error);
-    showNotification('Error al cerrar sesión', 'error');
+    console.error('❌ Error loading patient detail:', error);
+    showNotification('Error al cargar ficha del paciente: ' + error.message, 'error');
   } finally {
     showLoading(false);
   }
 }
 
-// ================= GESTIÓN DE EVENTOS COMPLETA =================
-
-function initializeEventListeners() {
-  try {
-    console.log('🎯 Configurando event listeners...');
-
-    // Botones principales de navegación
-    const loginProfessionalBtn = document.getElementById('login-professional');
-    const logoutProfessionalBtn = document.getElementById('logout-professional');
-    const registerPatientBtn = document.getElementById('register-patient');
-    const reentryProgramBtn = document.getElementById('reentry-program');
-    const aboutProgramBtn = document.getElementById('about-program');
-
-    // Event listeners para botones principales
-    if (loginProfessionalBtn) {
-      loginProfessionalBtn.addEventListener('click', () => showModal('login-modal'));
-    }
-
-    if (logoutProfessionalBtn) {
-      logoutProfessionalBtn.addEventListener('click', handleLogout);
-    }
-
-    if (registerPatientBtn) {
-      registerPatientBtn.addEventListener('click', () => {
-        resetForm();
-        showModal('patient-modal');
-      });
-    }
-
-    if (reentryProgramBtn) {
-      reentryProgramBtn.addEventListener('click', () => showModal('reentry-modal'));
-    }
-
-    if (aboutProgramBtn) {
-      aboutProgramBtn.addEventListener('click', showAboutProgram);
-    }
-
-    // Búsqueda y filtros
-    const searchSolicitudes = document.getElementById('search-solicitudes');
-    const priorityFilter = document.getElementById('priority-filter');
-    const searchPacientesRut = document.getElementById('search-pacientes-rut');
-    const buscarPacienteBtn = document.getElementById('buscar-paciente-btn');
-    const limpiarBusquedaBtn = document.getElementById('limpiar-busqueda-btn');
-
-    if (searchSolicitudes) {
-      searchSolicitudes.addEventListener('input', debounce(filterSolicitudes, 300));
-    }
-
-    if (priorityFilter) {
-      priorityFilter.addEventListener('change', filterSolicitudes);
-    }
-
-    if (buscarPacienteBtn) {
-      buscarPacienteBtn.addEventListener('click', buscarPacientePorRUT);
-    }
-
-    if (limpiarBusquedaBtn) {
-      limpiarBusquedaBtn.addEventListener('click', limpiarBusquedaPacientes);
-    }
-
-    if (searchPacientesRut) {
-      searchPacientesRut.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          buscarPacientePorRUT();
-        }
-      });
-      
-      searchPacientesRut.addEventListener('input', (e) => {
-        e.target.value = formatRUT(e.target.value);
-      });
-    }
-
-    // Navegación del calendario
-    const prevMonthBtn = document.getElementById('prev-month');
-    const nextMonthBtn = document.getElementById('next-month');
-    const nuevaCitaBtn = document.getElementById('nueva-cita-btn');
-
-    if (prevMonthBtn) {
-      prevMonthBtn.addEventListener('click', () => {
-        currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
-        renderCalendar();
-      });
-    }
-
-    if (nextMonthBtn) {
-      nextMonthBtn.addEventListener('click', () => {
-        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
-        renderCalendar();
-      });
-    }
-
-    if (nuevaCitaBtn) {
-      nuevaCitaBtn.addEventListener('click', createNuevaCitaModal);
-    }
-
-    // Atajos de teclado
-    document.addEventListener('keydown', handleKeyboardShortcuts);
-
-    // Configurar formularios de autenticación
-    setupAuthenticationForms();
-
-    console.log('✅ Event listeners configurados correctamente');
-  } catch (error) {
-    console.error('❌ Error configurando event listeners:', error);
-  }
+function createPatientDetailModal(paciente) {
+  const fechaCreacion = formatDate(paciente.fechaCreacion);
+  const fechaPrimeraAtencion = paciente.fechaPrimeraAtencion ? formatDate(paciente.fechaPrimeraAtencion) : 'No registrada';
+  
+  return `
+    <div class="modal-overlay temp-modal" id="patient-detail-modal">
+      <div class="modal large-modal">
+        <button class="modal-close" onclick="closeModal('patient-detail-modal')">
+          <i class="fas fa-times"></i>
+        </button>
+        
+        <div style="padding: 24px;">
+          <h2><i class="fas fa-user-md"></i> Ficha del Paciente</h2>
+          
+          <div class="patient-info" style="background: var(--light-blue); padding: 20px; border-radius: 12px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+              <div>
+                <h3 style="margin: 0; color: var(--primary-blue);">
+                  ${paciente.nombre} ${paciente.apellidos || ''}
+                </h3>
+                <p style="margin: 4px 0; font-weight: 500;">RUT: ${paciente.rut}</p>
+              </div>
+              <span class="patient-status ${paciente.estado || 'activo'}" style="padding: 6px 12px; border-radius: 6px; font-weight: bold;">
+                ${(paciente.estado || 'activo').toUpperCase()}
+              </span>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div>
+                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Datos Personales</h4>
+                <div style="font-size: 14px; line-height: 1.6;">
+                  <div><strong>Edad:</strong> ${paciente.edad || 'No especificada'} años</div>
+                  <div><strong>Teléfono:</strong> ${paciente.telefono || 'No disponible'}</div>
+                  <div><strong>Email:</strong> ${paciente.email || 'No disponible'}</div>
+                  <div><strong>Dirección:</strong> ${paciente.direccion || 'No disponible'}</div>
+                </div>
+              </div>
+              
+              <div>
+                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Información Clínica</h4>
+                <div style="font-size: 14px; line-height: 1.6;">
+                  <div><strong>CESFAM:</strong> ${paciente.cesfam}</div>
+                  <div><strong>Prioridad:</strong> <span style="color: ${getPriorityColor(paciente.prioridad || 'media')}; font-weight: bold;">${(paciente.prioridad || 'media').toUpperCase()}</span></div>
+                  <div><strong>Origen:</strong> ${paciente.origen || 'No especificado'}</div>
+                  <div><strong>Motivación inicial:</strong> ${paciente.motivacionInicial || 'No registrada'}/10</div>
+                </div>
+              </div>
+            </div>
+            
+            ${paciente.sustanciasProblematicas && paciente.sustanciasProblematicas.length > 0 ? 
+              `<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5);">
+                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Sustancias Problemáticas</h4>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  ${paciente.sustanciasProblematicas.map(s => `<span class="substance-tag" style="background: var(--primary-blue); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${s}</span>`).join('')}
+                </div>
+              </div>` : ''
+            }
+            
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5); font-size: 12px; color: var(--gray-600);">
+              <div><strong>Fecha de registro:</strong> ${fechaCreacion}</div>
+              <div><strong>Primera atención:</strong> ${fechaPrimeraAtencion}</div>
+              ${paciente.citaInicialId ? `<div><strong>Cita inicial ID:</strong> ${paciente.citaInicialId}</div>` : ''}
+            </div>
+          </div>
+          
+          <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="btn btn-outline" onclick="closeModal('patient-detail-modal')">
+              <i class="fas fa-times"></i>
+              Cerrar
+            </button>
+            <button class="btn btn-success" onclick="downloadPatientPDF('${paciente.id}')">
+              <i class="fas fa-download"></i>
+              Descargar PDF
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
-function handleKeyboardShortcuts(e) {
+function getPriorityColor(prioridad) {
+  const colors = {
+    'critica': '#ef4444',
+    'alta': '#f59e0b',
+    'media': '#3b82f6',
+    'baja': '#10b981'
+  };
+  return colors[prioridad] || '#6b7280';
+}
+
+// CORREGIDO: Función para descargar PDF completamente funcional
+async function downloadPatientPDF(pacienteId) {
   try {
-    // Ctrl/Cmd + K para búsqueda
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-      e.preventDefault();
-      const searchInput = document.getElementById('search-solicitudes');
-      if (searchInput && !searchInput.style.display === 'none') {
-        searchInput.focus();
-      }
+    showLoading(true, 'Generando PDF...');
+    
+    const pacienteDoc = await db.collection('pacientes').doc(pacienteId).get();
+    
+    if (!pacienteDoc.exists) {
+      showNotification('Paciente no encontrado', 'error');
+      return;
     }
     
-    // Escape para cerrar modales
-    if (e.key === 'Escape') {
-      const openModal = document.querySelector('.modal-overlay[style*="flex"]');
-      if (openModal) {
-        closeModal(openModal.id);
-      }
+    const paciente = pacienteDoc.data();
+    
+    // CORREGIDO: Verificar que jsPDF esté disponible
+    if (typeof window.jsPDF === 'undefined') {
+      showNotification('Error: Librería PDF no disponible. Cargando...', 'warning');
+      
+      // Cargar jsPDF dinámicamente si no está disponible
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      script.onload = () => {
+        setTimeout(() => downloadPatientPDF(pacienteId), 500);
+      };
+      script.onerror = () => {
+        showNotification('Error cargando librería PDF. Intenta nuevamente.', 'error');
+      };
+      document.head.appendChild(script);
+      return;
     }
     
-    // F5 para recargar datos (en desarrollo)
-    if (e.key === 'F5' && APP_CONFIG.DEBUG_MODE) {
-      e.preventDefault();
-      dataCache.clear();
-      if (currentUserData) {
-        loadInitialData();
-      }
+    const { jsPDF } = window.jsPDF;
+    const doc = new jsPDF();
+    
+    // Configurar fuente
+    doc.setFont('helvetica');
+    
+    // Título
+    doc.setFontSize(20);
+    doc.setTextColor(0, 102, 204);
+    doc.text('FICHA PACIENTE - PROGRAMA SENDA', 20, 30);
+    
+    // Información del CESFAM
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`CESFAM: ${paciente.cesfam}`, 20, 50);
+    doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-CL')}`, 20, 60);
+    doc.text(`Profesional: ${currentUserData.nombre} ${currentUserData.apellidos}`, 20, 70);
+    
+    // Línea separadora
+    doc.setLineWidth(0.5);
+    doc.line(20, 80, 190, 80);
+    
+    // Datos del paciente
+    doc.setFontSize(14);
+    doc.setTextColor(0, 102, 204);
+    doc.text('DATOS DEL PACIENTE', 20, 95);
+    
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    let yPos = 110;
+    
+    doc.text(`Nombre: ${paciente.nombre} ${paciente.apellidos || ''}`, 20, yPos);
+    yPos += 10;
+    doc.text(`RUT: ${paciente.rut}`, 20, yPos);
+    yPos += 10;
+    doc.text(`Edad: ${paciente.edad || 'No especificada'} años`, 20, yPos);
+    yPos += 10;
+    doc.text(`Teléfono: ${paciente.telefono || 'No disponible'}`, 20, yPos);
+    yPos += 10;
+    doc.text(`Email: ${paciente.email || 'No disponible'}`, 20, yPos);
+    yPos += 10;
+    doc.text(`Dirección: ${paciente.direccion || 'No disponible'}`, 20, yPos);
+    yPos += 15;
+    
+    // Información clínica
+    doc.setFontSize(14);
+    doc.setTextColor(0, 102, 204);
+    doc.text('INFORMACIÓN CLÍNICA', 20, yPos);
+    yPos += 15;
+    
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Estado: ${(paciente.estado || 'Activo').toUpperCase()}`, 20, yPos);
+    yPos += 10;
+    doc.text(`Prioridad: ${(paciente.prioridad || 'Media').toUpperCase()}`, 20, yPos);
+    yPos += 10;
+    doc.text(`Motivación inicial: ${paciente.motivacionInicial || 'No registrada'}/10`, 20, yPos);
+    yPos += 10;
+    doc.text(`Origen: ${paciente.origen || 'No especificado'}`, 20, yPos);
+    yPos += 10;
+    
+    if (paciente.sustanciasProblematicas && paciente.sustanciasProblematicas.length > 0) {
+      doc.text(`Sustancias problemáticas: ${paciente.sustanciasProblematicas.join(', ')}`, 20, yPos);
+      yPos += 10;
     }
-  } catch (error) {
-    console.error('❌ Error manejando atajos de teclado:', error);
-  }
-}
-
-// ================= GESTIÓN DE PESTAÑAS =================
-
-function setupTabFunctionality() {
-  try {
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const tabPanes = document.querySelectorAll('.tab-pane');
-
-    tabBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const targetTab = btn.dataset.tab;
-        
-        if (!canAccessTab(targetTab)) {
-          showNotification('No tienes permisos para acceder a esta sección', 'warning');
-          return;
-        }
-
-        // Actualizar pestañas activas
-        tabBtns.forEach(b => b.classList.remove('active'));
-        tabPanes.forEach(p => p.classList.remove('active'));
-
-        btn.classList.add('active');
-        const targetPane = document.getElementById(`${targetTab}-tab`);
-        if (targetPane) {
-          targetPane.classList.add('active');
-          
-          // Agregar título especial para agenda
-          if (targetTab === 'agenda') {
-            updateAgendaTitle();
-          }
-          
-          loadTabData(targetTab);
-        }
-      });
-    });
-
-    console.log('✅ Funcionalidad de pestañas configurada');
-  } catch (error) {
-    console.error('❌ Error configurando pestañas:', error);
-  }
-}
-
-function updateAgendaTitle() {
-  try {
-    const agendaTab = document.getElementById('agenda-tab');
-    if (agendaTab) {
-      let titleElement = agendaTab.querySelector('.agenda-title');
-      
-      if (!titleElement) {
-        titleElement = document.createElement('div');
-        titleElement.className = 'agenda-title';
-        titleElement.innerHTML = `
-          <h2 style="color: #3b82f6; margin-bottom: 2rem; font-size: 1.75rem; font-weight: 700; text-align: center;">
-            <i class="fas fa-calendar-alt" style="margin-right: 12px;"></i>
-            Gestión de Agenda
-          </h2>
-        `;
-        
-        const firstChild = agendaTab.firstElementChild;
-        if (firstChild) {
-          agendaTab.insertBefore(titleElement, firstChild);
-        } else {
-          agendaTab.appendChild(titleElement);
-        }
-      }
+    
+    yPos += 10;
+    doc.text(`Fecha de registro: ${formatDate(paciente.fechaCreacion)}`, 20, yPos);
+    yPos += 10;
+    
+    if (paciente.fechaPrimeraAtencion) {
+      doc.text(`Primera atención: ${formatDate(paciente.fechaPrimeraAtencion)}`, 20, yPos);
     }
+    
+    // Pie de página
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Documento generado por Sistema SENDA Puente Alto', 20, 280);
+    doc.text('Información confidencial - Uso exclusivo profesional', 20, 290);
+    
+    // Descargar
+    const fileName = `ficha_${paciente.nombre.replace(/\s+/g, '_')}_${paciente.rut.replace(/[.-]/g, '')}.pdf`;
+    doc.save(fileName);
+    
+    showNotification('PDF generado y descargado correctamente', 'success');
+    
   } catch (error) {
-    console.error('❌ Error actualizando título de agenda:', error);
+    console.error('❌ Error generando PDF:', error);
+    showNotification('Error al generar PDF: ' + error.message, 'error');
+  } finally {
+    showLoading(false);
   }
 }
-
-function loadTabData(tabName) {
-  try {
-    if (!currentUserData) return;
-
-    switch (tabName) {
-      case 'solicitudes':
-        if (hasAccessToSolicitudes()) {
-          loadSolicitudes();
-        }
-        break;
-      case 'agenda':
-        updateAgendaTitle();
-        renderCalendar();
-        break;
-      case 'seguimiento':
-        loadSeguimiento();
-        break;
-      case 'pacientes':
-        loadPacientes();
-        break;
-    }
-  } catch (error) {
-    console.error('❌ Error cargando datos de pestaña:', error);
-  }
-}
-
-// ================= FUNCIONES AUXILIARES ESPECÍFICAS =================
 
 async function buscarPacientePorRUT() {
   try {
@@ -3155,32 +3339,17 @@ async function buscarPacientePorRUT() {
     
     const rutFormatted = formatRUT(rut);
     
-    const snapshot = await retryOperation(async () => {
-      return await db.collection('pacientes')
-        .where('rut', '==', rutFormatted)
-        .where('cesfam', '==', currentUserData.cesfam)
-        .get();
-    }, 3, 'búsqueda de paciente');
+    const snapshot = await db.collection('pacientes')
+      .where('rut', '==', rutFormatted)
+      .where('cesfam', '==', currentUserData.cesfam)
+      .get();
     
     if (snapshot.empty) {
       resultsContainer.innerHTML = `
-        <div class="no-results" style="text-align: center; padding: 40px 20px; background: #f8f9fa; border-radius: 12px; margin: 20px 0;">
-          <i class="fas fa-user-slash" style="font-size: 3rem; color: #6b7280; margin-bottom: 16px;"></i>
-          <h3 style="color: #374151; margin-bottom: 12px;">Paciente no encontrado</h3>
-          <p style="color: #6b7280; margin-bottom: 20px;">
-            No se encontró ningún paciente con el RUT <strong>${rutFormatted}</strong> en <strong>${currentUserData.cesfam}</strong>
-          </p>
-          <div style="background: #e0f2fe; padding: 16px; border-radius: 8px; text-align: left;">
-            <h4 style="color: #3b82f6; margin-bottom: 8px;">
-              <i class="fas fa-info-circle"></i> ¿Qué puedes hacer?
-            </h4>
-            <ul style="margin: 0; color: #6b7280; font-size: 14px;">
-              <li>Verifica que el RUT esté correcto</li>
-              <li>El paciente puede estar en otro CESFAM de Puente Alto</li>
-              <li>Contacta al coordinador regional para derivaciones</li>
-              <li>Revisa las solicitudes pendientes por si aún no ha sido registrado</li>
-            </ul>
-          </div>
+        <div class="no-results">
+          <i class="fas fa-user-slash"></i>
+          <h3>Paciente no encontrado</h3>
+          <p>No se encontró ningún paciente con el RUT ${rutFormatted} en tu CESFAM</p>
         </div>
       `;
     } else {
@@ -3193,53 +3362,38 @@ async function buscarPacientePorRUT() {
       });
       
       resultsContainer.innerHTML = `
-        <div style="margin: 20px 0;">
-          <h4 style="color: #3b82f6; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-            <i class="fas fa-check-circle"></i> 
-            Paciente encontrado en ${currentUserData.cesfam}
-          </h4>
-          <div class="patients-grid">
-            ${pacientes.map(createPatientCard).join('')}
-          </div>
+        <h4>Resultados de búsqueda:</h4>
+        <div class="patients-grid">
+          ${pacientes.map(createPatientCard).join('')}
         </div>
       `;
     }
     
   } catch (error) {
     console.error('❌ Error buscando paciente:', error);
-    handleFirestoreError(error, 'búsqueda de paciente');
+    showNotification('Error al buscar paciente: ' + error.message, 'error');
   } finally {
     showLoading(false);
   }
 }
 
-function limpiarBusquedaPacientes() {
-  try {
-    const rutInput = document.getElementById('search-pacientes-rut');
-    const resultsContainer = document.getElementById('pacientes-search-results');
-    
-    if (rutInput) rutInput.value = '';
-    if (resultsContainer) resultsContainer.innerHTML = '';
-    
-    showNotification('Búsqueda limpiada', 'info', 2000);
-  } catch (error) {
-    console.error('❌ Error limpiando búsqueda:', error);
-  }
-}
+// ================= FUNCIONES AUXILIARES Y UTILIDADES =================
 
 function filterSolicitudes() {
   try {
     const searchTerm = document.getElementById('search-solicitudes')?.value?.toLowerCase() || '';
     const priorityFilter = document.getElementById('priority-filter')?.value || '';
     
-    let filteredSolicitudes = [...solicitudesData];
+    let filteredSolicitudes = solicitudesData;
     
-    // Filtrar por prioridad
+    if (currentFilter !== 'todas') {
+      filteredSolicitudes = filteredSolicitudes.filter(s => s.estado === currentFilter);
+    }
+    
     if (priorityFilter) {
       filteredSolicitudes = filteredSolicitudes.filter(s => s.prioridad === priorityFilter);
     }
     
-    // Filtrar por término de búsqueda
     if (searchTerm) {
       filteredSolicitudes = filteredSolicitudes.filter(s => {
         const searchableText = `
@@ -3249,7 +3403,6 @@ function filterSolicitudes() {
           ${s.email || ''} 
           ${s.descripcion || ''} 
           ${s.motivo || ''}
-          ${s.cesfam || ''}
         `.toLowerCase();
         
         return searchableText.includes(searchTerm);
@@ -3258,62 +3411,382 @@ function filterSolicitudes() {
     
     renderSolicitudes(filteredSolicitudes);
     
-    // Mostrar información del filtrado
-    if (searchTerm || priorityFilter) {
-      const container = document.getElementById('requests-container');
-      if (container) {
-        const existingInfo = container.querySelector('.filter-info');
-        if (existingInfo) existingInfo.remove();
-        
-        const filterInfo = document.createElement('div');
-        filterInfo.className = 'filter-info';
-        filterInfo.style.cssText = `
-          background: #e0f2fe;
-          padding: 12px;
-          border-radius: 8px;
-          margin-bottom: 16px;
-          font-size: 14px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        `;
-        filterInfo.innerHTML = `
-          <span>
-            <i class="fas fa-filter"></i>
-            Mostrando ${filteredSolicitudes.length} de ${solicitudesData.length} solicitudes
-            ${searchTerm ? `| Búsqueda: "${searchTerm}"` : ''}
-            ${priorityFilter ? `| Prioridad: ${priorityFilter.toUpperCase()}` : ''}
-          </span>
-          <button onclick="clearFilters()" style="background: transparent; color: #3b82f6; border: 1px solid #3b82f6; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-            <i class="fas fa-times"></i>
-            Limpiar
-          </button>
-        `;
-        
-        container.insertBefore(filterInfo, container.firstChild);
-      }
-    }
-    
   } catch (error) {
-    console.error('❌ Error filtrando solicitudes:', error);
+    console.error('Error filtering solicitudes:', error);
   }
 }
 
-function clearFilters() {
+function setupTabFunctionality() {
   try {
-    const searchInput = document.getElementById('search-solicitudes');
-    const priorityFilter = document.getElementById('priority-filter');
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetTab = btn.dataset.tab;
+        
+        if (!canAccessTab(targetTab)) {
+          showNotification('No tienes permisos para acceder a esta sección', 'warning');
+          return;
+        }
+
+        tabBtns.forEach(b => b.classList.remove('active'));
+        tabPanes.forEach(p => p.classList.remove('active'));
+
+        btn.classList.add('active');
+        const targetPane = document.getElementById(`${targetTab}-tab`);
+        if (targetPane) {
+          targetPane.classList.add('active');
+          loadTabData(targetTab);
+        }
+      });
+    });
+
+    console.log('✅ Funcionalidad de tabs configurada');
+  } catch (error) {
+    console.error('❌ Error configurando tabs:', error);
+  }
+}
+
+function loadTabData(tabName) {
+  try {
+    if (!currentUserData) return;
+
+    switch (tabName) {
+      case 'solicitudes':
+        if (hasAccessToSolicitudes()) {
+          loadSolicitudes();
+        }
+        break;
+      case 'agenda':
+        loadTodayAppointments();
+        if (!selectedCalendarDate) {
+          renderCalendar(); // CORREGIDO: Asegurar que el calendario se renderice
+        }
+        break;
+      case 'seguimiento':
+        loadSeguimiento();
+        break;
+      case 'pacientes':
+        loadPacientes();
+        break;
+    }
+  } catch (error) {
+    console.error('Error loading tab data:', error);
+  }
+}
+
+async function loadSeguimiento() {
+  if (!currentUserData) return;
+  
+  try {
+    showLoading(true, 'Cargando seguimiento...');
     
-    if (searchInput) searchInput.value = '';
-    if (priorityFilter) priorityFilter.value = '';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
     
-    renderSolicitudes(solicitudesData);
+    const todayAppointmentsSnapshot = await db.collection('citas')
+      .where('cesfam', '==', currentUserData.cesfam)
+      .where('fecha', '>=', today)
+      .where('fecha', '<', tomorrow)
+      .orderBy('fecha', 'asc')
+      .get();
     
-    const filterInfo = document.querySelector('.filter-info');
-    if (filterInfo) filterInfo.remove();
+    renderPatientsTimeline(todayAppointmentsSnapshot);
+    
+    const upcomingAppointmentsSnapshot = await db.collection('citas')
+      .where('cesfam', '==', currentUserData.cesfam)
+      .where('fecha', '>=', tomorrow)
+      .orderBy('fecha', 'asc')
+      .limit(10)
+      .get();
+    
+    renderUpcomingAppointments(upcomingAppointmentsSnapshot);
     
   } catch (error) {
-    console.error('❌ Error limpiando filtros:', error);
+    console.error('Error loading seguimiento:', error);
+    showNotification('Error al cargar seguimiento: ' + error.message, 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+function renderPatientsTimeline(appointmentsSnapshot) {
+  try {
+    const timeline = document.getElementById('patients-timeline');
+    if (!timeline) return;
+    
+    if (appointmentsSnapshot.empty) {
+      timeline.innerHTML = `
+        <div class="no-results">
+          <i class="fas fa-calendar-day"></i>
+          <h3>No hay pacientes agendados para hoy</h3>
+          <p>No se encontraron citas programadas para hoy</p>
+        </div>
+      `;
+      return;
+    }
+    
+    const appointments = [];
+    appointmentsSnapshot.forEach(doc => {
+      appointments.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    timeline.innerHTML = appointments.map(appointment => {
+      const fecha = appointment.fecha.toDate();
+      const hora = fecha.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+      const estado = appointment.estado || 'programada';
+      
+      return `
+        <div class="timeline-item">
+          <div class="timeline-time">${hora}</div>
+          <div class="timeline-patient">
+            <h4>${appointment.pacienteNombre}</h4>
+            <p>${getProfessionName(appointment.tipoProfesional)} - ${appointment.profesionalNombre}</p>
+            <small>Tipo: ${appointment.tipo || 'General'}</small>
+          </div>
+          <span class="timeline-status ${estado}">
+            <i class="fas fa-${getStatusIcon(estado)}"></i>
+            ${estado.toUpperCase()}
+          </span>
+        </div>
+      `;
+    }).join('');
+  } catch (error) {
+    console.error('Error rendering patients timeline:', error);
+  }
+}
+
+function getStatusIcon(estado) {
+  const icons = {
+    'programada': 'clock',
+    'confirmada': 'check',
+    'en_curso': 'play',
+    'completada': 'check-circle',
+    'cancelada': 'times-circle'
+  };
+  return icons[estado] || 'circle';
+}
+
+function renderUpcomingAppointments(appointmentsSnapshot) {
+  try {
+    const grid = document.getElementById('upcoming-appointments-grid');
+    const noUpcomingSection = document.getElementById('no-upcoming-section');
+    
+    if (!grid) return;
+    
+    if (appointmentsSnapshot.empty) {
+      if (noUpcomingSection) noUpcomingSection.style.display = 'block';
+      grid.innerHTML = '';
+      return;
+    }
+    
+    if (noUpcomingSection) noUpcomingSection.style.display = 'none';
+    
+    const appointments = [];
+    appointmentsSnapshot.forEach(doc => {
+      appointments.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    grid.innerHTML = appointments.map(appointment => {
+      const fecha = appointment.fecha.toDate();
+      const fechaStr = fecha.toLocaleDateString('es-CL', { 
+        day: '2-digit', 
+        month: '2-digit',
+        year: 'numeric'
+      });
+      const hora = fecha.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+      
+      return `
+        <div class="appointment-card">
+          <div class="appointment-card-header">
+            <span class="appointment-date">
+              <i class="fas fa-calendar"></i>
+              ${fechaStr}
+            </span>
+            <span class="appointment-time">
+              <i class="fas fa-clock"></i>
+              ${hora}
+            </span>
+          </div>
+          <div class="appointment-card-body">
+            <h4>${appointment.pacienteNombre}</h4>
+            <p><i class="fas fa-user-md"></i> ${getProfessionName(appointment.tipoProfesional)}</p>
+            <p><i class="fas fa-tags"></i> ${appointment.tipo || 'General'}</p>
+          </div>
+          <div class="appointment-card-footer">
+            <span class="status-badge ${appointment.estado || 'programada'}">
+              ${(appointment.estado || 'programada').toUpperCase()}
+            </span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (error) {
+    console.error('Error rendering upcoming appointments:', error);
+  }
+}
+
+// ================= FUNCIONES PLACEHOLDER =================
+
+function showSolicitudDetail(solicitud) {
+  try {
+    const detailModal = createSolicitudDetailModal(solicitud);
+    document.body.insertAdjacentHTML('beforeend', detailModal);
+    showModal('solicitud-detail-modal');
+  } catch (error) {
+    console.error('Error showing solicitud detail:', error);
+    showNotification('Error al mostrar detalle de solicitud', 'error');
+  }
+}
+
+function createSolicitudDetailModal(solicitud) {
+  const fecha = formatDate(solicitud.fechaCreacion);
+  const prioridad = solicitud.prioridad || 'baja';
+  const estado = solicitud.estado || 'pendiente';
+  
+  let tipoSolicitud = 'Solicitud General';
+  if (solicitud.tipo === 'reingreso') {
+    tipoSolicitud = 'Reingreso';
+  } else if (solicitud.tipoSolicitud === 'identificado') {
+    tipoSolicitud = 'Solicitud Identificada';
+  } else if (solicitud.tipoSolicitud === 'informacion') {
+    tipoSolicitud = 'Solicitud de Información';
+  }
+  
+  return `
+    <div class="modal-overlay temp-modal" id="solicitud-detail-modal">
+      <div class="modal large-modal">
+        <button class="modal-close" onclick="closeModal('solicitud-detail-modal')">
+          <i class="fas fa-times"></i>
+        </button>
+        
+        <div style="padding: 24px;">
+          <h2><i class="fas fa-file-alt"></i> Detalle de Solicitud</h2>
+          
+          <div class="solicitud-info" style="background: var(--light-blue); padding: 20px; border-radius: 12px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+              <div>
+                <h3 style="margin: 0; color: var(--primary-blue);">
+                  ${tipoSolicitud}
+                </h3>
+                <p style="margin: 4px 0; font-weight: 500;">ID: ${solicitud.id}</p>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <span class="priority-badge ${prioridad}" style="padding: 6px 12px; border-radius: 6px; font-weight: bold; color: white; background-color: ${getPriorityColor(prioridad)};">
+                  ${prioridad.toUpperCase()}
+                </span>
+                <span class="status-badge ${estado}" style="padding: 6px 12px; border-radius: 6px; font-weight: bold;">
+                  ${estado.replace('_', ' ').toUpperCase()}
+                </span>
+              </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div>
+                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Datos Personales</h4>
+                <div style="font-size: 14px; line-height: 1.6;">
+                  ${solicitud.nombre ? `<div><strong>Nombre:</strong> ${solicitud.nombre} ${solicitud.apellidos || ''}</div>` : ''}
+                  ${solicitud.rut ? `<div><strong>RUT:</strong> ${solicitud.rut}</div>` : ''}
+                  ${solicitud.email ? `<div><strong>Email:</strong> ${solicitud.email}</div>` : ''}
+                  ${solicitud.telefono ? `<div><strong>Teléfono:</strong> ${solicitud.telefono}</div>` : ''}
+                  ${solicitud.edad ? `<div><strong>Edad:</strong> ${solicitud.edad} años</div>` : ''}
+                  ${solicitud.direccion ? `<div><strong>Dirección:</strong> ${solicitud.direccion}</div>` : ''}
+                </div>
+              </div>
+              
+              <div>
+                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Información de Solicitud</h4>
+                <div style="font-size: 14px; line-height: 1.6;">
+                  <div><strong>CESFAM:</strong> ${solicitud.cesfam || 'No especificado'}</div>
+                  <div><strong>Fecha:</strong> ${fecha}</div>
+                  <div><strong>Origen:</strong> ${solicitud.origen || 'Web pública'}</div>
+                  ${solicitud.paraMi ? `<div><strong>Para:</strong> ${solicitud.paraMi === 'si' ? 'Sí mismo' : 'Otra persona'}</div>` : ''}
+                  ${solicitud.urgencia ? `<div><strong>Urgencia:</strong> ${solicitud.urgencia.toUpperCase()}</div>` : ''}
+                  ${solicitud.motivacion ? `<div><strong>Motivación:</strong> ${solicitud.motivacion}/10</div>` : ''}
+                </div>
+              </div>
+            </div>
+            
+            ${solicitud.sustancias && solicitud.sustancias.length > 0 ? 
+              `<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5);">
+                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Sustancias Problemáticas</h4>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  ${solicitud.sustancias.map(s => `<span class="substance-tag" style="background: var(--primary-blue); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${s}</span>`).join('')}
+                </div>
+              </div>` : ''
+            }
+            
+            ${solicitud.descripcion || solicitud.motivo ? 
+              `<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5);">
+                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Descripción/Motivo</h4>
+                <p style="margin: 0; background: rgba(255,255,255,0.7); padding: 12px; border-radius: 6px; line-height: 1.5;">
+                  ${solicitud.descripcion || solicitud.motivo}
+                </p>
+              </div>` : ''
+            }
+          </div>
+          
+          <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="btn btn-outline" onclick="closeModal('solicitud-detail-modal')">
+              <i class="fas fa-times"></i>
+              Cerrar
+            </button>
+            ${solicitud.tipo !== 'informacion' ? 
+              `<button class="btn btn-success" onclick="showAgendaModal('${solicitud.id}')">
+                <i class="fas fa-calendar-plus"></i>
+                Agendar Cita
+              </button>` : ''
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function showSolicitudDetailById(solicitudId) {
+  try {
+    const solicitud = solicitudesData.find(s => s.id === solicitudId);
+    if (solicitud) {
+      showSolicitudDetail(solicitud);
+    } else {
+      showNotification('Solicitud no encontrada', 'error');
+    }
+  } catch (error) {
+    console.error('Error showing solicitud detail by ID:', error);
+  }
+}
+
+function showAgendaModal(solicitudId) {
+  try {
+    showNotification('Función de agenda en desarrollo. Por ahora usa el botón "Nueva Cita" en la agenda.', 'info', 5000);
+    
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log('📅 Solicitud para agendar:', solicitudId);
+    }
+  } catch (error) {
+    console.error('Error showing agenda modal:', error);
+  }
+}
+
+function handleUrgentCase(solicitudId) { 
+  try {
+    showNotification('Caso urgente identificado. Se notificará al coordinador.', 'warning');
+    
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log('🚨 Caso urgente identificado:', solicitudId);
+    }
+  } catch (error) {
+    console.error('Error handling urgent case:', error);
   }
 }
 
@@ -3326,94 +3799,44 @@ function showAboutProgram() {
             <i class="fas fa-times"></i>
           </button>
           
-          <div style="padding: 32px; max-height: 80vh; overflow-y: auto;">
-            <div style="text-align: center; margin-bottom: 32px;">
-              <h2 style="color: #3b82f6; margin-bottom: 8px;">
-                <i class="fas fa-info-circle"></i> 
-                Programa SENDA Puente Alto
-              </h2>
-              <p style="color: #6b7280; font-size: 1.1rem;">
-                Servicio Nacional para la Prevención y Rehabilitación del Consumo de Drogas y Alcohol
-              </p>
-              <div style="background: #f0f9ff; padding: 8px 16px; border-radius: 6px; margin-top: 16px; font-size: 14px;">
-                <strong>Sistema desarrollado por:</strong> CamiMoralesM | <strong>Fecha:</strong> 2025-09-14 | <strong>Versión:</strong> 2.1
-              </div>
-            </div>
+          <div style="padding: 24px;">
+            <h2><i class="fas fa-info-circle"></i> Sobre el Programa SENDA</h2>
             
-            <div style="line-height: 1.7; color: #374151;">
-              <div style="background: #e0f2fe; padding: 24px; border-radius: 12px; margin-bottom: 24px;">
-                <h3 style="color: #3b82f6; margin-top: 0;">🎯 Nuestra Misión</h3>
-                <p style="margin-bottom: 0;">
-                  Mitigar el impacto social y sanitario del consumo de alcohol y otras drogas, 
-                  mejorando el bienestar y la calidad de vida de las personas, familias y comunidades 
-                  en la comuna de Puente Alto.
-                </p>
-              </div>
+            <div style="line-height: 1.6; color: var(--text-dark);">
+              <p><strong>SENDA (Servicio Nacional para la Prevención y Rehabilitación del Consumo de Drogas y Alcohol)</strong> es el organismo del Gobierno de Chile encargado de elaborar las políticas de prevención del consumo de drogas y alcohol, así como de tratamiento, rehabilitación e integración social de las personas afectadas por estas sustancias.</p>
               
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
-                <div>
-                  <h3 style="color: #3b82f6;">🏥 Nuestros Servicios</h3>
-                  <ul style="margin-left: 20px;">
-                    <li>Tratamiento ambulatorio básico e intensivo</li>
-                    <li>Tratamiento residencial</li>
-                    <li>Programas de reinserción social</li>
-                    <li>Apoyo familiar y comunitario</li>
-                    <li>Prevención en establecimientos educacionales</li>
-                    <li>Capacitación a profesionales</li>
-                    <li>Intervenciones grupales</li>
-                  </ul>
-                </div>
-                
-                <div>
-                  <h3 style="color: #3b82f6;">📍 CESFAM Activos</h3>
-                  <ul style="margin-left: 20px; font-size: 14px;">
-                    ${cesfamPuenteAlto.map(cesfam => `<li>${cesfam.replace('CESFAM ', '')}</li>`).join('')}
-                  </ul>
-                </div>
-              </div>
+              <h3 style="color: var(--primary-blue); margin-top: 24px;">Nuestros Servicios</h3>
+              <ul style="margin-left: 20px;">
+                <li>Tratamiento ambulatorio básico e intensivo</li>
+                <li>Tratamiento residencial</li>
+                <li>Programas de reinserción social</li>
+                <li>Apoyo familiar y comunitario</li>
+                <li>Prevención en establecimientos educacionales</li>
+                <li>Capacitación a profesionales</li>
+              </ul>
               
-              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
-                <h3 style="color: #3b82f6; margin-top: 0;">🕒 Horarios de Atención</h3>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                  <div>
-                    <strong>Lunes a Viernes:</strong><br>
-                    08:00 - 16:30 hrs
-                  </div>
-                  <div>
-                    <strong>Sábados y Domingos:</strong><br>
-                    09:00 - 12:30 hrs
-                  </div>
-                </div>
-              </div>
+              <h3 style="color: var(--primary-blue); margin-top: 24px;">Horarios de Atención</h3>
+              <ul style="margin-left: 20px;">
+                <li><strong>Lunes a Viernes:</strong> 08:00 - 16:30</li>
+                <li><strong>Sábados y Domingos:</strong> 09:00 - 12:30</li>
+              </ul>
               
-              <div style="background: #e7f3ff; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
-                <h3 style="color: #3b82f6; margin-top: 0;">📞 Contacto y Emergencias</h3>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                  <div>
-                    <strong>📱 Línea SENDA:</strong> 1412 (gratuito)<br>
-                    <strong>🚑 SAPU:</strong> 131<br>
-                    <strong>🆘 Emergencias:</strong> 132
-                  </div>
-                  <div>
-                    <strong>🌐 Web:</strong> <a href="https://www.senda.gob.cl" target="_blank">www.senda.gob.cl</a><br>
-                    <strong>🏛️ Gobierno:</strong> <a href="https://www.gob.cl" target="_blank">www.gob.cl</a>
-                  </div>
-                </div>
-              </div>
+              <h3 style="color: var(--primary-blue); margin-top: 24px;">Contacto</h3>
+              <ul style="margin-left: 20px;">
+                <li><strong>Teléfono:</strong> 1412 (gratuito)</li>
+                <li><strong>Emergencias:</strong> 131</li>
+                <li><strong>Web:</strong> <a href="https://www.senda.gob.cl" target="_blank">www.senda.gob.cl</a></li>
+              </ul>
               
-              <div style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; padding: 24px; border-radius: 12px; text-align: center;">
-                <h3 style="margin-top: 0; color: white;">
-                  <i class="fas fa-heart"></i> 
-                  Tu recuperación es posible
-                </h3>
-                <p style="margin-bottom: 0; font-size: 1.1rem; font-style: italic;">
-                  "Estamos aquí para acompañarte en cada paso del camino hacia una vida libre de drogas y alcohol."
+              <div style="background: var(--light-blue); padding: 16px; border-radius: 8px; margin-top: 24px;">
+                <p style="margin: 0; font-style: italic; text-align: center;">
+                  "Tu recuperación es posible. Estamos aquí para acompañarte en cada paso del camino."
                 </p>
               </div>
             </div>
             
-            <div style="text-align: center; margin-top: 32px;">
-              <button class="btn btn-primary btn-lg" onclick="closeModal('about-modal')" style="background: #3b82f6; color: white; border: none; padding: 16px 32px; border-radius: 8px; cursor: pointer; font-size: 16px;">
+            <div style="text-align: center; margin-top: 24px;">
+              <button class="btn btn-primary" onclick="closeModal('about-modal')">
                 <i class="fas fa-check"></i>
                 Entendido
               </button>
@@ -3427,193 +3850,66 @@ function showAboutProgram() {
     showModal('about-modal');
     
   } catch (error) {
-    console.error('❌ Error mostrando información del programa:', error);
+    console.error('Error showing about program:', error);
     showNotification('Error al mostrar información del programa', 'error');
   }
 }
 
-// ================= FUNCIONES PLACEHOLDER NECESARIAS =================
+// ================= AUTENTICACIÓN Y LOGOUT =================
 
-// Estas funciones se implementarán según las necesidades específicas
-async function loadPacientes() {
-  console.log('👥 Cargando pacientes...');
-  showNotification('Función de pacientes en desarrollo', 'info');
-}
-
-async function loadSeguimiento() {
-  console.log('📈 Cargando seguimiento...');
-  showNotification('Función de seguimiento en desarrollo', 'info');
-}
-
-function renderCalendar() {
-  console.log('📅 Renderizando calendario...');
-  const agendaTab = document.getElementById('agenda-tab');
-  if (agendaTab) {
-    updateAgendaTitle();
-    // Aquí iría la implementación del calendario
-    const calendarPlaceholder = agendaTab.querySelector('.calendar-placeholder');
-    if (!calendarPlaceholder) {
-      const placeholder = document.createElement('div');
-      placeholder.className = 'calendar-placeholder';
-      placeholder.style.cssText = `
-        text-align: center;
-        padding: 60px 20px;
-        background: #f8f9fa;
-        border-radius: 12px;
-        margin-top: 20px;
-      `;
-      placeholder.innerHTML = `
-        <i class="fas fa-calendar-alt" style="font-size: 3rem; color: #6b7280; margin-bottom: 16px;"></i>
-        <h3>Calendario en Desarrollo</h3>
-        <p>La funcionalidad del calendario estará disponible próximamente.</p>
-      `;
-      agendaTab.appendChild(placeholder);
-    }
+async function handleLogout() {
+  try {
+    await auth.signOut();
+    
+    currentUser = null;
+    currentUserData = null;
+    clearUserCache();
+    
+    showNotification('Sesión cerrada correctamente', 'success');
+    showPublicContent();
+    
+  } catch (error) {
+    console.error('Error during logout:', error);
+    showNotification('Error al cerrar sesión', 'error');
   }
 }
 
-function createNuevaCitaModal() {
-  console.log('📅 Nueva cita modal');
-  showNotification('Función de nueva cita en desarrollo', 'info');
-}
-
-function createPatientCard(paciente) {
-  return `
-    <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; background: white;">
-      <h4>${paciente.nombre} ${paciente.apellidos || ''}</h4>
-      <p>RUT: ${paciente.rut}</p>
-      <p>Fecha: ${formatDate(paciente.fechaCreacion)}</p>
-    </div>
-  `;
-}
-
-function debounce(func, wait) {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-}
-
-// ================= INICIALIZACIÓN FINAL COMPLETA =================
+// ================= INICIALIZACIÓN FINAL =================
 
 document.addEventListener('DOMContentLoaded', function() {
   try {
-    console.log(`
-🚀 ====================================
-   SISTEMA SENDA PUENTE ALTO v2.1
-   ====================================
-   
-   👨‍💻 Desarrollado por: CamiMoralesM
-   📅 Fecha: 2025-09-14
-   🕐 Hora UTC: 20:39:26
-   🌐 Repositorio: https://github.com/CamiMoralesM/malla-curricular
-   
-   Iniciando sistema...
-   ====================================
-    `);
-    
-    // Verificar dependencias críticas
-    if (typeof firebase === 'undefined') {
-      console.error('❌ Firebase SDK no está cargado');
-      showNotification('Error crítico: Firebase SDK no disponible. Recarga la página.', 'error', 15000);
-      return;
-    }
-    
-    // Inicializar Firebase
-    const firebaseSuccess = initializeFirebaseOnce();
-    if (!firebaseSuccess) {
-      console.error('❌ Falló la inicialización de Firebase');
-      return;
-    }
-    
-    // Configurar componentes
     setupMultiStepForm();
     initializeEventListeners();
     setupTabFunctionality();
+    setupCalendar();
     
-    // Mostrar contenido inicial
-    showPublicContent();
+    auth.onAuthStateChanged(onAuthStateChanged);
     
-    // Configurar listener de autenticación
-    setTimeout(() => {
-      if (auth) {
-        auth.onAuthStateChanged(onAuthStateChanged);
-        console.log('👂 Auth state listener configurado');
-      } else {
-        console.error('❌ Auth no disponible para listener');
-      }
-    }, 1000);
-    
-    // Verificar si ya hay un usuario logueado
-    const user = auth.currentUser;
-    if (user) {
-      console.log('👤 Usuario ya autenticado detectado:', user.email);
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log('🎉 SENDA Puente Alto - Sistema completo inicializado');
     }
     
-    console.log(`
-🎉 ====================================
-   SISTEMA SENDA PUENTE ALTO v2.1
-   ====================================
-   
-   ✅ Firebase inicializado correctamente
-   ✅ Formularios configurados
-   ✅ Event listeners activos
-   ✅ Pestañas funcionales
-   ✅ Autenticación con @senda.cl
-   ✅ Sistema de solicitudes operativo
-   ✅ Manejo de errores robusto
-   ✅ Debug mode: ${APP_CONFIG.DEBUG_MODE}
-   
-   👨‍💻 Desarrollado por: CamiMoralesM
-   📧 Contacto: CamiMoralesM@senda.cl
-   🌐 GitHub: https://github.com/CamiMoralesM
-   📅 Fecha: 2025-09-14 20:39:26 UTC
-   
-   🚀 SISTEMA COMPLETAMENTE OPERATIVO
-   ====================================
-    `);
-    
-    isSystemInitialized = true;
-    
   } catch (error) {
-    console.error('❌ Error crítico durante la inicialización:', error);
-    showNotification('Error crítico inicializando el sistema. Contacta al administrador.', 'error', 15000);
+    console.error('❌ Error durante la inicialización:', error);
+    showNotification('Error inicializando el sistema', 'error');
   }
 });
 
-// ================= EXPORTAR FUNCIONES GLOBALES =================
-
-// Funciones que deben estar disponibles globalmente para el HTML
+// EXPORTAR FUNCIONES GLOBALES
+window.showPatientDetail = showPatientDetail;
+window.downloadPatientPDF = downloadPatientPDF;
+window.buscarPacientePorRUT = buscarPacientePorRUT;
+window.createNuevaCitaModal = createNuevaCitaModal;
+window.createNuevaCitaModalForDate = createNuevaCitaModalForDate;
+window.selectNuevaCitaTimeSlot = selectNuevaCitaTimeSlot;
+window.showSolicitudDetailById = showSolicitudDetailById;
+window.showSolicitudDetail = showSolicitudDetail;
+window.showAgendaModal = showAgendaModal;
+window.handleUrgentCase = handleUrgentCase;
+window.showAboutProgram = showAboutProgram;
 window.showModal = showModal;
 window.closeModal = closeModal;
-window.buscarPacientePorRUT = buscarPacientePorRUT;
-window.limpiarBusquedaPacientes = limpiarBusquedaPacientes;
-window.clearFilters = clearFilters;
-window.showAboutProgram = showAboutProgram;
-window.handleUrgentCase = (id) => {
-  showNotification('Caso urgente identificado. Se notificará al coordinador.', 'warning');
-  console.log('🚨 Caso urgente:', id);
-};
-window.showSolicitudDetailById = (id) => {
-  const solicitud = solicitudesData.find(s => s.id === id);
-  if (solicitud) showSolicitudDetail(solicitud);
-};
-window.showInformationModal = (id) => {
-  console.log('📧 Información modal:', id);
-  showNotification('Función de información en desarrollo', 'info');
-};
-window.showAgendaModal = (id) => {
-  console.log('📅 Agenda modal:', id);
-  showNotification('Función de agenda en desarrollo', 'info');
-};
-window.handleLogout = handleLogout;
-window.loadSolicitudes = loadSolicitudes;
-window.dataCache = dataCache;
+window.showPatientAppointmentInfo = showPatientAppointmentInfo;
 
 console.log(`
 `);
