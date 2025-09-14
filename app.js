@@ -5898,7 +5898,7 @@ async function handleLogout() {
   }
 }
 
-// ================= FUNCIONES AUXILIARES Y PLACEHOLDERS =================
+// ================= CONTINUACIÓN DE FUNCIONES AUXILIARES =================
 
 function showAboutProgram() {
   try {
@@ -5910,4 +5910,418 @@ function showAboutProgram() {
           </button>
           <h2><i class="fas fa-info-circle"></i> Sobre el Programa SENDA</h2>
           <div style="padding: 0 24px 24px;">
-            <div class="
+            <div class="about-section" style="margin-bottom: 20px;">
+              <h3><i class="fas fa-target"></i> Misión</h3>
+              <p>
+                SENDA es el Servicio Nacional para la Prevención y Rehabilitación del Consumo de Drogas y Alcohol, 
+                organismo del gobierno de Chile dependiente del Ministerio del Interior y Seguridad Pública.
+              </p>
+              <p>
+                <strong>Nuestra misión:</strong> Desarrollar e implementar políticas públicas en materia de drogas, 
+                orientadas a prevenir su consumo, tratar y rehabilitar a quienes presentan consumo problemático.
+              </p>
+            </div>
+            
+            <div class="about-section" style="margin-bottom: 20px;">
+              <h3><i class="fas fa-heart"></i> Servicios que ofrecemos</h3>
+              <ul style="padding-left: 20px; margin-bottom: 16px;">
+                <li>Atención ambulatoria básica</li>
+                <li>Atención ambulatoria intensiva</li>
+                <li>Tratamiento residencial</li>
+                <li>Programas de reinserción social</li>
+                <li>Apoyo familiar</li>
+                <li>Prevención comunitaria</li>
+              </ul>
+            </div>
+            
+            <div class="about-section" style="margin-bottom: 20px;">
+              <h3><i class="fas fa-phone"></i> Contacto Nacional</h3>
+              <div class="contact-info">
+                <p><strong>Teléfono:</strong> <a href="tel:1412" style="color: var(--primary-blue);">1412 (gratuito)</a></p>
+                <p><strong>Web:</strong> <a href="https://www.senda.gob.cl" target="_blank" style="color: var(--primary-blue);">www.senda.gob.cl</a></p>
+                <p><strong>Email:</strong> <a href="mailto:info@senda.gob.cl" style="color: var(--primary-blue);">info@senda.gob.cl</a></p>
+              </div>
+            </div>
+            
+            <div class="emergency-section" style="background: var(--light-blue); padding: 16px; border-radius: 8px; margin-top: 20px;">
+              <h4><i class="fas fa-exclamation-triangle"></i> ¿Necesitas ayuda inmediata?</h4>
+              <div style="display: flex; gap: 16px; margin-top: 8px;">
+                <a href="tel:131" class="btn btn-danger btn-sm">
+                  <i class="fas fa-phone"></i> Emergencias: 131
+                </a>
+                <a href="tel:6003607777" class="btn btn-primary btn-sm">
+                  <i class="fas fa-headset"></i> Salud Responde: 600 360 7777
+                </a>
+              </div>
+            </div>
+            
+            <div style="margin-top: 20px; text-align: center; font-size: 12px; color: var(--gray-500);">
+              <p>Sistema desarrollado para el Programa SENDA Puente Alto</p>
+              <p>Versión 1.0 - ${new Date().getFullYear()}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', aboutInfo);
+    showModal('about-modal');
+  } catch (error) {
+    console.error('❌ Error showing about program:', error);
+    showNotification('Error al mostrar información del programa', 'error');
+  }
+}
+
+// ================= FUNCIONES DE DEBUGGING =================
+
+async function debugFirebaseConnection() {
+  console.log('🔍 INICIANDO DIAGNÓSTICO COMPLETO DE FIREBASE...');
+  
+  try {
+    console.log('Firebase apps:', firebase.apps.length);
+    if (firebase.apps.length > 0) {
+      console.log('Firebase inicializado correctamente');
+    } else {
+      console.error('Firebase NO inicializado');
+      return false;
+    }
+    
+    const currentUser = firebase.auth().currentUser;
+    console.log('Usuario autenticado:', currentUser ? 'SÍ' : 'NO');
+    
+    console.log('Firestore disponible:', !!db);
+    
+    testFirestoreWrite();
+    
+    return true;
+  } catch (error) {
+    console.error('❌ Error en diagnóstico:', error);
+  }
+}
+
+async function testFirestoreWrite() {
+  try {
+    console.log('Probando escritura en Firestore...');
+    
+    const testData = {
+      test: true,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      message: 'Test de conexión'
+    };
+    
+    const docRef = await db.collection('test_connection').add(testData);
+    console.log('✅ Escritura exitosa, ID:', docRef.id);
+    
+    await docRef.delete();
+    console.log('✅ Documento de prueba eliminado');
+    
+    return true;
+  } catch (error) {
+    console.error('❌ Error en escritura de prueba:', error);
+    console.error('Código de error:', error.code);
+    console.error('Mensaje:', error.message);
+    return false;
+  }
+}
+
+// ================= FUNCIONES DE DETALLE DE SOLICITUDES =================
+
+function showSolicitudDetail(solicitud) {
+  try {
+    const detailModal = createSolicitudDetailModal(solicitud);
+    document.body.insertAdjacentHTML('beforeend', detailModal);
+    showModal('solicitud-detail-modal');
+  } catch (error) {
+    console.error('Error showing solicitud detail:', error);
+    showNotification('Error al mostrar detalles de la solicitud', 'error');
+  }
+}
+
+function showSolicitudDetailById(solicitudId) {
+  const solicitud = solicitudesData.find(s => s.id === solicitudId);
+  if (solicitud) {
+    showSolicitudDetail(solicitud);
+  } else {
+    showNotification('Solicitud no encontrada', 'error');
+  }
+}
+
+function createSolicitudDetailModal(solicitud) {
+  const fecha = formatDate(solicitud.fechaCreacion);
+  const prioridad = solicitud.prioridad || 'baja';
+  const estado = solicitud.estado || 'pendiente';
+  
+  let titulo, tipoIcon, tipoLabel;
+  
+  if (solicitud.tipo === 'reingreso') {
+    titulo = `${solicitud.nombre || 'Sin nombre'}`;
+    tipoIcon = 'fa-redo';
+    tipoLabel = 'Reingreso';
+  } else {
+    tipoIcon = 'fa-user-plus';
+    tipoLabel = 'Nueva Solicitud';
+    if (solicitud.tipoSolicitud === 'identificado') {
+      titulo = `${solicitud.nombre || ''} ${solicitud.apellidos || ''}`.trim() || 'Solicitud identificada';
+    } else if (solicitud.tipoSolicitud === 'anonimo') {
+      titulo = 'Solicitud Anónima';
+      tipoIcon = 'fa-user-secret';
+    } else {
+      titulo = 'Solicitud de Información';
+      tipoIcon = 'fa-info-circle';
+    }
+  }
+
+  const sustancias = solicitud.sustancias || [];
+  const sustanciasHtml = sustancias.length > 0 ? 
+    `<div class="detail-section">
+      <h4><i class="fas fa-flask"></i> Sustancias</h4>
+      <div class="substances-list">
+        ${sustancias.map(s => `<span class="substance-tag">${s}</span>`).join('')}
+      </div>
+    </div>` : '';
+
+  return `
+    <div class="modal-overlay temp-modal" id="solicitud-detail-modal">
+      <div class="modal large-modal">
+        <button class="modal-close" onclick="closeModal('solicitud-detail-modal')">
+          <i class="fas fa-times"></i>
+        </button>
+        
+        <div style="padding: 24px;">
+          <div class="detail-header" style="margin-bottom: 24px; border-bottom: 2px solid var(--gray-200); padding-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <h2 style="margin: 0; color: var(--primary-blue);">
+                  <i class="fas ${tipoIcon}"></i> ${titulo}
+                </h2>
+                <p style="margin: 4px 0; color: var(--gray-600); font-weight: 500;">${tipoLabel}</p>
+              </div>
+              <div style="text-align: right;">
+                <span class="priority-badge ${prioridad}" style="background-color: ${getPriorityColor(prioridad)}; color: white; padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: bold;">
+                  PRIORIDAD ${prioridad.toUpperCase()}
+                </span>
+                <div style="margin-top: 8px;">
+                  <span class="status-badge ${estado}" style="background-color: ${getStatusColor(estado)}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                    ${estado.replace('_', ' ').toUpperCase()}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="detail-content" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <div class="detail-column">
+              <div class="detail-section" style="margin-bottom: 20px;">
+                <h4 style="color: var(--primary-blue); margin-bottom: 12px; font-size: 16px;">
+                  <i class="fas fa-info-circle"></i> Información General
+                </h4>
+                <div class="detail-grid" style="display: grid; gap: 8px;">
+                  ${solicitud.rut ? `<div><strong>RUT:</strong> ${solicitud.rut}</div>` : ''}
+                  ${solicitud.edad ? `<div><strong>Edad:</strong> ${solicitud.edad} años</div>` : ''}
+                  ${solicitud.telefono ? `<div><strong>Teléfono:</strong> <a href="tel:${solicitud.telefono}" style="color: var(--primary-blue);">${solicitud.telefono}</a></div>` : ''}
+                  ${solicitud.email ? `<div><strong>Email:</strong> <a href="mailto:${solicitud.email}" style="color: var(--primary-blue);">${solicitud.email}</a></div>` : ''}
+                  ${solicitud.direccion ? `<div><strong>Dirección:</strong> ${solicitud.direccion}</div>` : ''}
+                  <div><strong>CESFAM:</strong> ${solicitud.cesfam}</div>
+                  <div><strong>Fecha:</strong> ${fecha}</div>
+                  ${solicitud.paraMi ? `<div><strong>Solicita para:</strong> ${solicitud.paraMi.replace('_', ' ')}</div>` : ''}
+                </div>
+              </div>
+              
+              ${sustanciasHtml}
+            </div>
+            
+            <div class="detail-column">
+              ${solicitud.urgencia || solicitud.tiempoConsumo || solicitud.tratamientoPrevio || solicitud.motivacion ? 
+                `<div class="detail-section" style="margin-bottom: 20px;">
+                  <h4 style="color: var(--primary-blue); margin-bottom: 12px; font-size: 16px;">
+                    <i class="fas fa-stethoscope"></i> Evaluación Clínica
+                  </h4>
+                  <div class="detail-grid" style="display: grid; gap: 8px;">
+                    ${solicitud.urgencia ? `<div><strong>Nivel de urgencia:</strong> <span style="color: ${getPriorityColor(solicitud.urgencia)}; font-weight: bold;">${solicitud.urgencia.toUpperCase()}</span></div>` : ''}
+                    ${solicitud.tiempoConsumo ? `<div><strong>Tiempo de consumo:</strong> ${formatTiempoConsumo(solicitud.tiempoConsumo)}</div>` : ''}
+                    ${solicitud.tratamientoPrevio ? `<div><strong>Tratamiento previo:</strong> ${formatTratamientoPrevio(solicitud.tratamientoPrevio)}</div>` : ''}
+                    ${solicitud.motivacion ? `<div><strong>Motivación (1-10):</strong> <span style="color: ${getMotivacionColor(solicitud.motivacion)}; font-weight: bold;">${solicitud.motivacion}/10</span></div>` : ''}
+                  </div>
+                </div>` : ''
+              }
+              
+              ${solicitud.descripcion || solicitud.motivo ? 
+                `<div class="detail-section">
+                  <h4 style="color: var(--primary-blue); margin-bottom: 12px; font-size: 16px;">
+                    <i class="fas fa-comment-alt"></i> ${solicitud.tipo === 'reingreso' ? 'Motivo del Reingreso' : 'Descripción'}
+                  </h4>
+                  <div style="background: var(--gray-50); padding: 16px; border-radius: 8px; border-left: 4px solid var(--primary-blue);">
+                    <p style="margin: 0; line-height: 1.6; color: var(--gray-700);">${solicitud.descripcion || solicitud.motivo}</p>
+                  </div>
+                </div>` : ''
+              }
+            </div>
+          </div>
+          
+          <div class="detail-actions" style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--gray-200); display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="btn btn-outline" onclick="closeModal('solicitud-detail-modal')">
+              <i class="fas fa-times"></i>
+              Cerrar
+            </button>
+            <button class="btn btn-success" onclick="showAgendaModal('${solicitud.id}')">
+              <i class="fas fa-calendar-plus"></i>
+              Agendar Cita
+            </button>
+            ${solicitud.prioridad === 'critica' ? 
+              `<button class="btn btn-danger" onclick="handleUrgentCase('${solicitud.id}')">
+                <i class="fas fa-exclamation-triangle"></i>
+                Caso Urgente
+              </button>` : ''
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function getPriorityColor(prioridad) {
+  const colors = {
+    'critica': '#ef4444',
+    'alta': '#f59e0b',
+    'media': '#3b82f6',
+    'baja': '#10b981'
+  };
+  return colors[prioridad] || '#6b7280';
+}
+
+function getStatusColor(estado) {
+  const colors = {
+    'pendiente': '#f59e0b',
+    'en_proceso': '#3b82f6',
+    'agendada': '#10b981',
+    'completada': '#059669'
+  };
+  return colors[estado] || '#6b7280';
+}
+
+function getMotivacionColor(motivacion) {
+  const nivel = parseInt(motivacion);
+  if (nivel <= 3) return '#ef4444';
+  if (nivel <= 6) return '#f59e0b';
+  return '#10b981';
+}
+
+function formatTiempoConsumo(tiempo) {
+  const tiempos = {
+    '0-6': 'Menos de 6 meses',
+    '6-12': '6 meses a 1 año',
+    '12-24': '1 a 2 años',
+    '24-60': '2 a 5 años',
+    '60+': 'Más de 5 años'
+  };
+  return tiempos[tiempo] || tiempo;
+}
+
+function formatTratamientoPrevio(tratamiento) {
+  const tratamientos = {
+    'no': 'No, es la primera vez',
+    'si_senda': 'Sí, en SENDA',
+    'si_otro': 'Sí, en otro lugar'
+  };
+  return tratamientos[tratamiento] || tratamiento;
+}
+
+// ================= FUNCIONES PLACEHOLDER ACTUALIZADAS =================
+
+function handleUrgentCase(solicitudId) { 
+  showNotification('Caso urgente identificado. Se notificará al coordinador.', 'warning'); 
+}
+
+function editAppointment(appointmentId) { 
+  showNotification('Función de editar cita en desarrollo', 'info'); 
+}
+
+// ================= FUNCIONES GLOBALES Y EXPORTS =================
+
+// Exportar funciones globales para uso en HTML
+window.showSolicitudDetail = showSolicitudDetail;
+window.showSolicitudDetailById = showSolicitudDetailById;
+window.showAgendaModal = showAgendaModal;
+window.handleUrgentCase = handleUrgentCase;
+window.verFichaClinicaPaciente = verFichaClinicaPaciente;
+window.agendarPacienteExistente = agendarPacienteExistente;
+window.downloadFichaClinica = downloadFichaClinica;
+window.crearNuevaFicha = crearNuevaFicha;
+window.showNuevaCitaModal = showNuevaCitaModal;
+window.selectNuevaCitaTimeSlot = selectNuevaCitaTimeSlot;
+window.openSeguimientoModal = openSeguimientoModal;
+window.editAppointment = editAppointment;
+window.showAboutProgram = showAboutProgram;
+window.filterSolicitudes = filterSolicitudes;
+window.loadSolicitudes = loadSolicitudes;
+window.loadPacientes = loadPacientes;
+window.loadSeguimiento = loadSeguimiento;
+window.loadTodayAppointments = loadTodayAppointments;
+window.debugFirebaseConnection = debugFirebaseConnection;
+window.validateFormInputs = validateFormInputs;
+window.selectTimeSlot = selectTimeSlot;
+window.switchToAgendaTab = switchToAgendaTab;
+
+// ================= INICIALIZACIÓN FINAL =================
+
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(() => {
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log('Auto-verificando Firebase...');
+      debugFirebaseConnection();
+    }
+  }, 2000);
+});
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+  initializeApp();
+}
+
+// Registro de service worker para PWA (opcional)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(registration => {
+        if (APP_CONFIG.DEBUG_MODE) {
+          console.log('✅ Service Worker registrado:', registration.scope);
+        }
+      })
+      .catch(error => {
+        if (APP_CONFIG.DEBUG_MODE) {
+          console.log('❌ Error registrando Service Worker:', error);
+        }
+      });
+  });
+}
+
+// Event listeners globales para PWA
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  window.deferredPrompt = e;
+});
+
+// Manejo de errores no capturados
+window.addEventListener('error', (e) => {
+  if (APP_CONFIG.DEBUG_MODE) {
+    console.error('❌ Error no capturado:', e.error);
+  }
+});
+
+// Verificar conectividad
+window.addEventListener('online', () => {
+  showNotification('Conexión restaurada', 'success', 2000);
+});
+
+window.addEventListener('offline', () => {
+  showNotification('Sin conexión a internet', 'warning', 5000);
+});
+
+console.log('🎉 SENDA PUENTE ALTO - Sistema cargado completamente');
+console.log('📱 Versión: 1.0');
+console.log('🏥 CESFAM: Configuración dinámica');
+console.log('🔧 Debug mode:', APP_CONFIG.DEBUG_MODE ? 'Activado' : 'Desactivado');
+
+// ================= FIN DEL ARCHIVO APP.JS =================
