@@ -4,22 +4,22 @@
   <meta charset="UTF-8">
   <title>PROGRAMA SENDA PUENTE ALTO - Sistema de Gestión</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Sistema de gestión para el Programa SENDA Puente Alto">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="styles.css">
+  
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+  
+  <!-- Chart.js para gráficos -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- AGREGADO: Librería para generar PDFs -->
+  
+  <!-- html2pdf para generar PDFs -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
-  <!-- El resto del HTML permanece igual -->
-  <!-- ... contenido existente ... -->
-  
-  <script src="app.js"></script>
-</body>
-</html>
   <!-- Notifications Container -->
   <div id="notifications" class="notifications-container"></div>
 
@@ -74,8 +74,7 @@
     <!-- Public Landing Page -->
     <div id="public-content" class="hero-card">
       <h1>PROGRAMA SENDA</h1>
-      <br>PUENTE ALTO</br>
-      <p class="subtitle">Tu recuperación comienza aquí</p>
+      <p class="subtitle">PUENTE ALTO - Tu recuperación comienza aquí</p>
       
       <p class="description">
         Un espacio seguro y confidencial para solicitar ayuda cuando estés listo. 
@@ -152,7 +151,7 @@
 
       <!-- Tab Contents -->
       <div class="tab-content">
-        <!-- Solicitudes Tab (SIN CAMBIOS) -->
+        <!-- Solicitudes Tab -->
         <div id="solicitudes-tab" class="tab-pane active">
           <div class="section-header">
             <h2>Gestión de Solicitudes</h2>
@@ -195,7 +194,7 @@
           </div>
         </div>
 
-        <!-- Agenda Tab MODIFICADO -->
+        <!-- Agenda Tab -->
         <div id="agenda-tab" class="tab-pane">
           <div class="section-header">
             <h2>Gestión de Agenda</h2>
@@ -223,7 +222,7 @@
             </div>
           </div>
 
-          <!-- Citas del Día MODIFICADO - ELIMINADOS BOTONES -->
+          <!-- Citas del Día -->
           <div class="daily-appointments" id="daily-appointments">
             <h3>Citas del Día</h3>
             <div class="appointments-list" id="appointments-list">
@@ -232,11 +231,10 @@
           </div>
         </div>
 
-        <!-- Seguimiento Tab MODIFICADO - SIN BÚSQUEDA -->
+        <!-- Seguimiento Tab -->
         <div id="seguimiento-tab" class="tab-pane">
           <div class="section-header">
             <h2>Seguimiento de Pacientes</h2>
-            <!-- ELIMINADA LA BÚSQUEDA -->
           </div>
 
           <!-- Pacientes Agendados Hoy -->
@@ -267,11 +265,10 @@
           </div>
         </div>
 
-        <!-- Pacientes Tab MODIFICADO -->
+        <!-- Pacientes Tab -->
         <div id="pacientes-tab" class="tab-pane">
           <div class="section-header">
             <h2>Gestión de Pacientes</h2>
-            <!-- ELIMINADA LA BÚSQUEDA POR RUT -->
           </div>
 
           <!-- Lista de Pacientes del CESFAM -->
@@ -305,7 +302,7 @@
 
   <!-- MODALS -->
 
-  <!-- Login Modal (SIN CAMBIOS) -->
+  <!-- Login Modal -->
   <div class="modal-overlay" id="login-modal">
     <div class="modal">
       <button class="modal-close" data-close="login-modal">
@@ -401,7 +398,7 @@
     </div>
   </div>
 
-  <!-- Patient Registration Modal MODIFICADO -->
+  <!-- Patient Registration Modal - CORREGIDO -->
   <div class="modal-overlay" id="patient-modal">
     <div class="modal large-modal">
       <button class="modal-close" data-close="patient-modal">
@@ -417,7 +414,7 @@
       </div>
 
       <form id="patient-form" class="multi-step-form">
-        <!-- PASO 1: Tipo de solicitud y datos básicos MODIFICADO -->
+        <!-- PASO 1: Tipo de solicitud y datos básicos - CORREGIDO -->
         <div class="form-step active" data-step="1">
           <h3>Tipo de solicitud</h3>
           
@@ -430,6 +427,11 @@
                 Proporcionar mis datos para contacto directo
               </label>
               <label class="radio-option">
+                <input type="radio" name="tipoSolicitud" value="anonimo" required>
+                <span class="radio-custom"></span>
+                Solicitar ayuda de forma anónima
+              </label>
+              <label class="radio-option">
                 <input type="radio" name="tipoSolicitud" value="informacion" required>
                 <span class="radio-custom"></span>
                 Solo necesito información sobre el programa
@@ -437,7 +439,14 @@
             </div>
           </div>
 
-          <!-- Campo de email para solo información -->
+          <!-- Campo de teléfono para anónimos - AGREGADO -->
+          <div class="form-group" id="anonymous-phone-container" style="display: none;">
+            <label class="form-label">Teléfono de contacto *</label>
+            <input type="tel" class="form-input" id="anonymous-phone" placeholder="+56 9 1234 5678">
+            <small style="color: var(--gray-600);">Solo usaremos este número para contactarte de forma confidencial</small>
+          </div>
+
+          <!-- Campo de email para solo información - CORREGIDO -->
           <div class="form-group" id="info-email-container" style="display: none;">
             <label class="form-label">Email para recibir información *</label>
             <input type="email" class="form-input" id="info-email" placeholder="tu@email.com">
@@ -670,7 +679,12 @@
               <i class="fas fa-arrow-left"></i> Anterior
             </button>
             <button type="submit" class="btn btn-success" id="submit-form">
-              <i class="fas fa-paper-plane"></i> Enviar Solicitud
+              <span class="btn-text">
+                <i class="fas fa-paper-plane"></i> Enviar Solicitud
+              </span>
+              <span class="btn-loading" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i> Enviando...
+              </span>
             </button>
           </div>
         </div>
@@ -678,7 +692,7 @@
     </div>
   </div>
 
-  <!-- Reentry Modal (SIN CAMBIOS) -->
+  <!-- Reentry Modal -->
   <div class="modal-overlay" id="reentry-modal">
     <div class="modal">
       <button class="modal-close" data-close="reentry-modal">
@@ -726,7 +740,12 @@
         </div>
 
         <button type="submit" class="btn btn-primary btn-full">
-          <i class="fas fa-redo"></i> Solicitar Reingreso
+          <span class="btn-text">
+            <i class="fas fa-redo"></i> Solicitar Reingreso
+          </span>
+          <span class="btn-loading" style="display: none;">
+            <i class="fas fa-spinner fa-spin"></i> Enviando...
+          </span>
         </button>
       </form>
     </div>
