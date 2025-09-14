@@ -18,6 +18,9 @@
     
     <!-- EmailJS para envío de correos -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
+    <!-- jsPDF para generar PDFs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
     <!-- ================= HEADER PRINCIPAL ================= -->
@@ -32,15 +35,11 @@
                     <i class="fas fa-user-md"></i>
                     Acceso Profesionales
                 </button>
-                <button class="btn btn-outline" id="logout-btn" style="display: none;">
-                    <i class="fas fa-sign-out-alt"></i>
-                    Cerrar Sesión
-                </button>
             </div>
         </div>
     </header>
 
-    <!-- ================= HEADER PROFESIONAL CORREGIDO ================= -->
+    <!-- ================= HEADER PROFESIONAL ================= -->
     <div class="professional-header" id="professional-header" style="display: none;">
         <div class="header-content">
             <div class="professional-info">
@@ -52,7 +51,6 @@
                 </div>
             </div>
             <div class="professional-actions">
-                <!-- CORREGIDO: Color del botón de cerrar sesión -->
                 <button class="btn btn-danger btn-sm" id="logout-professional">
                     <i class="fas fa-sign-out-alt"></i>
                     Cerrar Sesión
@@ -158,6 +156,10 @@
 
             <!-- ================= TAB AGENDA ================= -->
             <div class="tab-pane active" id="agenda-tab">
+                <div class="section-header">
+                    <h2>Gestión de Agenda</h2>
+                </div>
+                
                 <!-- Calendario -->
                 <div class="calendar-container">
                     <div class="calendar-header">
@@ -196,12 +198,6 @@
             <div class="tab-pane" id="solicitudes-tab">
                 <div class="section-header">
                     <h2>Solicitudes de Ingreso</h2>
-                    <div class="section-actions">
-                        <div class="search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="search-solicitudes" placeholder="Buscar solicitudes...">
-                        </div>
-                    </div>
                 </div>
 
                 <div class="filters-container">
@@ -337,7 +333,10 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">Email</label>
-                    <input type="email" class="form-input" id="register-email" required>
+                    <input type="email" class="form-input" id="register-email" 
+                           pattern=".*@senda\.cl$" 
+                           title="Solo se permiten emails @senda.cl"
+                           placeholder="usuario@senda.cl" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Contraseña</label>
@@ -667,7 +666,7 @@
                     </div>
 
                     <div class="form-navigation">
-                       <button type="button" class="btn btn-outline" id="prev-step-4">
+                        <button type="button" class="btn btn-outline" id="prev-step-4">
                             <i class="fas fa-arrow-left"></i>
                             Anterior
                         </button>
@@ -689,45 +688,43 @@
             </button>
             
             <h2>Reingreso al Programa</h2>
-            <p class="modal-description">Si ya fuiste parte del programa SENDA, puedes solicitar tu reingreso.</p>
+            <p class="modal-description">Si ya fuiste parte del programa SENDA, completa este formulario para solicitar tu reingreso.</p>
 
             <form id="reentry-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Nombre *</label>
-                        <input type="text" class="form-input" id="reentry-name" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">RUT *</label>
-                        <input type="text" class="form-input" id="reentry-rut" placeholder="12.345.678-9" required>
-                    </div>
+                <div class="form-group">
+                    <label class="form-label">Nombre completo *</label>
+                    <input type="text" class="form-input" id="reentry-name" required>
                 </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Teléfono *</label>
-                        <input type="tel" class="form-input" id="reentry-phone" placeholder="9 1234 5678" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">CESFAM *</label>
-                        <select class="form-select" id="reentry-cesfam" required>
-                            <option value="">Seleccionar CESFAM...</option>
-                            <option value="CESFAM Alejandro del Río">CESFAM Alejandro del Río</option>
-                            <option value="CESFAM Karol Wojtyla">CESFAM Karol Wojtyla</option>
-                            <option value="CESFAM Laurita Vicuña">CESFAM Laurita Vicuña</option>
-                            <option value="CESFAM Padre Manuel Villaseca">CESFAM Padre Manuel Villaseca</option>
-                            <option value="CESFAM San Gerónimo">CESFAM San Gerónimo</option>
-                            <option value="CESFAM Vista Hermosa">CESFAM Vista Hermosa</option>
-                            <option value="CESFAM Bernardo Leighton">CESFAM Bernardo Leighton</option>
-                            <option value="CESFAM Cardenal Raúl Silva Henríquez">CESFAM Cardenal Raúl Silva Henríquez</option>
-                        </select>
-                    </div>
+                
+                <div class="form-group">
+                    <label class="form-label">RUT *</label>
+                    <input type="text" class="form-input" id="reentry-rut" placeholder="12.345.678-9" required>
                 </div>
-
+                
+                <div class="form-group">
+                    <label class="form-label">Teléfono *</label>
+                    <input type="tel" class="form-input" id="reentry-phone" placeholder="9 1234 5678" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">CESFAM *</label>
+                    <select class="form-select" id="reentry-cesfam" required>
+                        <option value="">Seleccionar CESFAM...</option>
+                        <option value="CESFAM Alejandro del Río">CESFAM Alejandro del Río</option>
+                        <option value="CESFAM Karol Wojtyla">CESFAM Karol Wojtyla</option>
+                        <option value="CESFAM Laurita Vicuña">CESFAM Laurita Vicuña</option>
+                        <option value="CESFAM Padre Manuel Villaseca">CESFAM Padre Manuel Villaseca</option>
+                        <option value="CESFAM San Gerónimo">CESFAM San Gerónimo</option>
+                        <option value="CESFAM Vista Hermosa">CESFAM Vista Hermosa</option>
+                        <option value="CESFAM Bernardo Leighton">CESFAM Bernardo Leighton</option>
+                        <option value="CESFAM Cardenal Raúl Silva Henríquez">CESFAM Cardenal Raúl Silva Henríquez</option>
+                    </select>
+                </div>
+                
                 <div class="form-group">
                     <label class="form-label">Motivo del reingreso *</label>
                     <textarea class="form-textarea" id="reentry-reason" rows="4" 
-                              placeholder="Explica brevemente por qué deseas reingresar al programa..." required></textarea>
+                              placeholder="Explica por qué deseas reingresar al programa..." required></textarea>
                 </div>
 
                 <div class="form-actions">
@@ -737,77 +734,10 @@
                     </button>
                     <button type="submit" class="btn btn-success">
                         <i class="fas fa-redo"></i>
-                        Enviar Solicitud
+                        Solicitar Reingreso
                     </button>
                 </div>
             </form>
-        </div>
-    </div>
-
-    <!-- ================= MODAL NUEVA CITA ================= -->
-    <div class="modal-overlay" id="nueva-cita-modal">
-        <div class="modal large-modal">
-            <button class="modal-close" onclick="closeModal('nueva-cita-modal')">
-                <i class="fas fa-times"></i>
-            </button>
-            
-            <div style="padding: 24px;">
-                <h2><i class="fas fa-calendar-plus"></i> Nueva Cita</h2>
-                
-                <form id="nueva-cita-form">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
-                        <div class="form-group">
-                            <label class="form-label">Nombre del Paciente *</label>
-                            <input type="text" class="form-input" id="nueva-cita-nombre" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">RUT *</label>
-                            <input type="text" class="form-input" id="nueva-cita-rut" placeholder="12.345.678-9" required>
-                        </div>
-                    </div>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
-                        <div class="form-group">
-                            <label class="form-label">Profesional *</label>
-                            <select class="form-select" id="nueva-cita-professional" required>
-                                <option value="">Seleccionar profesional...</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">Fecha *</label>
-                            <input type="date" class="form-input" id="nueva-cita-date" required>
-                        </div>
-                    </div>
-                    
-                    <div class="time-slots-container" id="nueva-cita-time-slots-container" style="display: none;">
-                        <h4 style="margin-bottom: 16px; color: var(--primary-blue);">
-                            <i class="fas fa-clock"></i> Horarios Disponibles
-                        </h4>
-                        <div class="time-slots-grid" id="nueva-cita-time-slots-grid">
-                            <!-- Los slots de tiempo se cargarán aquí -->
-                        </div>
-                    </div>
-                    
-                    <div class="form-group" style="margin-top: 24px;">
-                        <label class="form-label">Observaciones</label>
-                        <textarea class="form-textarea" id="nueva-cita-notes" rows="3" 
-                                  placeholder="Observaciones adicionales para la cita..."></textarea>
-                    </div>
-                    
-                    <div class="form-actions" style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
-                        <button type="button" class="btn btn-outline" onclick="closeModal('nueva-cita-modal')">
-                            <i class="fas fa-times"></i>
-                            Cancelar
-                        </button>
-                        <button type="submit" class="btn btn-success" disabled>
-                            <i class="fas fa-calendar-check"></i>
-                            Crear Cita
-                        </button>
-                    </div>
-                </form>
-            </div>
         </div>
     </div>
 
@@ -819,154 +749,42 @@
         </div>
     </div>
 
-    <!-- ================= NOTIFICATIONS CONTAINER ================= -->
-    <div class="notifications-container" id="notifications"></div>
-
     <!-- ================= FOOTER ================= -->
     <footer class="footer">
         <div class="footer-content">
             <p>&copy; 2024 SENDA Puente Alto. Todos los derechos reservados.</p>
-            <p>Sistema de gestión integral para la prevención y tratamiento de adicciones.</p>
-            <a href="#" class="footer-link">
-                <i class="fas fa-phone"></i>
-                Mesa de ayuda: 1412
+            <p>Desarrollado para el bienestar de nuestra comunidad</p>
+            <a href="https://www.senda.gob.cl" target="_blank" class="footer-link">
+                <i class="fas fa-external-link-alt"></i>
+                Sitio oficial SENDA
             </a>
         </div>
     </footer>
 
     <!-- ================= JAVASCRIPT ================= -->
     <script>
-        // Inicializar EmailJS
-        emailjs.init('tu_user_id'); // Reemplaza con tu User ID de EmailJS
-        
-        // Función para cambiar tabs de login
+        // Función para cambiar entre tabs de login
         function switchLoginTab(tab) {
-            const tabs = document.querySelectorAll('.modal-tab');
-            const forms = document.querySelectorAll('.auth-form');
-            
-            tabs.forEach(t => t.classList.remove('active'));
-            forms.forEach(f => f.classList.remove('active'));
-            
-            document.querySelector(`[onclick="switchLoginTab('${tab}')"]`).classList.add('active');
-            document.getElementById(`${tab}-form`).classList.add('active');
+            const loginTab = document.querySelector('.modal-tab[onclick*="login"]');
+            const registerTab = document.querySelector('.modal-tab[onclick*="register"]');
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+
+            if (tab === 'login') {
+                loginTab.classList.add('active');
+                registerTab.classList.remove('active');
+                loginForm.classList.add('active');
+                registerForm.classList.remove('active');
+            } else {
+                registerTab.classList.add('active');
+                loginTab.classList.remove('active');
+                registerForm.classList.add('active');
+                loginForm.classList.remove('active');
+            }
         }
-
-        // Event listeners para formularios de autenticación
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            
-            try {
-                showLoading(true, 'Iniciando sesión...');
-                await auth.signInWithEmailAndPassword(email, password);
-                closeModal('login-modal');
-                showNotification('Sesión iniciada correctamente', 'success');
-            } catch (error) {
-                console.error('Error logging in:', error);
-                let errorMessage = 'Error al iniciar sesión';
-                
-                switch (error.code) {
-                    case 'auth/user-not-found':
-                        errorMessage = 'Usuario no encontrado';
-                        break;
-                    case 'auth/wrong-password':
-                        errorMessage = 'Contraseña incorrecta';
-                        break;
-                    case 'auth/invalid-email':
-                        errorMessage = 'Email inválido';
-                        break;
-                    case 'auth/too-many-requests':
-                        errorMessage = 'Demasiados intentos. Intenta más tarde';
-                        break;
-                    default:
-                        errorMessage = error.message;
-                }
-                
-                showNotification(errorMessage, 'error');
-            } finally {
-                showLoading(false);
-            }
-        });
-
-        document.getElementById('register-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = {
-                email: document.getElementById('register-email').value,
-                password: document.getElementById('register-password').value,
-                nombre: document.getElementById('register-nombre').value,
-                apellidos: document.getElementById('register-apellidos').value,
-                profession: document.getElementById('register-profession').value,
-                cesfam: document.getElementById('register-cesfam').value
-            };
-            
-            if (formData.password.length < 6) {
-                showNotification('La contraseña debe tener al menos 6 caracteres', 'warning');
-                return;
-            }
-            
-            try {
-                showLoading(true, 'Registrando usuario...');
-                
-                const userCredential = await auth.createUserWithEmailAndPassword(formData.email, formData.password);
-                const user = userCredential.user;
-                
-                await db.collection('profesionales').doc(user.uid).set({
-                    nombre: formData.nombre,
-                    apellidos: formData.apellidos,
-                    email: formData.email,
-                    profession: formData.profession,
-                    cesfam: formData.cesfam,
-                    activo: true,
-                    fechaRegistro: firebase.firestore.FieldValue.serverTimestamp(),
-                    verificado: false
-                });
-                
-                closeModal('login-modal');
-                showNotification('Registro exitoso. Tu cuenta será verificada por un administrador.', 'success', 6000);
-                
-            } catch (error) {
-                console.error('Error registering:', error);
-                let errorMessage = 'Error en el registro';
-                
-                switch (error.code) {
-                    case 'auth/email-already-in-use':
-                        errorMessage = 'El email ya está registrado';
-                        break;
-                    case 'auth/invalid-email':
-                        errorMessage = 'Email inválido';
-                        break;
-                    case 'auth/weak-password':
-                        errorMessage = 'La contraseña es muy débil';
-                        break;
-                    default:
-                        errorMessage = error.message;
-                }
-                
-                showNotification(errorMessage, 'error');
-            } finally {
-                showLoading(false);
-            }
-        });
-
-        // Event listener para formatear RUT automáticamente
-        document.addEventListener('input', (e) => {
-            if (e.target.id && (e.target.id.includes('rut') || e.target.id.includes('RUT'))) {
-                e.target.value = formatRUT(e.target.value);
-            }
-        });
-
-        // Cerrar modales al hacer clic fuera
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal-overlay')) {
-                const modalId = e.target.id;
-                closeModal(modalId);
-            }
-        });
     </script>
-
-    <!-- Cargar el archivo principal de JavaScript -->
+    
+    <!-- Cargar archivo JavaScript principal -->
     <script src="app.js"></script>
 </body>
 </html>
