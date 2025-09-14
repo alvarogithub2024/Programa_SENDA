@@ -1,0 +1,157 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "solicitudes_ingreso",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "cesfam",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fechaCreacion",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "solicitudes_ingreso",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "cesfam",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "estado",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fechaCreacion",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "solicitudes_ingreso",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "cesfam",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "prioridad",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fechaCreacion",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "reingresos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "cesfam",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fechaCreacion",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "citas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "cesfam",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fecha",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "citas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "profesionalId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fecha",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "estado",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "pacientes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "cesfam",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fechaCreacion",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "pacientes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "rut",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "cesfam",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "fichas_clinicas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "pacienteId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fechaCreacion",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "profesionales",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "cesfam",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "activo",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
