@@ -2881,12 +2881,6 @@ function setupAutoSave() {
       autoSaveTimer = setTimeout(saveFormDraft, 2000);
     });
     
-    loadFormDraft();
-  } catch (error) {
-    console.error('Error setting up auto-save:', error);
-  }
-}
-
 function saveFormDraft() {
   try {
     const form = document.getElementById('patient-form');
