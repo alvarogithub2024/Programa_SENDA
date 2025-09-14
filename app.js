@@ -1399,14 +1399,6 @@ function loadFormDraft() {
       localStorage.removeItem('senda_form_draft');
       return;
     }
-    
-    if (confirm('Se encontró un borrador guardado. ¿Deseas continuar donde lo dejaste?')) {
-      restoreFormDraft(draftData);
-    }
-  } catch (error) {
-    console.error('Error loading form draft:', error);
-  }
-}
 
 function restoreFormDraft(draftData) {
   try {
