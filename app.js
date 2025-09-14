@@ -250,6 +250,7 @@ function showLoading(show = true, message = 'Cargando...') {
     console.error('Error with loading overlay:', error);
   }
 }
+
 // ================= FORMULARIO ORIGINAL APP14 - SIN MODIFICACIONES =================
 
 function setupMultiStepForm() {
@@ -448,7 +449,188 @@ function updateProgressIndicator(current, total) {
     console.error('Error updating progress indicator:', error);
   }
 }
-// ================= GESTIÃ"N DE EVENTOS CORREGIDOS =================
+
+// ================= AUTO-GUARDADO MODIFICADO SIN MENSAJES =================
+
+function setupAutoSave() {
+  try {
+    const form = document.getElementById('patient-form');
+    if (!form) return;
+    
+    let autoSaveTimer;
+    
+    form.addEventListener('input', () => {
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(saveFormDraft, 2000);
+    });
+    
+    // MODIFICADO: Carga silenciosa sin confirmación
+    loadFormDraft();
+    console.log('✅ Auto-guardado configurado (silencioso)');
+  } catch (error) {
+    console.error('Error setting up auto-save:', error);
+  }
+}
+
+function saveFormDraft() {
+  try {
+    const form = document.getElementById('patient-form');
+    if (!form) return;
+    
+    const formData = new FormData(form);
+    const draftData = {};
+    
+    for (let [key, value] of formData.entries()) {
+      draftData[key] = value;
+    }
+    
+    draftData.currentStep = currentFormStep;
+    draftData.maxFormStep = maxFormStep;
+    draftData.timestamp = Date.now();
+    
+    localStorage.setItem('senda_form_draft', JSON.stringify(draftData));
+    isDraftSaved = true;
+    
+    // OPCIONAL: Log silencioso para debug
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log('💾 Borrador guardado automáticamente');
+    }
+    
+  } catch (error) {
+    console.error('Error saving form draft:', error);
+  }
+}
+
+// MODIFICADO: Función simplificada sin mensaje de confirmación
+function loadFormDraft() {
+  try {
+    const savedDraft = localStorage.getItem('senda_form_draft');
+    if (!savedDraft) return;
+    
+    const draftData = JSON.parse(savedDraft);
+    
+    // Verificar si el borrador no es muy antiguo (24 horas)
+    if (Date.now() - draftData.timestamp > 24 * 60 * 60 * 1000) {
+      localStorage.removeItem('senda_form_draft');
+      return;
+    }
+    
+    // ELIMINADO: Ya no se muestra el mensaje de confirmación
+    // Directamente restaurar el borrador si existe y es válido
+    restoreFormDraft(draftData);
+    
+  } catch (error) {
+    console.error('Error loading form draft:', error);
+  }
+}
+
+function restoreFormDraft(draftData) {
+  try {
+    const form = document.getElementById('patient-form');
+    if (!form) return;
+    
+    Object.keys(draftData).forEach(key => {
+      if (key === 'currentStep' || key === 'maxFormStep' || key === 'timestamp') return;
+      
+      const field = form.querySelector(`[name="${key}"]`);
+      if (field) {
+        if (field.type === 'radio' || field.type === 'checkbox') {
+          field.checked = field.value === draftData[key];
+        } else {
+          field.value = draftData[key];
+        }
+      }
+    });
+    
+    if (draftData.maxFormStep) {
+      maxFormStep = draftData.maxFormStep;
+    }
+    
+    if (draftData.currentStep) {
+      goToStep(draftData.currentStep);
+    }
+    
+    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked');
+    if (tipoSolicitud) {
+      tipoSolicitud.dispatchEvent(new Event('change'));
+    }
+    
+    // ELIMINADO: Ya no se muestra notificación de borrador restaurado
+    if (APP_CONFIG.DEBUG_MODE) {
+      console.log('📝 Borrador restaurado silenciosamente');
+    }
+    
+  } catch (error) {
+    console.error('Error restoring form draft:', error);
+  }
+}
+
+function resetForm() {
+  try {
+    const form = document.getElementById('patient-form');
+    if (form) {
+      form.reset();
+      goToStep(1);
+      
+      const motivacionRange = document.getElementById('motivacion-range');
+      const motivacionValue = document.getElementById('motivacion-value');
+      if (motivacionRange && motivacionValue) {
+        motivacionRange.value = 5;
+        motivacionValue.textContent = '5';
+        updateMotivacionColor(5);
+      }
+      
+      form.querySelectorAll('.error').forEach(field => {
+        field.classList.remove('error');
+      });
+      
+      maxFormStep = 4;
+      updateProgressIndicator(1, 4);
+      
+      const infoEmailContainer = document.getElementById('info-email-container');
+      const basicInfoContainer = document.getElementById('basic-info-container');
+      const nextBtn = document.getElementById('next-step-1');
+      const submitBtn = document.getElementById('submit-step-1');
+      
+      if (infoEmailContainer) infoEmailContainer.style.display = 'none';
+      if (basicInfoContainer) basicInfoContainer.style.display = 'block';
+      if (nextBtn) nextBtn.style.display = 'inline-flex';
+      if (submitBtn) submitBtn.style.display = 'none';
+    }
+    
+    isDraftSaved = false;
+    localStorage.removeItem('senda_form_draft');
+    
+    console.log('✅ Formulario reseteado');
+  } catch (error) {
+    console.error('Error reseteando formulario:', error);
+  }
+}
+
+function updateMotivacionColor(value) {
+  try {
+    const motivacionValue = document.getElementById('motivacion-value');
+    if (!motivacionValue) return;
+    
+    const numValue = parseInt(value);
+    let color;
+    
+    if (numValue <= 3) {
+      color = 'var(--danger-red)';
+    } else if (numValue <= 6) {
+      color = 'var(--warning-orange)';
+    } else {
+      color = 'var(--success-green)';
+    }
+    
+    motivacionValue.style.backgroundColor = color;
+    motivacionValue.style.color = 'white';
+  } catch (error) {
+    console.error('Error updating motivacion color:', error);
+  }
+}
+
+// ================= GESTIÓN DE EVENTOS CORREGIDOS =================
 
 function initializeEventListeners() {
   try {
@@ -563,7 +745,7 @@ function handleKeyboardShortcuts(e) {
   }
 }
 
-// ================= AUTENTICACIÃ"N CORREGIDA =================
+// ================= AUTENTICACIÓN CORREGIDA =================
 
 function onAuthStateChanged(user) {
   try {
@@ -641,6 +823,7 @@ function clearUserCache() {
     console.error('Error clearing user cache:', error);
   }
 }
+
 async function loadUserData() {
   try {
     showLoading(true, 'Cargando datos del usuario...');
@@ -879,6 +1062,7 @@ async function loadProfessionalsList() {
     console.error('Error loading professionals list:', error);
   }
 }
+
 // ================= CARGA CORREGIDA DE SOLICITUDES DESDE FIREBASE =================
 
 async function loadSolicitudes() {
@@ -1072,6 +1256,7 @@ function renderSolicitudes(solicitudes) {
     console.error('Error renderizando solicitudes:', error);
   }
 }
+
 // ================= CREAR TARJETA DE SOLICITUD CORREGIDA =================
 
 function createSolicitudCard(solicitud) {
@@ -1370,6 +1555,497 @@ function filterSolicitudes() {
     console.error('Error filtering solicitudes:', error);
   }
 }
+
+// ================= ENVÍO DE FORMULARIOS =================
+
+async function handleInformationOnlySubmit() {
+  try {
+    console.log('Procesando solicitud de información únicamente...');
+    
+    const email = document.getElementById('info-email')?.value?.trim();
+    
+    if (!email || !isValidEmail(email)) {
+      showNotification('Email inválido', 'error');
+      return;
+    }
+    
+    const informationData = {
+      tipoSolicitud: 'informacion',
+      email: email,
+      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+      estado: 'pendiente_respuesta',
+      origen: 'web_publica',
+      prioridad: 'baja',
+      identificador: `INFO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    };
+    
+    console.log('Guardando solicitud de información...');
+    
+    await db.collection('solicitudes_informacion').add(informationData);
+    
+    localStorage.removeItem('senda_form_draft');
+    closeModal('patient-modal');
+    resetForm();
+    
+    showNotification('Solicitud de información enviada correctamente. Te responderemos pronto a tu email.', 'success', 6000);
+    
+  } catch (error) {
+    console.error('Error enviando información:', error);
+    showNotification('Error al enviar la solicitud: ' + error.message, 'error');
+  }
+}
+
+function collectFormDataSafe() {
+  try {
+    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+    
+    if (!tipoSolicitud) {
+      throw new Error('Tipo de solicitud no seleccionado');
+    }
+    
+    const solicitudData = {
+      tipoSolicitud,
+      edad: parseInt(document.getElementById('patient-age')?.value) || null,
+      cesfam: document.getElementById('patient-cesfam')?.value || '',
+      paraMi: document.querySelector('input[name="paraMi"]:checked')?.value || '',
+      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+      estado: 'pendiente',
+      origen: 'web_publica',
+      version: '2.0'
+    };
+
+    const sustanciasChecked = document.querySelectorAll('input[name="sustancias"]:checked');
+    if (sustanciasChecked.length > 0) {
+      solicitudData.sustancias = Array.from(sustanciasChecked).map(cb => cb.value);
+    }
+
+    const tiempoConsumo = document.getElementById('tiempo-consumo');
+    if (tiempoConsumo && tiempoConsumo.value) {
+      solicitudData.tiempoConsumo = tiempoConsumo.value;
+    }
+
+    const urgencia = document.querySelector('input[name="urgencia"]:checked');
+    if (urgencia) {
+      solicitudData.urgencia = urgencia.value;
+    }
+
+    const tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked');
+    if (tratamientoPrevio) {
+      solicitudData.tratamientoPrevio = tratamientoPrevio.value;
+        const descripcion = document.getElementById('patient-description');
+    if (descripcion && descripcion.value.trim()) {
+      solicitudData.descripcion = descripcion.value.trim();
+    }
+
+    const motivacion = document.getElementById('motivacion-range');
+    if (motivacion && motivacion.value) {
+      solicitudData.motivacion = parseInt(motivacion.value);
+    }
+
+    if (tipoSolicitud === 'identificado') {
+      const nombre = document.getElementById('patient-name')?.value?.trim();
+      const apellidos = document.getElementById('patient-lastname')?.value?.trim();
+      const rut = document.getElementById('patient-rut')?.value?.trim();
+      const telefono = document.getElementById('patient-phone')?.value?.trim();
+      const email = document.getElementById('patient-email')?.value?.trim();
+      const direccion = document.getElementById('patient-address')?.value?.trim();
+
+      if (nombre) solicitudData.nombre = nombre;
+      if (apellidos) solicitudData.apellidos = apellidos;
+      if (rut) solicitudData.rut = formatRUT(rut);
+      if (telefono) solicitudData.telefono = formatPhoneNumber(telefono);
+      if (email) solicitudData.email = email;
+      if (direccion) solicitudData.direccion = direccion;
+    }
+
+    console.log('Datos recopilados exitosamente:', solicitudData);
+    return solicitudData;
+    
+  } catch (error) {
+    console.error('Error recopilando datos del formulario:', error);
+    throw new Error('Error recopilando datos del formulario: ' + error.message);
+  }
+}
+
+function calculatePriority(solicitudData) {
+  let score = 0;
+  
+  if (solicitudData.urgencia === 'alta') score += 3;
+  else if (solicitudData.urgencia === 'media') score += 2;
+  else score += 1;
+  
+  if (solicitudData.edad) {
+    if (solicitudData.edad < 18 || solicitudData.edad > 65) score += 2;
+    else score += 1;
+  }
+  
+  if (solicitudData.sustancias && solicitudData.sustancias.length > 2) score += 2;
+  else if (solicitudData.sustancias && solicitudData.sustancias.length > 0) score += 1;
+  
+  if (solicitudData.motivacion) {
+    if (solicitudData.motivacion >= 8) score += 2;
+    else if (solicitudData.motivacion >= 5) score += 1;
+  }
+  
+  if (score >= 8) return 'critica';
+  else if (score >= 6) return 'alta';
+  else if (score >= 4) return 'media';
+  else return 'baja';
+}
+
+function formatPhoneNumber(phone) {
+  if (!phone) return '';
+  const cleaned = phone.replace(/\D/g, '');
+  if (cleaned.length === 9) {
+    return `${cleaned.slice(0, 1)} ${cleaned.slice(1, 5)} ${cleaned.slice(5)}`;
+  }
+  return phone;
+}
+
+async function handlePatientFormSubmit(e) {
+  e.preventDefault();
+  console.log('Iniciando envío de solicitud...');
+  
+  const submitBtn = document.getElementById('submit-form');
+  
+  try {
+    toggleSubmitButton(submitBtn, true);
+    
+    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+    if (!tipoSolicitud) {
+      showNotification('Selecciona un tipo de solicitud', 'warning');
+      return;
+    }
+
+    if (tipoSolicitud !== 'identificado') {
+      showNotification('Tipo de solicitud no válido para este flujo', 'error');
+      return;
+    }
+
+    const edad = document.getElementById('patient-age')?.value;
+    const cesfam = document.getElementById('patient-cesfam')?.value;
+    const paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
+    
+    if (!edad || !cesfam || !paraMi) {
+      showNotification('Completa todos los campos básicos obligatorios', 'warning');
+      return;
+    }
+
+    const nombre = document.getElementById('patient-name')?.value?.trim();
+    const apellidos = document.getElementById('patient-lastname')?.value?.trim();
+    const rut = document.getElementById('patient-rut')?.value?.trim();
+    const telefono = document.getElementById('patient-phone')?.value?.trim();
+    
+    if (!nombre || !apellidos || !rut || !telefono) {
+      showNotification('Para solicitud identificada, completa todos los datos personales', 'warning');
+      return;
+    }
+    
+    if (!validateRUT(rut)) {
+      showNotification('RUT inválido', 'warning');
+      return;
+    }
+    
+    if (!validatePhoneNumberString(telefono)) {
+      showNotification('Teléfono inválido', 'warning');
+      return;
+    }
+
+    const solicitudData = collectFormDataSafe();
+    console.log('Datos recopilados:', solicitudData);
+    
+    solicitudData.prioridad = calculatePriority(solicitudData);
+    console.log('Prioridad calculada:', solicitudData.prioridad);
+    
+    if (!db) {
+      throw new Error('No hay conexión a Firebase');
+    }
+    
+    console.log('Guardando en Firestore...');
+    
+    const docRef = await retryOperation(async () => {
+      return await db.collection('solicitudes_ingreso').add(solicitudData);
+    });
+    
+    console.log('Solicitud guardada con ID:', docRef.id);
+    
+    if (solicitudData.prioridad === 'critica') {
+      try {
+        await createCriticalAlert(solicitudData, docRef.id);
+        console.log('Alerta crítica creada');
+      } catch (alertError) {
+        console.warn('Error creando alerta crítica:', alertError);
+      }
+    }
+    
+    localStorage.removeItem('senda_form_draft');
+    closeModal('patient-modal');
+    resetForm();
+    
+    showNotification('Solicitud enviada correctamente. Te contactaremos pronto para coordinar una cita.', 'success', 6000);
+    console.log('Proceso completado exitosamente');
+    
+  } catch (error) {
+    console.error('Error enviando solicitud:', error);
+    
+    let errorMessage = 'Error al enviar la solicitud: ';
+    
+    if (error.code === 'permission-denied') {
+      errorMessage += 'Sin permisos para crear solicitudes. Verifica las reglas de Firebase.';
+    } else if (error.code === 'network-request-failed') {
+      errorMessage += 'Problema de conexión. Verifica tu internet.';
+    } else if (error.code === 'unavailable') {
+      errorMessage += 'Servicio no disponible temporalmente.';
+    } else if (error.message.includes('Firebase')) {
+      errorMessage += 'Error de configuración de Firebase.';
+    } else {
+      errorMessage += error.message || 'Intenta nuevamente en unos momentos.';
+    }
+    
+    showNotification(errorMessage, 'error', 8000);
+  } finally {
+    toggleSubmitButton(submitBtn, false);
+  }
+}
+
+async function handleReentrySubmit(e) {
+  e.preventDefault();
+  console.log('Iniciando envío de reingreso...');
+  
+  const formData = {
+    nombre: document.getElementById('reentry-name')?.value?.trim() || '',
+    rut: document.getElementById('reentry-rut')?.value?.trim() || '',
+    cesfam: document.getElementById('reentry-cesfam')?.value || '',
+    motivo: document.getElementById('reentry-reason')?.value?.trim() || '',
+    telefono: document.getElementById('reentry-phone')?.value?.trim() || ''
+  };
+  
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  
+  const requiredFields = [
+    { field: 'nombre', name: 'Nombre' },
+    { field: 'rut', name: 'RUT' },
+    { field: 'cesfam', name: 'CESFAM' },
+    { field: 'motivo', name: 'Motivo' },
+    { field: 'telefono', name: 'Teléfono' }
+  ];
+
+  for (const { field, name } of requiredFields) {
+    if (!formData[field]) {
+      showNotification(`El campo ${name} es obligatorio`, 'warning');
+      return;
+    }
+  }
+
+  if (!validateRUT(formData.rut)) {
+    showNotification('RUT inválido', 'warning');
+    return;
+  }
+
+  const phoneClean = formData.telefono.replace(/\D/g, '');
+  if (phoneClean.length < 8) {
+    showNotification('Teléfono inválido', 'warning');
+    return;
+  }
+
+  try {
+    toggleSubmitButton(submitBtn, true);
+    
+    if (!db) {
+      throw new Error('No hay conexión a Firebase');
+    }
+    
+    const rutFormatted = formatRUT(formData.rut);
+    try {
+      const existingReingreso = await db.collection('reingresos')
+        .where('rut', '==', rutFormatted)
+        .where('estado', '==', 'pendiente')
+        .get();
+      
+      if (!existingReingreso.empty) {
+        showNotification('Ya existe una solicitud de reingreso pendiente para este RUT', 'warning');
+        return;
+      }
+    } catch (queryError) {
+      console.warn('Error verificando reingresos existentes:', queryError);
+    }
+    
+    const reingresoData = {
+      nombre: formData.nombre,
+      rut: rutFormatted,
+      telefono: formatPhoneNumber(formData.telefono),
+      cesfam: formData.cesfam,
+      motivo: formData.motivo,
+      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+      estado: 'pendiente',
+      prioridad: 'media',
+      tipo: 'reingreso',
+      origen: 'web_publica',
+      version: '2.0'
+    };
+
+    const docRef = await db.collection('reingresos').add(reingresoData);
+    
+    closeModal('reentry-modal');
+    e.target.reset();
+    showNotification('Solicitud de reingreso enviada correctamente. Te contactaremos pronto.', 'success', 5000);
+    
+  } catch (error) {
+    console.error('Error enviando reingreso:', error);
+    
+    let errorMessage = 'Error al enviar la solicitud de reingreso: ';
+    if (error.code === 'permission-denied') {
+      errorMessage += 'Sin permisos para crear reingresos.';
+    } else if (error.code === 'network-request-failed') {
+      errorMessage += 'Problema de conexión. Verifica tu internet.';
+    } else {
+      errorMessage += error.message || 'Intenta nuevamente.';
+    }
+    
+    showNotification(errorMessage, 'error', 8000);
+  } finally {
+    toggleSubmitButton(submitBtn, false);
+  }
+}
+
+async function createCriticalAlert(solicitudData, solicitudId) {
+  try {
+    const alertData = {
+      id_solicitud: solicitudId,
+      mensaje: `Nuevo caso crítico: ${solicitudData.edad} años, urgencia ${solicitudData.urgencia}`,
+      prioridad: 'maxima',
+      tipo_alerta: 'caso_critico_nuevo',
+      estado: 'pendiente',
+      fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
+      notificado: false,
+      cesfam: solicitudData.cesfam,
+      datos_paciente: {
+        edad: solicitudData.edad,
+        sustancias: solicitudData.sustancias,
+        urgencia: solicitudData.urgencia,
+        motivacion: solicitudData.motivacion
+      }
+    };
+    
+    await db.collection('alertas_criticas').add(alertData);
+    
+    console.log('Alerta crítica creada para solicitud:', solicitudId);
+  } catch (error) {
+    console.error('Error creando alerta crítica:', error);
+  }
+}
+
+// ================= VALIDACIÓN DE FORMULARIOS =================
+
+function validateStep(step) {
+  try {
+    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+    const currentStepDiv = document.querySelector(`.form-step[data-step="${step}"]`);
+    if (!currentStepDiv) return false;
+
+    const requiredFields = currentStepDiv.querySelectorAll('[required]:not([style*="display: none"])');
+    let isValid = true;
+    const errors = [];
+
+    // Validar campos requeridos
+    requiredFields.forEach(field => {
+      const value = field.value?.trim() || '';
+      
+      if (!value) {
+        field.classList.add('error');
+        errors.push(`${getFieldLabel(field)} es obligatorio`);
+        isValid = false;
+      } else {
+        field.classList.remove('error');
+      }
+    });
+
+    // Validaciones específicas por paso
+    if (step === 1) {
+      if (!tipoSolicitud) {
+        errors.push('Selecciona un tipo de solicitud');
+        isValid = false;
+      } else if (tipoSolicitud === 'informacion') {
+        const email = document.getElementById('info-email');
+        if (!email || !email.value.trim()) {
+          errors.push('Ingresa un email para recibir información');
+          isValid = false;
+        } else if (!isValidEmail(email.value.trim())) {
+          errors.push('Ingresa un email válido');
+          isValid = false;
+        }
+      } else if (tipoSolicitud === 'identificado') {
+        const edad = parseInt(document.getElementById('patient-age')?.value);
+        if (!edad || edad < 12 || edad > 120) {
+          errors.push('La edad debe estar entre 12 y 120 años');
+          isValid = false;
+        }
+
+        const cesfam = document.getElementById('patient-cesfam')?.value;
+        if (!cesfam) {
+          errors.push('Selecciona un CESFAM');
+          isValid = false;
+        }
+
+        const paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
+        if (!paraMi) {
+          errors.push('Indica para quién solicitas ayuda');
+          isValid = false;
+        }
+      }
+    }
+
+    if (step === 2) {
+      const rut = document.getElementById('patient-rut');
+      if (rut && rut.value.trim() && !validateRUT(rut.value.trim())) {
+        errors.push('RUT inválido');
+        isValid = false;
+      }
+
+      const phone = document.getElementById('patient-phone');
+      if (phone && phone.value.trim() && !validatePhoneNumberString(phone.value.trim())) {
+        errors.push('Teléfono inválido');
+        isValid = false;
+      }
+
+      const email = document.getElementById('patient-email');
+      if (email && email.value.trim() && !isValidEmail(email.value.trim())) {
+        errors.push('Email inválido');
+        isValid = false;
+      }
+    }
+
+    if (step === 3) {
+      const sustancias = document.querySelectorAll('input[name="sustancias"]:checked');
+      if (sustancias.length === 0) {
+        errors.push('Selecciona al menos una sustancia');
+        isValid = false;
+      }
+
+      const urgencia = document.querySelector('input[name="urgencia"]:checked');
+      if (!urgencia) {
+        errors.push('Selecciona el nivel de urgencia');
+        isValid = false;
+      }
+
+      const tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked');
+      if (!tratamientoPrevio) {
+        errors.push('Indica si has recibido tratamiento previo');
+        isValid = false;
+      }
+    }
+
+    if (errors.length > 0) {
+      showNotification(errors.join('\n'), 'warning', 5000);
+    }
+
+    return isValid;
+  } catch (error) {
+    console.error('Error validating step:', error);
+    return false;
+  }
+}
+
 // ================= CALENDARIO FUNCIONAL CORREGIDO =================
 
 function setupCalendar() {
@@ -1616,12 +2292,6 @@ async function loadMonthAppointments(year, month) {
   }
 }
 
-// Definir monthNames para usar en loadMonthAppointments
-const monthNames = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-];
-
 // NUEVO: Mostrar información del paciente cuando se hace click
 function showPatientAppointmentInfo(appointment) {
   try {
@@ -1695,6 +2365,7 @@ function getStatusColor(estado) {
   };
   return colors[estado] || '#6b7280';
 }
+
 // ================= NUEVA CITA MODAL CORREGIDO Y FUNCIONAL =================
 
 function createNuevaCitaModal() {
@@ -2068,6 +2739,7 @@ async function registrarPacienteAutomaticamente(citaData, citaId) {
     console.error('Error registrando paciente automáticamente:', error);
   }
 }
+
 // ================= FUNCIONES UTILITARIAS BÁSICAS =================
 
 function formatRUT(rut) {
@@ -2338,6 +3010,7 @@ async function getOccupiedSlots(professionalId, date) {
     return [];
   }
 }
+
 // ================= GESTIÓN DE PACIENTES CORREGIDA =================
 
 async function loadPacientes() {
@@ -2756,839 +3429,8 @@ async function buscarPacientePorRUT() {
     showLoading(false);
   }
 }
-// ================= FORMULARIOS Y VALIDACIÓN ORIGINAL APP14 =================
 
-function validateStep(step) {
-  try {
-    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
-    const currentStepDiv = document.querySelector(`.form-step[data-step="${step}"]`);
-    if (!currentStepDiv) return false;
-
-    const requiredFields = currentStepDiv.querySelectorAll('[required]:not([style*="display: none"])');
-    let isValid = true;
-    const errors = [];
-
-    // Validar campos requeridos
-    requiredFields.forEach(field => {
-      const value = field.value?.trim() || '';
-      
-      if (!value) {
-        field.classList.add('error');
-        errors.push(`${getFieldLabel(field)} es obligatorio`);
-        isValid = false;
-      } else {
-        field.classList.remove('error');
-      }
-    });
-
-    // Validaciones específicas por paso
-    if (step === 1) {
-      if (!tipoSolicitud) {
-        errors.push('Selecciona un tipo de solicitud');
-        isValid = false;
-      } else if (tipoSolicitud === 'informacion') {
-        const email = document.getElementById('info-email');
-        if (!email || !email.value.trim()) {
-          errors.push('Ingresa un email para recibir información');
-          isValid = false;
-        } else if (!isValidEmail(email.value.trim())) {
-          errors.push('Ingresa un email válido');
-          isValid = false;
-        }
-      } else if (tipoSolicitud === 'identificado') {
-        const edad = parseInt(document.getElementById('patient-age')?.value);
-        if (!edad || edad < 12 || edad > 120) {
-          errors.push('La edad debe estar entre 12 y 120 años');
-          isValid = false;
-        }
-
-        const cesfam = document.getElementById('patient-cesfam')?.value;
-        if (!cesfam) {
-          errors.push('Selecciona un CESFAM');
-          isValid = false;
-        }
-
-        const paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
-        if (!paraMi) {
-          errors.push('Indica para quién solicitas ayuda');
-          isValid = false;
-        }
-      }
-    }
-
-    if (step === 2) {
-      const rut = document.getElementById('patient-rut');
-      if (rut && rut.value.trim() && !validateRUT(rut.value.trim())) {
-        errors.push('RUT inválido');
-        isValid = false;
-      }
-
-      const phone = document.getElementById('patient-phone');
-      if (phone && phone.value.trim() && !validatePhoneNumberString(phone.value.trim())) {
-        errors.push('Teléfono inválido');
-        isValid = false;
-      }
-
-      const email = document.getElementById('patient-email');
-      if (email && email.value.trim() && !isValidEmail(email.value.trim())) {
-        errors.push('Email inválido');
-        isValid = false;
-      }
-    }
-
-    if (step === 3) {
-      const sustancias = document.querySelectorAll('input[name="sustancias"]:checked');
-      if (sustancias.length === 0) {
-        errors.push('Selecciona al menos una sustancia');
-        isValid = false;
-      }
-
-      const urgencia = document.querySelector('input[name="urgencia"]:checked');
-      if (!urgencia) {
-        errors.push('Selecciona el nivel de urgencia');
-        isValid = false;
-      }
-
-      const tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked');
-      if (!tratamientoPrevio) {
-        errors.push('Indica si has recibido tratamiento previo');
-        isValid = false;
-      }
-    }
-
-    if (errors.length > 0) {
-      showNotification(errors.join('\n'), 'warning', 5000);
-    }
-
-    return isValid;
-  } catch (error) {
-    console.error('Error validating step:', error);
-    return false;
-  }
-}
-
-// ================= AUTO-GUARDADO =================
-
-function setupAutoSave() {
-  try {
-    const form = document.getElementById('patient-form');
-    if (!form) return;
-    
-    let autoSaveTimer;
-    
-    form.addEventListener('input', () => {
-      clearTimeout(autoSaveTimer);
-      autoSaveTimer = setTimeout(saveFormDraft, 2000);
-    });
-    
-    loadFormDraft();
-  } catch (error) {
-    console.error('Error setting up auto-save:', error);
-  }
-}
-
-function saveFormDraft() {
-  try {
-    const form = document.getElementById('patient-form');
-    if (!form) return;
-    
-    const formData = new FormData(form);
-    const draftData = {};
-    
-    for (let [key, value] of formData.entries()) {
-      draftData[key] = value;
-    }
-    
-    draftData.currentStep = currentFormStep;
-    draftData.maxFormStep = maxFormStep;
-    draftData.timestamp = Date.now();
-    
-    localStorage.setItem('senda_form_draft', JSON.stringify(draftData));
-    isDraftSaved = true;
-    
-  } catch (error) {
-    console.error('Error saving form draft:', error);
-  }
-}
-
-function loadFormDraft() {
-  try {
-    const savedDraft = localStorage.getItem('senda_form_draft');
-    if (!savedDraft) return;
-    
-    const draftData = JSON.parse(savedDraft);
-    
-    if (Date.now() - draftData.timestamp > 24 * 60 * 60 * 1000) {
-      localStorage.removeItem('senda_form_draft');
-      return;
-    }
-    
-    if (confirm('Se encontró un borrador guardado. ¿Deseas continuar donde lo dejaste?')) {
-      restoreFormDraft(draftData);
-    }
-  } catch (error) {
-    console.error('Error loading form draft:', error);
-  }
-}
-
-function restoreFormDraft(draftData) {
-  try {
-    const form = document.getElementById('patient-form');
-    if (!form) return;
-    
-    Object.keys(draftData).forEach(key => {
-      if (key === 'currentStep' || key === 'maxFormStep' || key === 'timestamp') return;
-      
-      const field = form.querySelector(`[name="${key}"]`);
-      if (field) {
-        if (field.type === 'radio' || field.type === 'checkbox') {
-          field.checked = field.value === draftData[key];
-        } else {
-          field.value = draftData[key];
-        }
-      }
-    });
-    
-    if (draftData.maxFormStep) {
-      maxFormStep = draftData.maxFormStep;
-    }
-    
-    if (draftData.currentStep) {
-      goToStep(draftData.currentStep);
-    }
-    
-    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked');
-    if (tipoSolicitud) {
-      tipoSolicitud.dispatchEvent(new Event('change'));
-    }
-    
-    showNotification('Borrador restaurado correctamente', 'success');
-    
-  } catch (error) {
-    console.error('Error restoring form draft:', error);
-  }
-}
-
-function resetForm() {
-  try {
-    const form = document.getElementById('patient-form');
-    if (form) {
-      form.reset();
-      goToStep(1);
-      
-      const motivacionRange = document.getElementById('motivacion-range');
-      const motivacionValue = document.getElementById('motivacion-value');
-      if (motivacionRange && motivacionValue) {
-        motivacionRange.value = 5;
-        motivacionValue.textContent = '5';
-        updateMotivacionColor(5);
-      }
-      
-      form.querySelectorAll('.error').forEach(field => {
-        field.classList.remove('error');
-      });
-      
-      maxFormStep = 4;
-      updateProgressIndicator(1, 4);
-      
-      const infoEmailContainer = document.getElementById('info-email-container');
-      const basicInfoContainer = document.getElementById('basic-info-container');
-      const nextBtn = document.getElementById('next-step-1');
-      const submitBtn = document.getElementById('submit-step-1');
-      
-      if (infoEmailContainer) infoEmailContainer.style.display = 'none';
-      if (basicInfoContainer) basicInfoContainer.style.display = 'block';
-      if (nextBtn) nextBtn.style.display = 'inline-flex';
-      if (submitBtn) submitBtn.style.display = 'none';
-    }
-    
-    isDraftSaved = false;
-    localStorage.removeItem('senda_form_draft');
-    
-    console.log('Formulario reseteado');
-  } catch (error) {
-    console.error('Error reseteando formulario:', error);
-  }
-}
-
-function updateMotivacionColor(value) {
-  try {
-    const motivacionValue = document.getElementById('motivacion-value');
-    if (!motivacionValue) return;
-    
-    const numValue = parseInt(value);
-    let color;
-    
-    if (numValue <= 3) {
-      color = 'var(--danger-red)';
-    } else if (numValue <= 6) {
-      color = 'var(--warning-orange)';
-    } else {
-      color = 'var(--success-green)';
-    }
-    
-    motivacionValue.style.backgroundColor = color;
-    motivacionValue.style.color = 'white';
-  } catch (error) {
-    console.error('Error updating motivacion color:', error);
-  }
-}
-
-// ================= ENVÍO DE FORMULARIOS =================
-
-async function handleInformationOnlySubmit() {
-  try {
-    console.log('Procesando solicitud de información únicamente...');
-    
-    const email = document.getElementById('info-email')?.value?.trim();
-    
-    if (!email || !isValidEmail(email)) {
-      showNotification('Email inválido', 'error');
-      return;
-    }
-    
-    const informationData = {
-      tipoSolicitud: 'informacion',
-      email: email,
-      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
-      estado: 'pendiente_respuesta',
-      origen: 'web_publica',
-      prioridad: 'baja',
-      identificador: `INFO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    };
-    
-    console.log('Guardando solicitud de información...');
-    
-    await db.collection('solicitudes_informacion').add(informationData);
-    
-    localStorage.removeItem('senda_form_draft');
-    closeModal('patient-modal');
-    resetForm();
-    
-    showNotification('Solicitud de información enviada correctamente. Te responderemos pronto a tu email.', 'success', 6000);
-    
-  } catch (error) {
-    console.error('Error enviando información:', error);
-    showNotification('Error al enviar la solicitud: ' + error.message, 'error');
-  }
-}
-
-function collectFormDataSafe() {
-  try {
-    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
-    
-    if (!tipoSolicitud) {
-      throw new Error('Tipo de solicitud no seleccionado');
-    }
-    
-    const solicitudData = {
-      tipoSolicitud,
-      edad: parseInt(document.getElementById('patient-age')?.value) || null,
-      cesfam: document.getElementById('patient-cesfam')?.value || '',
-      paraMi: document.querySelector('input[name="paraMi"]:checked')?.value || '',
-      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
-      estado: 'pendiente',
-      origen: 'web_publica',
-      version: '2.0'
-    };
-
-    const sustanciasChecked = document.querySelectorAll('input[name="sustancias"]:checked');
-    if (sustanciasChecked.length > 0) {
-      solicitudData.sustancias = Array.from(sustanciasChecked).map(cb => cb.value);
-    }
-
-    const tiempoConsumo = document.getElementById('tiempo-consumo');
-    if (tiempoConsumo && tiempoConsumo.value) {
-      solicitudData.tiempoConsumo = tiempoConsumo.value;
-    }
-
-    const urgencia = document.querySelector('input[name="urgencia"]:checked');
-    if (urgencia) {
-      solicitudData.urgencia = urgencia.value;
-    }
-
-    const tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked');
-    if (tratamientoPrevio) {
-      solicitudData.tratamientoPrevio = tratamientoPrevio.value;
-    }
-
-    const descripcion = document.getElementById('patient-description');
-    if (descripcion && descripcion.value.trim()) {
-      solicitudData.descripcion = descripcion.value.trim();
-    }
-
-    const motivacion = document.getElementById('motivacion-range');
-    if (motivacion && motivacion.value) {
-      solicitudData.motivacion = parseInt(motivacion.value);
-    }
-
-    if (tipoSolicitud === 'identificado') {
-      const nombre = document.getElementById('patient-name')?.value?.trim();
-      const apellidos = document.getElementById('patient-lastname')?.value?.trim();
-      const rut = document.getElementById('patient-rut')?.value?.trim();
-      const telefono = document.getElementById('patient-phone')?.value?.trim();
-      const email = document.getElementById('patient-email')?.value?.trim();
-      const direccion = document.getElementById('patient-address')?.value?.trim();
-
-      if (nombre) solicitudData.nombre = nombre;
-      if (apellidos) solicitudData.apellidos = apellidos;
-      if (rut) solicitudData.rut = formatRUT(rut);
-      if (telefono) solicitudData.telefono = formatPhoneNumber(telefono);
-      if (email) solicitudData.email = email;
-      if (direccion) solicitudData.direccion = direccion;
-    }
-
-    console.log('Datos recopilados exitosamente:', solicitudData);
-    return solicitudData;
-    
-  } catch (error) {
-    console.error('Error recopilando datos del formulario:', error);
-    throw new Error('Error recopilando datos del formulario: ' + error.message);
-  }
-}
-
-function calculatePriority(solicitudData) {
-  let score = 0;
-  
-  if (solicitudData.urgencia === 'alta') score += 3;
-  else if (solicitudData.urgencia === 'media') score += 2;
-  else score += 1;
-  
-  if (solicitudData.edad) {
-    if (solicitudData.edad < 18 || solicitudData.edad > 65) score += 2;
-    else score += 1;
-  }
-  
-  if (solicitudData.sustancias && solicitudData.sustancias.length > 2) score += 2;
-  else if (solicitudData.sustancias && solicitudData.sustancias.length > 0) score += 1;
-  
-  if (solicitudData.motivacion) {
-    if (solicitudData.motivacion >= 8) score += 2;
-    else if (solicitudData.motivacion >= 5) score += 1;
-  }
-  
-  if (score >= 8) return 'critica';
-  else if (score >= 6) return 'alta';
-  else if (score >= 4) return 'media';
-  else return 'baja';
-}
-
-function formatPhoneNumber(phone) {
-  if (!phone) return '';
-  const cleaned = phone.replace(/\D/g, '');
-  if (cleaned.length === 9) {
-    return `${cleaned.slice(0, 1)} ${cleaned.slice(1, 5)} ${cleaned.slice(5)}`;
-  }
-  return phone;
-}
-
-async function handlePatientFormSubmit(e) {
-  e.preventDefault();
-  console.log('Iniciando envío de solicitud...');
-  
-  const submitBtn = document.getElementById('submit-form');
-  
-  try {
-    toggleSubmitButton(submitBtn, true);
-    
-    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
-    if (!tipoSolicitud) {
-      showNotification('Selecciona un tipo de solicitud', 'warning');
-      return;
-    }
-
-    if (tipoSolicitud !== 'identificado') {
-      showNotification('Tipo de solicitud no válido para este flujo', 'error');
-      return;
-    }
-
-    const edad = document.getElementById('patient-age')?.value;
-    const cesfam = document.getElementById('patient-cesfam')?.value;
-    const paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
-    
-    if (!edad || !cesfam || !paraMi) {
-      showNotification('Completa todos los campos básicos obligatorios', 'warning');
-      return;
-    }
-
-    const nombre = document.getElementById('patient-name')?.value?.trim();
-    const apellidos = document.getElementById('patient-lastname')?.value?.trim();
-    const rut = document.getElementById('patient-rut')?.value?.trim();
-    const telefono = document.getElementById('patient-phone')?.value?.trim();
-    
-    if (!nombre || !apellidos || !rut || !telefono) {
-      showNotification('Para solicitud identificada, completa todos los datos personales', 'warning');
-      return;
-    }
-    
-    if (!validateRUT(rut)) {
-      showNotification('RUT inválido', 'warning');
-      return;
-    }
-    
-    if (!validatePhoneNumberString(telefono)) {
-      showNotification('Teléfono inválido', 'warning');
-      return;
-    }
-
-    const solicitudData = collectFormDataSafe();
-    console.log('Datos recopilados:', solicitudData);
-    
-    solicitudData.prioridad = calculatePriority(solicitudData);
-    console.log('Prioridad calculada:', solicitudData.prioridad);
-    
-    if (!db) {
-      throw new Error('No hay conexión a Firebase');
-    }
-    
-    console.log('Guardando en Firestore...');
-    
-    const docRef = await retryOperation(async () => {
-      return await db.collection('solicitudes_ingreso').add(solicitudData);
-    });
-    
-    console.log('Solicitud guardada con ID:', docRef.id);
-    
-    if (solicitudData.prioridad === 'critica') {
-      try {
-        await createCriticalAlert(solicitudData, docRef.id);
-        console.log('Alerta crítica creada');
-      } catch (alertError) {
-        console.warn('Error creando alerta crítica:', alertError);
-      }
-    }
-    
-    localStorage.removeItem('senda_form_draft');
-    closeModal('patient-modal');
-    resetForm();
-    
-    showNotification('Solicitud enviada correctamente. Te contactaremos pronto para coordinar una cita.', 'success', 6000);
-    console.log('Proceso completado exitosamente');
-    
-  } catch (error) {
-    console.error('Error enviando solicitud:', error);
-    
-    let errorMessage = 'Error al enviar la solicitud: ';
-    
-    if (error.code === 'permission-denied') {
-      errorMessage += 'Sin permisos para crear solicitudes. Verifica las reglas de Firebase.';
-    } else if (error.code === 'network-request-failed') {
-      errorMessage += 'Problema de conexión. Verifica tu internet.';
-    } else if (error.code === 'unavailable') {
-      errorMessage += 'Servicio no disponible temporalmente.';
-    } else if (error.message.includes('Firebase')) {
-      errorMessage += 'Error de configuración de Firebase.';
-    } else {
-      errorMessage += error.message || 'Intenta nuevamente en unos momentos.';
-    }
-    
-    showNotification(errorMessage, 'error', 8000);
-  } finally {
-    toggleSubmitButton(submitBtn, false);
-  }
-}
-
-async function handleReentrySubmit(e) {
-  e.preventDefault();
-  console.log('Iniciando envío de reingreso...');
-  
-  const formData = {
-    nombre: document.getElementById('reentry-name')?.value?.trim() || '',
-    rut: document.getElementById('reentry-rut')?.value?.trim() || '',
-    cesfam: document.getElementById('reentry-cesfam')?.value || '',
-    motivo: document.getElementById('reentry-reason')?.value?.trim() || '',
-    telefono: document.getElementById('reentry-phone')?.value?.trim() || ''
-  };
-  
-  const submitBtn = e.target.querySelector('button[type="submit"]');
-  
-  const requiredFields = [
-    { field: 'nombre', name: 'Nombre' },
-    { field: 'rut', name: 'RUT' },
-    { field: 'cesfam', name: 'CESFAM' },
-    { field: 'motivo', name: 'Motivo' },
-    { field: 'telefono', name: 'Teléfono' }
-  ];
-
-  for (const { field, name } of requiredFields) {
-    if (!formData[field]) {
-      showNotification(`El campo ${name} es obligatorio`, 'warning');
-      return;
-    }
-  }
-
-  if (!validateRUT(formData.rut)) {
-    showNotification('RUT inválido', 'warning');
-    return;
-  }
-
-  const phoneClean = formData.telefono.replace(/\D/g, '');
-  if (phoneClean.length < 8) {
-    showNotification('Teléfono inválido', 'warning');
-    return;
-  }
-
-  try {
-    toggleSubmitButton(submitBtn, true);
-    
-    if (!db) {
-      throw new Error('No hay conexión a Firebase');
-    }
-    
-    const rutFormatted = formatRUT(formData.rut);
-    try {
-      const existingReingreso = await db.collection('reingresos')
-        .where('rut', '==', rutFormatted)
-        .where('estado', '==', 'pendiente')
-        .get();
-      
-      if (!existingReingreso.empty) {
-        showNotification('Ya existe una solicitud de reingreso pendiente para este RUT', 'warning');
-        return;
-      }
-    } catch (queryError) {
-      console.warn('Error verificando reingresos existentes:', queryError);
-    }
-    
-    const reingresoData = {
-      nombre: formData.nombre,
-      rut: rutFormatted,
-      telefono: formatPhoneNumber(formData.telefono),
-      cesfam: formData.cesfam,
-      motivo: formData.motivo,
-      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
-      estado: 'pendiente',
-      prioridad: 'media',
-      tipo: 'reingreso',
-      origen: 'web_publica',
-      version: '2.0'
-    };
-
-    const docRef = await db.collection('reingresos').add(reingresoData);
-    
-    closeModal('reentry-modal');
-    e.target.reset();
-    showNotification('Solicitud de reingreso enviada correctamente. Te contactaremos pronto.', 'success', 5000);
-    
-  } catch (error) {
-    console.error('Error enviando reingreso:', error);
-    
-    let errorMessage = 'Error al enviar la solicitud de reingreso: ';
-    if (error.code === 'permission-denied') {
-      errorMessage += 'Sin permisos para crear reingresos.';
-    } else if (error.code === 'network-request-failed') {
-      errorMessage += 'Problema de conexión. Verifica tu internet.';
-    } else {
-      errorMessage += error.message || 'Intenta nuevamente.';
-    }
-    
-    showNotification(errorMessage, 'error', 8000);
-  } finally {
-    toggleSubmitButton(submitBtn, false);
-  }
-}
-
-async function createCriticalAlert(solicitudData, solicitudId) {
-  try {
-    const alertData = {
-      id_solicitud: solicitudId,
-      mensaje: `Nuevo caso crítico: ${solicitudData.edad} años, urgencia ${solicitudData.urgencia}`,
-      prioridad: 'maxima',
-      tipo_alerta: 'caso_critico_nuevo',
-      estado: 'pendiente',
-      fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
-      notificado: false,
-      cesfam: solicitudData.cesfam,
-      datos_paciente: {
-        edad: solicitudData.edad,
-        sustancias: solicitudData.sustancias,
-        urgencia: solicitudData.urgencia,
-        motivacion: solicitudData.motivacion
-      }
-    };
-    
-    await db.collection('alertas_criticas').add(alertData);
-    
-    console.log('Alerta crítica creada para solicitud:', solicitudId);
-  } catch (error) {
-    console.error('Error creando alerta crítica:', error);
-  }
-}
-// ================= FUNCIONES AUXILIARES FINALES =================
-
-async function downloadPatientPDF(pacienteId) {
-  try {
-    showLoading(true, 'Generando PDF...');
-    
-    const pacienteDoc = await db.collection('pacientes').doc(pacienteId).get();
-    
-    if (!pacienteDoc.exists) {
-      showNotification('Paciente no encontrado', 'error');
-      return;
-    }
-    
-    const paciente = pacienteDoc.data();
-    
-    if (typeof window.jsPDF === 'undefined') {
-      showNotification('Error: Librería PDF no disponible. Cargando...', 'warning');
-      
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-      script.onload = () => {
-        setTimeout(() => downloadPatientPDF(pacienteId), 500);
-      };
-      script.onerror = () => {
-        showNotification('Error cargando librería PDF. Intenta nuevamente.', 'error');
-      };
-      document.head.appendChild(script);
-      return;
-    }
-    
-    const { jsPDF } = window.jsPDF;
-    const doc = new jsPDF();
-    
-    doc.setFont('helvetica');
-    
-    doc.setFontSize(20);
-    doc.setTextColor(0, 102, 204);
-    doc.text('FICHA PACIENTE - PROGRAMA SENDA', 20, 30);
-    
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    doc.text(`CESFAM: ${paciente.cesfam}`, 20, 50);
-    doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-CL')}`, 20, 60);
-    doc.text(`Profesional: ${currentUserData.nombre} ${currentUserData.apellidos}`, 20, 70);
-    
-    doc.setLineWidth(0.5);
-    doc.line(20, 80, 190, 80);
-    
-    doc.setFontSize(14);
-    doc.setTextColor(0, 102, 204);
-    doc.text('DATOS DEL PACIENTE', 20, 95);
-    
-    doc.setFontSize(11);
-    doc.setTextColor(0, 0, 0);
-    let yPos = 110;
-    
-    doc.text(`Nombre: ${paciente.nombre} ${paciente.apellidos || ''}`, 20, yPos);
-    yPos += 10;
-    doc.text(`RUT: ${paciente.rut}`, 20, yPos);
-    yPos += 10;
-    doc.text(`Edad: ${paciente.edad || 'No especificada'} años`, 20, yPos);
-    yPos += 10;
-    doc.text(`Teléfono: ${paciente.telefono || 'No disponible'}`, 20, yPos);
-    yPos += 10;
-    doc.text(`Email: ${paciente.email || 'No disponible'}`, 20, yPos);
-    yPos += 10;
-    doc.text(`Dirección: ${paciente.direccion || 'No disponible'}`, 20, yPos);
-    yPos += 15;
-    
-    doc.setFontSize(14);
-    doc.setTextColor(0, 102, 204);
-    doc.text('INFORMACIÓN CLÍNICA', 20, yPos);
-    yPos += 15;
-    
-    doc.setFontSize(11);
-    doc.setTextColor(0, 0, 0);
-    doc.text(`Estado: ${(paciente.estado || 'Activo').toUpperCase()}`, 20, yPos);
-    yPos += 10;
-    doc.text(`Prioridad: ${(paciente.prioridad || 'Media').toUpperCase()}`, 20, yPos);
-    yPos += 10;
-    doc.text(`Motivación inicial: ${paciente.motivacionInicial || 'No registrada'}/10`, 20, yPos);
-    yPos += 10;
-    doc.text(`Origen: ${paciente.origen || 'No especificado'}`, 20, yPos);
-    yPos += 10;
-    
-    if (paciente.sustanciasProblematicas && paciente.sustanciasProblematicas.length > 0) {
-      doc.text(`Sustancias problemáticas: ${paciente.sustanciasProblematicas.join(', ')}`, 20, yPos);
-      yPos += 10;
-    }
-    
-    yPos += 10;
-    doc.text(`Fecha de registro: ${formatDate(paciente.fechaCreacion)}`, 20, yPos);
-    yPos += 10;
-    
-    if (paciente.fechaPrimeraAtencion) {
-      doc.text(`Primera atención: ${formatDate(paciente.fechaPrimeraAtencion)}`, 20, yPos);
-    }
-    
-    doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
-    doc.text('Documento generado por Sistema SENDA Puente Alto', 20, 280);
-    doc.text('Información confidencial - Uso exclusivo profesional', 20, 290);
-    
-    const fileName = `ficha_${paciente.nombre.replace(/\s+/g, '_')}_${paciente.rut.replace(/[.-]/g, '')}.pdf`;
-    doc.save(fileName);
-    
-    showNotification('PDF generado y descargado correctamente', 'success');
-    
-  } catch (error) {
-    console.error('Error generando PDF:', error);
-    showNotification('Error al generar PDF: ' + error.message, 'error');
-  } finally {
- showLoading(false);
-  }
-}
-
-function setupTabFunctionality() {
-  try {
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const tabPanes = document.querySelectorAll('.tab-pane');
-
-    tabBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const targetTab = btn.dataset.tab;
-        
-        if (!canAccessTab(targetTab)) {
-          showNotification('No tienes permisos para acceder a esta sección', 'warning');
-          return;
-        }
-
-        tabBtns.forEach(b => b.classList.remove('active'));
-        tabPanes.forEach(p => p.classList.remove('active'));
-
-        btn.classList.add('active');
-        const targetPane = document.getElementById(`${targetTab}-tab`);
-        if (targetPane) {
-          targetPane.classList.add('active');
-          loadTabData(targetTab);
-        }
-      });
-    });
-
-    console.log('Tab functionality configurada');
-  } catch (error) {
-    console.error('Error configurando tabs:', error);
-  }
-}
-
-function loadTabData(tabName) {
-  try {
-    if (!currentUserData) return;
-
-    switch (tabName) {
-      case 'solicitudes':
-        if (hasAccessToSolicitudes()) {
-          loadSolicitudes();
-        }
-        break;
-      case 'agenda':
-        loadTodayAppointments();
-        if (!selectedCalendarDate) {
-          renderCalendar();
-        }
-        break;
-      case 'seguimiento':
-        loadSeguimiento();
-        break;
-      case 'pacientes':
-        loadPacientes();
-        break;
-    }
-  } catch (error) {
-    console.error('Error loading tab data:', error);
-  }
-}
+// ================= SEGUIMIENTO Y CONTROL =================
 
 async function loadSeguimiento() {
   if (!currentUserData) return;
@@ -3889,6 +3731,184 @@ function createNuevaCitaModalForDate(dateIso) {
   }, 100);
 }
 
+// ================= GESTIÓN DE TABS =================
+
+function setupTabFunctionality() {
+  try {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetTab = btn.dataset.tab;
+        
+        if (!canAccessTab(targetTab)) {
+          showNotification('No tienes permisos para acceder a esta sección', 'warning');
+          return;
+        }
+
+        tabBtns.forEach(b => b.classList.remove('active'));
+        tabPanes.forEach(p => p.classList.remove('active'));
+
+        btn.classList.add('active');
+        const targetPane = document.getElementById(`${targetTab}-tab`);
+        if (targetPane) {
+          targetPane.classList.add('active');
+          loadTabData(targetTab);
+        }
+      });
+    });
+
+    console.log('Tab functionality configurada');
+  } catch (error) {
+    console.error('Error configurando tabs:', error);
+  }
+}
+
+function loadTabData(tabName) {
+  try {
+    if (!currentUserData) return;
+
+    switch (tabName) {
+      case 'solicitudes':
+        if (hasAccessToSolicitudes()) {
+          loadSolicitudes();
+        }
+        break;
+      case 'agenda':
+        loadTodayAppointments();
+        if (!selectedCalendarDate) {
+          renderCalendar();
+        }
+        break;
+      case 'seguimiento':
+        loadSeguimiento();
+        break;
+      case 'pacientes':
+        loadPacientes();
+        break;
+    }
+  } catch (error) {
+    console.error('Error loading tab data:', error);
+  }
+}
+
+// ================= DESCARGA DE PDF =================
+
+async function downloadPatientPDF(pacienteId) {
+  try {
+    showLoading(true, 'Generando PDF...');
+    
+    const pacienteDoc = await db.collection('pacientes').doc(pacienteId).get();
+    
+    if (!pacienteDoc.exists) {
+      showNotification('Paciente no encontrado', 'error');
+      return;
+    }
+    
+    const paciente = pacienteDoc.data();
+    
+    if (typeof window.jsPDF === 'undefined') {
+      showNotification('Error: Librería PDF no disponible. Cargando...', 'warning');
+      
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      script.onload = () => {
+        setTimeout(() => downloadPatientPDF(pacienteId), 500);
+      };
+      script.onerror = () => {
+        showNotification('Error cargando librería PDF. Intenta nuevamente.', 'error');
+      };
+      document.head.appendChild(script);
+      return;
+    }
+    
+    const { jsPDF } = window.jsPDF;
+    const doc = new jsPDF();
+    
+    doc.setFont('helvetica');
+    
+    doc.setFontSize(20);
+    doc.setTextColor(0, 102, 204);
+    doc.text('FICHA PACIENTE - PROGRAMA SENDA', 20, 30);
+    
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`CESFAM: ${paciente.cesfam}`, 20, 50);
+    doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-CL')}`, 20, 60);
+    doc.text(`Profesional: ${currentUserData.nombre} ${currentUserData.apellidos}`, 20, 70);
+    
+    doc.setLineWidth(0.5);
+    doc.line(20, 80, 190, 80);
+    
+    doc.setFontSize(14);
+    doc.setTextColor(0, 102, 204);
+    doc.text('DATOS DEL PACIENTE', 20, 95);
+    
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    let yPos = 110;
+    
+    doc.text(`Nombre: ${paciente.nombre} ${paciente.apellidos || ''}`, 20, yPos);
+    yPos += 10;
+    doc.text(`RUT: ${paciente.rut}`, 20, yPos);
+    yPos += 10;
+    doc.text(`Edad: ${paciente.edad || 'No especificada'} años`, 20, yPos);
+    yPos += 10;
+    doc.text(`Teléfono: ${paciente.telefono || 'No disponible'}`, 20, yPos);
+    yPos += 10;
+    doc.text(`Email: ${paciente.email || 'No disponible'}`, 20, yPos);
+    yPos += 10;
+    doc.text(`Dirección: ${paciente.direccion || 'No disponible'}`, 20, yPos);
+    yPos += 15;
+    
+    doc.setFontSize(14);
+    doc.setTextColor(0, 102, 204);
+    doc.text('INFORMACIÓN CLÍNICA', 20, yPos);
+    yPos += 15;
+    
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Estado: ${(paciente.estado || 'Activo').toUpperCase()}`, 20, yPos);
+    yPos += 10;
+    doc.text(`Prioridad: ${(paciente.prioridad || 'Media').toUpperCase()}`, 20, yPos);
+    yPos += 10;
+    doc.text(`Motivación inicial: ${paciente.motivacionInicial || 'No registrada'}/10`, 20, yPos);
+    yPos += 10;
+    doc.text(`Origen: ${paciente.origen || 'No especificado'}`, 20, yPos);
+    yPos += 10;
+    
+    if (paciente.sustanciasProblematicas && paciente.sustanciasProblematicas.length > 0) {
+      doc.text(`Sustancias problemáticas: ${paciente.sustanciasProblematicas.join(', ')}`, 20, yPos);
+      yPos += 10;
+    }
+    
+    yPos += 10;
+    doc.text(`Fecha de registro: ${formatDate(paciente.fechaCreacion)}`, 20, yPos);
+    yPos += 10;
+    
+    if (paciente.fechaPrimeraAtencion) {
+      doc.text(`Primera atención: ${formatDate(paciente.fechaPrimeraAtencion)}`, 20, yPos);
+    }
+    
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Documento generado por Sistema SENDA Puente Alto', 20, 280);
+    doc.text('Información confidencial - Uso exclusivo profesional', 20, 290);
+    
+    const fileName = `ficha_${paciente.nombre.replace(/\s+/g, '_')}_${paciente.rut.replace(/[.-]/g, '')}.pdf`;
+    doc.save(fileName);
+    
+    showNotification('PDF generado y descargado correctamente', 'success');
+    
+  } catch (error) {
+    console.error('Error generando PDF:', error);
+    showNotification('Error al generar PDF: ' + error.message, 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
 // ================= FUNCIONES PLACEHOLDER =================
 
 function showAgendaModal(solicitudId) {
@@ -4052,4 +4072,4 @@ console.log(`
 🎉 ====================================
    SISTEMA SENDA PUENTE ALTO v2.0
    ====================================
-`);   
+`);
