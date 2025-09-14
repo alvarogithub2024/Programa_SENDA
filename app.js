@@ -1534,8 +1534,118 @@ function selectNuevaCitaTimeSlot(button) {
 }
 
 console.log('✅ PARTE 3: Calendario con fecha/hora actual cargado');
-// ================= CONTINUACIÓN PARTE 4 =================
+// ================= SENDA PUENTE ALTO - APP.JS PARTE 4 CORREGIDA =================
+// Gestión de Solicitudes Firebase y Pacientes con Botón Limpiar
 
+// ================= ENLACE CON FIREBASE SOLICITUDES_INGRESO =================
+
+// MEJORA 2: Función para cargar solicitudes desde Firebase
+async function loadSolicitudes() {
+  if (!currentUserData || !hasAccessToSolicitudes()) {
+    console.log('⚠️ Usuario no tiene acceso a solicitudes');
+    return;
+  }
+
+  try {
+    showLoading(true, 'Cargando solicitudes desde Firebase...');
+    const container = document.getElementById('requests-container');
+    
+    if (!container) {
+      console.error('❌ Container requests-container no encontrado');
+      return;
+    }
+    
+    const cacheKey = `solicitudes_${currentUserData.cesfam}`;
+    dataCache.delete(cacheKey);
+    
+    await loadSolicitudesFromFirebaseEnhanced(true);
+    
+  } catch (error) {
+    console.error('❌ Error general cargando solicitudes:', error);
+    renderSolicitudesError(error);
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function loadSolicitudesFromFirebaseEnhanced(showLoadingIndicator = true) {
+  try {
+    if (showLoadingIndicator) {
+      const container = document.getElementById('requests-container');
+      if (container) {
+        container.innerHTML = `
+          <div class="loading-message">
+            <i class="fas fa-spinner fa-spin"></i>
+            Cargando solicitudes desde Firebase (solicitudes_ingreso)...
+          </div>
+        `;
+      }
+    }
+    
+    const solicitudes = [];
+    
+    console.log('🔍 MEJORA 2: Cargando desde Firebase - solicitudes_ingreso para CESFAM:', currentUserData.cesfam);
+    
+    // MEJORA 2: Cargar desde solicitudes_ingreso
+    try {
+      const solicitudesSnapshot = await db.collection('solicitudes_ingreso')
+        .where('cesfam', '==', currentUserData.cesfam)
+        .where('estado', 'in', ['pendiente', 'pendiente_respuesta', 'en_evaluacion'])
+        .orderBy('fechaCreacion', 'desc')
+        .limit(APP_CONFIG.PAGINATION_LIMIT)
+        .get();
+      
+      console.log('📊 MEJORA 2: Solicitudes_ingreso encontradas desde Firebase:', solicitudesSnapshot.size);
+      
+      solicitudesSnapshot.forEach(doc => {
+        const data = doc.data();
+        const tipoNecesidad = determinarTipoNecesidad(data);
+        
+        solicitudes.push({
+          id: doc.id,
+          tipo: 'solicitud',
+          tipoNecesidad: tipoNecesidad,
+          ...data
+        });
+      });
+      
+    } catch (error) {
+      console.error('❌ Error cargando solicitudes_ingreso desde Firebase:', error);
+    }
+    
+    // Cargar reingresos
+    try {
+      const reingresosSnapshot = await db.collection('reingresos')
+        .where('cesfam', '==', currentUserData.cesfam)
+        .where('estado', 'in', ['pendiente', 'en_evaluacion'])
+        .orderBy('fechaCreacion', 'desc')
+        .limit(APP_CONFIG.PAGINATION_LIMIT)
+        .get();
+      
+      console.log('📊 MEJORA 2: Reingresos encontrados desde Firebase:', reingresosSnapshot.size);
+      
+      reingresosSnapshot.forEach(doc => {
+        const data = doc.data();
+        solicitudes.push({
+          id: doc.id,
+          tipo: 'reingreso',
+          tipoNecesidad: 'necesita_hora',
+          ...data
+        });
+      });
+      
+    } catch (error) {
+      console.error('❌ Error cargando reingresos desde Firebase:', error);
+    }
+    
+    // Cargar solicitudes de información - SINTAXIS CORREGIDA
+    try {
+      const informacionSnapshot = await db.collection('solicitudes_informacion')
+        .where('estado', '==', 'pendiente_respuesta')
+        .orderBy('fechaCreacion', 'desc')
+        .limit(50)
+        .get();
+      
       console.log('📊 MEJORA 2: Solicitudes información encontradas desde Firebase:', informacionSnapshot.size);
       
       informacionSnapshot.forEach(doc => {
@@ -2286,7 +2396,7 @@ async function moveToPatients(solicitudData, citaId) {
   }
 }
 
-console.log('✅ PARTE 4: Gestión de solicitudes Firebase y pacientes con botón limpiar completada');
+console.log('✅ PARTE 4 CORREGIDA: Gestión de solicitudes Firebase y pacientes con botón limpiar - SINTAXIS ARREGLADA');
 // ================= CONTINUACIÓN PARTE 5 COMPLETA =================
 
     const nombre = document.getElementById('patient-name')?.value?.trim();
