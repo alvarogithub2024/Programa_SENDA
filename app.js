@@ -2397,7 +2397,687 @@ async function moveToPatients(solicitudData, citaId) {
 }
 
 console.log('✅ PARTE 4 CORREGIDA: Gestión de solicitudes Firebase y pacientes con botón limpiar - SINTAXIS ARREGLADA');
-// ================= CONTINUACIÓN PARTE 5 COMPLETA =================
+// ================= SENDA PUENTE ALTO - APP.JS PARTE 5 FINAL CORREGIDA =================
+// Inicialización, Eventos, Formularios y Funciones Finales
+
+// ================= GESTIÓN DE EVENTOS =================
+
+function initializeEventListeners() {
+  try {
+    const loginProfessionalBtn = document.getElementById('login-professional');
+    const logoutBtn = document.getElementById('logout-btn');
+    const logoutProfessionalBtn = document.getElementById('logout-professional');
+    const registerPatientBtn = document.getElementById('register-patient');
+    const reentryProgramBtn = document.getElementById('reentry-program');
+    const aboutProgramBtn = document.getElementById('about-program');
+    
+    const searchSolicitudes = document.getElementById('search-solicitudes');
+    const searchPacientesRut = document.getElementById('search-pacientes-rut');
+    const buscarPacienteBtn = document.getElementById('buscar-paciente-btn');
+    
+    const priorityFilter = document.getElementById('priority-filter');
+    
+    const prevMonthBtn = document.getElementById('prev-month');
+    const nextMonthBtn = document.getElementById('next-month');
+    const nuevaCitaBtn = document.getElementById('nueva-cita-btn');
+
+    if (loginProfessionalBtn) {
+      loginProfessionalBtn.addEventListener('click', () => {
+        showModal('login-modal');
+      });
+    }
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', handleLogout);
+    }
+
+    if (logoutProfessionalBtn) {
+      logoutProfessionalBtn.addEventListener('click', handleLogout);
+    }
+
+    if (registerPatientBtn) {
+      registerPatientBtn.addEventListener('click', () => {
+        resetForm();
+        showModal('patient-modal');
+      });
+    }
+
+    if (reentryProgramBtn) {
+      reentryProgramBtn.addEventListener('click', () => {
+        showModal('reentry-modal');
+      });
+    }
+
+    if (aboutProgramBtn) {
+      aboutProgramBtn.addEventListener('click', showAboutProgram);
+    }
+
+    if (searchSolicitudes) {
+      searchSolicitudes.addEventListener('input', debounce(filterSolicitudes, 300));
+    }
+
+    if (buscarPacienteBtn) {
+      buscarPacienteBtn.addEventListener('click', buscarPacientePorRUT);
+    }
+
+    if (searchPacientesRut) {
+      searchPacientesRut.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          buscarPacientePorRUT();
+        }
+      });
+      
+      searchPacientesRut.addEventListener('input', (e) => {
+        e.target.value = formatRUT(e.target.value);
+      });
+    }
+
+    if (priorityFilter) {
+      priorityFilter.addEventListener('change', filterSolicitudes);
+    }
+
+    if (prevMonthBtn) {
+      prevMonthBtn.addEventListener('click', () => {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+        renderCalendar();
+      });
+    }
+
+    if (nextMonthBtn) {
+      nextMonthBtn.addEventListener('click', () => {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+        renderCalendar();
+      });
+    }
+
+    if (nuevaCitaBtn) {
+      nuevaCitaBtn.addEventListener('click', () => createNuevaCitaModal());
+    }
+
+    document.addEventListener('keydown', handleKeyboardShortcuts);
+    
+    console.log('✅ Event listeners inicializados correctamente');
+  } catch (error) {
+    console.error('❌ Error inicializando event listeners:', error);
+  }
+}
+
+function handleKeyboardShortcuts(e) {
+  try {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      const searchInput = document.getElementById('search-solicitudes');
+      if (searchInput && searchInput.style.display !== 'none') {
+        searchInput.focus();
+      }
+    }
+    
+    if (e.key === 'Escape') {
+      const openModal = document.querySelector('.modal-overlay[style*="flex"]');
+      if (openModal) {
+        closeModal(openModal.id);
+      }
+    }
+  } catch (error) {
+    console.error('Error handling keyboard shortcuts:', error);
+  }
+}
+
+// ================= GESTIÓN DE TABS =================
+
+function setupTabFunctionality() {
+  try {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetTab = btn.dataset.tab;
+        
+        if (!canAccessTab(targetTab)) {
+          showNotification('No tienes permisos para acceder a esta sección', 'warning');
+          return;
+        }
+
+        tabBtns.forEach(b => b.classList.remove('active'));
+        tabPanes.forEach(p => p.classList.remove('active'));
+
+        btn.classList.add('active');
+        const targetPane = document.getElementById(`${targetTab}-tab`);
+        if (targetPane) {
+          targetPane.classList.add('active');
+          
+          if (targetTab === 'agenda') {
+            updateAgendaTitle();
+          }
+          
+          loadTabData(targetTab);
+        }
+      });
+    });
+
+    console.log('✅ Funcionalidad de tabs configurada');
+  } catch (error) {
+    console.error('❌ Error configurando tabs:', error);
+  }
+}
+
+function updateAgendaTitle() {
+  try {
+    const agendaTab = document.getElementById('agenda-tab');
+    if (agendaTab) {
+      let titleElement = agendaTab.querySelector('.agenda-title');
+      
+      if (!titleElement) {
+        titleElement = document.createElement('div');
+        titleElement.className = 'agenda-title';
+        titleElement.innerHTML = `
+          <h2 style="color: var(--primary-blue); margin-bottom: 2rem; font-size: 1.75rem; font-weight: 700; text-align: center;">
+            <i class="fas fa-calendar-alt" style="margin-right: 12px;"></i>
+            Gestión de Agenda
+          </h2>
+        `;
+        
+        const firstChild = agendaTab.firstElementChild;
+        if (firstChild) {
+          agendaTab.insertBefore(titleElement, firstChild);
+        } else {
+          agendaTab.appendChild(titleElement);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error updating agenda title:', error);
+  }
+}
+
+function loadTabData(tabName) {
+  try {
+    if (!currentUserData) return;
+
+    switch (tabName) {
+      case 'solicitudes':
+        if (hasAccessToSolicitudes()) {
+          loadSolicitudes();
+        }
+        break;
+      case 'agenda':
+        updateAgendaTitle();
+        renderCalendar();
+        break;
+      case 'seguimiento':
+        loadSeguimiento();
+        break;
+      case 'pacientes':
+        loadPacientes();
+        setTimeout(setupLimpiarButton, 100);
+        break;
+    }
+  } catch (error) {
+    console.error('Error loading tab data:', error);
+  }
+}
+
+// ================= FUNCIONES DE SEGUIMIENTO =================
+
+async function loadSeguimiento() {
+  if (!currentUserData) return;
+  
+  try {
+    showLoading(true, 'Cargando seguimiento...');
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const todayAppointmentsSnapshot = await db.collection('citas')
+      .where('cesfam', '==', currentUserData.cesfam)
+      .where('fecha', '>=', today)
+      .where('fecha', '<', tomorrow)
+      .orderBy('fecha', 'asc')
+      .get();
+    
+    renderPatientsTimeline(todayAppointmentsSnapshot);
+    
+    const upcomingAppointmentsSnapshot = await db.collection('citas')
+      .where('cesfam', '==', currentUserData.cesfam)
+      .where('fecha', '>=', tomorrow)
+      .orderBy('fecha', 'asc')
+      .limit(10)
+      .get();
+    
+    renderUpcomingAppointments(upcomingAppointmentsSnapshot);
+    
+  } catch (error) {
+    console.error('Error loading seguimiento:', error);
+    showNotification('Error al cargar seguimiento: ' + error.message, 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+function renderPatientsTimeline(appointmentsSnapshot) {
+  try {
+    const timeline = document.getElementById('patients-timeline');
+    if (!timeline) return;
+    
+    if (appointmentsSnapshot.empty) {
+      timeline.innerHTML = `
+        <div class="no-results">
+          <i class="fas fa-calendar-day"></i>
+          <h3>No hay pacientes agendados para hoy</h3>
+          <p>No se encontraron citas programadas para hoy</p>
+        </div>
+      `;
+      return;
+    }
+    
+    const appointments = [];
+    appointmentsSnapshot.forEach(doc => {
+      appointments.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    timeline.innerHTML = appointments.map(appointment => {
+      const fecha = appointment.fecha.toDate();
+      const hora = fecha.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+      const estado = appointment.estado || 'programada';
+      
+      return `
+        <div class="timeline-item">
+          <div class="timeline-time">${hora}</div>
+          <div class="timeline-patient">
+            <h4>${appointment.pacienteNombre}</h4>
+            <p>${getProfessionName(appointment.tipoProfesional)} - ${appointment.profesionalNombre}</p>
+            <small>Tipo: ${appointment.tipo || 'General'}</small>
+          </div>
+          <span class="timeline-status ${estado}">
+            <i class="fas fa-${getStatusIcon(estado)}"></i>
+            ${estado.toUpperCase()}
+          </span>
+        </div>
+      `;
+    }).join('');
+  } catch (error) {
+    console.error('Error rendering patients timeline:', error);
+  }
+}
+
+function getStatusIcon(estado) {
+  const icons = {
+    'programada': 'clock',
+    'confirmada': 'check',
+    'en_curso': 'play',
+    'completada': 'check-circle',
+    'cancelada': 'times-circle'
+  };
+  return icons[estado] || 'circle';
+}
+
+function renderUpcomingAppointments(appointmentsSnapshot) {
+  try {
+    const grid = document.getElementById('upcoming-appointments-grid');
+    const noUpcomingSection = document.getElementById('no-upcoming-section');
+    
+    if (!grid) return;
+    
+    if (appointmentsSnapshot.empty) {
+      if (noUpcomingSection) noUpcomingSection.style.display = 'block';
+      grid.innerHTML = '';
+      return;
+    }
+    
+    if (noUpcomingSection) noUpcomingSection.style.display = 'none';
+    
+    const appointments = [];
+    appointmentsSnapshot.forEach(doc => {
+      appointments.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    grid.innerHTML = appointments.map(appointment => {
+      const fecha = appointment.fecha.toDate();
+      const fechaStr = fecha.toLocaleDateString('es-CL', { 
+        day: '2-digit', 
+        month: '2-digit',
+        year: 'numeric'
+      });
+      const hora = fecha.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+      
+      return `
+        <div class="appointment-card">
+          <div class="appointment-card-header">
+            <span class="appointment-date">
+              <i class="fas fa-calendar"></i>
+              ${fechaStr}
+            </span>
+            <span class="appointment-time">
+              <i class="fas fa-clock"></i>
+              ${hora}
+            </span>
+          </div>
+          <div class="appointment-card-body">
+            <h4>${appointment.pacienteNombre}</h4>
+            <p><i class="fas fa-user-md"></i> ${getProfessionName(appointment.tipoProfesional)}</p>
+            <p><i class="fas fa-tags"></i> ${appointment.tipo || 'General'}</p>
+          </div>
+          <div class="appointment-card-footer">
+            <span class="status-badge ${appointment.estado || 'programada'}">
+              ${(appointment.estado || 'programada').toUpperCase()}
+            </span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (error) {
+    console.error('Error rendering upcoming appointments:', error);
+  }
+}
+
+// ================= FORMULARIOS DE ENVÍO =================
+
+async function handleInformationOnlySubmit() {
+  try {
+    console.log('📧 Procesando solicitud de información únicamente...');
+    
+    const email = document.getElementById('info-email')?.value?.trim();
+    
+    if (!email || !isValidEmail(email)) {
+      showNotification('Email inválido', 'error');
+      return;
+    }
+    
+    const informationData = {
+      tipoSolicitud: 'informacion',
+      email: email,
+      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+      estado: 'pendiente_respuesta',
+      origen: 'web_publica',
+      prioridad: 'baja',
+      identificador: `INFO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    };
+    
+    console.log('💾 Guardando solicitud de información...');
+    
+    await db.collection('solicitudes_informacion').add(informationData);
+    
+    closeModal('patient-modal');
+    resetForm();
+    
+    showNotification('Solicitud de información enviada correctamente. Te responderemos pronto a tu email.', 'success', 6000);
+    
+  } catch (error) {
+    console.error('❌ Error enviando información:', error);
+    showNotification('Error al enviar la solicitud: ' + error.message, 'error');
+  }
+}
+
+function collectFormDataSafe() {
+  try {
+    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+    
+    if (!tipoSolicitud) {
+      throw new Error('Tipo de solicitud no seleccionado');
+    }
+    
+    const solicitudData = {
+      tipoSolicitud,
+      edad: parseInt(document.getElementById('patient-age')?.value) || null,
+      cesfam: document.getElementById('patient-cesfam')?.value || '',
+      paraMi: document.querySelector('input[name="paraMi"]:checked')?.value || '',
+      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+      estado: 'pendiente',
+      origen: 'web_publica',
+      version: '2.0'
+    };
+
+    const sustanciasChecked = document.querySelectorAll('input[name="sustancias"]:checked');
+    if (sustanciasChecked.length > 0) {
+      solicitudData.sustancias = Array.from(sustanciasChecked).map(cb => cb.value);
+    }
+
+    const tiempoConsumo = document.getElementById('tiempo-consumo');
+    if (tiempoConsumo && tiempoConsumo.value) {
+      solicitudData.tiempoConsumo = tiempoConsumo.value;
+    }
+
+    const urgencia = document.querySelector('input[name="urgencia"]:checked');
+    if (urgencia) {
+      solicitudData.urgencia = urgencia.value;
+    }
+
+    const tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked');
+    if (tratamientoPrevio) {
+      solicitudData.tratamientoPrevio = tratamientoPrevio.value;
+    }
+
+    const descripcion = document.getElementById('patient-description');
+    if (descripcion && descripcion.value.trim()) {
+      solicitudData.descripcion = descripcion.value.trim();
+    }
+
+    const motivacion = document.getElementById('motivacion-range');
+    if (motivacion && motivacion.value) {
+      solicitudData.motivacion = parseInt(motivacion.value);
+    }
+
+    if (tipoSolicitud === 'identificado') {
+      const nombre = document.getElementById('patient-name')?.value?.trim();
+      const apellidos = document.getElementById('patient-lastname')?.value?.trim();
+      const rut = document.getElementById('patient-rut')?.value?.trim();
+      const telefono = document.getElementById('patient-phone')?.value?.trim();
+      const email = document.getElementById('patient-email')?.value?.trim();
+      const direccion = document.getElementById('patient-address')?.value?.trim();
+
+      if (nombre) solicitudData.nombre = nombre;
+      if (apellidos) solicitudData.apellidos = apellidos;
+      if (rut) solicitudData.rut = formatRUT(rut);
+      if (telefono) solicitudData.telefono = formatPhoneNumber(telefono);
+      if (email) solicitudData.email = email;
+      if (direccion) solicitudData.direccion = direccion;
+    }
+
+    console.log('Datos recopilados exitosamente:', solicitudData);
+    return solicitudData;
+    
+  } catch (error) {
+    console.error('Error recopilando datos del formulario:', error);
+    throw new Error('Error recopilando datos del formulario: ' + error.message);
+  }
+}
+
+function calculatePriority(solicitudData) {
+  let score = 0;
+  
+  if (solicitudData.urgencia === 'alta') score += 3;
+  else if (solicitudData.urgencia === 'media') score += 2;
+  else score += 1;
+  
+  if (solicitudData.edad) {
+    if (solicitudData.edad < 18 || solicitudData.edad > 65) score += 2;
+    else score += 1;
+  }
+  
+  if (solicitudData.sustancias && solicitudData.sustancias.length > 2) score += 2;
+  else if (solicitudData.sustancias && solicitudData.sustancias.length > 0) score += 1;
+  
+  if (solicitudData.motivacion) {
+    if (solicitudData.motivacion >= 8) score += 2;
+    else if (solicitudData.motivacion >= 5) score += 1;
+  }
+  
+  if (score >= 8) return 'critica';
+  else if (score >= 6) return 'alta';
+  else if (score >= 4) return 'media';
+  else return 'baja';
+}
+
+function formatPhoneNumber(phone) {
+  if (!phone) return '';
+  const cleaned = phone.replace(/\D/g, '');
+  if (cleaned.length === 9) {
+    return `${cleaned.slice(0, 1)} ${cleaned.slice(1, 5)} ${cleaned.slice(5)}`;
+  }
+  return phone;
+}
+
+// ================= VALIDACIONES DE FORMULARIO =================
+
+function validateStep(step) {
+  try {
+    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+    const currentStepDiv = document.querySelector(`.form-step[data-step="${step}"]`);
+    if (!currentStepDiv) return false;
+
+    const requiredFields = currentStepDiv.querySelectorAll('[required]:not([style*="display: none"])');
+    let isValid = true;
+    const errors = [];
+
+    requiredFields.forEach(field => {
+      const value = field.value?.trim() || '';
+      
+      if (!value) {
+        field.classList.add('error');
+        errors.push(`${getFieldLabel(field)} es obligatorio`);
+        isValid = false;
+      } else {
+        field.classList.remove('error');
+      }
+    });
+
+    if (step === 1) {
+      if (!tipoSolicitud) {
+        errors.push('Selecciona un tipo de solicitud');
+        isValid = false;
+      } else if (tipoSolicitud === 'informacion') {
+        const email = document.getElementById('info-email');
+        if (!email || !email.value.trim()) {
+          errors.push('Ingresa un email para recibir información');
+          isValid = false;
+        } else if (!isValidEmail(email.value.trim())) {
+          errors.push('Ingresa un email válido');
+          isValid = false;
+        }
+      } else if (tipoSolicitud === 'identificado') {
+        const edad = parseInt(document.getElementById('patient-age')?.value);
+        if (!edad || edad < 12 || edad > 120) {
+          errors.push('La edad debe estar entre 12 y 120 años');
+          isValid = false;
+        }
+
+        const cesfam = document.getElementById('patient-cesfam')?.value;
+        if (!cesfam) {
+          errors.push('Selecciona un CESFAM');
+          isValid = false;
+        }
+
+        const paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
+        if (!paraMi) {
+          errors.push('Indica para quién solicitas ayuda');
+          isValid = false;
+        }
+      }
+    }
+
+    if (step === 2) {
+      const rut = document.getElementById('patient-rut');
+      if (rut && rut.value.trim() && !validateRUT(rut.value.trim())) {
+        errors.push('RUT inválido');
+        isValid = false;
+      }
+
+      const phone = document.getElementById('patient-phone');
+      if (phone && phone.value.trim() && !validatePhoneNumberString(phone.value.trim())) {
+        errors.push('Teléfono inválido');
+        isValid = false;
+      }
+
+      const email = document.getElementById('patient-email');
+      if (email && email.value.trim() && !isValidEmail(email.value.trim())) {
+        errors.push('Email inválido');
+        isValid = false;
+      }
+    }
+
+    if (step === 3) {
+      const sustancias = document.querySelectorAll('input[name="sustancias"]:checked');
+      if (sustancias.length === 0) {
+        errors.push('Selecciona al menos una sustancia');
+        isValid = false;
+      }
+
+      const urgencia = document.querySelector('input[name="urgencia"]:checked');
+      if (!urgencia) {
+        errors.push('Selecciona el nivel de urgencia');
+        isValid = false;
+      }
+
+      const tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked');
+      if (!tratamientoPrevio) {
+        errors.push('Indica si has recibido tratamiento previo');
+        isValid = false;
+      }
+    }
+
+    if (errors.length > 0) {
+      showNotification(errors.join('\n'), 'warning', 5000);
+    }
+
+    return isValid;
+  } catch (error) {
+    console.error('Error validating step:', error);
+    return false;
+  }
+}
+
+function getFieldLabel(field) {
+  try {
+    const label = field.closest('.form-group')?.querySelector('label');
+    return label ? label.textContent.replace('*', '').trim() : 'Campo';
+  } catch (error) {
+    return 'Campo';
+  }
+}
+
+// ================= ENVÍO DE FORMULARIOS =================
+
+async function handlePatientFormSubmit(e) {
+  e.preventDefault();
+  console.log('📄 Iniciando envío de solicitud...');
+  
+  const submitBtn = document.getElementById('submit-form');
+  
+  try {
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+    }
+    
+    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+    if (!tipoSolicitud) {
+      showNotification('Selecciona un tipo de solicitud', 'warning');
+      return;
+    }
+
+    if (tipoSolicitud !== 'identificado') {
+      showNotification('Tipo de solicitud no válido para este flujo', 'error');
+      return;
+    }
+
+    const edad = document.getElementById('patient-age')?.value;
+    const cesfam = document.getElementById('patient-cesfam')?.value;
+    const paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
+    
+    if (!edad || !cesfam || !paraMi) {
+      showNotification('Completa todos los campos básicos obligatorios', 'warning');
+      return;
+    }
 
     const nombre = document.getElementById('patient-name')?.value?.trim();
     const apellidos = document.getElementById('patient-lastname')?.value?.trim();
@@ -2853,7 +3533,6 @@ function setupAgendaFormListeners() {
     const agendaForm = document.getElementById('agenda-cita-form');
     
     if (agendaDate) {
-      // MEJORA 1: Configurar con fecha actual
       const today = new Date().toISOString().split('T')[0];
       agendaDate.min = today;
       agendaDate.value = today;
@@ -3008,7 +3687,6 @@ async function handleAgendaCitaSubmit(e) {
     
     const citaRef = await db.collection('citas').add(citaData);
     
-    // Actualizar estado de la solicitud
     const collectionName = currentAgendaSolicitud.tipo === 'reingreso' ? 'reingresos' : 'solicitudes_ingreso';
     await db.collection(collectionName).doc(currentAgendaSolicitud.id).update({
       estado: 'agendada',
@@ -3016,7 +3694,6 @@ async function handleAgendaCitaSubmit(e) {
       fechaAgendamiento: firebase.firestore.FieldValue.serverTimestamp()
     });
     
-    // Crear paciente si no existe
     await moveToPatients({
       nombre: currentAgendaSolicitud.nombre,
       apellidos: currentAgendaSolicitud.apellidos || '',
@@ -3034,7 +3711,6 @@ async function handleAgendaCitaSubmit(e) {
     
     showNotification(`Cita agendada exitosamente para ${fechaCompleta.toLocaleDateString('es-CL')} a las ${formData.hora}`, 'success', 5000);
     
-    // Recargar solicitudes para actualizar estados
     await loadSolicitudes();
     renderCalendar();
     
@@ -3153,6 +3829,10 @@ function createSolicitudDetailModal(solicitud) {
                 <i class="fas fa-envelope"></i>
                 Enviar Información
               </button>` : 
+              `<button class="btn btn-success" onclick="showAgendaModal('${solicitud.id}')">
+                <i class="fas fa-calendar-plus"></i>
+// ================= CONTINUACIÓN FINAL DE LA PARTE 5 =================
+
               `<button class="btn btn-success" onclick="showAgendaModal('${solicitud.id}')">
                 <i class="fas fa-calendar-plus"></i>
                 Agendar Cita
@@ -3605,7 +4285,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 window.showPatientDetail = showPatientDetail;
 window.buscarPacientePorRUT = buscarPacientePorRUT;
-window.limpiarBusquedaPacientes = limpiarBusquedaPacientes; // MEJORA 3: Exportar función limpiar
+window.limpiarBusquedaPacientes = limpiarBusquedaPacientes;
 window.createNuevaCitaModal = createNuevaCitaModal;
 window.selectNuevaCitaTimeSlot = selectNuevaCitaTimeSlot;
 window.showSolicitudDetailById = (id) => {
@@ -3628,21 +4308,8 @@ console.log(`
    ===============================================
    
    ✅ MEJORA 1: Nueva cita configurada con fecha y hora actual
-      - Modal muestra fecha/hora del sistema
-      - Campo fecha se pre-llena con fecha actual
-      - Validación de horarios pasados con hora real
-   
    ✅ MEJORA 2: Enlace con Firebase para solicitudes_ingreso
-      - Conexión directa con colección solicitudes_ingreso
-      - Categorización de pacientes que necesitan horas vs información
-      - Estadísticas en tiempo real desde Firebase
-      - Mejor manejo de errores de conexión
-   
    ✅ MEJORA 3: Botón limpiar en pestaña pacientes funcional
-      - Función limpiarBusquedaPacientes() implementada
-      - Limpia input de RUT y resultados de búsqueda
-      - Acceso directo con tecla Escape
-      - Notificación de confirmación
    
    🚀 FUNCIONALIDADES ADICIONALES MANTENIDAS:
    ✅ Formulario APP14 original sin modificaciones
