@@ -1,5 +1,8 @@
-// ================= SENDA PUENTE ALTO - SISTEMA CORREGIDO CON FORMULARIO ORIGINAL APP14 =================
-// PARTE 1: Configuración, Variables Globales y Formulario Original - CORREGIDO
+// Verificar que Firebase esté disponible
+if (typeof firebase === 'undefined') {
+  console.error('❌ Firebase no está cargado');
+  alert('Error: Firebase no está disponible. Verifica las librerías.');
+}
 
 // Firebase Configuration
 const firebaseConfig = {
