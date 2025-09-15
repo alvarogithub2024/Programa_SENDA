@@ -3157,3 +3157,30 @@ body {
     border-width: 3px;
   }
 }
+/* Modal específico para registrar atención */
+#atencion-modal .modal {
+  max-width: 500px;
+  padding: 2.5rem 2rem;
+}
+
+#atencion-modal .patient-info {
+  margin-bottom: 1.5rem;
+  background: var(--light-blue);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  padding: 1rem 1.5rem;
+}
+
+#atencion-modal h2 i {
+  color: var(--health-green);
+  margin-right: 8px;
+}
+
+#atencion-modal .form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
