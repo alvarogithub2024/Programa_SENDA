@@ -3701,7 +3701,7 @@ async function loadAtencionesPaciente(rut, containerId) {
   try {
     const atencionesSnapshot = await db.collection('atenciones')
       .where('pacienteRut', '==', rut)
-      .where('cesfam', '==', currentUserData.cesfam)   // <--- ESTA LÍNEA ES CLAVE
+      .where('cesfam', '==', currentUserData.cesfam)
       .orderBy('fecha', 'desc')
       .get();
 
@@ -3743,6 +3743,7 @@ function createPatientDetailModal(paciente) {
       <div class="modal large-modal">
         <button class="modal-close" onclick="closeModal('patient-detail-modal')">
           <i class="fas fa-times"></i>
+          </div>
         </button>
         
         <div style="padding: 24px;">
