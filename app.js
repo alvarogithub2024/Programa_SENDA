@@ -3701,10 +3701,10 @@ async function showPatientDetail(pacienteId) {
 async function loadAtencionesPaciente(rut, containerId) {
   try {
     const atencionesSnapshot = await db.collection('atenciones')
-      .where('pacienteRut', '==', rut)
-      .where('cesfam', '==', currentUserData.cesfam) 
-      .orderBy('fecha', 'desc')
-      .get();
+  .where('pacienteRut', '==', rut)
+  .where('cesfam', '==', currentUserData.cesfam) //
+  .orderBy('fecha', 'desc')
+  .get();
 
     const container = document.getElementById(containerId);
     if (!container) return;
