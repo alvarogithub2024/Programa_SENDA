@@ -1458,7 +1458,7 @@ function createSolicitudCard(solicitud) {
       </div>
     `;
   }
-}   
+} 
    
   } catch (error) {
     console.error('Error creando tarjeta de solicitud:', error);
