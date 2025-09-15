@@ -2701,10 +2701,15 @@ function setupNuevaCitaFormListeners() {
     const citaForm = document.getElementById('nueva-cita-form');
     const rutInput = document.getElementById('nueva-cita-rut');
     
-    if (citaDate) {
-      const today = new Date().toISOString().split('T')[0];
-      citaDate.min = today;
-    }
+   if (citaDate) {
+  const today = new Date();
+  const todayString = today.toISOString().split('T')[0];
+  citaDate.min = todayString;
+
+  if (!citaDate.value) {
+    citaDate.value = todayString;
+  }
+}
 
     if (rutInput) {
       rutInput.addEventListener('input', (e) => {
@@ -3015,7 +3020,11 @@ function isPastTimeSlot(date, hour, minute) {
   const now = new Date();
   const slotTime = new Date(date);
   slotTime.setHours(hour, minute, 0, 0);
-  return slotTime <= now;
+  
+  const bufferTime = new Date(now);
+  bufferTime.setMinutes(bufferTime.getMinutes() + 30);
+  
+  return slotTime <= bufferTime;
 }
 
 async function getOccupiedSlots(professionalId, date) {
@@ -3058,11 +3067,19 @@ async function getOccupiedSlots(professionalId, date) {
 
 function setupCalendar() {
   try {
+    
     currentCalendarDate = new Date();
+    selectedCalendarDate = new Date();
+    
     renderCalendar();
     
+    // Cargar las citas de hoy automáticamente
+    if (currentUserData) {
+      loadTodayAppointments();
+    }
+    
     if (APP_CONFIG.DEBUG_MODE) {
-      console.log('✅ Calendario configurado');
+      console.log('✅ Calendario configurado con fecha actual:', currentCalendarDate.toLocaleDateString('es-CL'));
     }
   } catch (error) {
     console.error('❌ Error configurando calendario:', error);
@@ -3075,7 +3092,9 @@ function renderCalendar() {
     const monthYearElement = document.getElementById('calendar-month-year');
     
     if (!calendarGrid || !monthYearElement) return;
-
+    if (!currentCalendarDate) {
+      currentCalendarDate = new Date();
+    }
     const year = currentCalendarDate.getFullYear();
     const month = currentCalendarDate.getMonth();
     
@@ -3463,10 +3482,11 @@ async function loadTodayAppointments() {
     const today = new Date();
     await loadDayAppointments(today);
     
-    if (!selectedCalendarDate) {
-      selectedCalendarDate = today;
-      selectCalendarDay(today);
-    }
+    // Siempre actualizar la fecha seleccionada a hoy
+    selectedCalendarDate = today;
+    selectCalendarDay(today);
+    
+    console.log('📅 Citas de hoy cargadas para:', today.toLocaleDateString('es-CL'));
   } catch (error) {
     console.error('Error cargando citas de hoy:', error);
   }
