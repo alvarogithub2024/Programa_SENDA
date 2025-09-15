@@ -1443,6 +1443,21 @@ function createSolicitudCard(solicitud) {
       </div>
     `;
   }
+}
+    `;
+  } catch (error) {
+    console.error('Error creando tarjeta de solicitud:', error);
+    return `
+      <div class="request-card error-card">
+        <div class="request-header">
+          <h3>Error al cargar solicitud</h3>
+        </div>
+        <div class="request-body">
+          <p>No se pudo cargar la información de esta solicitud</p>
+        </div>
+      </div>
+    `;
+  }
 }   
    
   } catch (error) {
