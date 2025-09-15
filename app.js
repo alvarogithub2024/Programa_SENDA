@@ -3017,12 +3017,10 @@ function generateTimeSlots(date) {
       currentHour += Math.floor(currentMinute / 60);
       currentMinute = currentMinute % 60;
     }
-    
-    // CONDICIÃ“N DE SEGURIDAD PARA EVITAR BUCLE INFINITO
-    if (currentHour > config.horaFin + 1) {
-      break;
-    }
   }
+  
+  return slots;
+}
   
   console.log(`DÃ­a ${dayOfWeek} (${date.toLocaleDateString()}): ${slots.length} slots generados`, slots.map(s => s.time));
   return slots;
@@ -3045,7 +3043,7 @@ function debugTimeSlots() {
   console.log('SÃ¡bado 13/09:', sabado.getDay(), generateTimeSlots(sabado));
 }
 
-fuNction isPastTimeSlot(date, hour, minute) {
+function isPastTimeSlot(date, hour, minute) {
   const now = new Date();
   const slotTime = new Date(date);
   slotTime.setHours(hour, minute, 0, 0);
