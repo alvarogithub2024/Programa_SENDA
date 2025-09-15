@@ -3827,6 +3827,55 @@ async function loadSeguimiento() {
     showLoading(false);
   }
 }
+function showAtencionModal(pacienteRut, pacienteNombre) {
+  const modal = `
+    <div class="modal-overlay temp-modal" id="atencion-modal">
+      <div class="modal">
+        <button class="modal-close" onclick="closeModal('atencion-modal')">
+          <i class="fas fa-times"></i>
+        </button>
+        <div style="padding:24px;">
+          <h2>Registrar Atención</h2>
+          <p><strong>Paciente:</strong> ${pacienteNombre} (${pacienteRut})</p>
+          <form id="atencion-form">
+            <div class="form-group">
+              <label>Detalle de la atención</label>
+              <textarea id="atencion-detalle" rows="5" required></textarea>
+            </div>
+            <div style="text-align:right;margin-top:16px;">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Guardar Atención
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modal);
+  showModal('atencion-modal');
+  
+  document.getElementById('atencion-form').addEventListener('submit', async function(e){
+    e.preventDefault();
+    const detalle = document.getElementById('atencion-detalle').value.trim();
+    if(!detalle) return showNotification('Debes escribir la atención', 'warning');
+    try {
+      await db.collection('atenciones').add({
+        pacienteRut,
+        pacienteNombre,
+        detalle,
+        fecha: firebase.firestore.FieldValue.serverTimestamp(),
+        profesional: currentUserData ? `${currentUserData.nombre} ${currentUserData.apellidos}` : '',
+        profesionalId: currentUser ? currentUser.uid : '',
+        cesfam: currentUserData ? currentUserData.cesfam : '',
+      });
+      showNotification('Atención registrada', 'success');
+      closeModal('atencion-modal');
+    } catch(err){
+      showNotification('Error guardando atención', 'error');
+    }
+  });
+}
 
 function renderPatientsTimeline(appointmentsSnapshot) {
   try {
@@ -3851,14 +3900,14 @@ function renderPatientsTimeline(appointmentsSnapshot) {
         ...doc.data()
       });
     });
-    
     timeline.innerHTML = appointments.map(appointment => {
       const fecha = appointment.fecha.toDate();
       const hora = fecha.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
       const estado = appointment.estado || 'programada';
       
+      // SOLO ESTE RETURN:
       return `
-        <div class="timeline-item">
+        <div class="timeline-item" onclick="showAtencionModal('${appointment.pacienteRut}', '${appointment.pacienteNombre}')">
           <div class="timeline-time">${hora}</div>
           <div class="timeline-patient">
             <h4>${appointment.pacienteNombre}</h4>
@@ -4370,6 +4419,7 @@ window.showPatientAppointmentInfo = showPatientAppointmentInfo;
 window.switchLoginTab = switchLoginTab;
 window.downloadPatientPDF = downloadPatientPDF;
 window.loadSolicitudes = loadSolicitudes;
+window.showAtencionModal = showAtencionModal;
 
 // ================= MENSAJE FINAL =================
 
