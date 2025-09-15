@@ -3687,6 +3687,7 @@ async function showPatientDetail(pacienteId) {
     const detailModal = createPatientDetailModal(paciente);
     document.body.insertAdjacentHTML('beforeend', detailModal);
     showModal('patient-detail-modal');
+    loadAtencionesPaciente(paciente.rut, `atenciones-list-${paciente.rut}`);
     
   } catch (error) {
     console.error('Error loading patient detail:', error);
@@ -3760,7 +3761,11 @@ function createPatientDetailModal(paciente) {
               ${paciente.citaInicialId ? `<div><strong>Cita inicial ID:</strong> ${paciente.citaInicialId}</div>` : ''}
             </div>
           </div>
-          
+          <div id="atenciones-paciente-${paciente.rut}" style="margin-top:24px;">
+            <h4 style="margin-bottom:8px;">Historial de Atenciones</h4>
+          <div id="atenciones-list-${paciente.rut}">Cargando...</div>
+            </div>
+
           <div style="display: flex; gap: 12px; justify-content: flex-end;">
             <button class="btn btn-outline" onclick="closeModal('patient-detail-modal')">
               <i class="fas fa-times"></i>
@@ -3772,7 +3777,42 @@ function createPatientDetailModal(paciente) {
     </div>
   `;
 }
+async function loadAtencionesPaciente(rut, containerId) {
+  try {
+    const atencionesSnapshot = await db.collection('atenciones')
+      .where('pacienteRut', '==', rut)
+      .orderBy('fecha', 'desc')
+      .get();
 
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    if (atencionesSnapshot.empty) {
+      container.innerHTML = `<p style="color:gray;">Sin atenciones registradas.</p>`;
+      return;
+    }
+
+    const atenciones = [];
+    atencionesSnapshot.forEach(doc => atenciones.push(doc.data()));
+
+    container.innerHTML = atenciones.map(atencion => {
+      const fecha = atencion.fecha && atencion.fecha.toDate
+        ? atencion.fecha.toDate().toLocaleString('es-CL')
+        : '';
+      return `
+        <div class="atencion-item" style="margin-bottom:16px; padding:10px; border:1px solid #dde;">
+          <div><b>Fecha:</b> ${fecha}</div>
+          <div><b>Profesional:</b> ${atencion.profesional || ''}</div>
+          <div><b>Detalle:</b><br> ${atencion.detalle || ''}</div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error('Error cargando atenciones:', err);
+    const container = document.getElementById(containerId);
+    if (container) container.innerHTML = `<p style="color:red;">Error al cargar atenciones.</p>`;
+  }
+}
 // ================= BÚSQUEDA DE PACIENTES POR RUT =================
 
 async function buscarPacientePorRUT() {
