@@ -2984,54 +2984,28 @@ async function registrarPacienteAutomaticamente(citaData, citaId) {
 function generateTimeSlots(date) {
   const dayOfWeek = date.getDay();
   const slots = [];
-  
   let config;
-  
-  // Lunes a Viernes: dayOfWeek 1-5
+
   if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-    config = HORARIOS_CONFIG.semana; // 08:00 - 16:30
-  } 
-  // SÃ¡bado y Domingo: dayOfWeek 6 y 0
-  else if (dayOfWeek === 0 || dayOfWeek === 6) {
-    config = HORARIOS_CONFIG.finSemana; // 09:00 - 12:30
-  } 
-  else {
+    config = HORARIOS_CONFIG.semana;
+  } else if (dayOfWeek === 0 || dayOfWeek === 6) {
+    config = HORARIOS_CONFIG.finSemana;
+  } else {
     return [];
   }
-  
+
   let currentHour = config.horaInicio;
   let currentMinute = 0;
-  
-  // LÃ“GICA CORREGIDA DEL BUCLE
+
   while (currentHour < config.horaFin || (currentHour === config.horaFin && currentMinute <= config.minutoFin)) {
     const timeString = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
-    
-    slots.push({
-      time: timeString,
-      hour: currentHour,
-      minute: currentMinute
-    });
-    
+    slots.push({ time: timeString, hour: currentHour, minute: currentMinute });
     currentMinute += config.intervaloMinutos;
     if (currentMinute >= 60) {
       currentHour += Math.floor(currentMinute / 60);
       currentMinute = currentMinute % 60;
     }
   }
-  
-  return slots;
-}
-  
-  console.log(`DÃ­a ${dayOfWeek} (${date.toLocaleDateString()}): ${slots.length} slots generados`, slots.map(s => s.time));
-  return slots;
-}
-    currentMinute += config.intervaloMinutos;
-    if (currentMinute >= 60) {
-      currentHour += Math.floor(currentMinute / 60);
-      currentMinute = currentMinute % 60;
-    }
-  }
-  
   return slots;
 }
 function debugTimeSlots() {
