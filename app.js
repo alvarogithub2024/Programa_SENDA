@@ -1735,7 +1735,6 @@ function formatDate(timestamp) {
     } else {
       return 'N/A';
     }
-    
     if (isNaN(date.getTime())) return 'N/A';
     
     return date.toLocaleDateString('es-CL', {
@@ -1750,6 +1749,7 @@ function formatDate(timestamp) {
     return 'N/A';
   }
 }
+
 function parseLocalDateFromInput(dateStr) {
   // Para 'YYYY-MM-DD'
   const [year, month, day] = dateStr.split('-').map(Number);
