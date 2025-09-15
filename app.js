@@ -1242,13 +1242,8 @@ function renderSolicitudes(solicitudes) {
     }
 
 
-${solicitud.tipo !== 'informacion' ? 
-  `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); showAgendaModalFromSolicitud('${solicitud.id}')" title="Agendar cita">
-    <i class="fas fa-calendar-plus"></i>
-    Agendar
-  </button>` : ''
-}
-    
+container.innerHTML = solicitudes.map(solicitud => createSolicitudCard(solicitud)).join('');
+
     // CORREGIDO: Agregar event listeners funcionales a las tarjetas
     container.querySelectorAll('.request-card').forEach(card => {
       card.addEventListener('click', (e) => {
@@ -1295,7 +1290,29 @@ function createSolicitudCard(solicitud) {
         titulo = 'Solicitud General';
         subtitulo = `Edad: ${solicitud.edad || 'No especificada'} años`;
       }
-    }
+      
+    ${solicitud.tipo !== 'informacion' ? 
+          `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); showAgendaModalFromSolicitud('${solicitud.id}')" title="Agendar cita">
+            <i class="fas fa-calendar-plus"></i>
+            Agendar
+          </button>` : ''
+        }
+        
+        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); showSolicitudDetailById('${solicitud.id}')" title="Ver detalles completos">
+          <i class="fas fa-eye"></i>
+          Ver Detalle
+        </button>
+        
+        ${solicitud.prioridad === 'critica' ? 
+          `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); handleUrgentCase('${solicitud.id}')" title="Caso urgente">
+            <i class="fas fa-exclamation-triangle"></i>
+            URGENTE
+          </button>` : ''
+        }
+      </div>
+    </div>
+  `;
+}
 
     const sustancias = solicitud.sustancias || [];
     const sustanciasHtml = sustancias.length > 0 ? 
