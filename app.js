@@ -2980,82 +2980,75 @@ async function registrarPacienteAutomaticamente(citaData, citaId) {
 }
 
 // ================= FUNCIONES DE HORARIOS =================
+// ================= FUNCIONES DE HORARIOS =================
 
 function generateTimeSlots(date) {
   const dayOfWeek = date.getDay();
   const slots = [];
-  
+
   let config;
-  
+
   // Lunes a Viernes: dayOfWeek 1-5
   if (dayOfWeek >= 1 && dayOfWeek <= 5) {
     config = HORARIOS_CONFIG.semana; // 08:00 - 16:30
-  } 
+  }
   // Sábado y Domingo: dayOfWeek 6 y 0
   else if (dayOfWeek === 0 || dayOfWeek === 6) {
     config = HORARIOS_CONFIG.finSemana; // 09:00 - 12:30
-  } 
+  }
   else {
     return [];
   }
-  
+
   let currentHour = config.horaInicio;
   let currentMinute = 0;
-  
+
   // LÓGICA CORREGIDA DEL BUCLE
   while (currentHour < config.horaFin || (currentHour === config.horaFin && currentMinute <= config.minutoFin)) {
     const timeString = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
-    
+
     slots.push({
       time: timeString,
       hour: currentHour,
       minute: currentMinute
     });
-    
+
     currentMinute += config.intervaloMinutos;
     if (currentMinute >= 60) {
       currentHour += Math.floor(currentMinute / 60);
       currentMinute = currentMinute % 60;
     }
-    
+
     // CONDICIÓN DE SEGURIDAD PARA EVITAR BUCLE INFINITO
     if (currentHour > config.horaFin + 1) {
       break;
     }
   }
-  
+
   console.log(`Día ${dayOfWeek} (${date.toLocaleDateString()}): ${slots.length} slots generados`, slots.map(s => s.time));
   return slots;
 }
-    currentMinute += config.intervaloMinutos;
-    if (currentMinute >= 60) {
-      currentHour += Math.floor(currentMinute / 60);
-      currentMinute = currentMinute % 60;
-    }
-  }
-  
-  return slots;
-}
+
 function debugTimeSlots() {
   const lunes = new Date('2025-09-15');
   const sabado = new Date('2025-09-13');
-  
+
   console.log('=== DEBUG HORARIOS ===');
   console.log('Lunes 15/09:', lunes.getDay(), generateTimeSlots(lunes));
   console.log('Sábado 13/09:', sabado.getDay(), generateTimeSlots(sabado));
 }
 
-fuNction isPastTimeSlot(date, hour, minute) {
+function isPastTimeSlot(date, hour, minute) {
   const now = new Date();
   const slotTime = new Date(date);
   slotTime.setHours(hour, minute, 0, 0);
-  
+
+  // Configura un buffer de 30 minutos para evitar agendar en horarios muy cercanos al actual
   const bufferTime = new Date(now);
   bufferTime.setMinutes(bufferTime.getMinutes() + 30);
-  
+
   return slotTime <= bufferTime;
 }
-
 async function getOccupiedSlots(professionalId, date) {
   try {
     if (!currentUserData) return [];
