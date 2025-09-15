@@ -3734,6 +3734,7 @@ async function loadAtencionesPaciente(rut, containerId) {
     if (container) container.innerHTML = `<p style="color:red;">Error al cargar atenciones.</p>`;
   }
 }
+
 function createPatientDetailModal(paciente) {
   const fechaCreacion = formatDate(paciente.fechaCreacion);
   const fechaPrimeraAtencion = paciente.fechaPrimeraAtencion ? formatDate(paciente.fechaPrimeraAtencion) : 'No registrada';
