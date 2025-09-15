@@ -1661,7 +1661,7 @@ SENDA ${currentUserData.cesfam}"></textarea>
       </div>
     `;
   }
-}
+    
     const responderModal = `
       <div class="modal-overlay temp-modal" id="responder-modal">
         <div class="modal large-modal">
