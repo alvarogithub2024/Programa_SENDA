@@ -3335,17 +3335,20 @@ function createSolicitudDetailModal(solicitud) {
             }
           </div>
           
+          <!-- BOTONES MODIFICADOS: Solo cerrar, sin agendar -->
           <div style="display: flex; gap: 12px; justify-content: flex-end;">
             <button class="btn btn-outline" onclick="closeModal('solicitud-detail-modal')">
               <i class="fas fa-times"></i>
               Cerrar
             </button>
+            <!-- ELIMINADO: Botón Agendar Cita 
             ${solicitud.tipo !== 'informacion' ? 
               `<button class="btn btn-success" onclick="showAgendaModal('${solicitud.id}')">
                 <i class="fas fa-calendar-plus"></i>
                 Agendar Cita
               </button>` : ''
             }
+            -->
           </div>
         </div>
       </div>
