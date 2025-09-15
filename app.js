@@ -1320,6 +1320,58 @@ function createSolicitudCard(solicitud) {
         Responder
       </button>` : '';
 
+function createSolicitudCard(solicitud) {
+  try {
+    const fecha = formatDate(solicitud.fechaCreacion);
+    const prioridad = solicitud.prioridad || 'baja';
+    const estado = solicitud.estado || 'pendiente';
+    
+    let titulo, subtitulo, tipoIcon;
+    
+    if (solicitud.tipo === 'reingreso') {
+      titulo = `Reingreso - ${solicitud.nombre || 'Sin nombre'}`;
+      subtitulo = `RUT: ${solicitud.rut || 'No disponible'}`;
+      tipoIcon = 'fa-redo';
+    } else if (solicitud.tipo === 'informacion' || solicitud.tipoSolicitud === 'informacion') {
+      titulo = 'Solicitud de Información';
+      subtitulo = `Email: ${solicitud.email || 'No disponible'}`;
+      tipoIcon = 'fa-info-circle';
+    } else {
+      tipoIcon = 'fa-user-plus';
+      if (solicitud.tipoSolicitud === 'identificado') {
+        titulo = `${solicitud.nombre || ''} ${solicitud.apellidos || ''}`.trim() || 'Solicitud identificada';
+        subtitulo = `RUT: ${solicitud.rut || 'No disponible'}`;
+      } else {
+        titulo = 'Solicitud General';
+        subtitulo = `Edad: ${solicitud.edad || 'No especificada'} años`;
+      }
+    }
+
+    const sustancias = solicitud.sustancias || [];
+    const sustanciasHtml = sustancias.length > 0 ? 
+      sustancias.map(s => `<span class="substance-tag">${s}</span>`).join('') : '';
+
+    const prioridadColor = {
+      'critica': '#ef4444',
+      'alta': '#f59e0b',
+      'media': '#3b82f6',
+      'baja': '#10b981'
+    };
+
+    const estadoIcon = {
+      'pendiente': 'fa-clock',
+      'en_proceso': 'fa-spinner',
+      'agendada': 'fa-calendar-check',
+      'completada': 'fa-check-circle',
+      'pendiente_respuesta': 'fa-reply'
+    };
+
+    const responderBtn = (solicitud.tipo === 'informacion' || solicitud.tipoSolicitud === 'informacion') ? 
+      `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); showResponderModal('${solicitud.id}')" title="Responder solicitud de información">
+        <i class="fas fa-reply"></i>
+        Responder
+      </button>` : '';
+
     return `
       <div class="request-card" data-id="${solicitud.id}" style="transition: all 0.2s ease;">
         <div class="request-header">
@@ -1378,6 +1430,21 @@ function createSolicitudCard(solicitud) {
         </div>
       </div>
     `;
+  } catch (error) {
+    console.error('Error creando tarjeta de solicitud:', error);
+    return `
+      <div class="request-card error-card">
+        <div class="request-header">
+          <h3>Error al cargar solicitud</h3>
+        </div>
+        <div class="request-body">
+          <p>No se pudo cargar la información de esta solicitud</p>
+        </div>
+      </div>
+    `;
+  }
+}   
+   
   } catch (error) {
     console.error('Error creando tarjeta de solicitud:', error);
     return `
