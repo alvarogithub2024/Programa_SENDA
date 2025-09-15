@@ -4418,15 +4418,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Configurar autenticación
     auth.onAuthStateChanged(onAuthStateChanged);
     
-    console.log('🎉 SENDA Puente Alto - Sistema completo inicializado');
-    
-  } catch (error) {
-    console.error('❌ Error durante la inicialización:', error);
-    showNotification('Error inicializando el sistema', 'error');
-  }
-});
 
- setInterval(() => {
+    setInterval(() => {
       if (currentUserData) {
         const now = new Date();
         const currentHour = now.getHours();
