@@ -2338,15 +2338,46 @@ function showResponderModal(solicitudId) {
           <button class="modal-close" onclick="closeModal('responder-modal')">
             <i class="fas fa-times"></i>
           </button>
+          
           <div style="padding: 24px;">
             <h2><i class="fas fa-reply"></i> Responder Solicitud de Información</h2>
-            <!-- ... otros campos ... -->
+            
+            <div style="background: var(--light-blue); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+              <h4 style="margin: 0 0 8px 0; color: var(--primary-blue);">
+                <i class="fas fa-info-circle"></i> Información de la Solicitud
+              </h4>
+              <div style="font-size: 14px;">
+                <strong>Email del solicitante:</strong> ${solicitud.email}<br>
+                <strong>Fecha:</strong> ${formatDate(solicitud.fechaCreacion)}<br>
+                <strong>ID:</strong> ${solicitud.id}
+              </div>
+            </div>
+            
             <form id="responder-form">
-              <!-- ... otros inputs ... -->
+              <input type="hidden" id="responder-solicitud-id" value="${solicitud.id}">
+              
+              <div class="form-group">
+                <label class="form-label">Desde (Email institucional) *</label>
+                <input type="email" class="form-input" id="responder-from" 
+                       value="${currentUserData.email || currentUserData.nombre.toLowerCase().replace(/\s+/g, '.')}@senda.cl" readonly>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Para *</label>
+                <input type="email" class="form-input" id="responder-to" 
+                       value="${solicitud.email}" readonly>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Asunto *</label>
+                <input type="text" class="form-input" id="responder-subject" 
+                       value="Respuesta a su solicitud de información - SENDA Puente Alto" required>
+              </div>
+              
               <div class="form-group">
                 <label class="form-label">Mensaje *</label>
                 <textarea class="form-textarea" id="responder-message" rows="8" required
-                  placeholder="Estimado/a solicitante,
+                          placeholder="Estimado/a solicitante,
 
 Gracias por contactar al Programa SENDA Puente Alto. En respuesta a su solicitud de información...
 
@@ -2355,7 +2386,17 @@ ${currentUserData.nombre} ${currentUserData.apellidos}
 ${getProfessionName(currentUserData.profession)}
 SENDA ${currentUserData.cesfam}"></textarea>
               </div>
-              <!-- ... botones ... -->
+              
+              <div class="form-actions" style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                <button type="button" class="btn btn-outline" onclick="closeModal('responder-modal')">
+                  <i class="fas fa-times"></i>
+                  Cancelar
+                </button>
+                <button type="submit" class="btn btn-success">
+                  <i class="fas fa-paper-plane"></i>
+                  Enviar Respuesta
+                </button>
+              </div>
             </form>
           </div>
         </div>
@@ -2364,12 +2405,14 @@ SENDA ${currentUserData.cesfam}"></textarea>
 
     document.body.insertAdjacentHTML('beforeend', responderModal);
     showModal('responder-modal');
+
     document.getElementById('responder-form').addEventListener('submit', handleResponderSubmit);
 
   } catch (error) {
     console.error('Error showing responder modal:', error);
     showNotification('Error al abrir modal de respuesta', 'error');
   }
+}
 
 async function handleResponderSubmit(e) {
   e.preventDefault();
@@ -3774,7 +3817,13 @@ function createPatientDetailModal(paciente) {
     </div>
   `;
 }
-
+    }).join('');
+  } catch (err) {
+    console.error('Error cargando atenciones:', err);
+    const container = document.getElementById(containerId);
+    if (container) container.innerHTML = `<p style="color:red;">Error al cargar atenciones.</p>`;
+  }
+}
 // ================= BÚSQUEDA DE PACIENTES POR RUT =================
 
 async function buscarPacientePorRUT() {
