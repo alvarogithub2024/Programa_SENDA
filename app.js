@@ -3817,13 +3817,7 @@ function createPatientDetailModal(paciente) {
     </div>
   `;
 }
-    }).join('');
-  } catch (err) {
-    console.error('Error cargando atenciones:', err);
-    const container = document.getElementById(containerId);
-    if (container) container.innerHTML = `<p style="color:red;">Error al cargar atenciones.</p>`;
-  }
-}
+
 // ================= BÚSQUEDA DE PACIENTES POR RUT =================
 
 async function buscarPacientePorRUT() {
