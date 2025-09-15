@@ -3101,6 +3101,41 @@ function renderPacientes(pacientes) {
     console.error('Error rendering pacientes:', error);
   }
 }
+function createPatientDetailModal(paciente) {
+  const fechaCreacion = formatDate(paciente.fechaCreacion);
+  const fechaPrimeraAtencion = paciente.fechaPrimeraAtencion ? formatDate(paciente.fechaPrimeraAtencion) : 'No registrada';
+  
+  return `
+    <div class="modal-overlay temp-modal" id="patient-detail-modal">
+      <div class="modal large-modal">
+        <button class="modal-close" onclick="closeModal('patient-detail-modal')">
+          <i class="fas fa-times"></i>
+        </button>
+        
+        <div style="padding: 24px;">
+          <h2><i class="fas fa-user-md"></i> Ficha del Paciente</h2>
+          
+          <div class="patient-info" style="background: var(--light-blue); padding: 20px; border-radius: 12px; margin-bottom: 24px;">
+            <!-- ... resto del contenido igual ... -->
+          </div>
+          
+          <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="btn btn-outline" onclick="closeModal('patient-detail-modal')">
+              <i class="fas fa-times"></i>
+              Cerrar
+            </button>
+            <!-- ELIMINADO: Botón de descargar PDF
+            <button class="btn btn-success" onclick="downloadPatientPDF('${paciente.id}')">
+              <i class="fas fa-download"></i>
+              Descargar PDF
+            </button>
+            -->
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
 
 async function showPatientDetail(pacienteId) {
   try {
