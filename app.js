@@ -2982,31 +2982,27 @@ async function registrarPacienteAutomaticamente(citaData, citaId) {
 // ================= FUNCIONES DE HORARIOS ================
 
 function generateTimeSlots(date) {
- 
+  // Normaliza la fecha a la zona local (ignora la hora/minuto/segundo)
   const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const dayOfWeek = localDate.getDay();
-
+  const slots = [];
   let config;
 
-  // Lunes a Viernes: dayOfWeek 1-5
+  // Lógica igual que antes...
   if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-    config = HORARIOS_CONFIG.semana; // 08:00 - 16:30
-  }
-  // Sábado y Domingo: dayOfWeek 6 y 0
-  else if (dayOfWeek === 0 || dayOfWeek === 6) {
-    config = HORARIOS_CONFIG.finSemana; // 09:00 - 12:30
-  }
-  else {
+    config = HORARIOS_CONFIG.semana;
+  } else if (dayOfWeek === 0 || dayOfWeek === 6) {
+    config = HORARIOS_CONFIG.finSemana;
+  } else {
     return [];
   }
 
+  // El resto de tu función igual
   let currentHour = config.horaInicio;
   let currentMinute = 0;
 
-  // LÓGICA CORREGIDA DEL BUCLE
   while (currentHour < config.horaFin || (currentHour === config.horaFin && currentMinute <= config.minutoFin)) {
     const timeString = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
-
     slots.push({
       time: timeString,
       hour: currentHour,
@@ -3018,14 +3014,12 @@ function generateTimeSlots(date) {
       currentHour += Math.floor(currentMinute / 60);
       currentMinute = currentMinute % 60;
     }
-
-    // CONDICIÓN DE SEGURIDAD PARA EVITAR BUCLE INFINITO
     if (currentHour > config.horaFin + 1) {
       break;
     }
   }
 
-  console.log(`Día ${dayOfWeek} (${date.toLocaleDateString()}): ${slots.length} slots generados`, slots.map(s => s.time));
+  console.log(`Día ${dayOfWeek} (${localDate.toLocaleDateString()}): ${slots.length} slots generados`, slots.map(s => s.time));
   return slots;
 }
 
