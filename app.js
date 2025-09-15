@@ -3786,7 +3786,19 @@ async function downloadPatientPDF(pacienteId) {
     doc.setTextColor(100, 100, 100);
     doc.text('Documento generado por Sistema SENDA Puente Alto', 20, 280);
     doc.text('Información confidencial - Uso exclusivo profesional', 20, 290);
+ 
+    const fileName = `ficha_${paciente.nombre.replace(/\s+/g, '_')}_${paciente.rut.replace(/[.-]/g, '')}.pdf`;
+    doc.save(fileName);
     
+    showNotification('PDF generado y descargado correctamente', 'success');
+    
+  } catch (error) {
+    console.error('Error generando PDF:', error);
+    showNotification('Error al generar PDF: ' + error.message, 'error');
+  } finally {
+    showLoading(false);
+  }
+}  
 
 // ================= FUNCIONES PLACEHOLDER =================
 
@@ -4174,6 +4186,7 @@ window.showModal = showModal;
 window.closeModal = closeModal;
 window.showPatientAppointmentInfo = showPatientAppointmentInfo;
 window.showResponderModal = showResponderModal;
+window.switchLoginTab = switchLoginTab;
 
 console.log(`
 🎉 ====================================
