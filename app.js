@@ -3083,7 +3083,7 @@ async function handleNuevaCitaSubmit(e) {
       await loadSolicitudes();
     }
     
-  } catch (error) {
+   } catch (error) {
     console.error('Error creando nueva cita:', error);
     showNotification('Error al crear cita: ' + error.message, 'error');
   } finally {
@@ -3096,10 +3096,11 @@ if (solicitudId) {
       citaData.origenSolicitud = true;
     }
     
-    const citaRef = await db.collection('citas').add(citaData);
+   const citaRef = await db.collection('citas').add(citaData);
     
     // Registrar paciente automáticamente
     await registrarPacienteAutomaticamente(formData, citaRef.id);
+    
     
     // Si viene de solicitud, actualizar estado de la solicitud
     if (solicitudId) {
