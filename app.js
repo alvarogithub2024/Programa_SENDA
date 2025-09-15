@@ -3700,9 +3700,9 @@ async function showPatientDetail(pacienteId) {
 }
 async function loadAtencionesPaciente(rut, containerId) {
   try {
-    console.log('Buscando atenciones para RUT:', rut); // Depuración
     const atencionesSnapshot = await db.collection('atenciones')
       .where('pacienteRut', '==', rut)
+      .where('cesfam', '==', currentUserData.cesfam) 
       .orderBy('fecha', 'desc')
       .get();
 
