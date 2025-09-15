@@ -3799,11 +3799,13 @@ function createPatientDetailModal(paciente) {
               ${paciente.citaInicialId ? `<div><strong>Cita inicial ID:</strong> ${paciente.citaInicialId}</div>` : ''}
             </div>
           </div>
+          
+          <!-- Bloque de historial de atenciones, solo una vez -->
           <div id="atenciones-paciente-${paciente.rut}" style="margin-top:24px;">
             <h4 style="margin-bottom:8px;">Historial de Atenciones</h4>
-          <div id="atenciones-list-${paciente.rut}">Cargando...</div>
-            </div>
-
+            <div id="atenciones-list-${paciente.rut}">Cargando...</div>
+          </div>
+          
           <div style="display: flex; gap: 12px; justify-content: flex-end;">
             <button class="btn btn-outline" onclick="closeModal('patient-detail-modal')">
               <i class="fas fa-times"></i>
