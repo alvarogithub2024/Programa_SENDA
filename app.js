@@ -1,10 +1,10 @@
-// ================= VERIFICACIÓN DE FIREBASE =================
+// ================= VERIFICACIÃ“N DE FIREBASE =================
 if (typeof firebase === 'undefined') {
-  console.error('❌ Firebase no está cargado');
-  alert('Error: Firebase no está disponible. Verifica las librerías.');
+  console.error('âŒ Firebase no estÃ¡ cargado');
+  alert('Error: Firebase no estÃ¡ disponible. Verifica las librerÃ­as.');
 }
 
-// ================= CONFIGURACIÓN DE FIREBASE =================
+// ================= CONFIGURACIÃ“N DE FIREBASE =================
 const firebaseConfig = {
   apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
   authDomain: "senda-6d5c9.firebaseapp.com",
@@ -28,27 +28,27 @@ try {
     synchronizeTabs: true
   }).catch((err) => {
     if (err.code === 'failed-precondition') {
-      console.warn('Persistencia falló: múltiples tabs abiertas');
+      console.warn('Persistencia fallÃ³: mÃºltiples tabs abiertas');
     } else if (err.code === 'unimplemented') {
       console.warn('Persistencia no soportada en este navegador');
     }
   });
   
-  console.log('✅ Firebase inicializado correctamente');
+  console.log('âœ… Firebase inicializado correctamente');
 } catch (error) {
-  console.error('❌ Error inicializando Firebase:', error);
+  console.error('âŒ Error inicializando Firebase:', error);
 }
 
 // ================= VARIABLES GLOBALES =================
 const cesfamPuenteAlto = [
-  "CESFAM Alejandro del Río",
+  "CESFAM Alejandro del RÃ­o",
   "CESFAM Karol Wojtyla", 
-  "CESFAM Laurita Vicuña",
+  "CESFAM Laurita VicuÃ±a",
   "CESFAM Padre Manuel Villaseca",
-  "CESFAM San Gerónimo",
+  "CESFAM San GerÃ³nimo",
   "CESFAM Vista Hermosa",
   "CESFAM Bernardo Leighton",
-  "CESFAM Cardenal Raúl Silva Henriquez"
+  "CESFAM Cardenal RaÃºl Silva Henriquez"
 ];
 
 let currentUser = null;
@@ -130,7 +130,7 @@ function showNotification(message, type = 'info', duration = 4000) {
     }, duration);
     
     if (APP_CONFIG.DEBUG_MODE) {
-      console.log(`📢 Notification [${type.toUpperCase()}]: ${message}`);
+      console.log(`ðŸ“¢ Notification [${type.toUpperCase()}]: ${message}`);
     }
     
   } catch (error) {
@@ -172,7 +172,7 @@ function showModal(modalId) {
       }, 100);
       
       if (APP_CONFIG.DEBUG_MODE) {
-        console.log(`🔧 Modal abierto: ${modalId}`);
+        console.log(`ðŸ”§ Modal abierto: ${modalId}`);
       }
     }
   } catch (error) {
@@ -186,7 +186,7 @@ function closeModal(modalId) {
     if (modal) {
       if (modalId === 'patient-modal' && !isDraftSaved) {
         const hasChanges = checkFormChanges();
-        if (hasChanges && !confirm('¿Estás seguro de cerrar? Los cambios no guardados se perderán.')) {
+        if (hasChanges && !confirm('Â¿EstÃ¡s seguro de cerrar? Los cambios no guardados se perderÃ¡n.')) {
           return;
         }
         resetForm();
@@ -200,7 +200,7 @@ function closeModal(modalId) {
       }
       
       if (APP_CONFIG.DEBUG_MODE) {
-        console.log(`🔧 Modal cerrado: ${modalId}`);
+        console.log(`ðŸ”§ Modal cerrado: ${modalId}`);
       }
     }
   } catch (error) {
@@ -327,7 +327,7 @@ function setupMultiStepForm() {
       });
     });
 
-    // Listeners para motivación
+    // Listeners para motivaciÃ³n
     const motivacionRange = document.getElementById('motivacion-range');
     const motivacionValue = document.getElementById('motivacion-value');
     if (motivacionRange && motivacionValue) {
@@ -340,7 +340,7 @@ function setupMultiStepForm() {
       updateMotivacionColor(motivacionRange.value);
     }
 
-    // Botón específico para envío de información
+    // BotÃ³n especÃ­fico para envÃ­o de informaciÃ³n
     const submitInfoBtn = document.getElementById('submit-step-1');
     if (submitInfoBtn) {
       submitInfoBtn.addEventListener('click', (e) => {
@@ -358,10 +358,10 @@ function setupMultiStepForm() {
     }
 
     setupAutoSave();
-    console.log('✅ Formulario multi-step configurado');
+    console.log('âœ… Formulario multi-step configurado');
     
   } catch (error) {
-    console.error('❌ Error configurando formulario multi-step:', error);
+    console.error('âŒ Error configurando formulario multi-step:', error);
   }
 }
 
@@ -416,7 +416,7 @@ function goToStep(step) {
     saveFormDraft();
 
     if (APP_CONFIG.DEBUG_MODE) {
-      console.log(`🔧 Navegando a paso ${step} de ${maxFormStep}`);
+      console.log(`ðŸ”§ Navegando a paso ${step} de ${maxFormStep}`);
     }
   } catch (error) {
     console.error('Error going to step:', error);
@@ -454,7 +454,7 @@ function setupAutoSave() {
     });
     
     loadFormDraft();
-    console.log('✅ Auto-guardado configurado');
+    console.log('âœ… Auto-guardado configurado');
   } catch (error) {
     console.error('Error setting up auto-save:', error);
   }
@@ -480,7 +480,7 @@ function saveFormDraft() {
     isDraftSaved = true;
     
     if (APP_CONFIG.DEBUG_MODE) {
-      console.log('💾 Borrador guardado automáticamente');
+      console.log('ðŸ’¾ Borrador guardado automÃ¡ticamente');
     }
     
   } catch (error) {
@@ -539,7 +539,7 @@ function restoreFormDraft(draftData) {
     }
     
     if (APP_CONFIG.DEBUG_MODE) {
-      console.log('📝 Borrador restaurado');
+      console.log('ðŸ“ Borrador restaurado');
     }
     
   } catch (error) {
@@ -583,7 +583,7 @@ function resetForm() {
     isDraftSaved = false;
     localStorage.removeItem('senda_form_draft');
     
-    console.log('✅ Formulario reseteado');
+    console.log('âœ… Formulario reseteado');
   } catch (error) {
     console.error('Error reseteando formulario:', error);
   }
@@ -612,31 +612,31 @@ function updateMotivacionColor(value) {
   }
 }
 
-// ================= AUTENTICACIÓN COMPLETA =================
+// ================= AUTENTICACIÃ“N COMPLETA =================
 
 function setupAuthForms() {
   try {
-    console.log('🔧 Configurando formularios de autenticación...');
+    console.log('ðŸ”§ Configurando formularios de autenticaciÃ³n...');
     
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
       loginForm.addEventListener('submit', handleLoginSubmit);
-      console.log('✅ Formulario de login configurado');
+      console.log('âœ… Formulario de login configurado');
     } else {
-      console.warn('⚠️ Formulario de login no encontrado');
+      console.warn('âš ï¸ Formulario de login no encontrado');
     }
     
     const registerForm = document.getElementById('register-form');
     if (registerForm) {
       registerForm.addEventListener('submit', handleRegisterSubmit);
-      console.log('✅ Formulario de registro configurado');
+      console.log('âœ… Formulario de registro configurado');
     } else {
-      console.warn('⚠️ Formulario de registro no encontrado');
+      console.warn('âš ï¸ Formulario de registro no encontrado');
     }
     
-    console.log('✅ Formularios de autenticación configurados');
+    console.log('âœ… Formularios de autenticaciÃ³n configurados');
   } catch (error) {
-    console.error('❌ Error configurando formularios de auth:', error);
+    console.error('âŒ Error configurando formularios de auth:', error);
   }
 }
 
@@ -644,7 +644,7 @@ async function handleLoginSubmit(e) {
   e.preventDefault();
   
   try {
-    console.log('🔐 Iniciando proceso de login...');
+    console.log('ðŸ” Iniciando proceso de login...');
     
     const email = document.getElementById('login-email')?.value?.trim();
     const password = document.getElementById('login-password')?.value?.trim();
@@ -657,37 +657,37 @@ async function handleLoginSubmit(e) {
     const submitBtn = e.target.querySelector('button[type="submit"]');
     toggleSubmitButton(submitBtn, true);
     
-    showLoading(true, 'Iniciando sesión...');
+    showLoading(true, 'Iniciando sesiÃ³n...');
     
-    console.log('🔐 Intentando login con email:', email);
+    console.log('ðŸ” Intentando login con email:', email);
     
     const userCredential = await auth.signInWithEmailAndPassword(email, password);
-    console.log('✅ Login exitoso:', userCredential.user.uid);
+    console.log('âœ… Login exitoso:', userCredential.user.uid);
     
     closeModal('login-modal');
-    showNotification('Sesión iniciada correctamente', 'success');
+    showNotification('SesiÃ³n iniciada correctamente', 'success');
     
     e.target.reset();
     
   } catch (error) {
-    console.error('❌ Error en login:', error);
+    console.error('âŒ Error en login:', error);
     
-    let errorMessage = 'Error al iniciar sesión: ';
+    let errorMessage = 'Error al iniciar sesiÃ³n: ';
     switch (error.code) {
       case 'auth/user-not-found':
         errorMessage += 'Usuario no encontrado';
         break;
       case 'auth/wrong-password':
-        errorMessage += 'Contraseña incorrecta';
+        errorMessage += 'ContraseÃ±a incorrecta';
         break;
       case 'auth/invalid-email':
-        errorMessage += 'Email inválido';
+        errorMessage += 'Email invÃ¡lido';
         break;
       case 'auth/user-disabled':
         errorMessage += 'Usuario deshabilitado';
         break;
       case 'auth/too-many-requests':
-        errorMessage += 'Demasiados intentos. Intenta más tarde';
+        errorMessage += 'Demasiados intentos. Intenta mÃ¡s tarde';
         break;
       default:
         errorMessage += error.message;
@@ -705,7 +705,7 @@ async function handleRegisterSubmit(e) {
   e.preventDefault();
   
   try {
-    console.log('📝 Iniciando proceso de registro...');
+    console.log('ðŸ“ Iniciando proceso de registro...');
     
     const formData = {
       nombre: document.getElementById('register-nombre')?.value?.trim(),
@@ -716,7 +716,7 @@ async function handleRegisterSubmit(e) {
       cesfam: document.getElementById('register-cesfam')?.value
     };
     
-    console.log('📝 Datos del formulario:', { ...formData, password: '***' });
+    console.log('ðŸ“ Datos del formulario:', { ...formData, password: '***' });
     
     const requiredFields = ['nombre', 'apellidos', 'email', 'password', 'profession', 'cesfam'];
     for (const field of requiredFields) {
@@ -732,7 +732,7 @@ async function handleRegisterSubmit(e) {
     }
     
     if (formData.password.length < 6) {
-      showNotification('La contraseña debe tener al menos 6 caracteres', 'warning');
+      showNotification('La contraseÃ±a debe tener al menos 6 caracteres', 'warning');
       return;
     }
     
@@ -741,12 +741,12 @@ async function handleRegisterSubmit(e) {
     
     showLoading(true, 'Registrando usuario...');
     
-    console.log('📝 Creando usuario en Firebase Auth...');
+    console.log('ðŸ“ Creando usuario en Firebase Auth...');
     
     const userCredential = await auth.createUserWithEmailAndPassword(formData.email, formData.password);
     const user = userCredential.user;
     
-    console.log('✅ Usuario creado en Auth:', user.uid);
+    console.log('âœ… Usuario creado en Auth:', user.uid);
     
     const professionalData = {
       nombre: formData.nombre,
@@ -759,35 +759,35 @@ async function handleRegisterSubmit(e) {
       uid: user.uid
     };
     
-    console.log('📝 Guardando datos del profesional en Firestore...');
+    console.log('ðŸ“ Guardando datos del profesional en Firestore...');
     
     await db.collection('profesionales').doc(user.uid).set(professionalData);
     
-    console.log('✅ Profesional guardado en Firestore');
+    console.log('âœ… Profesional guardado en Firestore');
     
     closeModal('login-modal');
     showNotification('Registro exitoso. Bienvenido al sistema SENDA', 'success');
     
     e.target.reset();
     
-    console.log('✅ Usuario registrado exitosamente:', user.uid);
+    console.log('âœ… Usuario registrado exitosamente:', user.uid);
     
   } catch (error) {
-    console.error('❌ Error en registro:', error);
+    console.error('âŒ Error en registro:', error);
     
     let errorMessage = 'Error al registrarse: ';
     switch (error.code) {
       case 'auth/email-already-in-use':
-        errorMessage += 'Este email ya está registrado';
+        errorMessage += 'Este email ya estÃ¡ registrado';
         break;
       case 'auth/invalid-email':
-        errorMessage += 'Email inválido';
+        errorMessage += 'Email invÃ¡lido';
         break;
       case 'auth/operation-not-allowed':
         errorMessage += 'Registro no permitido';
         break;
       case 'auth/weak-password':
-        errorMessage += 'Contraseña muy débil';
+        errorMessage += 'ContraseÃ±a muy dÃ©bil';
         break;
       case 'permission-denied':
         errorMessage += 'Sin permisos para crear el perfil profesional';
@@ -806,7 +806,7 @@ async function handleRegisterSubmit(e) {
 
 function switchLoginTab(tab) {
   try {
-    console.log('🔄 Cambiando tab a:', tab);
+    console.log('ðŸ”„ Cambiando tab a:', tab);
     
     const loginTab = document.querySelector('.modal-tab[onclick*="login"]');
     const registerTab = document.querySelector('.modal-tab[onclick*="register"]');
@@ -832,7 +832,7 @@ function switchLoginTab(tab) {
 function onAuthStateChanged(user) {
   try {
     if (APP_CONFIG.DEBUG_MODE) {
-      console.log('🔧 Estado de autenticación cambió:', user ? user.email : 'No autenticado');
+      console.log('ðŸ”§ Estado de autenticaciÃ³n cambiÃ³:', user ? user.email : 'No autenticado');
     }
     
     if (user) {
@@ -845,16 +845,16 @@ function onAuthStateChanged(user) {
       showPublicContent();
     }
   } catch (error) {
-    console.error('❌ Error en cambio de estado de autenticación:', error);
-    showNotification('Error en autenticación', 'error');
+    console.error('âŒ Error en cambio de estado de autenticaciÃ³n:', error);
+    showNotification('Error en autenticaciÃ³n', 'error');
   }
 }
 
 async function handleLogout() {
   try {
-    console.log('🔐 Cerrando sesión...');
+    console.log('ðŸ” Cerrando sesiÃ³n...');
     
-    showLoading(true, 'Cerrando sesión...');
+    showLoading(true, 'Cerrando sesiÃ³n...');
     
     await auth.signOut();
     
@@ -862,14 +862,14 @@ async function handleLogout() {
     currentUserData = null;
     clearUserCache();
     
-    showNotification('Sesión cerrada correctamente', 'success');
+    showNotification('SesiÃ³n cerrada correctamente', 'success');
     showPublicContent();
     
-    console.log('✅ Sesión cerrada exitosamente');
+    console.log('âœ… SesiÃ³n cerrada exitosamente');
     
   } catch (error) {
-    console.error('❌ Error during logout:', error);
-    showNotification('Error al cerrar sesión: ' + error.message, 'error');
+    console.error('âŒ Error during logout:', error);
+    showNotification('Error al cerrar sesiÃ³n: ' + error.message, 'error');
   } finally {
     showLoading(false);
   }
@@ -992,9 +992,9 @@ function showPublicContent() {
     if (loginBtn) loginBtn.style.display = 'flex';
     if (logoutBtn) logoutBtn.style.display = 'none';
     
-    console.log('📄 Mostrando contenido público');
+    console.log('ðŸ“„ Mostrando contenido pÃºblico');
   } catch (error) {
-    console.error('Error mostrando contenido público:', error);
+    console.error('Error mostrando contenido pÃºblico:', error);
   }
 }
 
@@ -1017,7 +1017,7 @@ function showProfessionalContent() {
       updateTabVisibility();
     }
     
-    console.log('👨‍⚕️ Mostrando contenido profesional');
+    console.log('ðŸ‘¨â€âš•ï¸ Mostrando contenido profesional');
   } catch (error) {
     console.error('Error mostrando contenido profesional:', error);
   }
@@ -1104,8 +1104,8 @@ function canAccessTab(tabName) {
 function getProfessionName(profession) {
   const names = {
     'asistente_social': 'Asistente Social',
-    'medico': 'Médico',
-    'psicologo': 'Psicólogo',
+    'medico': 'MÃ©dico',
+    'psicologo': 'PsicÃ³logo',
     'terapeuta': 'Terapeuta Ocupacional',
     'coordinador': 'Coordinador Regional',
     'admin': 'Administrador'
@@ -1144,16 +1144,16 @@ async function loadProfessionalsList() {
   }
 }
 
-// ================= ENVÍO DE FORMULARIOS =================
+// ================= ENVÃO DE FORMULARIOS =================
 
 async function handleInformationOnlySubmit() {
   try {
-    console.log('Procesando solicitud de información únicamente...');
+    console.log('Procesando solicitud de informaciÃ³n Ãºnicamente...');
     
     const email = document.getElementById('info-email')?.value?.trim();
     
     if (!email || !isValidEmail(email)) {
-      showNotification('Email inválido', 'error');
+      showNotification('Email invÃ¡lido', 'error');
       return;
     }
     
@@ -1167,7 +1167,7 @@ async function handleInformationOnlySubmit() {
       identificador: `INFO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     };
     
-    console.log('Guardando solicitud de información...');
+    console.log('Guardando solicitud de informaciÃ³n...');
     
     await db.collection('solicitudes_informacion').add(informationData);
     
@@ -1175,10 +1175,10 @@ async function handleInformationOnlySubmit() {
     closeModal('patient-modal');
     resetForm();
     
-    showNotification('Solicitud de información enviada correctamente. Te responderemos pronto a tu email.', 'success', 6000);
+    showNotification('Solicitud de informaciÃ³n enviada correctamente. Te responderemos pronto a tu email.', 'success', 6000);
     
   } catch (error) {
-    console.error('Error enviando información:', error);
+    console.error('Error enviando informaciÃ³n:', error);
     showNotification('Error al enviar la solicitud: ' + error.message, 'error');
   }
 }
@@ -1294,7 +1294,7 @@ function formatPhoneNumber(phone) {
 
 async function handlePatientFormSubmit(e) {
   e.preventDefault();
-  console.log('Iniciando envío de solicitud...');
+  console.log('Iniciando envÃ­o de solicitud...');
   
   const submitBtn = document.getElementById('submit-form');
   
@@ -1308,7 +1308,7 @@ async function handlePatientFormSubmit(e) {
     }
 
     if (tipoSolicitud !== 'identificado') {
-      showNotification('Tipo de solicitud no válido para este flujo', 'error');
+      showNotification('Tipo de solicitud no vÃ¡lido para este flujo', 'error');
       return;
     }
 
@@ -1317,7 +1317,7 @@ async function handlePatientFormSubmit(e) {
     const paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
     
     if (!edad || !cesfam || !paraMi) {
-      showNotification('Completa todos los campos básicos obligatorios', 'warning');
+      showNotification('Completa todos los campos bÃ¡sicos obligatorios', 'warning');
       return;
     }
 
@@ -1332,12 +1332,12 @@ async function handlePatientFormSubmit(e) {
     }
     
     if (!validateRUT(rut)) {
-      showNotification('RUT inválido', 'warning');
+      showNotification('RUT invÃ¡lido', 'warning');
       return;
     }
     
     if (!validatePhoneNumberString(telefono)) {
-      showNotification('Teléfono inválido', 'warning');
+      showNotification('TelÃ©fono invÃ¡lido', 'warning');
       return;
     }
 
@@ -1348,7 +1348,7 @@ async function handlePatientFormSubmit(e) {
     console.log('Prioridad calculada:', solicitudData.prioridad);
     
     if (!db) {
-      throw new Error('No hay conexión a Firebase');
+      throw new Error('No hay conexiÃ³n a Firebase');
     }
     
     console.log('Guardando en Firestore...');
@@ -1362,9 +1362,9 @@ async function handlePatientFormSubmit(e) {
     if (solicitudData.prioridad === 'critica') {
       try {
         await createCriticalAlert(solicitudData, docRef.id);
-        console.log('Alerta crítica creada');
+        console.log('Alerta crÃ­tica creada');
       } catch (alertError) {
-        console.warn('Error creando alerta crítica:', alertError);
+        console.warn('Error creando alerta crÃ­tica:', alertError);
       }
     }
     
@@ -1383,11 +1383,11 @@ async function handlePatientFormSubmit(e) {
     if (error.code === 'permission-denied') {
       errorMessage += 'Sin permisos para crear solicitudes. Verifica las reglas de Firebase.';
     } else if (error.code === 'network-request-failed') {
-      errorMessage += 'Problema de conexión. Verifica tu internet.';
+      errorMessage += 'Problema de conexiÃ³n. Verifica tu internet.';
     } else if (error.code === 'unavailable') {
       errorMessage += 'Servicio no disponible temporalmente.';
     } else if (error.message.includes('Firebase')) {
-      errorMessage += 'Error de configuración de Firebase.';
+      errorMessage += 'Error de configuraciÃ³n de Firebase.';
     } else {
       errorMessage += error.message || 'Intenta nuevamente en unos momentos.';
     }
@@ -1400,7 +1400,7 @@ async function handlePatientFormSubmit(e) {
 
 async function handleReentrySubmit(e) {
   e.preventDefault();
-  console.log('Iniciando envío de reingreso...');
+  console.log('Iniciando envÃ­o de reingreso...');
   
   const formData = {
     nombre: document.getElementById('reentry-name')?.value?.trim() || '',
@@ -1417,7 +1417,7 @@ async function handleReentrySubmit(e) {
     { field: 'rut', name: 'RUT' },
     { field: 'cesfam', name: 'CESFAM' },
     { field: 'motivo', name: 'Motivo' },
-    { field: 'telefono', name: 'Teléfono' }
+    { field: 'telefono', name: 'TelÃ©fono' }
   ];
 
   for (const { field, name } of requiredFields) {
@@ -1428,13 +1428,13 @@ async function handleReentrySubmit(e) {
   }
 
   if (!validateRUT(formData.rut)) {
-    showNotification('RUT inválido', 'warning');
+    showNotification('RUT invÃ¡lido', 'warning');
     return;
   }
 
   const phoneClean = formData.telefono.replace(/\D/g, '');
   if (phoneClean.length < 8) {
-    showNotification('Teléfono inválido', 'warning');
+    showNotification('TelÃ©fono invÃ¡lido', 'warning');
     return;
   }
 
@@ -1442,7 +1442,7 @@ async function handleReentrySubmit(e) {
     toggleSubmitButton(submitBtn, true);
     
     if (!db) {
-      throw new Error('No hay conexión a Firebase');
+      throw new Error('No hay conexiÃ³n a Firebase');
     }
     
     const rutFormatted = formatRUT(formData.rut);
@@ -1487,7 +1487,7 @@ async function handleReentrySubmit(e) {
     if (error.code === 'permission-denied') {
       errorMessage += 'Sin permisos para crear reingresos.';
     } else if (error.code === 'network-request-failed') {
-      errorMessage += 'Problema de conexión. Verifica tu internet.';
+      errorMessage += 'Problema de conexiÃ³n. Verifica tu internet.';
     } else {
       errorMessage += error.message || 'Intenta nuevamente.';
     }
@@ -1502,7 +1502,7 @@ async function createCriticalAlert(solicitudData, solicitudId) {
   try {
     const alertData = {
       id_solicitud: solicitudId,
-      mensaje: `Nuevo caso crítico: ${solicitudData.edad} años, urgencia ${solicitudData.urgencia}`,
+      mensaje: `Nuevo caso crÃ­tico: ${solicitudData.edad} aÃ±os, urgencia ${solicitudData.urgencia}`,
       prioridad: 'maxima',
       tipo_alerta: 'caso_critico_nuevo',
       estado: 'pendiente',
@@ -1519,13 +1519,13 @@ async function createCriticalAlert(solicitudData, solicitudId) {
     
     await db.collection('alertas_criticas').add(alertData);
     
-    console.log('Alerta crítica creada para solicitud:', solicitudId);
+    console.log('Alerta crÃ­tica creada para solicitud:', solicitudId);
   } catch (error) {
-    console.error('Error creando alerta crítica:', error);
+    console.error('Error creando alerta crÃ­tica:', error);
   }
 }
 
-// ================= VALIDACIÓN DE FORMULARIOS =================
+// ================= VALIDACIÃ“N DE FORMULARIOS =================
 
 function validateStep(step) {
   try {
@@ -1556,16 +1556,16 @@ function validateStep(step) {
       } else if (tipoSolicitud === 'informacion') {
         const email = document.getElementById('info-email');
         if (!email || !email.value.trim()) {
-          errors.push('Ingresa un email para recibir información');
+          errors.push('Ingresa un email para recibir informaciÃ³n');
           isValid = false;
         } else if (!isValidEmail(email.value.trim())) {
-          errors.push('Ingresa un email válido');
+          errors.push('Ingresa un email vÃ¡lido');
           isValid = false;
         }
       } else if (tipoSolicitud === 'identificado') {
         const edad = parseInt(document.getElementById('patient-age')?.value);
         if (!edad || edad < 12 || edad > 120) {
-          errors.push('La edad debe estar entre 12 y 120 años');
+          errors.push('La edad debe estar entre 12 y 120 aÃ±os');
           isValid = false;
         }
 
@@ -1577,7 +1577,7 @@ function validateStep(step) {
 
         const paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
         if (!paraMi) {
-          errors.push('Indica para quién solicitas ayuda');
+          errors.push('Indica para quiÃ©n solicitas ayuda');
           isValid = false;
         }
       }
@@ -1586,19 +1586,19 @@ function validateStep(step) {
     if (step === 2) {
       const rut = document.getElementById('patient-rut');
       if (rut && rut.value.trim() && !validateRUT(rut.value.trim())) {
-        errors.push('RUT inválido');
+        errors.push('RUT invÃ¡lido');
         isValid = false;
       }
 
       const phone = document.getElementById('patient-phone');
       if (phone && phone.value.trim() && !validatePhoneNumberString(phone.value.trim())) {
-        errors.push('Teléfono inválido');
+        errors.push('TelÃ©fono invÃ¡lido');
         isValid = false;
       }
 
       const email = document.getElementById('patient-email');
       if (email && email.value.trim() && !isValidEmail(email.value.trim())) {
-        errors.push('Email inválido');
+        errors.push('Email invÃ¡lido');
         isValid = false;
       }
     }
@@ -1643,7 +1643,7 @@ function getFieldLabel(field) {
   }
 }
 
-// ================= FUNCIONES BÁSICAS =================
+// ================= FUNCIONES BÃSICAS =================
 
 function formatRUT(rut) {
   try {
@@ -1664,7 +1664,7 @@ function formatRUT(rut) {
     return rut;
   }
 }
-// ... (continuación del código anterior)
+// ... (continuaciÃ³n del cÃ³digo anterior)
 
 function validateRUT(rut) {
   try {
@@ -1800,7 +1800,7 @@ async function retryOperation(operation, maxAttempts = APP_CONFIG.MAX_RETRY_ATTE
     try {
       return await operation();
     } catch (error) {
-      console.warn(`Intento ${attempt}/${maxAttempts} falló:`, error.message);
+      console.warn(`Intento ${attempt}/${maxAttempts} fallÃ³:`, error.message);
       
       if (attempt === maxAttempts) {
         throw error;
@@ -1828,7 +1828,7 @@ function setCachedData(key, data) {
   });
 }
 
-// ================= GESTIÓN DE SOLICITUDES =================
+// ================= GESTIÃ“N DE SOLICITUDES =================
 
 async function loadSolicitudes() {
   if (!currentUserData || !hasAccessToSolicitudes()) {
@@ -1932,7 +1932,7 @@ async function loadSolicitudesFromFirestore(showLoadingIndicator = true) {
         .limit(50)
         .get();
       
-      console.log('Solicitudes información encontradas:', informacionSnapshot.size);
+      console.log('Solicitudes informaciÃ³n encontradas:', informacionSnapshot.size);
       
       informacionSnapshot.forEach(doc => {
         const data = doc.data();
@@ -2030,7 +2030,7 @@ function createSolicitudCard(solicitud) {
       subtitulo = `RUT: ${solicitud.rut || 'No disponible'}`;
       tipoIcon = 'fa-redo';
     } else if (solicitud.tipo === 'informacion' || solicitud.tipoSolicitud === 'informacion') {
-      titulo = 'Solicitud de Información';
+      titulo = 'Solicitud de InformaciÃ³n';
       subtitulo = `Email: ${solicitud.email || 'No disponible'}`;
       tipoIcon = 'fa-info-circle';
     } else {
@@ -2040,7 +2040,7 @@ function createSolicitudCard(solicitud) {
         subtitulo = `RUT: ${solicitud.rut || 'No disponible'}`;
       } else {
         titulo = 'Solicitud General';
-        subtitulo = `Edad: ${solicitud.edad || 'No especificada'} años`;
+        subtitulo = `Edad: ${solicitud.edad || 'No especificada'} aÃ±os`;
       }
     }
 
@@ -2064,7 +2064,7 @@ function createSolicitudCard(solicitud) {
     };
 
     const responderBtn = (solicitud.tipo === 'informacion' || solicitud.tipoSolicitud === 'informacion') ? 
-      `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); showResponderModal('${solicitud.id}')" title="Responder solicitud de información">
+      `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); showResponderModal('${solicitud.id}')" title="Responder solicitud de informaciÃ³n">
         <i class="fas fa-reply"></i>
         Responder
       </button>` : '';
@@ -2084,7 +2084,7 @@ function createSolicitudCard(solicitud) {
               ${prioridad.toUpperCase()}
             </span>
             ${solicitud.tipo === 'reingreso' ? '<span class="request-type reingreso" style="background: #e0e7ff; color: #3730a3; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">REINGRESO</span>' : ''}
-            ${solicitud.tipo === 'informacion' ? '<span class="request-type informacion" style="background: #f0f9ff; color: #0c4a6e; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">INFORMACIÓN</span>' : ''}
+            ${solicitud.tipo === 'informacion' ? '<span class="request-type informacion" style="background: #f0f9ff; color: #0c4a6e; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">INFORMACIÃ“N</span>' : ''}
           </div>
         </div>
         
@@ -2101,7 +2101,7 @@ function createSolicitudCard(solicitud) {
                 ${estado.replace('_', ' ').toUpperCase()}
               </span>
             </div>
-            ${solicitud.edad ? `<div><strong>Edad:</strong> ${solicitud.edad} años</div>` : ''}
+            ${solicitud.edad ? `<div><strong>Edad:</strong> ${solicitud.edad} aÃ±os</div>` : ''}
             <div><strong>Fecha:</strong> ${fecha}</div>
           </div>
         </div>
@@ -2135,7 +2135,7 @@ function createSolicitudCard(solicitud) {
           <h3>Error al cargar solicitud</h3>
         </div>
         <div class="request-body">
-          <p>No se pudo cargar la información de esta solicitud</p>
+          <p>No se pudo cargar la informaciÃ³n de esta solicitud</p>
         </div>
       </div>
     `;
@@ -2154,7 +2154,7 @@ function renderSolicitudesError(error) {
     errorDetails = 'No tienes permisos para ver las solicitudes de este CESFAM';
   } else if (error.code === 'unavailable') {
     errorMessage = 'Servicio no disponible';
-    errorDetails = 'El servicio está temporalmente no disponible';
+    errorDetails = 'El servicio estÃ¡ temporalmente no disponible';
   } else {
     errorDetails = error.message;
   }
@@ -2217,7 +2217,7 @@ function createSolicitudDetailModal(solicitud) {
   } else if (solicitud.tipoSolicitud === 'identificado') {
     tipoSolicitud = 'Solicitud Identificada';
   } else if (solicitud.tipoSolicitud === 'informacion') {
-    tipoSolicitud = 'Solicitud de Información';
+    tipoSolicitud = 'Solicitud de InformaciÃ³n';
   }
   
   return `
@@ -2255,28 +2255,28 @@ function createSolicitudDetailModal(solicitud) {
                   ${solicitud.nombre ? `<div><strong>Nombre:</strong> ${solicitud.nombre} ${solicitud.apellidos || ''}</div>` : ''}
                   ${solicitud.rut ? `<div><strong>RUT:</strong> ${solicitud.rut}</div>` : ''}
                   ${solicitud.email ? `<div><strong>Email:</strong> ${solicitud.email}</div>` : ''}
-                  ${solicitud.telefono ? `<div><strong>Teléfono:</strong> ${solicitud.telefono}</div>` : ''}
-                  ${solicitud.edad ? `<div><strong>Edad:</strong> ${solicitud.edad} años</div>` : ''}
-                  ${solicitud.direccion ? `<div><strong>Dirección:</strong> ${solicitud.direccion}</div>` : ''}
+                  ${solicitud.telefono ? `<div><strong>TelÃ©fono:</strong> ${solicitud.telefono}</div>` : ''}
+                  ${solicitud.edad ? `<div><strong>Edad:</strong> ${solicitud.edad} aÃ±os</div>` : ''}
+                  ${solicitud.direccion ? `<div><strong>DirecciÃ³n:</strong> ${solicitud.direccion}</div>` : ''}
                 </div>
               </div>
               
               <div>
-                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Información de Solicitud</h4>
+                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">InformaciÃ³n de Solicitud</h4>
                 <div style="font-size: 14px; line-height: 1.6;">
                   <div><strong>CESFAM:</strong> ${solicitud.cesfam || 'No especificado'}</div>
                   <div><strong>Fecha:</strong> ${fecha}</div>
-                  <div><strong>Origen:</strong> ${solicitud.origen || 'Web pública'}</div>
-                  ${solicitud.paraMi ? `<div><strong>Para:</strong> ${solicitud.paraMi === 'si' ? 'Sí mismo' : 'Otra persona'}</div>` : ''}
+                  <div><strong>Origen:</strong> ${solicitud.origen || 'Web pÃºblica'}</div>
+                  ${solicitud.paraMi ? `<div><strong>Para:</strong> ${solicitud.paraMi === 'si' ? 'SÃ­ mismo' : 'Otra persona'}</div>` : ''}
                   ${solicitud.urgencia ? `<div><strong>Urgencia:</strong> ${solicitud.urgencia.toUpperCase()}</div>` : ''}
-                  ${solicitud.motivacion ? `<div><strong>Motivación:</strong> ${solicitud.motivacion}/10</div>` : ''}
+                  ${solicitud.motivacion ? `<div><strong>MotivaciÃ³n:</strong> ${solicitud.motivacion}/10</div>` : ''}
                 </div>
               </div>
             </div>
             
             ${solicitud.sustancias && solicitud.sustancias.length > 0 ? 
               `<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5);">
-                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Sustancias Problemáticas</h4>
+                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Sustancias ProblemÃ¡ticas</h4>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                   ${solicitud.sustancias.map(s => `<span class="substance-tag" style="background: var(--primary-blue); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${s}</span>`).join('')}
                 </div>
@@ -2285,7 +2285,7 @@ function createSolicitudDetailModal(solicitud) {
             
             ${solicitud.descripcion || solicitud.motivo ? 
               `<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5);">
-                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Descripción/Motivo</h4>
+                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">DescripciÃ³n/Motivo</h4>
                 <p style="margin: 0; background: rgba(255,255,255,0.7); padding: 12px; border-radius: 6px; line-height: 1.5;">
                   ${solicitud.descripcion || solicitud.motivo}
                 </p>
@@ -2336,11 +2336,11 @@ function showResponderModal(solicitudId) {
           </button>
           
           <div style="padding: 24px;">
-            <h2><i class="fas fa-reply"></i> Responder Solicitud de Información</h2>
+            <h2><i class="fas fa-reply"></i> Responder Solicitud de InformaciÃ³n</h2>
             
             <div style="background: var(--light-blue); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
               <h4 style="margin: 0 0 8px 0; color: var(--primary-blue);">
-                <i class="fas fa-info-circle"></i> Información de la Solicitud
+                <i class="fas fa-info-circle"></i> InformaciÃ³n de la Solicitud
               </h4>
               <div style="font-size: 14px;">
                 <strong>Email del solicitante:</strong> ${solicitud.email}<br>
@@ -2367,7 +2367,7 @@ function showResponderModal(solicitudId) {
               <div class="form-group">
                 <label class="form-label">Asunto *</label>
                 <input type="text" class="form-input" id="responder-subject" 
-                       value="Respuesta a su solicitud de información - SENDA Puente Alto" required>
+                       value="Respuesta a su solicitud de informaciÃ³n - SENDA Puente Alto" required>
               </div>
               
               <div class="form-group">
@@ -2375,7 +2375,7 @@ function showResponderModal(solicitudId) {
                 <textarea class="form-textarea" id="responder-message" rows="8" required
                           placeholder="Estimado/a solicitante,
 
-Gracias por contactar al Programa SENDA Puente Alto. En respuesta a su solicitud de información...
+Gracias por contactar al Programa SENDA Puente Alto. En respuesta a su solicitud de informaciÃ³n...
 
 Atentamente,
 ${currentUserData.nombre} ${currentUserData.apellidos}
@@ -2463,13 +2463,13 @@ async function handleResponderSubmit(e) {
   }
 }
 
-// ... (continuación del código anterior)
+// ... (continuaciÃ³n del cÃ³digo anterior)
 
 // ================= AGENDAR CITAS DESDE SOLICITUDES =================
 
 function showAgendaModalFromSolicitud(solicitudId) {
   try {
-    console.log('📅 Agendando cita desde solicitud:', solicitudId);
+    console.log('ðŸ“… Agendando cita desde solicitud:', solicitudId);
     
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) {
@@ -2494,8 +2494,8 @@ function showAgendaModalFromSolicitud(solicitudId) {
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 14px;">
                 <div><strong>Nombre:</strong> ${solicitud.nombre} ${solicitud.apellidos || ''}</div>
                 <div><strong>RUT:</strong> ${solicitud.rut}</div>
-                <div><strong>Edad:</strong> ${solicitud.edad} años</div>
-                <div><strong>Teléfono:</strong> ${solicitud.telefono || 'No disponible'}</div>
+                <div><strong>Edad:</strong> ${solicitud.edad} aÃ±os</div>
+                <div><strong>TelÃ©fono:</strong> ${solicitud.telefono || 'No disponible'}</div>
                 <div><strong>Email:</strong> ${solicitud.email || 'No disponible'}</div>
                 <div><strong>CESFAM:</strong> ${solicitud.cesfam}</div>
               </div>
@@ -2835,7 +2835,7 @@ async function handleNuevaCitaSubmit(e) {
     }
     
     if (!validateRUT(formData.rut)) {
-      showNotification('RUT inválido', 'warning');
+      showNotification('RUT invÃ¡lido', 'warning');
       return;
     }
     
@@ -2929,7 +2929,7 @@ async function actualizarEstadoSolicitud(solicitudId, citaId) {
       agendadaPor: currentUser.uid
     });
     
-    console.log(`✅ Estado de solicitud ${solicitudId} actualizado a 'agendada'`);
+    console.log(`âœ… Estado de solicitud ${solicitudId} actualizado a 'agendada'`);
     
   } catch (error) {
     console.error('Error actualizando estado de solicitud:', error);
@@ -2972,10 +2972,10 @@ async function registrarPacienteAutomaticamente(citaData, citaId) {
 
     await db.collection('pacientes').add(pacienteData);
     
-    console.log('✅ Paciente registrado automáticamente');
+    console.log('âœ… Paciente registrado automÃ¡ticamente');
     
   } catch (error) {
-    console.error('Error registrando paciente automáticamente:', error);
+    console.error('Error registrando paciente automÃ¡ticamente:', error);
   }
 }
 
@@ -2991,7 +2991,7 @@ function generateTimeSlots(date) {
   if (dayOfWeek >= 1 && dayOfWeek <= 5) {
     config = HORARIOS_CONFIG.semana; // 08:00 - 16:30
   } 
-  // Sábado y Domingo: dayOfWeek 6 y 0
+  // SÃ¡bado y Domingo: dayOfWeek 6 y 0
   else if (dayOfWeek === 0 || dayOfWeek === 6) {
     config = HORARIOS_CONFIG.finSemana; // 09:00 - 12:30
   } 
@@ -3002,7 +3002,7 @@ function generateTimeSlots(date) {
   let currentHour = config.horaInicio;
   let currentMinute = 0;
   
-  // LÓGICA CORREGIDA DEL BUCLE
+  // LÃ“GICA CORREGIDA DEL BUCLE
   while (currentHour < config.horaFin || (currentHour === config.horaFin && currentMinute <= config.minutoFin)) {
     const timeString = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
     
@@ -3018,13 +3018,13 @@ function generateTimeSlots(date) {
       currentMinute = currentMinute % 60;
     }
     
-    // CONDICIÓN DE SEGURIDAD PARA EVITAR BUCLE INFINITO
+    // CONDICIÃ“N DE SEGURIDAD PARA EVITAR BUCLE INFINITO
     if (currentHour > config.horaFin + 1) {
       break;
     }
   }
   
-  console.log(`Día ${dayOfWeek} (${date.toLocaleDateString()}): ${slots.length} slots generados`, slots.map(s => s.time));
+  console.log(`DÃ­a ${dayOfWeek} (${date.toLocaleDateString()}): ${slots.length} slots generados`, slots.map(s => s.time));
   return slots;
 }
     currentMinute += config.intervaloMinutos;
@@ -3042,7 +3042,7 @@ function debugTimeSlots() {
   
   console.log('=== DEBUG HORARIOS ===');
   console.log('Lunes 15/09:', lunes.getDay(), generateTimeSlots(lunes));
-  console.log('Sábado 13/09:', sabado.getDay(), generateTimeSlots(sabado));
+  console.log('SÃ¡bado 13/09:', sabado.getDay(), generateTimeSlots(sabado));
 }
 
 fuNction isPastTimeSlot(date, hour, minute) {
@@ -3102,16 +3102,16 @@ function setupCalendar() {
     
     renderCalendar();
     
-    // Cargar las citas de hoy automáticamente
+    // Cargar las citas de hoy automÃ¡ticamente
     if (currentUserData) {
       loadTodayAppointments();
     }
     
     if (APP_CONFIG.DEBUG_MODE) {
-      console.log('✅ Calendario configurado con fecha actual:', currentCalendarDate.toLocaleDateString('es-CL'));
+      console.log('âœ… Calendario configurado con fecha actual:', currentCalendarDate.toLocaleDateString('es-CL'));
     }
   } catch (error) {
-    console.error('❌ Error configurando calendario:', error);
+    console.error('âŒ Error configurando calendario:', error);
   }
 }
 
@@ -3136,7 +3136,7 @@ function renderCalendar() {
     
     calendarGrid.innerHTML = '';
     
-    const dayHeaders = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    const dayHeaders = ['Lun', 'Mar', 'MiÃ©', 'Jue', 'Vie', 'SÃ¡b', 'Dom'];
     dayHeaders.forEach(day => {
       const dayHeader = document.createElement('div');
       dayHeader.className = 'calendar-day-header';
@@ -3166,7 +3166,7 @@ function renderCalendar() {
     }
     
   } catch (error) {
-    console.error('❌ Error renderizando calendario:', error);
+    console.error('âŒ Error renderizando calendario:', error);
   }
 }
 
@@ -3218,10 +3218,10 @@ function selectCalendarDay(date) {
     loadDayAppointments(date);
     
     if (APP_CONFIG.DEBUG_MODE) {
-      console.log('📅 Día seleccionado:', date.toLocaleDateString('es-CL'));
+      console.log('ðŸ“… DÃ­a seleccionado:', date.toLocaleDateString('es-CL'));
     }
   } catch (error) {
-    console.error('❌ Error seleccionando día del calendario:', error);
+    console.error('âŒ Error seleccionando dÃ­a del calendario:', error);
   }
 }
 
@@ -3229,7 +3229,7 @@ async function loadMonthAppointments(year, month) {
   if (!currentUserData) return;
   
   try {
-    console.log(`📝 Cargando citas para ${month + 1}/${year} - CESFAM: ${currentUserData.cesfam}`);
+    console.log(`ðŸ“ Cargando citas para ${month + 1}/${year} - CESFAM: ${currentUserData.cesfam}`);
     
     const startOfMonth = new Date(year, month, 1);
     const endOfMonth = new Date(year, month + 1, 0);
@@ -3241,7 +3241,7 @@ async function loadMonthAppointments(year, month) {
       .where('fecha', '<=', endOfMonth)
       .get();
     
-    console.log(`📊 Citas encontradas en ${month + 1}/${year}: ${appointmentsSnapshot.size}`);
+    console.log(`ðŸ“Š Citas encontradas en ${month + 1}/${year}: ${appointmentsSnapshot.size}`);
     
     document.querySelectorAll('.calendar-appointments').forEach(container => {
       container.innerHTML = '';
@@ -3308,7 +3308,7 @@ async function loadMonthAppointments(year, month) {
         if (appointments.length > 3) {
           const moreEl = document.createElement('div');
           moreEl.className = 'calendar-appointment more';
-          moreEl.textContent = `+${appointments.length - 3} más`;
+          moreEl.textContent = `+${appointments.length - 3} mÃ¡s`;
           moreEl.style.cssText = `
             background: var(--gray-400);
             color: white;
@@ -3332,11 +3332,11 @@ async function loadMonthAppointments(year, month) {
     });
     
     if (APP_CONFIG.DEBUG_MODE) {
-      console.log(`✅ Citas del mes cargadas y mostradas: ${appointmentsSnapshot.size}`);
+      console.log(`âœ… Citas del mes cargadas y mostradas: ${appointmentsSnapshot.size}`);
     }
     
   } catch (error) {
-    console.error('❌ Error cargando citas del mes:', error);
+    console.error('âŒ Error cargando citas del mes:', error);
   }
 }
 
@@ -3347,7 +3347,7 @@ function showPatientAppointmentInfo(appointment) {
     showModal('patient-appointment-info-modal');
   } catch (error) {
     console.error('Error showing patient appointment info:', error);
-    showNotification('Error al mostrar información del paciente', 'error');
+    showNotification('Error al mostrar informaciÃ³n del paciente', 'error');
   }
 }
 
@@ -3364,7 +3364,7 @@ function createPatientAppointmentInfoModal(appointment) {
         </button>
         
         <div style="padding: 24px;">
-          <h2><i class="fas fa-calendar-check"></i> Información de Cita</h2>
+          <h2><i class="fas fa-calendar-check"></i> InformaciÃ³n de Cita</h2>
           
           <div class="patient-info" style="background: var(--light-blue); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
             <h3 style="margin: 0 0 12px 0; color: var(--primary-blue);">
@@ -3373,7 +3373,7 @@ function createPatientAppointmentInfoModal(appointment) {
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 14px;">
               <div><strong>RUT:</strong> ${appointment.pacienteRut || 'No disponible'}</div>
-              <div><strong>Teléfono:</strong> ${appointment.pacienteTelefono || 'No disponible'}</div>
+              <div><strong>TelÃ©fono:</strong> ${appointment.pacienteTelefono || 'No disponible'}</div>
               <div><strong>Fecha:</strong> ${fechaStr}</div>
               <div><strong>Hora:</strong> ${horaStr}</div>
               <div><strong>Profesional:</strong> ${appointment.profesionalNombre}</div>
@@ -3461,7 +3461,7 @@ async function loadDayAppointments(date) {
     appointmentsList.innerHTML = appointments.map(appointment => createAppointmentItem(appointment)).join('');
     
   } catch (error) {
-    console.error('Error cargando citas del día:', error);
+    console.error('Error cargando citas del dÃ­a:', error);
     appointmentsList.innerHTML = `
       <div class="no-results">
         <i class="fas fa-exclamation-triangle"></i>
@@ -3515,7 +3515,7 @@ async function loadTodayAppointments() {
     selectedCalendarDate = today;
     selectCalendarDay(today);
     
-    console.log('📅 Citas de hoy cargadas para:', today.toLocaleDateString('es-CL'));
+    console.log('ðŸ“… Citas de hoy cargadas para:', today.toLocaleDateString('es-CL'));
   } catch (error) {
     console.error('Error cargando citas de hoy:', error);
   }
@@ -3561,7 +3561,7 @@ function createNuevaCitaModalForDate(dateIso) {
   }, 100);
 }
 
-// ================= GESTIÓN COMPLETA DE PACIENTES =================
+// ================= GESTIÃ“N COMPLETA DE PACIENTES =================
 
 async function loadPacientes() {
   if (!currentUserData) return;
@@ -3661,8 +3661,8 @@ function createPatientCard(paciente) {
         </span>
       </div>
       <div class="patient-details">
-        <div><strong>Edad:</strong> ${paciente.edad || 'No especificada'} años</div>
-        <div><strong>Teléfono:</strong> ${paciente.telefono || 'No disponible'}</div>
+        <div><strong>Edad:</strong> ${paciente.edad || 'No especificada'} aÃ±os</div>
+        <div><strong>TelÃ©fono:</strong> ${paciente.telefono || 'No disponible'}</div>
         <div><strong>Email:</strong> ${paciente.email || 'No disponible'}</div>
         <div><strong>Registrado:</strong> ${fecha}</div>
       </div>
@@ -3735,27 +3735,27 @@ function createPatientDetailModal(paciente) {
               <div>
                 <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Datos Personales</h4>
                 <div style="font-size: 14px; line-height: 1.6;">
-                  <div><strong>Edad:</strong> ${paciente.edad || 'No especificada'} años</div>
-                  <div><strong>Teléfono:</strong> ${paciente.telefono || 'No disponible'}</div>
+                  <div><strong>Edad:</strong> ${paciente.edad || 'No especificada'} aÃ±os</div>
+                  <div><strong>TelÃ©fono:</strong> ${paciente.telefono || 'No disponible'}</div>
                   <div><strong>Email:</strong> ${paciente.email || 'No disponible'}</div>
-                  <div><strong>Dirección:</strong> ${paciente.direccion || 'No disponible'}</div>
+                  <div><strong>DirecciÃ³n:</strong> ${paciente.direccion || 'No disponible'}</div>
                 </div>
               </div>
               
               <div>
-                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Información Clínica</h4>
+                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">InformaciÃ³n ClÃ­nica</h4>
                 <div style="font-size: 14px; line-height: 1.6;">
                   <div><strong>CESFAM:</strong> ${paciente.cesfam}</div>
                   <div><strong>Prioridad:</strong> <span style="color: ${getPriorityColor(paciente.prioridad || 'media')}; font-weight: bold;">${(paciente.prioridad || 'media').toUpperCase()}</span></div>
                   <div><strong>Origen:</strong> ${paciente.origen || 'No especificado'}</div>
-                  <div><strong>Motivación inicial:</strong> ${paciente.motivacionInicial || 'No registrada'}/10</div>
+                  <div><strong>MotivaciÃ³n inicial:</strong> ${paciente.motivacionInicial || 'No registrada'}/10</div>
                 </div>
               </div>
             </div>
             
             ${paciente.sustanciasProblematicas && paciente.sustanciasProblematicas.length > 0 ? 
               `<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5);">
-                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Sustancias Problemáticas</h4>
+                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Sustancias ProblemÃ¡ticas</h4>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                   ${paciente.sustanciasProblematicas.map(s => `<span class="substance-tag" style="background: var(--primary-blue); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${s}</span>`).join('')}
                 </div>
@@ -3764,7 +3764,7 @@ function createPatientDetailModal(paciente) {
             
             <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5); font-size: 12px; color: var(--gray-600);">
               <div><strong>Fecha de registro:</strong> ${fechaCreacion}</div>
-              <div><strong>Primera atención:</strong> ${fechaPrimeraAtencion}</div>
+              <div><strong>Primera atenciÃ³n:</strong> ${fechaPrimeraAtencion}</div>
               ${paciente.citaInicialId ? `<div><strong>Cita inicial ID:</strong> ${paciente.citaInicialId}</div>` : ''}
             </div>
           </div>
@@ -3781,7 +3781,7 @@ function createPatientDetailModal(paciente) {
   `;
 }
 
-// ================= BÚSQUEDA DE PACIENTES POR RUT =================
+// ================= BÃšSQUEDA DE PACIENTES POR RUT =================
 
 async function buscarPacientePorRUT() {
   try {
@@ -3798,7 +3798,7 @@ async function buscarPacientePorRUT() {
     }
     
     if (!validateRUT(rut)) {
-      showNotification('RUT inválido', 'error');
+      showNotification('RUT invÃ¡lido', 'error');
       return;
     }
     
@@ -3816,7 +3816,7 @@ async function buscarPacientePorRUT() {
         <div class="no-results">
           <i class="fas fa-user-slash"></i>
           <h3>Paciente no encontrado</h3>
-          <p>No se encontró ningún paciente con el RUT ${rutFormatted} en tu CESFAM</p>
+          <p>No se encontrÃ³ ningÃºn paciente con el RUT ${rutFormatted} en tu CESFAM</p>
         </div>
       `;
     } else {
@@ -3829,7 +3829,7 @@ async function buscarPacientePorRUT() {
       });
       
       resultsContainer.innerHTML = `
-        <h4>Resultados de búsqueda:</h4>
+        <h4>Resultados de bÃºsqueda:</h4>
         <div class="patients-grid">
           ${pacientes.map(createPatientCard).join('')}
         </div>
@@ -3890,16 +3890,16 @@ function showAtencionModal(pacienteRut, pacienteNombre) {
           <i class="fas fa-times"></i>
         </button>
         <div style="padding:24px;">
-          <h2>Registrar Atención</h2>
+          <h2>Registrar AtenciÃ³n</h2>
           <p><strong>Paciente:</strong> ${pacienteNombre} (${pacienteRut})</p>
           <form id="atencion-form">
             <div class="form-group">
-              <label>Detalle de la atención</label>
+              <label>Detalle de la atenciÃ³n</label>
               <textarea id="atencion-detalle" rows="5" required></textarea>
             </div>
             <div style="text-align:right;margin-top:16px;">
               <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save"></i> Guardar Atención
+                <i class="fas fa-save"></i> Guardar AtenciÃ³n
               </button>
             </div>
           </form>
@@ -3913,7 +3913,7 @@ function showAtencionModal(pacienteRut, pacienteNombre) {
   document.getElementById('atencion-form').addEventListener('submit', async function(e){
     e.preventDefault();
     const detalle = document.getElementById('atencion-detalle').value.trim();
-    if(!detalle) return showNotification('Debes escribir la atención', 'warning');
+    if(!detalle) return showNotification('Debes escribir la atenciÃ³n', 'warning');
     try {
       await db.collection('atenciones').add({
         pacienteRut,
@@ -3924,10 +3924,10 @@ function showAtencionModal(pacienteRut, pacienteNombre) {
         profesionalId: currentUser ? currentUser.uid : '',
         cesfam: currentUserData ? currentUserData.cesfam : '',
       });
-      showNotification('Atención registrada', 'success');
+      showNotification('AtenciÃ³n registrada', 'success');
       closeModal('atencion-modal');
     } catch(err){
-      showNotification('Error guardando atención', 'error');
+      showNotification('Error guardando atenciÃ³n', 'error');
     }
   });
 }
@@ -4054,7 +4054,7 @@ function renderUpcomingAppointments(appointmentsSnapshot) {
   }
 }
 
-// ================= GESTIÓN DE TABS =================
+// ================= GESTIÃ“N DE TABS =================
 
 function setupTabFunctionality() {
   try {
@@ -4066,7 +4066,7 @@ function setupTabFunctionality() {
         const targetTab = btn.dataset.tab;
         
         if (!canAccessTab(targetTab)) {
-          showNotification('No tienes permisos para acceder a esta sección', 'warning');
+          showNotification('No tienes permisos para acceder a esta secciÃ³n', 'warning');
           return;
         }
 
@@ -4082,7 +4082,7 @@ function setupTabFunctionality() {
       });
     });
 
-    console.log('✅ Tab functionality configurada');
+    console.log('âœ… Tab functionality configurada');
   } catch (error) {
     console.error('Error configurando tabs:', error);
   }
@@ -4122,16 +4122,16 @@ function initializeEventListeners() {
   try {
     const loginProfessionalBtn = document.getElementById('login-professional');
     
-    console.log('🔧 Botón login encontrado:', loginProfessionalBtn);
+    console.log('ðŸ”§ BotÃ³n login encontrado:', loginProfessionalBtn);
     
     if (loginProfessionalBtn) {
       loginProfessionalBtn.addEventListener('click', () => {
-        console.log('🔧 Click en botón login detectado');
+        console.log('ðŸ”§ Click en botÃ³n login detectado');
         showModal('login-modal');
       });
-      console.log('✅ Event listener agregado al botón login');
+      console.log('âœ… Event listener agregado al botÃ³n login');
     } else {
-      console.error('❌ Botón login-professional no encontrado');
+      console.error('âŒ BotÃ³n login-professional no encontrado');
     }
 
     const logoutBtn = document.getElementById('logout-professional');
@@ -4213,9 +4213,9 @@ function initializeEventListeners() {
 
     document.addEventListener('keydown', handleKeyboardShortcuts);
     
-    console.log('✅ Event listeners inicializados correctamente');
+    console.log('âœ… Event listeners inicializados correctamente');
   } catch (error) {
-    console.error('❌ Error inicializando event listeners:', error);
+    console.error('âŒ Error inicializando event listeners:', error);
   }
 }
 
@@ -4247,34 +4247,34 @@ function showAboutProgram() {
             <h2><i class="fas fa-info-circle"></i> Sobre el Programa SENDA</h2>
             
             <div style="line-height: 1.6; color: var(--text-dark);">
-              <p><strong>SENDA (Servicio Nacional para la Prevención y Rehabilitación del Consumo de Drogas y Alcohol)</strong> es el organismo del Gobierno de Chile encargado de elaborar las políticas de prevención del consumo de drogas y alcohol, así como de tratamiento, rehabilitación e integración social de las personas afectadas por estas sustancias.</p>
+              <p><strong>SENDA (Servicio Nacional para la PrevenciÃ³n y RehabilitaciÃ³n del Consumo de Drogas y Alcohol)</strong> es el organismo del Gobierno de Chile encargado de elaborar las polÃ­ticas de prevenciÃ³n del consumo de drogas y alcohol, asÃ­ como de tratamiento, rehabilitaciÃ³n e integraciÃ³n social de las personas afectadas por estas sustancias.</p>
               
               <h3 style="color: var(--primary-blue); margin-top: 24px;">Nuestros Servicios</h3>
               <ul style="margin-left: 20px;">
-                <li>Tratamiento ambulatorio básico e intensivo</li>
+                <li>Tratamiento ambulatorio bÃ¡sico e intensivo</li>
                 <li>Tratamiento residencial</li>
-                <li>Programas de reinserción social</li>
+                <li>Programas de reinserciÃ³n social</li>
                 <li>Apoyo familiar y comunitario</li>
-                <li>Prevención en establecimientos educacionales</li>
-                <li>Capacitación a profesionales</li>
+                <li>PrevenciÃ³n en establecimientos educacionales</li>
+                <li>CapacitaciÃ³n a profesionales</li>
               </ul>
               
-              <h3 style="color: var(--primary-blue); margin-top: 24px;">Horarios de Atención</h3>
+              <h3 style="color: var(--primary-blue); margin-top: 24px;">Horarios de AtenciÃ³n</h3>
               <ul style="margin-left: 20px;">
                 <li><strong>Lunes a Viernes:</strong> 08:00 - 16:30</li>
-                <li><strong>Sábados y Domingos:</strong> 09:00 - 12:30</li>
+                <li><strong>SÃ¡bados y Domingos:</strong> 09:00 - 12:30</li>
               </ul>
               
               <h3 style="color: var(--primary-blue); margin-top: 24px;">Contacto</h3>
               <ul style="margin-left: 20px;">
-                <li><strong>Teléfono:</strong> 1412 (gratuito)</li>
+                <li><strong>TelÃ©fono:</strong> 1412 (gratuito)</li>
                 <li><strong>Emergencias:</strong> 131</li>
                 <li><strong>Web:</strong> <a href="https://www.senda.gob.cl" target="_blank">www.senda.gob.cl</a></li>
               </ul>
               
               <div style="background: var(--light-blue); padding: 16px; border-radius: 8px; margin-top: 24px;">
                 <p style="margin: 0; font-style: italic; text-align: center;">
-                  "Tu recuperación es posible. Estamos aquí para acompañarte en cada paso del camino."
+                  "Tu recuperaciÃ³n es posible. Estamos aquÃ­ para acompaÃ±arte en cada paso del camino."
                 </p>
               </div>
             </div>
@@ -4295,16 +4295,16 @@ function showAboutProgram() {
     
   } catch (error) {
     console.error('Error showing about program:', error);
-    showNotification('Error al mostrar información del programa', 'error');
+    showNotification('Error al mostrar informaciÃ³n del programa', 'error');
   }
 }
 
 function handleUrgentCase(solicitudId) { 
   try {
-    showNotification('Caso urgente identificado. Se notificará al coordinador.', 'warning');
+    showNotification('Caso urgente identificado. Se notificarÃ¡ al coordinador.', 'warning');
     
     if (APP_CONFIG.DEBUG_MODE) {
-      console.log('🚨 Caso urgente identificado:', solicitudId);
+      console.log('ðŸš¨ Caso urgente identificado:', solicitudId);
     }
   } catch (error) {
     console.error('Error handling urgent case:', error);
@@ -4327,7 +4327,7 @@ async function downloadPatientPDF(pacienteId) {
     const paciente = pacienteDoc.data();
     
     if (typeof window.jsPDF === 'undefined') {
-      showNotification('Error: Librería PDF no disponible. Cargando...', 'warning');
+      showNotification('Error: LibrerÃ­a PDF no disponible. Cargando...', 'warning');
       
       const script = document.createElement('script');
       script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
@@ -4335,7 +4335,7 @@ async function downloadPatientPDF(pacienteId) {
         setTimeout(() => downloadPatientPDF(pacienteId), 500);
       };
       script.onerror = () => {
-        showNotification('Error cargando librería PDF. Intenta nuevamente.', 'error');
+        showNotification('Error cargando librerÃ­a PDF. Intenta nuevamente.', 'error');
       };
       document.head.appendChild(script);
       return;
@@ -4353,7 +4353,7 @@ async function downloadPatientPDF(pacienteId) {
     doc.setFontSize(12);
     doc.setTextColor(0, 0, 0);
     doc.text(`CESFAM: ${paciente.cesfam}`, 20, 50);
-    doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-CL')}`, 20, 60);
+    doc.text(`Fecha de generaciÃ³n: ${new Date().toLocaleDateString('es-CL')}`, 20, 60);
     doc.text(`Profesional: ${currentUserData.nombre} ${currentUserData.apellidos}`, 20, 70);
     
     doc.setLineWidth(0.5);
@@ -4371,18 +4371,18 @@ async function downloadPatientPDF(pacienteId) {
     yPos += 10;
     doc.text(`RUT: ${paciente.rut}`, 20, yPos);
     yPos += 10;
-    doc.text(`Edad: ${paciente.edad || 'No especificada'} años`, 20, yPos);
+    doc.text(`Edad: ${paciente.edad || 'No especificada'} aÃ±os`, 20, yPos);
     yPos += 10;
-    doc.text(`Teléfono: ${paciente.telefono || 'No disponible'}`, 20, yPos);
+    doc.text(`TelÃ©fono: ${paciente.telefono || 'No disponible'}`, 20, yPos);
     yPos += 10;
     doc.text(`Email: ${paciente.email || 'No disponible'}`, 20, yPos);
     yPos += 10;
-    doc.text(`Dirección: ${paciente.direccion || 'No disponible'}`, 20, yPos);
+    doc.text(`DirecciÃ³n: ${paciente.direccion || 'No disponible'}`, 20, yPos);
     yPos += 15;
     
     doc.setFontSize(14);
     doc.setTextColor(0, 102, 204);
-    doc.text('INFORMACIÓN CLÍNICA', 20, yPos);
+    doc.text('INFORMACIÃ“N CLÃNICA', 20, yPos);
     yPos += 15;
     
     doc.setFontSize(11);
@@ -4391,13 +4391,13 @@ async function downloadPatientPDF(pacienteId) {
     yPos += 10;
     doc.text(`Prioridad: ${(paciente.prioridad || 'Media').toUpperCase()}`, 20, yPos);
     yPos += 10;
-    doc.text(`Motivación inicial: ${paciente.motivacionInicial || 'No registrada'}/10`, 20, yPos);
+    doc.text(`MotivaciÃ³n inicial: ${paciente.motivacionInicial || 'No registrada'}/10`, 20, yPos);
     yPos += 10;
     doc.text(`Origen: ${paciente.origen || 'No especificado'}`, 20, yPos);
     yPos += 10;
     
     if (paciente.sustanciasProblematicas && paciente.sustanciasProblematicas.length > 0) {
-      doc.text(`Sustancias problemáticas: ${paciente.sustanciasProblematicas.join(', ')}`, 20, yPos);
+      doc.text(`Sustancias problemÃ¡ticas: ${paciente.sustanciasProblematicas.join(', ')}`, 20, yPos);
       yPos += 10;
     }
     
@@ -4406,13 +4406,13 @@ async function downloadPatientPDF(pacienteId) {
     yPos += 10;
     
     if (paciente.fechaPrimeraAtencion) {
-      doc.text(`Primera atención: ${formatDate(paciente.fechaPrimeraAtencion)}`, 20, yPos);
+      doc.text(`Primera atenciÃ³n: ${formatDate(paciente.fechaPrimeraAtencion)}`, 20, yPos);
     }
     
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
     doc.text('Documento generado por Sistema SENDA Puente Alto', 20, 280);
-    doc.text('Información confidencial - Uso exclusivo profesional', 20, 290);
+    doc.text('InformaciÃ³n confidencial - Uso exclusivo profesional', 20, 290);
  
     const fileName = `ficha_${paciente.nombre.replace(/\s+/g, '_')}_${paciente.rut.replace(/[.-]/g, '')}.pdf`;
     doc.save(fileName);
@@ -4427,11 +4427,11 @@ async function downloadPatientPDF(pacienteId) {
   }
 }
 
-// ================= INICIALIZACIÓN FINAL =================
+// ================= INICIALIZACIÃ“N FINAL =================
 
 document.addEventListener('DOMContentLoaded', function() {
   try {
-    console.log('🚀 Iniciando sistema SENDA completo...');
+    console.log('ðŸš€ Iniciando sistema SENDA completo...');
     
     // Configurar formularios
     setupMultiStepForm();
@@ -4444,7 +4444,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setupTabFunctionality();
     setupCalendar();
     
-    // Configurar autenticación
+    // Configurar autenticaciÃ³n
     auth.onAuthStateChanged(onAuthStateChanged);
     
 
@@ -4454,7 +4454,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const currentHour = now.getHours();
         const currentMinute = now.getMinutes();
         
-        // Recargar slots de tiempo si están visibles y han cambiado
+        // Recargar slots de tiempo si estÃ¡n visibles y han cambiado
         const timeSlotsContainer = document.getElementById('nueva-cita-time-slots-container');
         if (timeSlotsContainer && timeSlotsContainer.style.display !== 'none') {
           loadNuevaCitaTimeSlots();
@@ -4462,10 +4462,10 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }, 60000); // Cada minuto
     
-    console.log('🎉 SENDA Puente Alto - Sistema completo inicializado');
+    console.log('ðŸŽ‰ SENDA Puente Alto - Sistema completo inicializado');
     
   } catch (error) {
-    console.error('❌ Error durante la inicialización:', error);
+    console.error('âŒ Error durante la inicializaciÃ³n:', error);
     showNotification('Error inicializando el sistema', 'error');
   }
 });
@@ -4498,4 +4498,5 @@ console.log(`
    SISTEMA SENDA PUENTE ALTO v2.0
    ====================================
 `);
+
 
