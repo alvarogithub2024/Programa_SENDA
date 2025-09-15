@@ -2995,7 +2995,7 @@ async function handleNuevaCitaSubmit(e) {
   e.preventDefault();
   
   try {
-    const solicitudId = document.getElementById('solicitud-id')?.value; // Para detectar si viene de solicitud
+    const solicitudId = document.getElementById('solicitud-id')?.value;
     
     const formData = {
       nombre: document.getElementById('nueva-cita-nombre')?.value?.trim(),
@@ -3091,6 +3091,7 @@ async function handleNuevaCitaSubmit(e) {
     if (submitBtn) toggleSubmitButton(submitBtn, false);
   }
 }
+
 if (solicitudId) {
       citaData.solicitudId = solicitudId;
       citaData.origenSolicitud = true;
@@ -4761,6 +4762,7 @@ window.closeModal = closeModal;
 window.showPatientAppointmentInfo = showPatientAppointmentInfo;
 window.showResponderModal = showResponderModal;
 window.switchLoginTab = switchLoginTab;
+window.showPatientDetail = showPatientDetail;
 
 console.log(`
 🎉 ====================================
