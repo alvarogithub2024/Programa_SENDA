@@ -1124,7 +1124,6 @@ async function loadProfessionalsList() {
     }
     
     const snapshot = await db.collection('profesionales')
-      .where('cesfam', '==', currentUserData.cesfam)
       .where('activo', '==', true)
       .get();
     
@@ -3702,7 +3701,7 @@ async function loadAtencionesPaciente(rut, containerId) {
   try {
     const atencionesSnapshot = await db.collection('atenciones')
       .where('pacienteRut', '==', rut)
-      .where('cesfam', '==', currentUserData.cesfam) // <--- ESTA LÍNEA ES OBLIGATORIA
+      .where('cesfam', '==', currentUserData.cesfam)   // <--- ESTA LÍNEA ES CLAVE
       .orderBy('fecha', 'desc')
       .get();
 
