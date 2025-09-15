@@ -3701,7 +3701,7 @@ async function loadAtencionesPaciente(rut, containerId) {
   try {
     const atencionesSnapshot = await db.collection('atenciones')
       .where('pacienteRut', '==', rut)
-      .where('cesfam', '==', currentUserData.cesfam)   // <--- ESTA LÍNEA ES CLAVE
+      .where('cesfam', '==', currentUserData.cesfam)
       .orderBy('fecha', 'desc')
       .get();
 
@@ -3734,6 +3734,7 @@ async function loadAtencionesPaciente(rut, containerId) {
     if (container) container.innerHTML = `<p style="color:red;">Error al cargar atenciones.</p>`;
   }
 }
+
 function createPatientDetailModal(paciente) {
   const fechaCreacion = formatDate(paciente.fechaCreacion);
   const fechaPrimeraAtencion = paciente.fechaPrimeraAtencion ? formatDate(paciente.fechaPrimeraAtencion) : 'No registrada';
@@ -3816,20 +3817,6 @@ function createPatientDetailModal(paciente) {
     </div>
   `;
 }
-    const atenciones = [];
-atencionesSnapshot.forEach(doc => atenciones.push(doc.data()));
-
-    container.innerHTML = atenciones.map(atencion => {
-      const fecha = atencion.fecha && atencion.fecha.toDate
-        ? atencion.fecha.toDate().toLocaleString('es-CL')
-        : '';
-      return `
-        <div class="atencion-item" style="margin-bottom:16px; padding:10px; border:1px solid #dde;">
-          <div><b>Fecha:</b> ${fecha}</div>
-          <div><b>Profesional:</b> ${atencion.profesional || ''}</div>
-          <div><b>Detalle:</b><br> ${atencion.detalle || ''}</div>
-        </div>
-      `;
     }).join('');
   } catch (err) {
     console.error('Error cargando atenciones:', err);
