@@ -1735,11 +1735,7 @@ function formatDate(timestamp) {
     } else {
       return 'N/A';
     }
-    function parseLocalDateFromInput(dateStr) {
-  // Para 'YYYY-MM-DD'
-  const [year, month, day] = dateStr.split('-').map(Number);
-  return new Date(year, month - 1, day);
-}
+    
     if (isNaN(date.getTime())) return 'N/A';
     
     return date.toLocaleDateString('es-CL', {
@@ -1753,6 +1749,11 @@ function formatDate(timestamp) {
     console.error('Error formatting date:', error);
     return 'N/A';
   }
+}
+function parseLocalDateFromInput(dateStr) {
+  // Para 'YYYY-MM-DD'
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
 }
 
 function toggleSubmitButton(button, isLoading) {
