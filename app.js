@@ -2332,36 +2332,35 @@ function showResponderModal(solicitudId) {
       return;
     }
 
-    const responderModal = `
-      <div class="modal-overlay temp-modal" id="responder-modal">
-        <div class="modal large-modal">
-          <button class="modal-close" onclick="closeModal('responder-modal')">
-            <i class="fas fa-times"></i>
-          </button>
-          <div style="padding: 24px;">
-            <h2><i class="fas fa-reply"></i> Responder Solicitud de Información</h2>
-            <!-- ... otros campos ... -->
-            <form id="responder-form">
-              <!-- ... otros inputs ... -->
-              <div class="form-group">
-                <label class="form-label">Mensaje *</label>
-                <textarea class="form-textarea" id="responder-message" rows="8" required
-                  placeholder="Estimado/a solicitante,
+ const responderModal = `
+  <div class="modal-overlay temp-modal" id="responder-modal">
+    <div class="modal large-modal">
+      <button class="modal-close" onclick="closeModal('responder-modal')">
+        <i class="fas fa-times"></i>
+      </button>
+      <div style="padding: 24px;">
+        <h2><i class="fas fa-reply"></i> Responder Solicitud de Información</h2>
+        <form id="responder-form">
+          <!-- ...otros campos... -->
+          <div class="form-group">
+            <label class="form-label">Mensaje *</label>
+            <textarea class="form-textarea" id="responder-message" rows="8" required>
+Estimado/a solicitante,
 
 Gracias por contactar al Programa SENDA Puente Alto. En respuesta a su solicitud de información...
 
 Atentamente,
 ${currentUserData.nombre} ${currentUserData.apellidos}
 ${getProfessionName(currentUserData.profession)}
-SENDA ${currentUserData.cesfam}"></textarea>
-              </div>
-              <!-- ... botones ... -->
-            </form>
+SENDA ${currentUserData.cesfam}
+            </textarea>
           </div>
-        </div>
+          <!-- ...botones... -->
+        </form>
       </div>
-    `;
-
+    </div>
+  </div>
+`;
     document.body.insertAdjacentHTML('beforeend', responderModal);
     showModal('responder-modal');
     document.getElementById('responder-form').addEventListener('submit', handleResponderSubmit);
@@ -2370,7 +2369,6 @@ SENDA ${currentUserData.cesfam}"></textarea>
     console.error('Error showing responder modal:', error);
     showNotification('Error al abrir modal de respuesta', 'error');
   }
-}
 
 async function handleResponderSubmit(e) {
   e.preventDefault();
