@@ -3075,6 +3075,36 @@ async function loadPacientes() {
     showLoading(false);
   }
 }
+function createPatientCard(paciente) {
+  const fecha = formatDate(paciente.fechaCreacion);
+  const estado = paciente.estado || 'activo';
+  
+  return `
+    <div class="patient-card">
+      <div class="patient-header">
+        <div class="patient-info">
+          <h3>${paciente.nombre} ${paciente.apellidos || ''}</h3>
+          <p>RUT: ${paciente.rut}</p>
+        </div>
+        <span class="patient-status ${estado}">
+          ${estado.toUpperCase()}
+        </span>
+      </div>
+      <div class="patient-details">
+        <div><strong>Edad:</strong> ${paciente.edad || 'No especificada'} años</div>
+        <div><strong>Teléfono:</strong> ${paciente.telefono || 'No disponible'}</div>
+        <div><strong>Email:</strong> ${paciente.email || 'No disponible'}</div>
+        <div><strong>Registrado:</strong> ${fecha}</div>
+      </div>
+      <div class="patient-actions">
+        <button class="btn btn-sm btn-primary" onclick="showPatientDetail('${paciente.id}')">
+          <i class="fas fa-eye"></i>
+          Ver Ficha
+        </button>
+      </div>
+    </div>
+  `;
+}
 
 function renderPacientes(pacientes) {
   try {
@@ -3116,7 +3146,54 @@ function createPatientDetailModal(paciente) {
           <h2><i class="fas fa-user-md"></i> Ficha del Paciente</h2>
           
           <div class="patient-info" style="background: var(--light-blue); padding: 20px; border-radius: 12px; margin-bottom: 24px;">
-            <!-- ... resto del contenido igual ... -->
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+              <div>
+                <h3 style="margin: 0; color: var(--primary-blue);">
+                  ${paciente.nombre} ${paciente.apellidos || ''}
+                </h3>
+                <p style="margin: 4px 0; font-weight: 500;">RUT: ${paciente.rut}</p>
+              </div>
+              <span class="patient-status ${paciente.estado || 'activo'}" style="padding: 6px 12px; border-radius: 6px; font-weight: bold;">
+                ${(paciente.estado || 'activo').toUpperCase()}
+              </span>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div>
+                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Datos Personales</h4>
+                <div style="font-size: 14px; line-height: 1.6;">
+                  <div><strong>Edad:</strong> ${paciente.edad || 'No especificada'} años</div>
+                  <div><strong>Teléfono:</strong> ${paciente.telefono || 'No disponible'}</div>
+                  <div><strong>Email:</strong> ${paciente.email || 'No disponible'}</div>
+                  <div><strong>Dirección:</strong> ${paciente.direccion || 'No disponible'}</div>
+                </div>
+              </div>
+              
+              <div>
+                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Información Clínica</h4>
+                <div style="font-size: 14px; line-height: 1.6;">
+                  <div><strong>CESFAM:</strong> ${paciente.cesfam}</div>
+                  <div><strong>Prioridad:</strong> <span style="color: ${getPriorityColor(paciente.prioridad || 'media')}; font-weight: bold;">${(paciente.prioridad || 'media').toUpperCase()}</span></div>
+                  <div><strong>Origen:</strong> ${paciente.origen || 'No especificado'}</div>
+                  <div><strong>Motivación inicial:</strong> ${paciente.motivacionInicial || 'No registrada'}/10</div>
+                </div>
+              </div>
+            </div>
+            
+            ${paciente.sustanciasProblematicas && paciente.sustanciasProblematicas.length > 0 ? 
+              `<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5);">
+                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Sustancias Problemáticas</h4>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  ${paciente.sustanciasProblematicas.map(s => `<span class="substance-tag" style="background: var(--primary-blue); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${s}</span>`).join('')}
+                </div>
+              </div>` : ''
+            }
+            
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5); font-size: 12px; color: var(--gray-600);">
+              <div><strong>Fecha de registro:</strong> ${fechaCreacion}</div>
+              <div><strong>Primera atención:</strong> ${fechaPrimeraAtencion}</div>
+              ${paciente.citaInicialId ? `<div><strong>Cita inicial ID:</strong> ${paciente.citaInicialId}</div>` : ''}
+            </div>
           </div>
           
           <div style="display: flex; gap: 12px; justify-content: flex-end;">
@@ -3124,12 +3201,6 @@ function createPatientDetailModal(paciente) {
               <i class="fas fa-times"></i>
               Cerrar
             </button>
-            <!-- ELIMINADO: Botón de descargar PDF
-            <button class="btn btn-success" onclick="downloadPatientPDF('${paciente.id}')">
-              <i class="fas fa-download"></i>
-              Descargar PDF
-            </button>
-            -->
           </div>
         </div>
       </div>
@@ -4205,7 +4276,7 @@ document.addEventListener('DOMContentLoaded', function() {
     showNotification('Error inicializando el sistema', 'error');
   }
 });
-  
+
 // EXPORTAR FUNCIONES GLOBALES
 window.showPatientDetail = showPatientDetail;
 window.buscarPacientePorRUT = buscarPacientePorRUT;
@@ -4221,7 +4292,7 @@ window.showModal = showModal;
 window.closeModal = closeModal;
 window.showPatientAppointmentInfo = showPatientAppointmentInfo;
 window.showResponderModal = showResponderModal;
-window.switchLoginTab = switchLoginTab;
+window.switchLoginTab = switchLoginTab; // ← AGREGAR ESTA TAMBIÉN
 
 console.log(`
 🎉 ====================================
