@@ -2986,11 +2986,16 @@ function generateTimeSlots(date) {
   const slots = [];
   
   let config;
-  if (HORARIOS_CONFIG.semana.diasSemana.includes(dayOfWeek)) {
-    config = HORARIOS_CONFIG.semana;
-  } else if (HORARIOS_CONFIG.finSemana.diasSemana.includes(dayOfWeek)) {
-    config = HORARIOS_CONFIG.finSemana;
-  } else {
+  
+  // Lunes a Viernes: dayOfWeek 1-5 (Lunes=1, Martes=2, ..., Viernes=5)
+  if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+    config = HORARIOS_CONFIG.semana; // 08:00 - 16:30
+  } 
+  // Sábado y Domingo: dayOfWeek 6 y 0 (Sábado=6, Domingo=0)
+  else if (dayOfWeek === 0 || dayOfWeek === 6) {
+    config = HORARIOS_CONFIG.finSemana; // 09:00 - 12:30
+  } 
+  else {
     return [];
   }
   
@@ -3015,7 +3020,6 @@ function generateTimeSlots(date) {
   
   return slots;
 }
-
 function isPastTimeSlot(date, hour, minute) {
   const now = new Date();
   const slotTime = new Date(date);
