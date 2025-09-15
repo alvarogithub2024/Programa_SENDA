@@ -1265,6 +1265,15 @@ container.innerHTML = solicitudes.map(solicitud => createSolicitudCard(solicitud
 
 // ================= CREAR TARJETA DE SOLICITUD CORREGIDA =================
 
+
+// NUEVO: Modal para responder solicitudes de información
+function showResponderModal(solicitudId) {
+  try {
+    const solicitud = solicitudesData.find(s => s.id === solicitudId);
+    if (!solicitud) {
+      showNotification('Solicitud no encontrada', 'error');
+      return;
+    }
 function createSolicitudCard(solicitud) {
   try {
     const fecha = formatDate(solicitud.fechaCreacion);
@@ -1290,29 +1299,7 @@ function createSolicitudCard(solicitud) {
         titulo = 'Solicitud General';
         subtitulo = `Edad: ${solicitud.edad || 'No especificada'} años`;
       }
-      
-    ${solicitud.tipo !== 'informacion' ? 
-          `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); showAgendaModalFromSolicitud('${solicitud.id}')" title="Agendar cita">
-            <i class="fas fa-calendar-plus"></i>
-            Agendar
-          </button>` : ''
-        }
-        
-        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); showSolicitudDetailById('${solicitud.id}')" title="Ver detalles completos">
-          <i class="fas fa-eye"></i>
-          Ver Detalle
-        </button>
-        
-        ${solicitud.prioridad === 'critica' ? 
-          `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); handleUrgentCase('${solicitud.id}')" title="Caso urgente">
-            <i class="fas fa-exclamation-triangle"></i>
-            URGENTE
-          </button>` : ''
-        }
-      </div>
-    </div>
-  `;
-}
+    }
 
     const sustancias = solicitud.sustancias || [];
     const sustanciasHtml = sustancias.length > 0 ? 
@@ -1333,7 +1320,7 @@ function createSolicitudCard(solicitud) {
       'pendiente_respuesta': 'fa-reply'
     };
 
-    // NUEVO: Botón responder para solicitudes de información
+    // Botón responder para solicitudes de información
     const responderBtn = (solicitud.tipo === 'informacion' || solicitud.tipoSolicitud === 'informacion') ? 
       `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); showResponderModal('${solicitud.id}')" title="Responder solicitud de información">
         <i class="fas fa-reply"></i>
@@ -1380,7 +1367,7 @@ function createSolicitudCard(solicitud) {
         <div class="request-actions" style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px;">
           ${responderBtn}
           ${solicitud.tipo !== 'informacion' ? 
-            `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); showAgendaModal('${solicitud.id}')" title="Agendar cita">
+            `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); showAgendaModalFromSolicitud('${solicitud.id}')" title="Agendar cita">
               <i class="fas fa-calendar-plus"></i>
               Agendar
             </button>` : ''
@@ -1412,16 +1399,6 @@ function createSolicitudCard(solicitud) {
     `;
   }
 }
-
-// NUEVO: Modal para responder solicitudes de información
-function showResponderModal(solicitudId) {
-  try {
-    const solicitud = solicitudesData.find(s => s.id === solicitudId);
-    if (!solicitud) {
-      showNotification('Solicitud no encontrada', 'error');
-      return;
-    }
-
     const responderModal = `
       <div class="modal-overlay temp-modal" id="responder-modal">
         <div class="modal large-modal">
