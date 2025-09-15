@@ -2370,6 +2370,7 @@ SENDA ${currentUserData.cesfam}"></textarea>
     console.error('Error showing responder modal:', error);
     showNotification('Error al abrir modal de respuesta', 'error');
   }
+}
 
 async function handleResponderSubmit(e) {
   e.preventDefault();
