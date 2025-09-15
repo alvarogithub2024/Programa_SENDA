@@ -1735,7 +1735,11 @@ function formatDate(timestamp) {
     } else {
       return 'N/A';
     }
-    
+    function parseLocalDateFromInput(dateStr) {
+  // Para 'YYYY-MM-DD'
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
     if (isNaN(date.getTime())) return 'N/A';
     
     return date.toLocaleDateString('es-CL', {
@@ -2748,7 +2752,7 @@ async function loadNuevaCitaTimeSlots() {
       return;
     }
 
-    const selectedDate = new Date(citaDate.value);
+   const selectedDate = parseLocalDateFromInput(citaDate.value);
     const timeSlots = generateTimeSlots(selectedDate);
     const occupiedSlots = await getOccupiedSlots(professionalSelect.value, selectedDate);
     
