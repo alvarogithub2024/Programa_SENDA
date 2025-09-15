@@ -3817,7 +3817,7 @@ function createPatientDetailModal(paciente) {
   `;
 }
     const atenciones = [];
-    atencionesSnapshot.forEach(doc => atenciones.push(doc.data()));
+atencionesSnapshot.forEach(doc => atenciones.push(doc.data()));
 
     container.innerHTML = atenciones.map(atencion => {
       const fecha = atencion.fecha && atencion.fecha.toDate
