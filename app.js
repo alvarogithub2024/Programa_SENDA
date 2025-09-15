@@ -1241,7 +1241,13 @@ function renderSolicitudes(solicitudes) {
       return;
     }
 
-    container.innerHTML = solicitudes.map(solicitud => createSolicitudCard(solicitud)).join('');
+
+${solicitud.tipo !== 'informacion' ? 
+  `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); showAgendaModalFromSolicitud('${solicitud.id}')" title="Agendar cita">
+    <i class="fas fa-calendar-plus"></i>
+    Agendar
+  </button>` : ''
+}
     
     // CORREGIDO: Agregar event listeners funcionales a las tarjetas
     container.querySelectorAll('.request-card').forEach(card => {
@@ -1560,7 +1566,107 @@ function filterSolicitudes() {
     console.error('Error filtering solicitudes:', error);
   }
 }
+// ================= AGENDAR DESDE SOLICITUD =================
 
+function showAgendaModalFromSolicitud(solicitudId) {
+  try {
+    console.log('📅 Agendando cita desde solicitud:', solicitudId);
+    
+    // Encontrar la solicitud
+    const solicitud = solicitudesData.find(s => s.id === solicitudId);
+    if (!solicitud) {
+      showNotification('Solicitud no encontrada', 'error');
+      return;
+    }
+    
+    // Crear modal de nueva cita con datos precargados
+    const nuevaCitaModal = `
+      <div class="modal-overlay temp-modal" id="nueva-cita-modal">
+        <div class="modal large-modal">
+          <button class="modal-close" onclick="closeModal('nueva-cita-modal')">
+            <i class="fas fa-times"></i>
+          </button>
+          
+          <div style="padding: 24px;">
+            <h2><i class="fas fa-calendar-plus"></i> Agendar Cita - Solicitud ${solicitud.id}</h2>
+            
+            <!-- Información de la solicitud -->
+            <div style="background: var(--light-blue); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+              <h4 style="margin: 0 0 8px 0; color: var(--primary-blue);">
+                <i class="fas fa-info-circle"></i> Datos del Solicitante
+              </h4>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 14px;">
+                <div><strong>Nombre:</strong> ${solicitud.nombre} ${solicitud.apellidos || ''}</div>
+                <div><strong>RUT:</strong> ${solicitud.rut}</div>
+                <div><strong>Edad:</strong> ${solicitud.edad} años</div>
+                <div><strong>Teléfono:</strong> ${solicitud.telefono || 'No disponible'}</div>
+                <div><strong>Email:</strong> ${solicitud.email || 'No disponible'}</div>
+                <div><strong>CESFAM:</strong> ${solicitud.cesfam}</div>
+              </div>
+            </div>
+            
+            <form id="nueva-cita-form">
+              <!-- Campos ocultos con datos de la solicitud -->
+              <input type="hidden" id="solicitud-id" value="${solicitud.id}">
+              <input type="hidden" id="nueva-cita-nombre" value="${solicitud.nombre} ${solicitud.apellidos || ''}">
+              <input type="hidden" id="nueva-cita-rut" value="${solicitud.rut}">
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                <div class="form-group">
+                  <label class="form-label">Profesional *</label>
+                  <select class="form-select" id="nueva-cita-professional" required>
+                    <option value="">Seleccionar profesional...</option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label">Fecha *</label>
+                  <input type="date" class="form-input" id="nueva-cita-date" required>
+                </div>
+              </div>
+              
+              <div class="time-slots-container" id="nueva-cita-time-slots-container" style="display: none;">
+                <h4 style="margin-bottom: 16px; color: var(--primary-blue);">
+                  <i class="fas fa-clock"></i> Horarios Disponibles
+                </h4>
+                <div class="time-slots-grid" id="nueva-cita-time-slots-grid">
+                  <!-- Los slots de tiempo se cargarán aquí -->
+                </div>
+              </div>
+              
+              <div class="form-group" style="margin-top: 24px;">
+                <label class="form-label">Observaciones</label>
+                <textarea class="form-textarea" id="nueva-cita-notes" rows="3" 
+                          placeholder="Observaciones adicionales para la cita...">${solicitud.descripcion || solicitud.motivo || ''}</textarea>
+              </div>
+              
+              <div class="form-actions" style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                <button type="button" class="btn btn-outline" onclick="closeModal('nueva-cita-modal')">
+                  <i class="fas fa-times"></i>
+                  Cancelar
+                </button>
+                <button type="submit" class="btn btn-success" disabled>
+                  <i class="fas fa-calendar-check"></i>
+                  Agendar Cita
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', nuevaCitaModal);
+    showModal('nueva-cita-modal');
+    
+    // Cargar profesionales y configurar listeners
+    loadProfessionalsForNuevaCita();
+    
+  } catch (error) {
+    console.error('Error showing agenda modal from solicitud:', error);
+    showNotification('Error al abrir modal de agenda', 'error');
+  }
+}
 // ================= ENVÍO DE FORMULARIOS =================
 
 async function handleInformationOnlySubmit() {
@@ -2702,7 +2808,81 @@ async function handleNuevaCitaSubmit(e) {
     if (submitBtn) toggleSubmitButton(submitBtn, false);
   }
 }
-
+if (solicitudId) {
+      citaData.solicitudId = solicitudId;
+      citaData.origenSolicitud = true;
+    }
+    
+    const citaRef = await db.collection('citas').add(citaData);
+    
+    // Registrar paciente automáticamente
+    await registrarPacienteAutomaticamente(formData, citaRef.id);
+    
+    // Si viene de solicitud, actualizar estado de la solicitud
+    if (solicitudId) {
+      try {
+        await actualizarEstadoSolicitud(solicitudId, citaRef.id);
+      } catch (error) {
+        console.warn('Error actualizando estado de solicitud:', error);
+      }
+    }
+    
+    closeModal('nueva-cita-modal');
+    
+    const mensaje = solicitudId 
+      ? `Cita agendada exitosamente desde solicitud para ${fechaCompleta.toLocaleDateString('es-CL')} a las ${formData.hora}`
+      : `Cita creada exitosamente para ${fechaCompleta.toLocaleDateString('es-CL')} a las ${formData.hora}`;
+    
+    showNotification(mensaje, 'success', 5000);
+    
+    // Actualizar vistas
+    renderCalendar();
+    if (selectedCalendarDate) {
+      loadDayAppointments(selectedCalendarDate);
+    } else {
+      loadTodayAppointments();
+    }
+    
+async function actualizarEstadoSolicitud(solicitudId, citaId) {
+  try {
+    // Buscar en qué colección está la solicitud
+    const solicitud = solicitudesData.find(s => s.id === solicitudId);
+    if (!solicitud) return;
+    
+    let coleccion = 'solicitudes_ingreso'; // Default
+    
+    if (solicitud.tipo === 'reingreso') {
+      coleccion = 'reingresos';
+    } else if (solicitud.tipo === 'informacion') {
+      coleccion = 'solicitudes_informacion';
+    }
+    
+    await db.collection(coleccion).doc(solicitudId).update({
+      estado: 'agendada',
+      citaId: citaId,
+      fechaAgenda: firebase.firestore.FieldValue.serverTimestamp(),
+      agendadaPor: currentUser.uid
+    });
+    
+    console.log(`✅ Estado de solicitud ${solicitudId} actualizado a 'agendada'`);
+    
+  } catch (error) {
+    console.error('Error actualizando estado de solicitud:', error);
+    throw error;
+  }
+}
+    if (solicitudId && hasAccessToSolicitudes()) {
+      await loadSolicitudes();
+    }
+    
+  } catch (error) {
+    console.error('Error creando nueva cita:', error);
+    showNotification('Error al crear cita: ' + error.message, 'error');
+  } finally {
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn) toggleSubmitButton(submitBtn, false);
+  }
+}
 // NUEVO: Registrar paciente automáticamente cuando se crea una cita
 async function registrarPacienteAutomaticamente(citaData, citaId) {
   try {
@@ -4289,13 +4469,14 @@ window.selectNuevaCitaTimeSlot = selectNuevaCitaTimeSlot;
 window.showSolicitudDetailById = showSolicitudDetailById;
 window.showSolicitudDetail = showSolicitudDetail;
 window.showAgendaModal = showAgendaModal;
+window.showAgendaModalFromSolicitud = showAgendaModalFromSolicitud;
 window.handleUrgentCase = handleUrgentCase;
 window.showAboutProgram = showAboutProgram;
 window.showModal = showModal;
 window.closeModal = closeModal;
 window.showPatientAppointmentInfo = showPatientAppointmentInfo;
 window.showResponderModal = showResponderModal;
-window.switchLoginTab = switchLoginTab; // ← AGREGAR ESTA TAMBIÉN
+window.switchLoginTab = switchLoginTab;
 
 console.log(`
 🎉 ====================================
