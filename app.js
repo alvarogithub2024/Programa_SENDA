@@ -2979,12 +2979,12 @@ async function registrarPacienteAutomaticamente(citaData, citaId) {
   }
 }
 
-// ================= FUNCIONES DE HORARIOS =================
-// ================= FUNCIONES DE HORARIOS =================
+// ================= FUNCIONES DE HORARIOS ================
 
 function generateTimeSlots(date) {
-  const dayOfWeek = date.getDay();
-  const slots = [];
+ 
+  const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const dayOfWeek = localDate.getDay();
 
   let config;
 
