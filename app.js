@@ -2987,11 +2987,11 @@ function generateTimeSlots(date) {
   
   let config;
   
-  // Lunes a Viernes: dayOfWeek 1-5 (Lunes=1, Martes=2, ..., Viernes=5)
+  // Lunes a Viernes: dayOfWeek 1-5
   if (dayOfWeek >= 1 && dayOfWeek <= 5) {
     config = HORARIOS_CONFIG.semana; // 08:00 - 16:30
   } 
-  // Sábado y Domingo: dayOfWeek 6 y 0 (Sábado=6, Domingo=0)
+  // Sábado y Domingo: dayOfWeek 6 y 0
   else if (dayOfWeek === 0 || dayOfWeek === 6) {
     config = HORARIOS_CONFIG.finSemana; // 09:00 - 12:30
   } 
@@ -3002,6 +3002,7 @@ function generateTimeSlots(date) {
   let currentHour = config.horaInicio;
   let currentMinute = 0;
   
+  // LÓGICA CORREGIDA DEL BUCLE
   while (currentHour < config.horaFin || (currentHour === config.horaFin && currentMinute <= config.minutoFin)) {
     const timeString = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
     
@@ -3016,11 +3017,35 @@ function generateTimeSlots(date) {
       currentHour += Math.floor(currentMinute / 60);
       currentMinute = currentMinute % 60;
     }
+    
+    // CONDICIÓN DE SEGURIDAD PARA EVITAR BUCLE INFINITO
+    if (currentHour > config.horaFin + 1) {
+      break;
+    }
+  }
+  
+  console.log(`Día ${dayOfWeek} (${date.toLocaleDateString()}): ${slots.length} slots generados`, slots.map(s => s.time));
+  return slots;
+}
+    currentMinute += config.intervaloMinutos;
+    if (currentMinute >= 60) {
+      currentHour += Math.floor(currentMinute / 60);
+      currentMinute = currentMinute % 60;
+    }
   }
   
   return slots;
 }
-function isPastTimeSlot(date, hour, minute) {
+function debugTimeSlots() {
+  const lunes = new Date('2025-09-15');
+  const sabado = new Date('2025-09-13');
+  
+  console.log('=== DEBUG HORARIOS ===');
+  console.log('Lunes 15/09:', lunes.getDay(), generateTimeSlots(lunes));
+  console.log('Sábado 13/09:', sabado.getDay(), generateTimeSlots(sabado));
+}
+
+fuNction isPastTimeSlot(date, hour, minute) {
   const now = new Date();
   const slotTime = new Date(date);
   slotTime.setHours(hour, minute, 0, 0);
