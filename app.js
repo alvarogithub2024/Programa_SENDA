@@ -3520,11 +3520,17 @@ function createNuevaCitaModalForDate(dateIso) {
     const dateInput = document.getElementById('nueva-cita-date');
     if (dateInput) {
       const date = new Date(dateIso);
+      const today = new Date();
+      
+      // No permitir fechas pasadas
+      if (date < today.setHours(0,0,0,0)) {
+        date.setTime(today.getTime());
+      }
+      
       dateInput.value = date.toISOString().split('T')[0];
     }
   }, 100);
 }
-// ... (continuación del código anterior)
 
 // ================= GESTIÓN COMPLETA DE PACIENTES =================
 
@@ -4411,6 +4417,28 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Configurar autenticación
     auth.onAuthStateChanged(onAuthStateChanged);
+    
+    console.log('🎉 SENDA Puente Alto - Sistema completo inicializado');
+    
+  } catch (error) {
+    console.error('❌ Error durante la inicialización:', error);
+    showNotification('Error inicializando el sistema', 'error');
+  }
+});
+
+ setInterval(() => {
+      if (currentUserData) {
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        
+        // Recargar slots de tiempo si están visibles y han cambiado
+        const timeSlotsContainer = document.getElementById('nueva-cita-time-slots-container');
+        if (timeSlotsContainer && timeSlotsContainer.style.display !== 'none') {
+          loadNuevaCitaTimeSlots();
+        }
+      }
+    }, 60000); // Cada minuto
     
     console.log('🎉 SENDA Puente Alto - Sistema completo inicializado');
     
