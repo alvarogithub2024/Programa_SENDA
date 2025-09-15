@@ -3062,7 +3062,8 @@ async function handleNuevaCitaSubmit(e) {
       }
     }
     
-    closeModal('nueva-cita-modal');
+      closeModal('nueva-cita-modal');
+    showNotification(mensaje, 'success', 5000);
     
     const mensaje = solicitudId 
       ? `Cita agendada exitosamente desde solicitud para ${fechaCompleta.toLocaleDateString('es-CL')} a las ${formData.hora}`
@@ -3083,7 +3084,7 @@ async function handleNuevaCitaSubmit(e) {
       await loadSolicitudes();
     }
     
-   } catch (error) {
+  } catch (error) {
     console.error('Error creando nueva cita:', error);
     showNotification('Error al crear cita: ' + error.message, 'error');
   } finally {
