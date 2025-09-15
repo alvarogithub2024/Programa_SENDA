@@ -3817,21 +3817,6 @@ function createPatientDetailModal(paciente) {
     </div>
   `;
 }
-async function loadAtencionesPaciente(rut, containerId) {
-  try {
-    const atencionesSnapshot = await db.collection('atenciones')
-      .where('pacienteRut', '==', rut)
-      .orderBy('fecha', 'desc')
-      .get();
-
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
-    if (atencionesSnapshot.empty) {
-      container.innerHTML = `<p style="color:gray;">Sin atenciones registradas.</p>`;
-      return;
-    }
-
     const atenciones = [];
     atencionesSnapshot.forEach(doc => atenciones.push(doc.data()));
 
