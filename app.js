@@ -3743,7 +3743,6 @@ function createPatientDetailModal(paciente) {
       <div class="modal large-modal">
         <button class="modal-close" onclick="closeModal('patient-detail-modal')">
           <i class="fas fa-times"></i>
-          </div>
         </button>
         
         <div style="padding: 24px;">
@@ -3817,20 +3816,6 @@ function createPatientDetailModal(paciente) {
     </div>
   `;
 }
-    const atenciones = [];
-atencionesSnapshot.forEach(doc => atenciones.push(doc.data()));
-
-    container.innerHTML = atenciones.map(atencion => {
-      const fecha = atencion.fecha && atencion.fecha.toDate
-        ? atencion.fecha.toDate().toLocaleString('es-CL')
-        : '';
-      return `
-        <div class="atencion-item" style="margin-bottom:16px; padding:10px; border:1px solid #dde;">
-          <div><b>Fecha:</b> ${fecha}</div>
-          <div><b>Profesional:</b> ${atencion.profesional || ''}</div>
-          <div><b>Detalle:</b><br> ${atencion.detalle || ''}</div>
-        </div>
-      `;
     }).join('');
   } catch (err) {
     console.error('Error cargando atenciones:', err);
