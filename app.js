@@ -1267,6 +1267,134 @@ container.innerHTML = solicitudes.map(solicitud => createSolicitudCard(solicitud
 
 
 // NUEVO: Modal para responder solicitudes de información
+function createSolicitudCard(solicitud) {
+  try {
+    const fecha = formatDate(solicitud.fechaCreacion);
+    const prioridad = solicitud.prioridad || 'baja';
+    const estado = solicitud.estado || 'pendiente';
+    
+    let titulo, subtitulo, tipoIcon;
+    
+    if (solicitud.tipo === 'reingreso') {
+      titulo = `Reingreso - ${solicitud.nombre || 'Sin nombre'}`;
+      subtitulo = `RUT: ${solicitud.rut || 'No disponible'}`;
+      tipoIcon = 'fa-redo';
+    } else if (solicitud.tipo === 'informacion' || solicitud.tipoSolicitud === 'informacion') {
+      titulo = 'Solicitud de Información';
+      subtitulo = `Email: ${solicitud.email || 'No disponible'}`;
+      tipoIcon = 'fa-info-circle';
+    } else {
+      tipoIcon = 'fa-user-plus';
+      if (solicitud.tipoSolicitud === 'identificado') {
+        titulo = `${solicitud.nombre || ''} ${solicitud.apellidos || ''}`.trim() || 'Solicitud identificada';
+        subtitulo = `RUT: ${solicitud.rut || 'No disponible'}`;
+      } else {
+        titulo = 'Solicitud General';
+        subtitulo = `Edad: ${solicitud.edad || 'No especificada'} años`;
+      }
+    }
+
+    const sustancias = solicitud.sustancias || [];
+    const sustanciasHtml = sustancias.length > 0 ? 
+      sustancias.map(s => `<span class="substance-tag">${s}</span>`).join('') : '';
+
+    const prioridadColor = {
+      'critica': '#ef4444',
+      'alta': '#f59e0b',
+      'media': '#3b82f6',
+      'baja': '#10b981'
+    };
+
+    const estadoIcon = {
+      'pendiente': 'fa-clock',
+      'en_proceso': 'fa-spinner',
+      'agendada': 'fa-calendar-check',
+      'completada': 'fa-check-circle',
+      'pendiente_respuesta': 'fa-reply'
+    };
+
+    // Botón responder para solicitudes de información
+    const responderBtn = (solicitud.tipo === 'informacion' || solicitud.tipoSolicitud === 'informacion') ? 
+      `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); showResponderModal('${solicitud.id}')" title="Responder solicitud de información">
+        <i class="fas fa-reply"></i>
+        Responder
+      </button>` : '';
+
+    return `
+      <div class="request-card" data-id="${solicitud.id}" style="transition: all 0.2s ease;">
+        <div class="request-header">
+          <div class="request-info">
+            <h3>
+              <i class="fas ${tipoIcon}" style="margin-right: 8px; color: var(--primary-blue);"></i>
+              ${titulo}
+            </h3>
+            <p style="color: var(--gray-600);">${subtitulo}</p>
+          </div>
+          <div class="request-meta">
+            <span class="priority-badge ${prioridad}" style="background-color: ${prioridadColor[prioridad]}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+              ${prioridad.toUpperCase()}
+            </span>
+            ${solicitud.tipo === 'reingreso' ? '<span class="request-type reingreso" style="background: #e0e7ff; color: #3730a3; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">REINGRESO</span>' : ''}
+            ${solicitud.tipo === 'informacion' ? '<span class="request-type informacion" style="background: #f0f9ff; color: #0c4a6e; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">INFORMACIÓN</span>' : ''}
+          </div>
+        </div>
+        
+        <div class="request-body">
+          ${sustanciasHtml ? `<div class="request-substances" style="margin-bottom: 8px;">${sustanciasHtml}</div>` : ''}
+          ${solicitud.descripcion || solicitud.motivo ? 
+            `<p class="request-description" style="color: var(--gray-700); line-height: 1.5;">${truncateText(solicitud.descripcion || solicitud.motivo, 150)}</p>` : ''}
+          
+          <div class="request-details" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--gray-600);">
+            ${solicitud.cesfam ? `<div><strong>CESFAM:</strong> ${solicitud.cesfam}</div>` : ''}
+            <div><strong>Estado:</strong> 
+              <span class="status-${estado}" style="display: inline-flex; align-items: center; gap: 4px;">
+                <i class="fas ${estadoIcon[estado] || 'fa-circle'}"></i>
+                ${estado.replace('_', ' ').toUpperCase()}
+              </span>
+            </div>
+            ${solicitud.edad ? `<div><strong>Edad:</strong> ${solicitud.edad} años</div>` : ''}
+            <div><strong>Fecha:</strong> ${fecha}</div>
+          </div>
+        </div>
+        
+        <div class="request-actions" style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px;">
+          ${responderBtn}
+          ${solicitud.tipo !== 'informacion' ? 
+            `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); showAgendaModalFromSolicitud('${solicitud.id}')" title="Agendar cita">
+              <i class="fas fa-calendar-plus"></i>
+              Agendar
+            </button>` : ''
+          }
+          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); showSolicitudDetailById('${solicitud.id}')" title="Ver detalles completos">
+            <i class="fas fa-eye"></i>
+            Ver Detalle
+          </button>
+          ${solicitud.prioridad === 'critica' ? 
+            `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); handleUrgentCase('${solicitud.id}')" title="Caso urgente">
+              <i class="fas fa-exclamation-triangle"></i>
+              URGENTE
+            </button>` : ''
+          }
+        </div>
+      </div>
+    `;
+  } catch (error) {
+    console.error('Error creando tarjeta de solicitud:', error);
+    return `
+      <div class="request-card error-card">
+        <div class="request-header">
+          <h3>Error al cargar solicitud</h3>
+        </div>
+        <div class="request-body">
+          <p>No se pudo cargar la información de esta solicitud</p>
+        </div>
+      </div>
+    `;
+  }
+}
+
+// ================= MODAL PARA RESPONDER SOLICITUDES =================
+
 function showResponderModal(solicitudId) {
   try {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
@@ -1274,7 +1402,89 @@ function showResponderModal(solicitudId) {
       showNotification('Solicitud no encontrada', 'error');
       return;
     }
-function createSolicitudCard(solicitud) {
+
+    const responderModal = `
+      <div class="modal-overlay temp-modal" id="responder-modal">
+        <div class="modal large-modal">
+          <button class="modal-close" onclick="closeModal('responder-modal')">
+            <i class="fas fa-times"></i>
+          </button>
+          
+          <div style="padding: 24px;">
+            <h2><i class="fas fa-reply"></i> Responder Solicitud de Información</h2>
+            
+            <div style="background: var(--light-blue); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+              <h4 style="margin: 0 0 8px 0; color: var(--primary-blue);">
+                <i class="fas fa-info-circle"></i> Información de la Solicitud
+              </h4>
+              <div style="font-size: 14px;">
+                <strong>Email del solicitante:</strong> ${solicitud.email}<br>
+                <strong>Fecha:</strong> ${formatDate(solicitud.fechaCreacion)}<br>
+                <strong>ID:</strong> ${solicitud.id}
+              </div>
+            </div>
+            
+            <form id="responder-form">
+              <input type="hidden" id="responder-solicitud-id" value="${solicitud.id}">
+              
+              <div class="form-group">
+                <label class="form-label">Desde (Email institucional) *</label>
+                <input type="email" class="form-input" id="responder-from" 
+                       value="${currentUserData.email || currentUserData.nombre.toLowerCase().replace(/\s+/g, '.')}@senda.cl" readonly>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Para *</label>
+                <input type="email" class="form-input" id="responder-to" 
+                       value="${solicitud.email}" readonly>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Asunto *</label>
+                <input type="text" class="form-input" id="responder-subject" 
+                       value="Respuesta a su solicitud de información - SENDA Puente Alto" required>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Mensaje *</label>
+                <textarea class="form-textarea" id="responder-message" rows="8" required
+                          placeholder="Estimado/a solicitante,
+
+Gracias por contactar al Programa SENDA Puente Alto. En respuesta a su solicitud de información...
+
+Atentamente,
+${currentUserData.nombre} ${currentUserData.apellidos}
+${getProfessionName(currentUserData.profession)}
+SENDA ${currentUserData.cesfam}"></textarea>
+              </div>
+              
+              <div class="form-actions" style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                <button type="button" class="btn btn-outline" onclick="closeModal('responder-modal')">
+                  <i class="fas fa-times"></i>
+                  Cancelar
+                </button>
+                <button type="submit" class="btn btn-success">
+                  <i class="fas fa-paper-plane"></i>
+                  Enviar Respuesta
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', responderModal);
+    showModal('responder-modal');
+
+    // Configurar listener del formulario
+    document.getElementById('responder-form').addEventListener('submit', handleResponderSubmit);
+
+  } catch (error) {
+    console.error('Error showing responder modal:', error);
+    showNotification('Error al abrir modal de respuesta', 'error');
+  }
+}
   try {
     const fecha = formatDate(solicitud.fechaCreacion);
     const prioridad = solicitud.prioridad || 'baja';
