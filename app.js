@@ -1319,6 +1319,7 @@ function createSolicitudCard(solicitud) {
         <i class="fas fa-reply"></i>
         Responder
       </button>` : '';
+// ================= CREAR TARJETA DE SOLICITUD CORREGIDA =================
 
 function createSolicitudCard(solicitud) {
   try {
@@ -1444,36 +1445,6 @@ function createSolicitudCard(solicitud) {
     `;
   }
 }
-    `;
-  } catch (error) {
-    console.error('Error creando tarjeta de solicitud:', error);
-    return `
-      <div class="request-card error-card">
-        <div class="request-header">
-          <h3>Error al cargar solicitud</h3>
-        </div>
-        <div class="request-body">
-          <p>No se pudo cargar la información de esta solicitud</p>
-        </div>
-      </div>
-    `;
-  }
-} 
-   
-  } catch (error) {
-    console.error('Error creando tarjeta de solicitud:', error);
-    return `
-      <div class="request-card error-card">
-        <div class="request-header">
-          <h3>Error al cargar solicitud</h3>
-        </div>
-        <div class="request-body">
-          <p>No se pudo cargar la información de esta solicitud</p>
-        </div>
-      </div>
-    `;
-  }
-}
 
 // ================= MODAL PARA RESPONDER SOLICITUDES =================
 
@@ -1559,7 +1530,6 @@ SENDA ${currentUserData.cesfam}"></textarea>
     document.body.insertAdjacentHTML('beforeend', responderModal);
     showModal('responder-modal');
 
-    // Configurar listener del formulario
     document.getElementById('responder-form').addEventListener('submit', handleResponderSubmit);
 
   } catch (error) {
@@ -1567,6 +1537,7 @@ SENDA ${currentUserData.cesfam}"></textarea>
     showNotification('Error al abrir modal de respuesta', 'error');
   }
 }
+
   try {
     const fecha = formatDate(solicitud.fechaCreacion);
     const prioridad = solicitud.prioridad || 'baja';
