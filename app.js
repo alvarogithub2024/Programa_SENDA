@@ -3687,6 +3687,8 @@ async function showPatientDetail(pacienteId) {
     const detailModal = createPatientDetailModal(paciente);
     document.body.insertAdjacentHTML('beforeend', detailModal);
     showModal('patient-detail-modal');
+    
+    // Aquí sí: paciente.rut ya existe
     loadAtencionesPaciente(paciente.rut, `atenciones-list-${paciente.rut}`);
     
   } catch (error) {
@@ -3696,7 +3698,43 @@ async function showPatientDetail(pacienteId) {
     showLoading(false);
   }
 }
+async function loadAtencionesPaciente(rut, containerId) {
+  try {
+    console.log('Buscando atenciones para RUT:', rut); // Depuración
+    const atencionesSnapshot = await db.collection('atenciones')
+      .where('pacienteRut', '==', rut)
+      .orderBy('fecha', 'desc')
+      .get();
 
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    if (atencionesSnapshot.empty) {
+      container.innerHTML = `<p style="color:gray;">Sin atenciones registradas.</p>`;
+      return;
+    }
+
+    const atenciones = [];
+    atencionesSnapshot.forEach(doc => atenciones.push(doc.data()));
+
+    container.innerHTML = atenciones.map(atencion => {
+      const fecha = atencion.fecha && atencion.fecha.toDate
+        ? atencion.fecha.toDate().toLocaleString('es-CL')
+        : '';
+      return `
+        <div class="atencion-item" style="margin-bottom:16px; padding:10px; border:1px solid #dde;">
+          <div><b>Fecha:</b> ${fecha}</div>
+          <div><b>Profesional:</b> ${atencion.profesional || ''}</div>
+          <div><b>Detalle:</b><br> ${atencion.detalle || ''}</div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error('Error cargando atenciones:', err);
+    const container = document.getElementById(containerId);
+    if (container) container.innerHTML = `<p style="color:red;">Error al cargar atenciones.</p>`;
+  }
+}
 function createPatientDetailModal(paciente) {
   const fechaCreacion = formatDate(paciente.fechaCreacion);
   const fechaPrimeraAtencion = paciente.fechaPrimeraAtencion ? formatDate(paciente.fechaPrimeraAtencion) : 'No registrada';
