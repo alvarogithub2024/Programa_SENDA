@@ -2732,6 +2732,8 @@ async function handleNuevaCitaSubmit(e) {
   e.preventDefault();
   
   try {
+    const solicitudId = document.getElementById('solicitud-id')?.value; // Para detectar si viene de solicitud
+    
     const formData = {
       nombre: document.getElementById('nueva-cita-nombre')?.value?.trim(),
       rut: document.getElementById('nueva-cita-rut')?.value?.trim(),
@@ -2754,7 +2756,7 @@ async function handleNuevaCitaSubmit(e) {
     const submitBtn = e.target.querySelector('button[type="submit"]');
     toggleSubmitButton(submitBtn, true);
     
-    // CORREGIDO: Obtener nombre del profesional correctamente
+    // Obtener nombre del profesional
     const professionalSelect = document.getElementById('nueva-cita-professional');
     const selectedOption = professionalSelect.options[professionalSelect.selectedIndex];
     const profesionalNombre = selectedOption.dataset.nombre;
@@ -2770,28 +2772,52 @@ async function handleNuevaCitaSubmit(e) {
       pacienteRut: formatRUT(formData.rut),
       fecha: fechaCompleta,
       estado: 'programada',
-      tipo: 'cita_directa',
+      tipo: solicitudId ? 'cita_desde_solicitud' : 'cita_directa',
       cesfam: currentUserData.cesfam,
       observaciones: formData.observaciones,
       fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
       creadoPor: currentUser.uid
     };
     
+    // Si viene de solicitud, agregar referencia
+    if (solicitudId) {
+      citaData.solicitudId = solicitudId;
+      citaData.origenSolicitud = true;
+    }
+    
     const citaRef = await db.collection('citas').add(citaData);
     
-    // NUEVO: Registrar paciente automáticamente
+    // Registrar paciente automáticamente
     await registrarPacienteAutomaticamente(formData, citaRef.id);
+    
+    // Si viene de solicitud, actualizar estado
+    if (solicitudId) {
+      try {
+        await actualizarEstadoSolicitud(solicitudId, citaRef.id);
+      } catch (error) {
+        console.warn('Error actualizando estado de solicitud:', error);
+      }
+    }
     
     closeModal('nueva-cita-modal');
     
-    showNotification(`Cita creada exitosamente para ${fechaCompleta.toLocaleDateString('es-CL')} a las ${formData.hora}`, 'success', 5000);
+    const mensaje = solicitudId 
+      ? `Cita agendada exitosamente desde solicitud para ${fechaCompleta.toLocaleDateString('es-CL')} a las ${formData.hora}`
+      : `Cita creada exitosamente para ${fechaCompleta.toLocaleDateString('es-CL')} a las ${formData.hora}`;
     
-    // CORREGIDO: Actualizar calendario inmediatamente
+    showNotification(mensaje, 'success', 5000);
+    
+    // Actualizar vistas
     renderCalendar();
     if (selectedCalendarDate) {
       loadDayAppointments(selectedCalendarDate);
     } else {
       loadTodayAppointments();
+    }
+    
+    // Si viene de solicitud, recargar solicitudes
+    if (solicitudId && hasAccessToSolicitudes()) {
+      await loadSolicitudes();
     }
     
   } catch (error) {
