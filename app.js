@@ -1,10 +1,10 @@
-// ================= VERIFICACIÓN DE FIREBASE =================
+// VERIFICACIÓN DE FIREBASE
 if (typeof firebase === 'undefined') {
   console.error('❌ Firebase no está cargado');
   alert('Error: Firebase no está disponible. Verifica las librerías.');
 }
 
-// ================= CONFIGURACIÓN DE FIREBASE =================
+// CONFIGURACIÓN DE FIREBASE =================
 const firebaseConfig = {
   apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
   authDomain: "senda-6d5c9.firebaseapp.com",
@@ -15,7 +15,7 @@ const firebaseConfig = {
   measurementId: "G-82DCLW5R2W"
 };
 
-// Initialize Firebase
+// Inicializando Firebase
 let auth, db;
 try {
   if (!firebase.apps.length) {
@@ -39,7 +39,7 @@ try {
   console.error('❌ Error inicializando Firebase:', error);
 }
 
-// ================= VARIABLES GLOBALES =================
+// VARIABLES GLOBALES
 const cesfamPuenteAlto = [
   "CESFAM Alejandro del Río",
   "CESFAM Karol Wojtyla", 
@@ -96,7 +96,7 @@ const APP_CONFIG = {
 
 const dataCache = new Map();
 
-// ================= FUNCIONES UTILITARIAS =================
+// FUNCIONES UTILITARIAS
 
 function showNotification(message, type = 'info', duration = 4000) {
   try {
@@ -252,7 +252,7 @@ function showLoading(show = true, message = 'Cargando...') {
   }
 }
 
-// ================= FORMULARIO MULTI-STEP COMPLETO =================
+//  FORMULARIO MULTI-STEP
 
 function setupMultiStepForm() {
   try {
@@ -288,7 +288,7 @@ function setupMultiStepForm() {
 
     form.addEventListener('submit', handlePatientFormSubmit);
 
-    // Listeners para tipo de solicitud
+    // Listas para tipo de solicitud
     const tipoSolicitudInputs = document.querySelectorAll('input[name="tipoSolicitud"]');
     tipoSolicitudInputs.forEach(input => {
       input.addEventListener('change', () => {
@@ -327,7 +327,7 @@ function setupMultiStepForm() {
       });
     });
 
-    // Listeners para motivación
+    // Lista para motivación
     const motivacionRange = document.getElementById('motivacion-range');
     const motivacionValue = document.getElementById('motivacion-value');
     if (motivacionRange && motivacionValue) {
@@ -340,7 +340,7 @@ function setupMultiStepForm() {
       updateMotivacionColor(motivacionRange.value);
     }
 
-    // Botón específico para envío de información
+    // Botón para envío de información
     const submitInfoBtn = document.getElementById('submit-step-1');
     if (submitInfoBtn) {
       submitInfoBtn.addEventListener('click', (e) => {
@@ -612,7 +612,7 @@ function updateMotivacionColor(value) {
   }
 }
 
-// ================= AUTENTICACIÓN COMPLETA =================
+// AUTENTICACIÓN
 
 function setupAuthForms() {
   try {
@@ -1143,7 +1143,7 @@ async function loadProfessionalsList() {
   }
 }
 
-// ================= ENVÍO DE FORMULARIOS =================
+// ENVÍO DE FORMULARIOS
 
 async function handleInformationOnlySubmit() {
   try {
@@ -1524,7 +1524,7 @@ async function createCriticalAlert(solicitudData, solicitudId) {
   }
 }
 
-// ================= VALIDACIÓN DE FORMULARIOS =================
+// VALIDACIÓN DE FORMULARIOS
 
 function validateStep(step) {
   try {
@@ -1642,7 +1642,7 @@ function getFieldLabel(field) {
   }
 }
 
-// ================= FUNCIONES BÁSICAS =================
+// FUNCIONES BÁSICAS
 
 function formatRUT(rut) {
   try {
@@ -1663,7 +1663,6 @@ function formatRUT(rut) {
     return rut;
   }
 }
-// ... (continuación del código anterior)
 
 function validateRUT(rut) {
   try {
@@ -1832,7 +1831,7 @@ function setCachedData(key, data) {
   });
 }
 
-// ================= GESTIÓN DE SOLICITUDES =================
+// GESTIÓN DE SOLICITUDES
 
 async function loadSolicitudes() {
   if (!currentUserData || !hasAccessToSolicitudes()) {
@@ -2322,7 +2321,7 @@ function showSolicitudDetailById(solicitudId) {
   }
 }
 
-// ================= MODAL RESPONDER SOLICITUDES =================
+// MODAL RESPONDER SOLICITUDES
 
 function showResponderModal(solicitudId) {
   try {
@@ -2467,9 +2466,7 @@ async function handleResponderSubmit(e) {
   }
 }
 
-// ... (continuación del código anterior)
-
-// ================= AGENDAR CITAS DESDE SOLICITUDES =================
+// AGENDAR CITAS DESDE SOLICITUDES
 
 function showAgendaModalFromSolicitud(solicitudId) {
   try {
@@ -2983,7 +2980,7 @@ async function registrarPacienteAutomaticamente(citaData, citaId) {
   }
 }
 
-// ================= FUNCIONES DE HORARIOS ================
+// FUNCIONES DE HORARIOS
 
 function generateTimeSlots(date) {
   // Normaliza la fecha a la zona local (ignora la hora/minuto/segundo)
@@ -3083,7 +3080,7 @@ async function getOccupiedSlots(professionalId, date) {
   }
 }
 
-// ================= CALENDARIO COMPLETO =================
+// CALENDARIO 
 
 function setupCalendar() {
   try {
@@ -3093,7 +3090,6 @@ function setupCalendar() {
     
     renderCalendar();
     
-    // Cargar las citas de hoy automáticamente
     if (currentUserData) {
       loadTodayAppointments();
     }
@@ -3502,7 +3498,6 @@ async function loadTodayAppointments() {
     const today = new Date();
     await loadDayAppointments(today);
     
-    // Siempre actualizar la fecha seleccionada a hoy
     selectedCalendarDate = today;
     selectCalendarDay(today);
     
@@ -3552,8 +3547,7 @@ function createNuevaCitaModalForDate(dateIso) {
   }, 100);
 }
 
-// ================= GESTIÓN COMPLETA DE PACIENTES =================
-
+// GESTIÓN DE PACIENTES
 async function loadPacientes() {
   if (!currentUserData) return;
 
@@ -3687,7 +3681,6 @@ async function showPatientDetail(pacienteId) {
     document.body.insertAdjacentHTML('beforeend', detailModal);
     showModal('patient-detail-modal');
     
-    // Aquí sí: paciente.rut ya existe
     loadAtencionesPaciente(paciente.rut, `atenciones-list-${paciente.rut}`);
     
   } catch (error) {
@@ -3818,7 +3811,7 @@ function createPatientDetailModal(paciente) {
   `;
 }
 
-// ================= BÚSQUEDA DE PACIENTES POR RUT =================
+// BÚSQUEDA DE PACIENTES POR RUT
 
 async function buscarPacientePorRUT() {
   try {
@@ -3881,7 +3874,7 @@ async function buscarPacientePorRUT() {
   }
 }
 
-// ================= SISTEMA DE SEGUIMIENTO =================
+// SISTEMA DE SEGUIMIENTO 
 
 async function loadSeguimiento() {
   if (!currentUserData) return;
@@ -3997,7 +3990,6 @@ function renderPatientsTimeline(appointmentsSnapshot) {
       const hora = fecha.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
       const estado = appointment.estado || 'programada';
       
-      // SOLO ESTE RETURN:
       return `
         <div class="timeline-item" onclick="showAtencionModal('${appointment.pacienteRut}', '${appointment.pacienteNombre}')">
           <div class="timeline-time">${hora}</div>
@@ -4091,7 +4083,7 @@ function renderUpcomingAppointments(appointmentsSnapshot) {
   }
 }
 
-// ================= GESTIÓN DE TABS =================
+// GESTIÓN DE TABS
 
 function setupTabFunctionality() {
   try {
@@ -4153,7 +4145,7 @@ function loadTabData(tabName) {
   }
 }
 
-// ================= EVENT LISTENERS COMPLETOS =================
+// EVENT LISTENERS
 
 function initializeEventListeners() {
   try {
@@ -4269,7 +4261,7 @@ function handleKeyboardShortcuts(e) {
   }
 }
 
-// ================= FUNCIONES PLACEHOLDER Y UTILITARIAS =================
+// FUNCIONES PLACEHOLDER Y UTILITARIAS
 
 function showAboutProgram() {
   try {
@@ -4347,8 +4339,6 @@ function handleUrgentCase(solicitudId) {
     console.error('Error handling urgent case:', error);
   }
 }
-
-// ================= DESCARGA DE PDF =================
 
 async function downloadPatientPDF(pacienteId) {
   try {
@@ -4464,7 +4454,7 @@ async function downloadPatientPDF(pacienteId) {
   }
 }
 
-// ================= INICIALIZACIÓN FINAL =================
+// INICIALIZACIÓN FINAL
 
 document.addEventListener('DOMContentLoaded', function() {
   try {
@@ -4481,7 +4471,6 @@ document.addEventListener('DOMContentLoaded', function() {
     setupTabFunctionality();
     setupCalendar();
     
-    // Configurar autenticación
     auth.onAuthStateChanged(onAuthStateChanged);
     
 
@@ -4497,7 +4486,7 @@ document.addEventListener('DOMContentLoaded', function() {
           loadNuevaCitaTimeSlots();
         }
       }
-    }, 60000); // Cada minuto
+    }, 60000); 
     
     console.log('🎉 SENDA Puente Alto - Sistema completo inicializado');
     
@@ -4507,7 +4496,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// ================= EXPORTAR FUNCIONES GLOBALES =================
+// EXPORTAR FUNCIONES GLOBALES
 
 window.showPatientDetail = showPatientDetail;
 window.buscarPacientePorRUT = buscarPacientePorRUT;
@@ -4528,7 +4517,7 @@ window.downloadPatientPDF = downloadPatientPDF;
 window.loadSolicitudes = loadSolicitudes;
 window.showAtencionModal = showAtencionModal;
 
-// ================= MENSAJE FINAL =================
+// MENSAJE FINAL
 
 console.log(`
    ====================================
