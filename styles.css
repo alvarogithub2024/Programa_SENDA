@@ -150,7 +150,7 @@ body {
   align-items: center;
 }
 
-/* ===== HEADER PROFESIONAL CORREGIDO ===== */
+/* ===== HEADER PROFESIONAL ===== */
 .professional-header {
   background: var(--health-teal);
   color: var(--text-white);
@@ -195,7 +195,6 @@ body {
   align-items: center;
 }
 
-/* CORREGIDO: Botón de cerrar sesión más visible */
 #logout-professional {
   background: var(--danger-red) !important;
   color: white !important;
@@ -226,7 +225,7 @@ body {
   min-height: calc(100vh - 200px);
 }
 
-/* ===== HERO CARD (PÁGINA PÚBLICA) ===== */
+/* ===== HERO CARD ===== */
 .hero-card {
   background: linear-gradient(135deg, var(--background-white) 0%, var(--light-blue) 100%);
   border-radius: var(--border-radius-lg);
@@ -1198,7 +1197,7 @@ body {
   align-items: center;
 }
 
-/* ===== HEADER PROFESIONAL CORREGIDO ===== */
+/* ===== HEADER PROFESIONAL ===== */
 .professional-header {
   background: var(--health-teal);
   color: var(--text-white);
@@ -1243,7 +1242,6 @@ body {
   align-items: center;
 }
 
-/* CORREGIDO: Botón de cerrar sesión más visible */
 #logout-professional {
   background: var(--danger-red) !important;
   color: white !important;
@@ -1274,7 +1272,7 @@ body {
   min-height: calc(100vh - 200px);
 }
 
-/* ===== HERO CARD (PÁGINA PÚBLICA) ===== */
+/* ===== HERO CARD ===== */
 .hero-card {
   background: linear-gradient(135deg, var(--background-white) 0%, var(--light-blue) 100%);
   border-radius: var(--border-radius-lg);
