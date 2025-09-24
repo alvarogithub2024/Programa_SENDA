@@ -31,21 +31,43 @@ function inicializarAutenticacion() {
     }
 }
 
-async function asegurarPerfilProfesional(uid, nombre, apellidos, cesfam, profession) {
-    const userRef = db.collection('profesionales').doc(uid);
-    const doc = await userRef.get();
-    if (!doc.exists) {
-        await userRef.set({
-            nombre,
-            apellidos,
-            cesfam,
-            profession
-        });
-        console.log('Perfil profesional creado automáticamente.');
-    } else {
-        console.log('Perfil profesional ya existe.');
+/**
+ * Maneja los cambios en el estado de autenticación
+ */
+async function manejarCambioAutenticacion(user) {
+    try {
+        if (APP_CONFIG.DEBUG_MODE) {
+            console.log('🔄 Estado de autenticación cambió:', user ? user.email : 'No autenticado');
+        }
+
+        if (user) {
+            currentUser = user;
+            await cargarDatosUsuario(); // Carga datos del usuario desde Firestore
+            mostrarContenidoProfesional(); // Muestra la interfaz profesional
+            
+            // Actualizar variables globales
+            if (window.SENDASystem) {
+                window.SENDASystem.currentUser = currentUser;
+                window.SENDASystem.currentUserData = currentUserData;
+            }
+        } else {
+            currentUser = null;
+            currentUserData = null;
+            limpiarCacheUsuario();
+            mostrarContenidoPublico(); // Muestra la interfaz pública
+        
+            // Limpiar variables globales
+            if (window.SENDASystem) {
+                window.SENDASystem.currentUser = null;
+                window.SENDASystem.currentUserData = null;
+            }
+        }
+    } catch (error) {
+        console.error('❌ Error en cambio de estado de autenticación:', error);
+        mostrarNotificacion('Error en autenticación', 'error');
     }
 }
+
 /**
  * Carga los datos del usuario autenticado
  */
