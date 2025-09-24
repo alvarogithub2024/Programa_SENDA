@@ -1,618 +1,206 @@
-
 import { getFirestore } from '../configuracion/firebase.js';
 import { showNotification } from '../utilidades/notificaciones.js';
+import { performQuickSearch } from '../pacientes/busqueda.js';
+import { getAvailableSlots } from './horarios.js';
 
-// Variables globales
-let upcomingAppointments = [];
-let overdueAppointments = [];
-let todayAppointments = [];
+/**
+ * Abre el modal de nueva cita ordenado
+ * @param {Date|string} preselectedDate Fecha preseleccionada (opcional)
+ */
+export function openNewAppointmentModal(preselectedDate = null) {
+    // Elimina modal existente si está
+    let modal = document.getElementById('appointment-modal');
+    if (modal) modal.remove();
 
-// Inicializar seguimiento de citas próximas
-export function initUpcomingAppointments() {
-    try {
-        console.log('📅 Inicializando citas próximas...');
-        
-        setupAppointmentsView();
-        setupAppointmentFilters();
-        setupAppointmentActions();
-        loadUpcomingAppointments();
-        setupAutoRefresh();
-        
-        console.log('✅ Seguimiento de citas próximas inicializado');
-    } catch (error) {
-        console.error('Error inicializando citas próximas:', error);
-    }
-}
-
-// Configurar vista de citas próximas
-function setupAppointmentsView() {
-    try {
-        let container = document.getElementById('upcoming-appointments-container');
-        
-        // Si no existe el contenedor, crearlo en la pestaña de seguimiento
-        if (!container) {
-            const seguimientoTab = document.getElementById('seguimiento-tab');
-            if (seguimientoTab) {
-                container = document.createElement('div');
-                container.id = 'upcoming-appointments-container';
-                seguimientoTab.appendChild(container);
-            } else {
-                console.warn('No se encontró pestaña de seguimiento');
-                return;
-            }
-        }
-
-        container.innerHTML = `
-            <div class="upcoming-header">
-                <h3>Citas Próximas</h3>
-                <div class="upcoming-stats">
-                    <div class="stat-card today">
-                        <div class="stat-icon">
-                            <i class="fas fa-calendar-day"></i>
-                        </div>
-                        <div class="stat-info">
-                            <div class="stat-number" id="today-count">0</div>
-                            <div class="stat-label">Hoy</div>
-                        </div>
+    // Modal HTML ordenado
+    modal = document.createElement('div');
+    modal.id = 'appointment-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal large-modal">
+            <button class="modal-close" onclick="closeModal('appointment-modal')">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2>Nueva Cita</h2>
+            <form id="appointment-form" autocomplete="off">
+                <!-- PACIENTE -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>RUT Paciente *</label>
+                        <input type="text" id="appointment-patient-rut" required autocomplete="off" placeholder="Buscar RUT...">
+                        <div id="appointment-patient-autocomplete" class="autocomplete-list"></div>
                     </div>
-                    
-                    <div class="stat-card upcoming">
-                        <div class="stat-icon">
-                            <i class="fas fa-calendar-alt"></i>
-                        </div>
-                        <div class="stat-info">
-                            <div class="stat-number" id="upcoming-count">0</div>
-                            <div class="stat-label">Próximas 7 días</div>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card overdue">
-                        <div class="stat-icon">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <div class="stat-info">
-                            <div class="stat-number" id="overdue-count">0</div>
-                            <div class="stat-label">Vencidas</div>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card pending">
-                        <div class="stat-icon">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div class="stat-info">
-                            <div class="stat-number" id="pending-count">0</div>
-                            <div class="stat-label">Por confirmar</div>
-                        </div>
+                    <div class="form-group">
+                        <label>Nombre Paciente</label>
+                        <input type="text" id="appointment-patient-name" readonly>
                     </div>
                 </div>
-                
-                <div class="upcoming-controls">
-                    <div class="view-toggles">
-                        <button class="toggle-btn active" data-view="today" onclick="showAppointmentsView('today')">
-                            Hoy
-                        </button>
-                        <button class="toggle-btn" data-view="upcoming" onclick="showAppointmentsView('upcoming')">
-                            Próximas
-                        </button>
-                        <button class="toggle-btn" data-view="overdue" onclick="showAppointmentsView('overdue')">
-                            Vencidas
-                        </button>
-                        <button class="toggle-btn" data-view="all" onclick="showAppointmentsView('all')">
-                            Todas
-                        </button>
+                <!-- PROFESIONAL -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Profesional *</label>
+                        <select id="appointment-professional" required></select>
                     </div>
-                    
-                    <div class="action-buttons">
-                        <button class="btn btn-secondary" onclick="refreshAppointments()">
-                            <i class="fas fa-sync"></i> Actualizar
-                        </button>
-                        <button class="btn btn-primary" onclick="scheduleNewAppointment()">
-                            <i class="fas fa-plus"></i> Nueva Cita
-                        </button>
+                    <div class="form-group">
+                        <label>Profesión</label>
+                        <input type="text" id="appointment-profession" readonly>
                     </div>
                 </div>
-            </div>
-            
-            <div class="upcoming-content">
-                <div id="appointments-list" class="appointments-list">
-                    <div class="loading-message">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        Cargando citas...
+                <!-- FECHA Y HORA -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Fecha *</label>
+                        <input type="date" id="appointment-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Horario *</label>
+                        <select id="appointment-time" required>
+                            <option value="">Selecciona fecha y profesional</option>
+                        </select>
                     </div>
                 </div>
-            </div>
-        `;
-
-        console.log('✅ Vista de citas próximas configurada');
-    } catch (error) {
-        console.error('Error configurando vista:', error);
-    }
-}
-
-// Cargar citas próximas - FUNCIÓN CORREGIDA
-export async function loadUpcomingAppointments() {
-    try {
-        console.log('📋 Cargando citas próximas...');
-        
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const nextWeek = new Date(today);
-        nextWeek.setDate(nextWeek.getDate() + 7);
-        
-        // Citas de hoy
-        await loadTodayAppointments(today);
-        
-        // Citas próximas (próximos 7 días)
-        await loadUpcomingWeekAppointments(today, nextWeek);
-        
-        // Citas vencidas
-        await loadOverdueAppointments(today);
-        
-        // Actualizar estadísticas - FUNCIÓN PROTEGIDA
-        updateAppointmentStatsSafe();
-        
-        // Mostrar vista por defecto (hoy)
-        showAppointmentsView('today');
-        
-        console.log('✅ Citas próximas cargadas exitosamente');
-        
-    } catch (error) {
-        console.error('Error cargando citas próximas:', error);
-        showNotification('Error al cargar las citas próximas', 'error');
-        
-        // Mostrar datos de ejemplo en caso de error
-        createSampleData();
-        updateAppointmentStatsSafe();
-        showAppointmentsView('today');
-    }
-}
-
-// Crear datos de ejemplo
-function createSampleData() {
-    const today = formatDateForQuery(new Date());
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = formatDateForQuery(tomorrow);
-    
-    todayAppointments = [
-        {
-            id: 'sample1',
-            fecha: today,
-            hora: '09:00',
-            paciente: { nombre: 'Juan', apellido: 'Pérez', telefono: '912345678' },
-            profesional: 'Dr. García',
-            tipo: 'Consulta inicial',
-            estado: 'confirmada'
-        }
-    ];
-    
-    upcomingAppointments = [
-        {
-            id: 'sample2',
-            fecha: tomorrowStr,
-            hora: '14:30',
-            paciente: { nombre: 'María', apellido: 'González', telefono: '987654321' },
-            profesional: 'Dra. López',
-            tipo: 'Seguimiento',
-            estado: 'programada'
-        }
-    ];
-    
-    overdueAppointments = [];
-}
-
-// Cargar citas de hoy
-async function loadTodayAppointments(today) {
-    try {
-        const todayStr = formatDateForQuery(today);
-        
-        const db = getFirestore();
-        if (!db) {
-            console.warn('Base de datos no disponible');
-            return;
-        }
-        
-        const citasRef = db.collection('citas');
-        const query = citasRef
-            .where('fecha', '==', todayStr)
-            .where('estado', 'in', ['programada', 'confirmada']);
-        
-        const snapshot = await query.get();
-        
-        todayAppointments = [];
-        for (const doc of snapshot.docs) {
-            const data = doc.data();
-            const patientData = await getPatientDataSafe(data.pacienteId);
-            
-            todayAppointments.push({
-                id: doc.id,
-                ...data,
-                paciente: patientData
-            });
-        }
-        
-        console.log(`📅 Cargadas ${todayAppointments.length} citas de hoy`);
-        
-    } catch (error) {
-        console.error('Error cargando citas de hoy:', error);
-        todayAppointments = [];
-    }
-}
-
-// Cargar citas de la próxima semana
-async function loadUpcomingWeekAppointments(startDate, endDate) {
-    try {
-        const startStr = formatDateForQuery(startDate);
-        const endStr = formatDateForQuery(endDate);
-        
-        const db = getFirestore();
-        if (!db) {
-            console.warn('Base de datos no disponible');
-            return;
-        }
-        
-        const citasRef = db.collection('citas');
-        const query = citasRef
-            .where('fecha', '>', startStr)
-            .where('fecha', '<=', endStr)
-            .where('estado', 'in', ['programada', 'confirmada']);
-        
-        const snapshot = await query.get();
-        
-        upcomingAppointments = [];
-        for (const doc of snapshot.docs) {
-            const data = doc.data();
-            const patientData = await getPatientDataSafe(data.pacienteId);
-            
-            upcomingAppointments.push({
-                id: doc.id,
-                ...data,
-                paciente: patientData
-            });
-        }
-        
-        console.log(`📅 Cargadas ${upcomingAppointments.length} citas próximas`);
-        
-    } catch (error) {
-        console.error('Error cargando citas próximas:', error);
-        upcomingAppointments = [];
-    }
-}
-
-// Cargar citas vencidas
-async function loadOverdueAppointments(today) {
-    try {
-        const todayStr = formatDateForQuery(today);
-        
-        const db = getFirestore();
-        if (!db) {
-            console.warn('Base de datos no disponible');
-            return;
-        }
-        
-        const citasRef = db.collection('citas');
-        const query = citasRef
-            .where('fecha', '<', todayStr)
-            .where('estado', 'in', ['programada', 'confirmada'])
-            .limit(50);
-        
-        const snapshot = await query.get();
-        
-        overdueAppointments = [];
-        for (const doc of snapshot.docs) {
-            const data = doc.data();
-            const patientData = await getPatientDataSafe(data.pacienteId);
-            
-            overdueAppointments.push({
-                id: doc.id,
-                ...data,
-                paciente: patientData,
-                overdue: true
-            });
-        }
-        
-        console.log(`⚠️ Cargadas ${overdueAppointments.length} citas vencidas`);
-        
-    } catch (error) {
-        console.error('Error cargando citas vencidas:', error);
-        overdueAppointments = [];
-    }
-}
-
-// Obtener datos del paciente de manera segura
-async function getPatientDataSafe(patientId) {
-    try {
-        if (!patientId) return null;
-        
-        const db = getFirestore();
-        if (!db) return null;
-        
-        const doc = await db.collection('pacientes').doc(patientId).get();
-        return doc.exists ? { id: doc.id, ...doc.data() } : null;
-    } catch (error) {
-        console.error('Error obteniendo datos del paciente:', error);
-        return null;
-    }
-}
-
-// Actualizar estadísticas de manera segura
-function updateAppointmentStatsSafe() {
-    try {
-        // Verificar que los elementos existan antes de actualizar
-        const todayCountEl = document.getElementById('today-count');
-        const upcomingCountEl = document.getElementById('upcoming-count');
-        const overdueCountEl = document.getElementById('overdue-count');
-        const pendingCountEl = document.getElementById('pending-count');
-        
-        if (todayCountEl) todayCountEl.textContent = todayAppointments.length;
-        if (upcomingCountEl) upcomingCountEl.textContent = upcomingAppointments.length;
-        if (overdueCountEl) overdueCountEl.textContent = overdueAppointments.length;
-        
-        if (pendingCountEl) {
-            const pendingCount = [...todayAppointments, ...upcomingAppointments]
-                .filter(apt => apt.estado === 'programada').length;
-            pendingCountEl.textContent = pendingCount;
-        }
-        
-        console.log('📊 Estadísticas actualizadas');
-    } catch (error) {
-        console.error('Error actualizando estadísticas:', error);
-    }
-}
-
-// Mostrar vista de citas específica - FUNCIÓN CORREGIDA
-window.showAppointmentsView = function(view) {
-    try {
-        // Actualizar botones activos
-        document.querySelectorAll('.toggle-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        
-        const activeBtn = document.querySelector(`[data-view="${view}"]`);
-        if (activeBtn) {
-            activeBtn.classList.add('active');
-        }
-        
-        // Mostrar citas correspondientes
-        let appointmentsToShow = [];
-        
-        switch (view) {
-            case 'today':
-                appointmentsToShow = todayAppointments;
-                break;
-            case 'upcoming':
-                appointmentsToShow = upcomingAppointments;
-                break;
-            case 'overdue':
-                appointmentsToShow = overdueAppointments;
-                break;
-            case 'all':
-                appointmentsToShow = [...todayAppointments, ...upcomingAppointments, ...overdueAppointments];
-                break;
-        }
-        
-        renderAppointmentsList(appointmentsToShow);
-        console.log(`👁️ Mostrando vista: ${view} (${appointmentsToShow.length} citas)`);
-        
-    } catch (error) {
-        console.error('Error mostrando vista de citas:', error);
-    }
-};
-
-// Renderizar lista de citas
-function renderAppointmentsList(appointments) {
-    try {
-        const listContainer = document.getElementById('appointments-list');
-        if (!listContainer) {
-            console.warn('Contenedor de lista de citas no encontrado');
-            return;
-        }
-
-        if (appointments.length === 0) {
-            listContainer.innerHTML = `
-                <div class="no-appointments">
-                    <i class="fas fa-calendar-check"></i>
-                    <h4>No hay citas para mostrar</h4>
-                    <p>No se encontraron citas en esta categoría.</p>
-                    <button class="btn btn-primary" onclick="scheduleNewAppointment()">
-                        <i class="fas fa-plus"></i> Agendar nueva cita
-                    </button>
+                <!-- ACCIONES -->
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('appointment-modal')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cita</button>
                 </div>
-            `;
-            return;
-        }
-
-        const appointmentsHTML = appointments.map(appointment => 
-            createAppointmentCard(appointment)
-        ).join('');
-
-        listContainer.innerHTML = appointmentsHTML;
-        
-        console.log(`📋 ${appointments.length} citas renderizadas`);
-    } catch (error) {
-        console.error('Error renderizando lista:', error);
-    }
-}
-
-// Crear tarjeta de cita
-function createAppointmentCard(appointment) {
-    const isOverdue = appointment.overdue;
-    const isToday = isAppointmentToday(appointment.fecha);
-    const patientName = appointment.paciente ? 
-        `${appointment.paciente.nombre} ${appointment.paciente.apellido}` : 
-        'Paciente no encontrado';
-
-    return `
-        <div class="appointment-card ${isOverdue ? 'overdue' : ''} ${isToday ? 'today' : ''}" 
-             data-appointment-id="${appointment.id}">
-            
-            <div class="appointment-time">
-                <div class="time-display">
-                    <span class="hour">${appointment.hora}</span>
-                    <span class="date">${formatDisplayDate(appointment.fecha)}</span>
-                </div>
-                <div class="duration">
-                    ${appointment.duracionMinutos || 30} min
-                </div>
-            </div>
-            
-            <div class="appointment-info">
-                <div class="patient-info">
-                    <h4>${patientName}</h4>
-                    <div class="patient-details">
-                        ${appointment.paciente?.telefono ? `
-                            <span><i class="fas fa-phone"></i> ${appointment.paciente.telefono}</span>
-                        ` : ''}
-                    </div>
-                </div>
-                
-                <div class="appointment-details">
-                    <div class="type-professional">
-                        <span class="type">${appointment.tipo || 'Consulta'}</span>
-                        <span class="professional">
-                            <i class="fas fa-user-md"></i>
-                            ${appointment.profesional}
-                        </span>
-                    </div>
-                    
-                    ${appointment.motivo ? `
-                        <div class="reason">
-                            <i class="fas fa-comment"></i>
-                            ${appointment.motivo}
-                        </div>
-                    ` : ''}
-                </div>
-            </div>
-            
-            <div class="appointment-status">
-                <span class="status-badge ${appointment.estado}">
-                    ${getStatusText(appointment.estado)}
-                </span>
-                
-                ${isOverdue ? `
-                    <span class="overdue-badge">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        Vencida
-                    </span>
-                ` : ''}
-            </div>
-            
-            <div class="appointment-actions">
-                <div class="primary-actions">
-                    ${appointment.estado !== 'confirmada' ? `
-                        <button class="btn btn-sm btn-success" onclick="confirmAppointment('${appointment.id}')">
-                            <i class="fas fa-check"></i> Confirmar
-                        </button>
-                    ` : ''}
-                    
-                    ${isToday ? `
-                        <button class="btn btn-sm btn-primary" onclick="startAppointment('${appointment.id}')">
-                            <i class="fas fa-play"></i> Iniciar
-                        </button>
-                    ` : ''}
-                    
-                    <button class="btn btn-sm btn-secondary" onclick="editAppointment('${appointment.id}')">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                </div>
-            </div>
+            </form>
         </div>
     `;
-}
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
 
-// Configurar filtros
-function setupAppointmentFilters() {
-    // Implementar filtros si es necesario
-}
-
-// Configurar acciones
-function setupAppointmentActions() {
-    // Las acciones se manejan mediante onclick
-}
-
-// Configurar auto-refresh
-function setupAutoRefresh() {
-    setInterval(() => {
-        console.log('🔄 Auto-actualizando citas próximas...');
-        loadUpcomingAppointments();
-    }, 5 * 60 * 1000); // Cada 5 minutos
-}
-
-// Funciones utilitarias
-function formatDateForQuery(date) {
-    return date.toISOString().split('T')[0];
-}
-
-function formatDisplayDate(dateString) {
-    const date = new Date(dateString);
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    if (dateString === formatDateForQuery(today)) {
-        return 'Hoy';
-    } else if (dateString === formatDateForQuery(tomorrow)) {
-        return 'Mañana';
-    } else {
-        return date.toLocaleDateString('es-CL', { 
-            weekday: 'short', 
-            day: 'numeric', 
-            month: 'short' 
+    // Lógica de búsqueda de paciente
+    const rutInput = modal.querySelector('#appointment-patient-rut');
+    const nameInput = modal.querySelector('#appointment-patient-name');
+    const autocompleteDiv = modal.querySelector('#appointment-patient-autocomplete');
+    rutInput.addEventListener('input', async (e) => {
+        const query = e.target.value.trim();
+        if (query.length < 2) {
+            autocompleteDiv.innerHTML = '';
+            nameInput.value = '';
+            return;
+        }
+        const results = await performQuickSearch(query);
+        autocompleteDiv.innerHTML = results.map(
+            p => `<div class="autocomplete-item" data-id="${p.id}" data-name="${p.nombre} ${p.apellido}">${p.rut} - ${p.nombre} ${p.apellido}</div>`
+        ).join('');
+        // Click en sugerencia
+        autocompleteDiv.querySelectorAll('.autocomplete-item').forEach(item => {
+            item.addEventListener('click', () => {
+                rutInput.value = item.textContent.split(' - ')[0];
+                nameInput.value = item.dataset.name;
+                rutInput.dataset.patientId = item.dataset.id;
+                autocompleteDiv.innerHTML = '';
+            });
         });
+    });
+
+    // Lógica de carga de profesionales
+    const profSelect = modal.querySelector('#appointment-professional');
+    const profNameInput = modal.querySelector('#appointment-profession');
+    loadProfessionalsForModal().then(list => {
+        profSelect.innerHTML = '<option value="">Seleccionar profesional...</option>' +
+            list.map(p => `<option value="${p.id}" data-profession="${p.professionName}">${p.nombre} ${p.apellidos}</option>`).join('');
+    });
+    profSelect.addEventListener('change', function() {
+        const selectedOption = profSelect.options[profSelect.selectedIndex];
+        profNameInput.value = selectedOption.dataset.profession || '';
+        updateAvailableSlots();
+    });
+
+    // Fecha: preseleccionada o actual
+    const dateInput = modal.querySelector('#appointment-date');
+    dateInput.value = preselectedDate ? formatDateForInput(preselectedDate) : formatDateForInput(new Date());
+    dateInput.addEventListener('change', updateAvailableSlots);
+
+    // Horarios disponibles
+    const timeSelect = modal.querySelector('#appointment-time');
+    async function updateAvailableSlots() {
+        const profId = profSelect.value;
+        const date = dateInput.value;
+        if (!profId || !date) {
+            timeSelect.innerHTML = '<option value="">Selecciona fecha y profesional</option>';
+            return;
+        }
+        const slots = await getAvailableSlots(profId, date);
+        if (!slots.length) {
+            timeSelect.innerHTML = '<option value="">No hay horarios disponibles</option>';
+            return;
+        }
+        timeSelect.innerHTML = slots.map(h => `<option value="${h}">${h}</option>`).join('');
     }
+
+    // Guardar cita
+    modal.querySelector('#appointment-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        // Validar y obtener datos
+        const patientId = rutInput.dataset.patientId;
+        const patientRut = rutInput.value.trim();
+        const patientName = nameInput.value.trim();
+        const profId = profSelect.value;
+        const profName = profSelect.options[profSelect.selectedIndex]?.textContent;
+        const profProfession = profNameInput.value;
+        const date = dateInput.value;
+        const time = timeSelect.value;
+
+        if (!patientId || !profId || !date || !time) {
+            showNotification('Completa todos los campos obligatorios', 'warning');
+            return;
+        }
+
+        // Guardar en Firebase
+        try {
+            const db = getFirestore();
+            await db.collection('citas').add({
+                pacienteId: patientId,
+                pacienteRut,
+                pacienteNombre: patientName,
+                profesionalId: profId,
+                profesionalNombre: profName,
+                profesion: profProfession,
+                fecha: date,
+                hora: time,
+                estado: 'programada',
+                fechaCreacion: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            showNotification('Cita creada correctamente', 'success');
+            closeModal('appointment-modal');
+        } catch (err) {
+            showNotification('Error guardando la cita', 'error');
+            console.error(err);
+        }
+    });
 }
 
-function isAppointmentToday(dateString) {
-    const today = new Date();
-    return dateString === formatDateForQuery(today);
+/**
+ * Carga todos los profesionales para el select del modal
+ * @returns {Promise<Array>} Lista de profesionales
+ */
+async function loadProfessionalsForModal() {
+    const db = getFirestore();
+    const snapshot = await db.collection('profesionales').where('activo', '==', true).get();
+    return snapshot.docs.map(doc => ({
+        id: doc.id,
+        nombre: doc.data().nombre,
+        apellidos: doc.data().apellidos,
+        professionName: doc.data().profession ? getProfessionDisplay(doc.data().profession) : ''
+    }));
+}
+function getProfessionDisplay(code) {
+    const map = { 'asistente_social': 'Asistente Social', 'medico': 'Médico', 'psicologo': 'Psicólogo', 'terapeuta': 'Terapeuta Ocupacional' };
+    return map[code] || code;
+}
+function formatDateForInput(date) {
+    if (!date) return '';
+    const d = typeof date === 'string' ? new Date(date) : date;
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
 }
 
-function getStatusText(status) {
-    const texts = {
-        'programada': 'Programada',
-        'confirmada': 'Confirmada',
-        'realizada': 'Realizada',
-        'cancelada': 'Cancelada',
-        'no_asistio': 'No asistió'
-    };
-    return texts[status] || status;
+// Exporta la función global para ser usada desde el calendario o el botón
+if (typeof window !== 'undefined') {
+    window.openNewAppointmentModal = openNewAppointmentModal;
 }
-
-// Funciones globales
-window.confirmAppointment = async function(appointmentId) {
-    try {
-        const db = getFirestore();
-        await db.collection('citas').doc(appointmentId).update({
-            estado: 'confirmada',
-            fechaConfirmacion: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
-        showNotification('Cita confirmada exitosamente', 'success');
-        await loadUpcomingAppointments();
-        
-    } catch (error) {
-        console.error('Error confirmando cita:', error);
-        showNotification('Error al confirmar la cita', 'error');
-    }
-};
-
-window.startAppointment = function(appointmentId) {
-    showNotification('Función de iniciar atención en desarrollo', 'info');
-};
-
-window.editAppointment = function(appointmentId) {
-    showNotification('Función de editar cita en desarrollo', 'info');
-};
-
-window.refreshAppointments = function() {
-    loadUpcomingAppointments();
-};
-
-window.scheduleNewAppointment = function() {
-    // Cambiar a pestaña de agenda
-    const agendaTab = document.querySelector('.tab-btn[data-tab="agenda"]');
-    if (agendaTab) {
-        agendaTab.click();
-    }
-};
