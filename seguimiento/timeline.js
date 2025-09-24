@@ -568,9 +568,8 @@ function duplicateEntry(entry) {
     console.log('Duplicar entrada:', entry);
 }
 
-// Exportar funciones principales
+
 export {
-    loadPatientTimeline,
     renderTimeline,
     applyTimelineFilters
 };
