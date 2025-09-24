@@ -588,7 +588,6 @@ function showLoading(show) {
 
 // Exportar funciones principales
 export { 
-    loadPatientRecord,
     renderPatientRecord,
     currentPatient
 };
