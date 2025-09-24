@@ -1,185 +1,184 @@
 /**
- * CONFIGURACIÓN DE FIREBASE
- * Inicializa Firestore y Auth, permite el registro completo de profesionales
+ * SISTEMA SENDA PUENTE ALTO - ARCHIVO PRINCIPAL
+ * Inicializa y coordina todos los módulos del sistema
  */
 
-const firebaseConfig = {
-    apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
-    authDomain: "senda-6d5c9.firebaseapp.com",
-    projectId: "senda-6d5c9",
-    storageBucket: "senda-6d5c9.firebasestorage.app",
-    messagingSenderId: "1090028669785",
-    appId: "1:1090028669785:web:d4e1c1b9945fc2fddc1a48",
-    measurementId: "G-82DCLW5R2W"
+import { APP_CONFIG } from './configuracion/constantes.js';
+import { verificarFirebase, inicializarFirebase } from './configuracion/firebase.js';
+import { inicializarAutenticacion } from './autenticacion/sesion.js';
+import { inicializarLogin } from './autenticacion/login.js';
+import { inicializarRegistro } from './autenticacion/registro.js';
+import { inicializarFormularios } from './formularios/formulario-paciente.js';
+import { inicializarFormularioReingreso } from './formularios/formulario-reingreso.js';
+import { inicializarGestorSolicitudes } from './solicitudes/gestor-solicitudes.js';
+import { inicializarCalendario } from './calendario/calendario.js';
+import { inicializarGestorPacientes } from './pacientes/gestor-pacientes.js';
+import { inicializarSeguimiento } from './seguimiento/timeline.js';
+import { inicializarTabs } from './navegacion/tabs.js';
+import { inicializarEventos } from './navegacion/eventos.js';
+import { inicializarNotificaciones } from './utilidades/notificaciones.js';
+import { inicializarModales } from './utilidades/modales.js';
+
+// Variables globales del sistema
+window.SENDASystem = {
+    currentUser: null,
+    currentUserData: null,
+    isInitialized: false
 };
 
-let db, auth;
-
-// Inicializa Firebase solo una vez
-function inicializarFirebase() {
-    if (typeof firebase === 'undefined') {
-        throw new Error('Firebase no está cargado');
-    }
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    
-    db = firebase.firestore();
-    auth = firebase.auth();
-    
-    console.log('✅ Firebase inicializado correctamente');
-    return { db, auth };
-}
-
-function obtenerFirestore() {
-    if (!db) {
-        inicializarFirebase();
-    }
-    return db;
-}
-
-function obtenerAuth() {
-    if (!auth) {
-        inicializarFirebase();
-    }
-    return auth;
-}
-
-// ================= REGISTRO DE PROFESIONAL COMPLETO =================
-
-import { mostrarNotificacion, mostrarExito } from '../utilidades/notificaciones.js';
-import { mostrarCarga, cerrarModal } from '../utilidades/modales.js';
-import { alternarBotonEnvio } from '../utilidades/formato.js';
-
-function inicializarRegistro() {
+/**
+ * Función principal de inicialización
+ */
+async function inicializarSistema() {
     try {
-        // Asegurar que Firebase esté inicializado
-        if (!db || !auth) {
-            inicializarFirebase();
-        }
+        console.log('🚀 Iniciando Sistema SENDA Puente Alto...');
         
-        configurarFormularioRegistro();
-        console.log('✅ Sistema de registro inicializado');
-    } catch (error) {
-        console.error('❌ Error inicializando registro:', error);
-        throw error;
-    }
-}
-
-function configurarFormularioRegistro() {
-    const registerForm = document.getElementById('register-form');
-    if (registerForm) {
-        registerForm.addEventListener('submit', manejarEnvioRegistro);
-        console.log('✅ Formulario de registro configurado');
-    } else {
-        console.warn('⚠️ Formulario de registro no encontrado');
-    }
-}
-
-async function manejarEnvioRegistro(e) {
-    e.preventDefault();
-    console.log('🔐 Iniciando proceso de registro completo...');
-
-    try {
-        mostrarCarga(true, 'Creando cuenta de profesional...');
-
-        // Obtener datos del formulario
-        const nombre = document.getElementById('register-nombre')?.value?.trim();
-        const apellidos = document.getElementById('register-apellidos')?.value?.trim();
-        const email = document.getElementById('register-email')?.value?.trim();
-        const password = document.getElementById('register-password')?.value?.trim();
-        const cesfam = document.getElementById('register-cesfam')?.value?.trim();
-        const profession = document.getElementById('register-profession')?.value?.trim();
-
-        // Validaciones
-        if (!email || !nombre || !apellidos || !cesfam || !profession || !password) {
-            mostrarNotificacion('Completa todos los campos obligatorios', 'warning');
+        // Verificar Firebase
+        if (!verificarFirebase()) {
+            console.error('❌ Firebase no está disponible');
+            mostrarErrorFirebase();
             return;
         }
 
-        if (password.length < 6) {
-            mostrarNotificacion('La contraseña debe tener al menos 6 caracteres', 'warning');
-            return;
-        }
-
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        alternarBotonEnvio(submitBtn, true);
-
-        console.log('📧 Creando usuario en Firebase Auth...');
-
-        // PASO 1: Crear usuario en Firebase Authentication
-        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-        const user = userCredential.user;
-
-        console.log('✅ Usuario Auth creado:', user.uid);
-        console.log('💾 Guardando datos en Firestore...');
-
-        // PASO 2: Guardar datos del profesional en Firestore usando el UID
-        await db.collection('profesionales').doc(user.uid).set({
-            nombre,
-            apellidos,
-            email,
-            cesfam,
-            profession,
-            activo: true,
-            fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
-            uid: user.uid // Guardar el UID para referencias
-        });
-
-        console.log('✅ Datos guardados en Firestore');
-
-        // PASO 3: Actualizar perfil del usuario
-        await user.updateProfile({
-            displayName: `${nombre} ${apellidos}`
-        });
-
-        console.log('✅ Perfil de usuario actualizado');
-
-        // Éxito total
-        cerrarModal('login-modal');
-        mostrarExito(`¡Registro exitoso! Bienvenido ${nombre} ${apellidos}`, 5000);
+        // Inicializar Firebase primero
+        inicializarFirebase();
         
-        // Resetear formulario
-        e.target.reset();
-
-        // El usuario ya está logueado automáticamente después del registro
-        console.log('🎉 Registro completo exitoso');
-
+        // Inicializar utilidades básicas
+        inicializarNotificaciones();
+        inicializarModales();
+        
+        // Inicializar autenticación
+        inicializarAutenticacion();
+        inicializarLogin();
+        inicializarRegistro();
+        
+        // Inicializar formularios
+        inicializarFormularios();
+        inicializarFormularioReingreso();
+        
+        // Inicializar gestores de datos
+        inicializarGestorSolicitudes();
+        inicializarGestorPacientes();
+        inicializarSeguimiento();
+        
+        // Inicializar interfaz
+        inicializarCalendario();
+        inicializarTabs();
+        
+        // Inicializar eventos globales
+        inicializarEventos();
+        
+        // Marcar sistema como inicializado
+        window.SENDASystem.isInitialized = true;
+        
+        console.log('✅ Sistema SENDA inicializado correctamente');
+        
+        // Debug info
+        if (APP_CONFIG.DEBUG_MODE) {
+            console.log('📋 Configuración del sistema:', APP_CONFIG);
+        }
+        
     } catch (error) {
-        console.error('❌ Error en registro:', error);
-        
-        let mensajeError = 'Error al registrar: ';
-        
-        // Mensajes específicos de Firebase Auth
-        switch (error.code) {
-            case 'auth/email-already-in-use':
-                mensajeError += 'Este email ya está registrado';
-                break;
-            case 'auth/invalid-email':
-                mensajeError += 'Email inválido';
-                break;
-            case 'auth/weak-password':
-                mensajeError += 'Contraseña muy débil';
-                break;
-            case 'auth/operation-not-allowed':
-                mensajeError += 'Registro no permitido. Contacta al administrador';
-                break;
-            default:
-                mensajeError += error.message;
-        }
-        
-        mostrarNotificacion(mensajeError, 'error');
-    } finally {
-        mostrarCarga(false);
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        if (submitBtn) alternarBotonEnvio(submitBtn, false);
+        console.error('❌ Error durante la inicialización:', error);
+        mostrarErrorSistema(error);
     }
 }
 
-export {
-    inicializarFirebase,
-    obtenerFirestore,
-    obtenerAuth,
-    inicializarRegistro,
-    configurarFormularioRegistro
-};
+/**
+ * Muestra error cuando Firebase no está disponible
+ */
+function mostrarErrorFirebase() {
+    const errorContainer = document.createElement('div');
+    errorContainer.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #ef4444;
+            color: white;
+            padding: 16px;
+            border-radius: 8px;
+            z-index: 10000;
+            max-width: 350px;
+        ">
+            <h4>Error de Firebase</h4>
+            <p>No se pudo conectar con Firebase. Revisa que esté cargado correctamente.</p>
+            <button onclick="location.reload()" style="
+                background: white;
+                color: #ef4444;
+                border: none;
+                padding: 8px 12px;
+                border-radius: 4px;
+                cursor: pointer;
+                margin-top: 8px;
+            ">
+                Recargar
+            </button>
+        </div>
+    `;
+    document.body.appendChild(errorContainer);
+}
+
+/**
+ * Muestra error general del sistema
+ */
+function mostrarErrorSistema(error) {
+    const errorContainer = document.createElement('div');
+    errorContainer.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #ef4444;
+            color: white;
+            padding: 16px;
+            border-radius: 8px;
+            z-index: 10000;
+            max-width: 300px;
+        ">
+            <h4>Error del Sistema</h4>
+            <p>No se pudo inicializar el sistema SENDA. Por favor, recarga la página.</p>
+            <p><small>${error.message}</small></p>
+            <button onclick="location.reload()" style="
+                background: white;
+                color: #ef4444;
+                border: none;
+                padding: 8px 12px;
+                border-radius: 4px;
+                cursor: pointer;
+                margin-top: 8px;
+            ">
+                Recargar
+            </button>
+        </div>
+    `;
+    document.body.appendChild(errorContainer);
+}
+
+// Inicializar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    inicializarSistema();
+
+    // Configurar eventos adicionales del HTML
+    const aboutBtn = document.getElementById('about-program');
+    if (aboutBtn) {
+        aboutBtn.addEventListener('click', function() {
+            import('./navegacion/eventos.js')
+                .then(modulo => modulo.mostrarInformacionPrograma())
+                .catch(error => console.error('Error mostrando información:', error));
+        });
+    }
+});
+
+/**
+ * Exportar funciones globales para compatibilidad
+ */
+export { inicializarSistema };
+
+// Mensaje de bienvenida
+console.log(`
+   ====================================
+   SISTEMA SENDA PUENTE ALTO v2.0
+   Arquitectura Modular
+   ====================================
+`);
