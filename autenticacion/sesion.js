@@ -343,7 +343,7 @@ export {
     obtenerNombreProfesion,
     mostrarContenidoPublico,
     mostrarContenidoProfesional
-}; = 'block';
+};
         if (professionalContent) professionalContent.style.display = 'none';
         if (professionalHeader) professionalHeader.style.display = 'none';
         if (loginBtn) loginBtn.style.display = 'flex';
