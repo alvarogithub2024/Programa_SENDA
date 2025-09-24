@@ -3,7 +3,6 @@
  * Inicializa y coordina todos los módulos del sistema
  */
 
-import { inicializarFirebase } from './configuracion/firebase.js';
 import { APP_CONFIG } from './configuracion/constantes.js';
 import { inicializarAutenticacion } from './autenticacion/sesion.js';
 import { inicializarFormularios } from './formularios/formulario-paciente.js';
