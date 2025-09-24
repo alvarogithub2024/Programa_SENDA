@@ -1,8 +1,3 @@
-/**
- * FORMULARIOS/VALIDACIONES.JS
- * Funciones de validación para formularios
- */
-
 import { showNotification } from '../utilidades/notificaciones.js';
 import { isValidEmail, validateRUT, validatePhoneNumberString } from '../utilidades/validaciones.js';
 /**
