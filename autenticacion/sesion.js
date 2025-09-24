@@ -353,7 +353,6 @@ export {
     catch (error) {
         console.error('Error mostrando contenido público:', error);
     }
-}
 
 /**
  * Muestra el contenido profesional (autenticado)
