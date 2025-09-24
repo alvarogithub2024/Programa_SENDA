@@ -3,7 +3,7 @@
  */
 
 import { showNotification } from '../utilidades/notificaciones.js';
-import { isValidEmail, validateRUT, formatRUT } from '../utilidades/validaciones.js';
+import { isValidEmail, validateRUT } from '../utilidades/validaciones.js';
 // IMPORTS CORREGIDOS - SIN getServerTimestamp
 import { getFirestore } from '../configuracion/firebase.js';
 
