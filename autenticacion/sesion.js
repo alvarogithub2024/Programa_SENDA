@@ -55,8 +55,7 @@ async function manejarCambioAutenticacion(user) {
             currentUserData = null;
             limpiarCacheUsuario();
             mostrarContenidoPublico();
-            
-            mostrarModal('login-modal');
+        
             // Limpiar variables globales
             if (window.SENDASystem) {
                 window.SENDASystem.currentUser = null;
