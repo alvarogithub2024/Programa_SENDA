@@ -480,3 +480,40 @@ function obtenerSustancias(formData) {
     
     return sustancias;
 }
+/**
+ * Maneja el envío de solicitudes de información
+ */
+export async function handleInformationRequestSubmit(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const requestData = {
+        nombre: formData.get('nombre') || '',
+        apellidos: formData.get('apellidos') || '',
+        email: formData.get('email') || document.getElementById('info-email')?.value || '',
+        telefono: formData.get('telefono') || '',
+        rut: formData.get('rut') || '',
+        tipoConsulta: 'informacion',
+        mensaje: formData.get('mensaje') || 'Solicitud de información general',
+        cesfam: formData.get('cesfam') || 'CESFAM Karol Wojtyla',
+        fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+        estado: 'pendiente',
+        origen: 'formulario_web',
+        version: '1.0'
+    };
+
+    try {
+        const { getFirestore } = await import('../configuracion/firebase.js');
+        const db = getFirestore();
+        
+        const solicitudesRef = db.collection('solicitudes_informacion');
+        await solicitudesRef.add(requestData);
+        
+        showNotification('Solicitud de información enviada correctamente', 'success');
+        e.target.reset();
+        
+    } catch (error) {
+        console.error('Error enviando solicitud:', error);
+        showNotification('Error al enviar la solicitud', 'error');
+    }
+}
