@@ -232,33 +232,6 @@ export function setupModalEventListeners() {
 }
 
 /**
- * Resetea el formulario principal
- */
-export function resetForm() {
-    try {
-        const form = document.getElementById('patient-form');
-        if (form) {
-            form.reset();
-            
-            // Resetear campos específicos
-            resetSpecialFormFields();
-            
-            // Limpiar estilos de error
-            form.querySelectorAll('.error').forEach(field => {
-                field.classList.remove('error');
-            });
-        }
-        
-        // Limpiar localStorage
-        localStorage.removeItem('senda_form_draft');
-        
-        console.log('✅ Formulario reseteado');
-    } catch (error) {
-        console.error('Error reseteando formulario:', error);
-    }
-}
-
-/**
  * Resetea campos especiales del formulario
  */
 function resetSpecialFormFields() {
