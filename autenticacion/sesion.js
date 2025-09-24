@@ -42,8 +42,8 @@ async function manejarCambioAutenticacion(user) {
 
         if (user) {
             currentUser = user;
-            await cargarDatosUsuario();
-            mostrarContenidoProfesional();
+            await cargarDatosUsuario(); // Carga datos del usuario desde Firestore
+            mostrarContenidoProfesional(); // Muestra la interfaz profesional
             
             // Actualizar variables globales
             if (window.SENDASystem) {
@@ -54,7 +54,7 @@ async function manejarCambioAutenticacion(user) {
             currentUser = null;
             currentUserData = null;
             limpiarCacheUsuario();
-            mostrarContenidoPublico();
+            mostrarContenidoPublico(); // Muestra la interfaz pública
         
             // Limpiar variables globales
             if (window.SENDASystem) {
