@@ -479,6 +479,5 @@ document.addEventListener('solicitudesLoaded', (event) => {
 // Exportar funciones principales
 export {
     applyFiltersToSolicitudes,
-    getActiveFilters,
     updateFilterStats
 };
