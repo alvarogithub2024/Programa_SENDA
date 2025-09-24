@@ -4,7 +4,6 @@
  */
 
 import { APP_CONFIG } from './configuracion/constantes.js';
-import { inicializarAutenticacion } from './autenticacion/sesion.js';
 import { inicializarFormularios } from './formularios/formulario-paciente.js';
 import { inicializarFormularioReingreso } from './formularios/formulario-reingreso.js';
 import { inicializarGestorSolicitudes } from './solicitudes/gestor-solicitudes.js';
