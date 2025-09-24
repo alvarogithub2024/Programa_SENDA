@@ -3,7 +3,7 @@
  * Sistema de pestañas para la navegación del panel profesional
  */
 
-import { loadSolicitudes } from '../solicitudes/gestor-solicitudes.js';
+import { loadSolicitudesData } from '../solicitudes/gestor-solicitudes.js';
 import { loadPatients } from '../pacientes/gestor-pacientes.js';
 import { initCalendar, loadAppointments } from '../calendario/agenda.js';
 import { loadPatientTimeline } from '../seguimiento/timeline.js';
