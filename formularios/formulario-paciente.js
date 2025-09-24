@@ -301,37 +301,182 @@ export function getMaxFormStep() {
 }
 
 /**
- * Maneja el envío de solicitudes de información
+ * Maneja el envío de solicitudes de información únicamente
  */
-export async function handleInformationRequestSubmit(e) {
+function handleInformationOnlySubmit() {
+    try {
+        const form = document.getElementById('patient-form');
+        if (!form) return;
+        
+        // Crear evento simulado para usar la función existente
+        const fakeEvent = {
+            preventDefault: () => {},
+            target: form
+        };
+        
+        handleInformationRequestSubmit(fakeEvent);
+        
+    } catch (error) {
+        console.error('Error enviando solicitud de información:', error);
+        showNotification('Error al enviar la solicitud', 'error');
+    }
+}
+
+/**
+ * Maneja el envío del formulario de pacientes completo
+ */
+async function handlePatientFormSubmit(e) {
+    try {
+        e.preventDefault();
+        console.log('📤 Enviando formulario de paciente');
+        
+        const formData = new FormData(e.target);
+        const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+        
+        if (tipoSolicitud === 'informacion') {
+            // Usar función existente para solicitudes de información
+            await handleInformationRequestSubmit(e);
+        } else if (tipoSolicitud === 'identificado') {
+            // Manejar como solicitud de ingreso
+            await handleSolicitudIngresoSubmit(e);
+        }
+        
+    } catch (error) {
+        console.error('Error enviando formulario:', error);
+        showNotification('Error al procesar la solicitud', 'error');
+    }
+}
+
+/**
+ * Maneja el envío de solicitudes de ingreso (guardado en solicitudes_ingreso)
+ */
+async function handleSolicitudIngresoSubmit(e) {
     e.preventDefault();
     
     const formData = new FormData(e.target);
-    const requestData = {
-        nombre: formData.get('nombre'),
-        apellidos: formData.get('apellidos'),
-        email: formData.get('email'),
-        telefono: formData.get('telefono'),
-        rut: formData.get('rut'),
-        tipoConsulta: formData.get('tipo-consulta'),
-        mensaje: formData.get('mensaje'),
-        cesfam: formData.get('cesfam'),
-        fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+    
+    // Construir datos para solicitud de ingreso
+    const solicitudData = {
+        // Información personal
+        nombre: formData.get('nombre') || '',
+        apellidos: formData.get('apellidos') || formData.get('apellido') || '',
+        rut: formData.get('rut') || '',
+        edad: parseInt(formData.get('edad')) || 0,
+        email: formData.get('email') || '',
+        telefono: formData.get('telefono') || '',
+        direccion: formData.get('direccion') || '',
+        
+        // Información de la solicitud
+        cesfam: formData.get('cesfam') || 'CESFAM Karol Wojtyla',
+        descripcion: formData.get('descripcion') || formData.get('motivoConsulta') || '',
+        
+        // Clasificación
+        prioridad: determinarPrioridad(formData),
+        urgencia: determinarUrgencia(formData),
+        motivacion: parseInt(formData.get('motivacion')) || 5,
+        
+        // Información específica
+        sustancias: obtenerSustancias(formData),
+        tiempoConsumo: formData.get('tiempoConsumo') || '',
+        tratamientoPrevio: formData.get('tratamientoPrevio') || 'no',
+        paraMi: formData.get('paraMi') || formData.get('esPara') || 'si',
+        
+        // Metadata del sistema
         estado: 'pendiente',
-        origen: 'formulario_web',
-        version: '1.0'
+        tipoSolicitud: 'identificado',
+        origen: 'web_publica',
+        version: '2.0',
+        
+        // Timestamps
+        fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+        fechaAgenda: null,
+        
+        // IDs relacionados
+        agendadaPor: null,
+        citaId: null
     };
 
     try {
+        // Importar getFirestore dinámicamente para evitar errores de import
+        const { getFirestore } = await import('../configuracion/firebase.js');
         const db = getFirestore();
-        const solicitudesRef = db.collection('solicitudes_informacion');
-        await solicitudesRef.add(requestData);
         
-        showNotification('Solicitud de información enviada correctamente', 'success');
+        // Guardar en la colección correcta: solicitudes_ingreso
+        const solicitudesRef = db.collection('solicitudes_ingreso');
+        const docRef = await solicitudesRef.add(solicitudData);
+        
+        console.log('✅ Solicitud de ingreso guardada con ID:', docRef.id);
+        showNotification('¡Solicitud de ayuda enviada correctamente! Te contactaremos pronto.', 'success');
+        
+        // Limpiar formulario y resetear
         e.target.reset();
+        resetForm();
+        goToStep(1);
         
     } catch (error) {
-        console.error('Error enviando solicitud:', error);
-        showNotification('Error al enviar la solicitud', 'error');
+        console.error('❌ Error guardando solicitud de ingreso:', error);
+        showNotification('Error al enviar la solicitud. Por favor intente nuevamente.', 'error');
     }
+}
+
+/**
+ * Determina la prioridad basada en los datos del formulario
+ */
+function determinarPrioridad(formData) {
+    const motivacion = parseInt(formData.get('motivacion')) || 5;
+    const sustancias = obtenerSustancias(formData);
+    const tiempoConsumo = formData.get('tiempoConsumo');
+    
+    if (motivacion >= 8 && (sustancias.includes('pasta_base') || sustancias.includes('cocaina'))) {
+        return 'alta';
+    } else if (motivacion >= 6 || tiempoConsumo === 'mas_5_años') {
+        return 'media';
+    } else {
+        return 'baja';
+    }
+}
+
+/**
+ * Determina la urgencia basada en los datos del formulario
+ */
+function determinarUrgencia(formData) {
+    const descripcion = (formData.get('descripcion') || '').toLowerCase();
+    const sustancias = obtenerSustancias(formData);
+    
+    // Palabras clave que indican alta urgencia
+    const palabrasUrgentes = ['crisis', 'urgente', 'emergencia', 'suicidio', 'violento', 'peligro'];
+    
+    if (palabrasUrgentes.some(palabra => descripcion.includes(palabra))) {
+        return 'alta';
+    } else if (sustancias.includes('pasta_base') || sustancias.includes('cocaina')) {
+        return 'media';
+    } else {
+        return 'baja';
+    }
+}
+
+/**
+ * Obtiene las sustancias seleccionadas del formulario
+ */
+function obtenerSustancias(formData) {
+    const sustancias = [];
+    
+    // Verificar checkboxes de sustancias
+    const sustanciasDisponibles = ['alcohol', 'marihuana', 'cocaina', 'pasta_base', 'benzodiacepinas', 'otros'];
+    
+    sustanciasDisponibles.forEach(sustancia => {
+        if (formData.get(`sustancia_${sustancia}`) || formData.get(sustancia)) {
+            sustancias.push(sustancia);
+        }
+    });
+    
+    // Si no hay sustancias específicas, intentar obtener de un campo general
+    if (sustancias.length === 0) {
+        const sustanciaGeneral = formData.get('sustancias');
+        if (sustanciaGeneral) {
+            sustancias.push(sustanciaGeneral);
+        }
+    }
+    
+    return sustancias;
 }
