@@ -672,15 +672,6 @@ async function createCriticalAlert(solicitudData, solicitudId) {
     }
 }
 
-function validatePhoneNumberString(phone) {
-    if (!phone) return false;
-    const cleaned = phone.replace(/\D/g, '');
-    return cleaned.length >= 8 && cleaned.length <= 12;
-}
-
-/**
- * Auto-guardado de formulario
- */
 function setupAutoSave() {
     try {
         const form = document.getElementById('patient-form');
