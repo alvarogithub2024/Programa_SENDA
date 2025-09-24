@@ -31,7 +31,7 @@
                 <span>SENDA Puente Alto</span>
             </div>
             <div class="header-actions">
-                <button class="btn btn-professional" id="login-professional" onclick="openModal('login-modal')">
+                <button class="btn btn-professional" id="login-professional">
                     <i class="fas fa-user-md"></i>
                     Acceso Profesionales
                 </button>
@@ -95,15 +95,15 @@
 
                 <!-- Botones principales -->
                 <div class="btn-group">
-                    <button class="btn btn-primary" id="register-patient" onclick="openModal('patient-modal')">
+                    <button class="btn btn-primary" id="register-patient">
                         <i class="fas fa-user-plus"></i>
                         Solicitar Ayuda
                     </button>
-                    <button class="btn btn-secondary" id="reentry-program" onclick="openModal('reentry-modal')">
+                    <button class="btn btn-secondary" id="reentry-program">
                         <i class="fas fa-redo"></i>
                         Reingreso al Programa
                     </button>
-                    <button class="btn btn-outline" id="about-program" onclick="openModal('about-modal')">
+                    <button class="btn btn-outline" id="about-program">
                         <i class="fas fa-info-circle"></i>
                         Sobre el Programa
                     </button>
@@ -287,9 +287,9 @@
     </main>
 
     <!-- ================= MODAL LOGIN ================= -->
-    <div class="modal-overlay" id="login-modal" style="display:none;">
+    <div class="modal-overlay" id="login-modal">
         <div class="modal">
-            <button class="modal-close" onclick="closeModal('login-modal')">
+            <button class="modal-close">
                 <i class="fas fa-times"></i>
             </button>
             
@@ -297,8 +297,8 @@
             <p class="modal-description">Ingresa con tu cuenta autorizada para acceder al sistema.</p>
 
             <div class="modal-tabs">
-                <button class="modal-tab active" onclick="switchLoginTab('login')">Iniciar Sesión</button>
-                <button class="modal-tab" onclick="switchLoginTab('register')">Registrarse</button>
+                <button class="modal-tab active">Iniciar Sesión</button>
+                <button class="modal-tab">Registrarse</button>
             </div>
 
             <!-- Login Form -->
@@ -378,9 +378,9 @@
     </div>
 
     <!-- ================= MODAL SOLICITUD PACIENTE ================= -->
-    <div class="modal-overlay" id="patient-modal" style="display:none;">
+    <div class="modal-overlay" id="patient-modal">
         <div class="modal large-modal">
-            <button class="modal-close" onclick="closeModal('patient-modal')">
+            <button class="modal-close">
                 <i class="fas fa-times"></i>
             </button>
             
@@ -681,9 +681,9 @@
     </div>
     
     <!-- ================= MODAL REINGRESO ================= -->
-    <div class="modal-overlay" id="reentry-modal" style="display:none;">
+    <div class="modal-overlay" id="reentry-modal">
         <div class="modal">
-            <button class="modal-close" onclick="closeModal('reentry-modal')">
+            <button class="modal-close">
                 <i class="fas fa-times"></i>
             </button>
             
@@ -741,33 +741,6 @@
         </div>
     </div>
 
-    <!-- ================= MODAL SOBRE EL PROGRAMA SENDA ================= -->
-    <div class="modal-overlay" id="about-modal" style="display:none;">
-        <div class="modal">
-            <button class="modal-close" onclick="closeModal('about-modal')">
-                <i class="fas fa-times"></i>
-            </button>
-            <h2>Sobre el Programa SENDA</h2>
-            <p class="modal-description">
-                El Programa SENDA Puente Alto está enfocado exclusivamente en los 8 CESFAM de Puente Alto, centralizando todos los registros, reportes y estadísticas en estos centros de salud familiar.<br><br>
-                <strong>CESFAM de Puente Alto considerados:</strong>
-                <ul>
-                    <li>CESFAM Alejandro del Río</li>
-                    <li>CESFAM Carol Urzúa</li>
-                    <li>CESFAM Laurita Vicuña</li>
-                    <li>CESFAM Padre Manuel Villaseca</li>
-                    <li>CESFAM San Gerónimo</li>
-                    <li>CESFAM Vista Hermosa</li>
-                    <li>CESFAM Bernardo Leighton</li>
-                    <li>CESFAM Alejandro del Río </li>
-                </ul>
-                <strong>Objetivo:</strong>
-                <br>
-                SENDA busca mitigar el impacto social y sanitario del consumo de alcohol y otras drogas en niños, niñas, adolescentes, hombres, mujeres y colectivos de las diversidades sexo/genéricas, para mejorar la calidad de vida de la comunidad.
-            </p>
-        </div>
-    </div>
-
     <!-- ================= LOADING OVERLAY ================= -->
     <div class="loading-overlay hidden" id="loading-overlay">
         <div class="loading-spinner">
@@ -790,44 +763,5 @@
 
     <!-- ================= JAVASCRIPT ================= -->
     <script type="module" src="./main.js"></script>
-    <script>
-        // Funciones para abrir/cerrar modales
-        window.openModal = function(id) {
-            document.getElementById(id).style.display = 'block';
-            document.body.classList.add('modal-open');
-        };
-        window.closeModal = function(id) {
-            document.getElementById(id).style.display = 'none';
-            document.body.classList.remove('modal-open');
-        };
-
-        // Cerrar modal al hacer clic fuera del modal
-        document.querySelectorAll('.modal-overlay').forEach(overlay => {
-            overlay.addEventListener('click', function(e) {
-                if (e.target === overlay) {
-                    overlay.style.display = 'none';
-                    document.body.classList.remove('modal-open');
-                }
-            });
-        });
-        // Evitar que el clic dentro del modal cierre el modal
-        document.querySelectorAll('.modal').forEach(modal => {
-            modal.addEventListener('click', function(e) {
-                e.stopPropagation();
-            });
-        });
-        // Cambiar tab login/registro
-        window.switchLoginTab = function(tab) {
-            document.querySelectorAll('.modal-tab').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
-            if(tab === 'login') {
-                document.querySelector('.modal-tab:nth-child(1)').classList.add('active');
-                document.getElementById('login-form').classList.add('active');
-            } else {
-                document.querySelector('.modal-tab:nth-child(2)').classList.add('active');
-                document.getElementById('register-form').classList.add('active');
-            }
-        };
-    </script>
 </body>
 </html>
