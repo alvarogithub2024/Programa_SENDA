@@ -37,7 +37,7 @@ function inicializarAutenticacion() {
 async function manejarCambioAutenticacion(user) {
     try {
         if (APP_CONFIG.DEBUG_MODE) {
-            console.log('🔐 Estado de autenticación cambió:', user ? user.email : 'No autenticado');
+            console.log('🔄 Estado de autenticación cambió:', user ? user.email : 'No autenticado');
         }
 
         if (user) {
@@ -46,8 +46,10 @@ async function manejarCambioAutenticacion(user) {
             mostrarContenidoProfesional();
             
             // Actualizar variables globales
-            window.SENDASystem.currentUser = currentUser;
-            window.SENDASystem.currentUserData = currentUserData;
+            if (window.SENDASystem) {
+                window.SENDASystem.currentUser = currentUser;
+                window.SENDASystem.currentUserData = currentUserData;
+            }
         } else {
             currentUser = null;
             currentUserData = null;
@@ -55,8 +57,10 @@ async function manejarCambioAutenticacion(user) {
             mostrarContenidoPublico();
             
             // Limpiar variables globales
-            window.SENDASystem.currentUser = null;
-            window.SENDASystem.currentUserData = null;
+            if (window.SENDASystem) {
+                window.SENDASystem.currentUser = null;
+                window.SENDASystem.currentUserData = null;
+            }
         }
     } catch (error) {
         console.error('❌ Error en cambio de estado de autenticación:', error);
@@ -182,6 +186,29 @@ function limpiarCacheUsuario() {
  * Muestra el contenido público (no autenticado)
  */
 function mostrarContenidoPublico() {
+    try {
+        const publicContent = document.getElementById('public-content');
+        const professionalContent = document.getElementById('professional-content');
+        const professionalHeader = document.getElementById('professional-header');
+        const loginBtn = document.getElementById('login-professional');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        if (publicContent) publicContent.style.display = 'block';
+        if (professionalContent) professionalContent.style.display = 'none';
+        if (professionalHeader) professionalHeader.style.display = 'none';
+        if (loginBtn) loginBtn.style.display = 'flex';
+        if (logoutBtn) logoutBtn.style.display = 'none';
+
+        console.log('📄 Mostrando contenido público');
+    } catch (error) {
+        console.error('Error mostrando contenido público:', error);
+    }
+}
+
+/**
+ * Muestra el contenido profesional (autenticado)
+ */
+function mostrarContenidoProfesional() {
     try {
         const publicContent = document.getElementById('public-content');
         const professionalContent = document.getElementById('professional-content');
@@ -343,27 +370,4 @@ export {
     obtenerNombreProfesion,
     mostrarContenidoPublico,
     mostrarContenidoProfesional
-}; = 'block';
-        if (professionalContent) professionalContent.style.display = 'none';
-        if (professionalHeader) professionalHeader.style.display = 'none';
-        if (loginBtn) loginBtn.style.display = 'flex';
-        if (logoutBtn) logoutBtn.style.display = 'none';
-
-        console.log('📄 Mostrando contenido público');
-    } catch (error) {
-        console.error('Error mostrando contenido público:', error);
-    }
-}
-
-/**
- * Muestra el contenido profesional (autenticado)
- */
-function mostrarContenidoProfesional() {
-    try {
-        const publicContent = document.getElementById('public-content');
-        const professionalContent = document.getElementById('professional-content');
-        const professionalHeader = document.getElementById('professional-header');
-        const loginBtn = document.getElementById('login-professional');
-        const logoutBtn = document.getElementById('logout-btn');
-
-        if (publicContent) publicContent.style.display
+};
