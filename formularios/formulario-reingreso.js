@@ -6,7 +6,8 @@
 import { getFirestore } from '../configuracion/firebase.js';
 import { showNotification, showLoading } from '../utilidades/notificaciones.js';
 import { closeModal, toggleSubmitButton } from '../utilidades/modales.js';
-import { validateRUT, formatRUT, formatPhoneNumber } from '../utilidades/formato.js';
+import { formatRUT, formatDate } from '../utilidades/formato.js';
+import { validateRUT } from '../utilidades/validaciones.js';
 
 /**
  * Configura el formulario de reingreso
