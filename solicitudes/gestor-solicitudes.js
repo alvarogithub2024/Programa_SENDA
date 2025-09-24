@@ -1,7 +1,3 @@
-// GESTOR DE SOLICITUDES DE INGRESO - SISTEMA SENDA v2.0
-// Gestión completa de solicitudes con auto-actualización y filtros avanzados
-// Desarrollado por: CamiMoralesM
-// Fecha: 2024
 
 import { getFirestore } from '../configuracion/firebase.js';
 import { showNotification } from '../utilidades/notificaciones.js';
