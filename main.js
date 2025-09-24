@@ -113,29 +113,45 @@ async function inicializarSistema() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Inicializa tu sistema
-    inicializarSistema();
+    try {
+        // Inicializa tu sistema
+        if (typeof inicializarSistema === 'function') {
+            inicializarSistema();
+        }
 
-    // Escucha el botón "Sobre el Programa"
-    const aboutBtn = document.getElementById('about-program');
-    if (aboutBtn) {
-        aboutBtn.addEventListener('click', function() {
-            showModal('about-program-modal');
-        });
-    }
+        // Botón "Sobre el Programa"
+        const aboutBtn = document.getElementById('about-program');
+        if (aboutBtn) {
+            aboutBtn.addEventListener('click', function() {
+                if (typeof showModal === 'function') {
+                    showModal('about-program-modal');
+                } else {
+                    document.getElementById('about-program-modal').style.display = 'flex';
+                }
+            });
+        }
 
-    // Escucha el formulario de paciente
-    const patientForm = document.getElementById('patient-form');
-    if (patientForm) {
-        patientForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            mostrarExito('¡Solicitud enviada correctamente!');
-            document.getElementById('patient-modal').style.display = 'none';
-            patientForm.reset();
-        });
+        // Formulario de paciente
+        const patientForm = document.getElementById('patient-form');
+        if (patientForm) {
+            patientForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                if (typeof mostrarExito === 'function') {
+                    mostrarExito('¡Solicitud enviada correctamente!');
+                } else {
+                    alert('¡Solicitud enviada correctamente!');
+                }
+                const patientModal = document.getElementById('patient-modal');
+                if (patientModal) {
+                    patientModal.style.display = 'none';
+                }
+                patientForm.reset();
+            });
+        }
+    } catch (error) {
+        console.error('Error en inicialización de eventos:', error);
     }
 });
-
 /**
  * Exportar funciones globales para compatibilidad
  */
