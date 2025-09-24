@@ -130,6 +130,26 @@
         </div>
 
         <!-- ================= CONTENIDO PROFESIONAL ================= -->
+<!-- Agregar después del contenedor de profesionales -->
+<select id="professional-filter" style="display: none;">
+    <option value="">Todos los profesionales</option>
+</select>
+
+<select id="professional-select" style="display: none;">
+    <option value="">Seleccionar profesional</option>
+</select>
+
+<!-- Div para mostrar loading -->
+<div id="loading-overlay" class="loading-overlay hidden">
+    <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Cargando...</p>
+    </div>
+</div>
+
+<!-- Contenedor para notificaciones -->
+<div id="notifications" class="notifications-container"></div>
+        
         <div id="professional-content" style="display: none;">
             <!-- Navegación por pestañas -->
             <nav class="tab-navigation">
