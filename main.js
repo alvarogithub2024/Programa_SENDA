@@ -130,10 +130,9 @@ document.addEventListener('DOMContentLoaded', function() {
   const patientForm = document.getElementById('patient-form');
   if (patientForm) {
     patientForm.addEventListener('submit', function(e) {
-      e.preventDefault(); // Evita recarga y mensaje
-      // Aquí tu lógica de envío
-      alert('¡Solicitud enviada correctamente!');
-      // Puedes cerrar el modal si lo deseas:
+      e.preventDefault();
+      // Usa la notificación visual, no el alert nativo
+      mostrarExito('¡Solicitud enviada correctamente!');
       document.getElementById('patient-modal').style.display = 'none';
       patientForm.reset();
     });
