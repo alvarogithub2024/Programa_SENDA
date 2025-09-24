@@ -480,6 +480,5 @@ document.addEventListener('solicitudesLoaded', (event) => {
 export {
     applyFiltersToSolicitudes,
     getActiveFilters,
-    setFilters,
     updateFilterStats
 };
