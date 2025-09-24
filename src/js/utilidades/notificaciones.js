@@ -1,62 +1,68 @@
-// src/js/utilidades/notificaciones.js
-const iconosNotificacion = {
-  'success': 'check-circle',
-  'error': 'exclamation-triangle', 
-  'warning': 'exclamation-triangle',
-  'info': 'info-circle'
-};
+// ====================================
+// SISTEMA DE NOTIFICACIONES
+// ====================================
 
-export function mostrarNotificacion(mensaje, tipo = 'info', duracion = 4000) {
+function showNotification(message, type = 'info', duration = 4000) {
   try {
-    const contenedor = document.getElementById('notifications') || crearContenedorNotificaciones();
+    const container = document.getElementById('notifications') || createNotificationsContainer();
     
-    const notificacion = document.createElement('div');
-    notificacion.className = `notification ${tipo}`;
-    notificacion.innerHTML = `
-      <i class="fas fa-${iconosNotificacion[tipo]}"></i> 
-      <span>${mensaje}</span>
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+      <i class="fas fa-${getNotificationIcon(type)}"></i> 
+      <span>${message}</span>
       <button class="notification-close" onclick="this.parentElement.remove()">
         <i class="fas fa-times"></i>
       </button>
     `;
     
-    contenedor.appendChild(notificacion);
+    container.appendChild(notification);
     
-    requestAnimationFrame(() => notificacion.classList.add('show'));
+    requestAnimationFrame(() => {
+      notification.classList.add('show');
+    });
     
     setTimeout(() => {
-      if (notificacion.parentElement) {
-        notificacion.classList.remove('show');
-        setTimeout(() => notificacion.remove(), 300);
+      if (notification.parentElement) {
+        notification.classList.remove('show');
+        setTimeout(() => {
+          if (notification.parentElement) {
+            notification.remove();
+          }
+        }, 300);
       }
-    }, duracion);
+    }, duration);
     
-    console.log(`📢 Notificación [${tipo.toUpperCase()}]: ${mensaje}`);
+    if (window.SENDASystem.constants.APP_CONFIG.DEBUG_MODE) {
+      console.log(`📢 Notification [${type.toUpperCase()}]: ${message}`);
+    }
     
   } catch (error) {
-    console.error('Error mostrando notificación:', error);
-    alert(`${tipo.toUpperCase()}: ${mensaje}`);
+    console.error('Error showing notification:', error);
+    alert(`${type.toUpperCase()}: ${message}`);
   }
 }
 
-export function mostrarCarga(mostrar = true, mensaje = 'Cargando...') {
-  try {
-    const overlay = document.getElementById('loading-overlay');
-    if (!overlay) return;
-    
-    const elementoMensaje = overlay.querySelector('p');
-    if (elementoMensaje) elementoMensaje.textContent = mensaje;
-    
-    overlay.classList.toggle('hidden', !mostrar);
-  } catch (error) {
-    console.error('Error con overlay de carga:', error);
-  }
+function getNotificationIcon(type) {
+  const icons = {
+    'success': 'check-circle',
+    'error': 'exclamation-triangle',
+    'warning': 'exclamation-triangle',
+    'info': 'info-circle'
+  };
+  return icons[type] || 'info-circle';
 }
 
-function crearContenedorNotificaciones() {
-  const contenedor = document.createElement('div');
-  contenedor.id = 'notifications';
-  contenedor.className = 'notifications-container';
-  document.body.appendChild(contenedor);
-  return contenedor;
+function createNotificationsContainer() {
+  const container = document.createElement('div');
+  container.id = 'notifications';
+  container.className = 'notifications-container';
+  document.body.appendChild(container);
+  return container;
 }
+
+// Exportar funciones
+window.SENDASystem = window.SENDASystem || {};
+window.SENDASystem.notifications = {
+  show: showNotification
+};
