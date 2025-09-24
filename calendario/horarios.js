@@ -1,4 +1,4 @@
-import { db } from '../configuracion/firebase.js';
+import { getFirestore } from '../configuracion/firebase.js';
 import { showNotification } from '../utilidades/notificaciones.js';
 
 // Variables globales para horarios
@@ -152,6 +152,7 @@ async function toggleSlotAvailability(slotElement) {
 
 // Agregar disponibilidad
 async function addAvailability(professional, datetime) {
+    const db = getFirestore();
     const [date, time] = datetime.split(' ');
     
     const availabilityRef = db.collection('horarios_disponibles');
@@ -166,6 +167,7 @@ async function addAvailability(professional, datetime) {
 
 // Remover disponibilidad
 async function removeAvailability(professional, datetime) {
+    const db = getFirestore();
     const [date, time] = datetime.split(' ');
     
     const availabilityRef = db.collection('horarios_disponibles');
@@ -183,6 +185,7 @@ async function removeAvailability(professional, datetime) {
 // Cargar horarios de profesionales
 async function loadProfessionalSchedules() {
     try {
+        const db = getFirestore();
         const horariosRef = db.collection('horarios_disponibles');
         const snapshot = await horariosRef.get();
         
@@ -241,6 +244,7 @@ function updateScheduleView() {
 // Marcar citas existentes
 async function markExistingAppointments(professional) {
     try {
+        const db = getFirestore();
         const startOfWeek = getStartOfWeek(currentWeek);
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(endOfWeek.getDate() + 6);
@@ -284,6 +288,7 @@ function setupProfessionalFilter() {
 // Cargar profesionales para el filtro
 async function loadProfessionalsForFilter() {
     try {
+        const db = getFirestore();
         const profRef = db.collection('profesionales');
         const snapshot = await profRef.where('activo', '==', true).get();
         
@@ -347,6 +352,7 @@ export async function setRecurringSchedule(scheduleData) {
     const { professional, days, startTime, endTime, startDate, endDate } = scheduleData;
     
     try {
+        const db = getFirestore();
         const batch = db.batch();
         const current = new Date(startDate);
         const end = new Date(endDate);
@@ -420,6 +426,7 @@ function parseTime(timeStr) {
 // Obtener horarios disponibles para una fecha y profesional
 export async function getAvailableSlots(professional, date) {
     try {
+        const db = getFirestore();
         const horariosRef = db.collection('horarios_disponibles');
         const query = horariosRef
             .where('profesional', '==', professional)
@@ -454,6 +461,69 @@ export async function getAvailableSlots(professional, date) {
         console.error('Error obteniendo slots disponibles:', error);
         return [];
     }
+}
+
+/**
+ * Configura los slots de tiempo para las citas
+ */
+export function setupTimeSlots() {
+    try {
+        const timeSlotsContainer = document.getElementById('time-slots-container');
+        if (!timeSlotsContainer) {
+            console.warn('Contenedor de slots de tiempo no encontrado');
+            return;
+        }
+
+        // Generar slots de tiempo (ejemplo: 8:00 AM - 6:00 PM)
+        const timeSlots = generateTimeSlots();
+        
+        timeSlotsContainer.innerHTML = timeSlots.map(slot => `
+            <div class="time-slot" data-time="${slot.value}">
+                <input type="radio" name="appointment-time" value="${slot.value}" id="time-${slot.value}">
+                <label for="time-${slot.value}">${slot.label}</label>
+            </div>
+        `).join('');
+
+        console.log('✅ Slots de tiempo configurados');
+        
+    } catch (error) {
+        console.error('❌ Error configurando slots de tiempo:', error);
+    }
+}
+
+/**
+ * Genera los slots de tiempo disponibles
+ */
+function generateTimeSlots() {
+    const slots = [];
+    const startHour = 8; // 8:00 AM
+    const endHour = 18;  // 6:00 PM
+    const interval = 30; // 30 minutos
+
+    for (let hour = startHour; hour < endHour; hour++) {
+        for (let minutes = 0; minutes < 60; minutes += interval) {
+            const time = `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            const label = formatTimeLabel(hour, minutes);
+            
+            slots.push({
+                value: time,
+                label: label
+            });
+        }
+    }
+
+    return slots;
+}
+
+/**
+ * Formatea la etiqueta de tiempo
+ */
+function formatTimeLabel(hour, minutes) {
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
+    const displayMinutes = minutes.toString().padStart(2, '0');
+    
+    return `${displayHour}:${displayMinutes} ${period}`;
 }
 
 // Exportar funciones principales
