@@ -209,25 +209,33 @@ async function loadProfessionalSchedules() {
     }
 }
 
-// Actualizar vista de horarios
 function updateScheduleView() {
-    const professional = document.getElementById('professional-filter').value;
-    if (!professional) return;
+    const professional = document.getElementById('professional-filter')?.value;
+    if (!professional) {
+        console.warn('No hay profesional seleccionado');
+        return;
+    }
 
     // Limpiar clases anteriores
     document.querySelectorAll('.time-slot').forEach(slot => {
-        slot.classList.remove('available', 'unavailable', 'booked');
+        if (slot) { // ✅ Verificar que slot no sea null
+            slot.classList.remove('available', 'unavailable', 'booked');
+        }
     });
 
     // Aplicar disponibilidad actual
     document.querySelectorAll('.time-slot').forEach(slot => {
+        if (!slot || !slot.dataset) return; // ✅ Verificar null
+        
         const datetime = slot.dataset.datetime;
+        if (!datetime) return; // ✅ Verificar datetime existe
+        
         const [date, time] = datetime.split(' ');
         const key = `${professional}-${date}-${time}`;
         
         if (professionalSchedules.has(key)) {
             const schedule = professionalSchedules.get(key);
-            if (schedule.disponible) {
+            if (schedule && schedule.disponible) {
                 slot.classList.add('available');
             } else {
                 slot.classList.add('unavailable');
