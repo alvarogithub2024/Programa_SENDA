@@ -374,255 +374,138 @@ function handleInformationOnlySubmit() {
         showNotification('Error al enviar la solicitud', 'error');
     }
 }
+// Agregar esta función al final del archivo formulario-paciente.js
 
 /**
- * Maneja el envío de solicitudes de información
+ * Recopila datos del formulario de manera segura
  */
-export async function handleInformationRequestSubmit(e) {
-    e.preventDefault();
+function collectFormDataSafe() {
+  try {
+    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
     
-    const formData = new FormData(e.target);
-    const requestData = {
-        nombre: formData.get('nombre') || '',
-        apellidos: formData.get('apellidos') || '',
-        email: formData.get('email') || document.getElementById('info-email')?.value || '',
-        telefono: formData.get('telefono') || '',
-        rut: formData.get('rut') || '',
-        tipoConsulta: 'informacion',
-        mensaje: formData.get('mensaje') || 'Solicitud de información general',
-        cesfam: formData.get('cesfam') || 'CESFAM Karol Wojtyla',
-        fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
-        estado: 'pendiente',
-        origen: 'formulario_web',
-        version: '1.0'
-    };
-
-    try {
-        const { getFirestore } = await import('../configuracion/firebase.js');
-        const db = getFirestore();
-        
-        const solicitudesRef = db.collection('solicitudes_informacion');
-        await solicitudesRef.add(requestData);
-        
-        showNotification('Solicitud de información enviada correctamente', 'success');
-        e.target.reset();
-        
-    } catch (error) {
-        console.error('Error enviando solicitud:', error);
-        showNotification('Error al enviar la solicitud', 'error');
+    if (!tipoSolicitud) {
+      throw new Error('Tipo de solicitud no seleccionado');
     }
-}
-
-/**
- * Maneja el envío de solicitudes de ingreso
- */
-async function handleSolicitudIngresoSubmit(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(e.target);
     
     const solicitudData = {
-        // Información personal
-        nombre: formData.get('nombre') || formData.get('patient-name') || '',
-        apellidos: formData.get('apellidos') || formData.get('patient-lastname') || '',
-        rut: formatRUT(formData.get('rut') || formData.get('patient-rut') || ''),
-        edad: parseInt(formData.get('edad') || formData.get('patient-age')) || 0,
-        email: formData.get('email') || formData.get('patient-email') || '',
-        telefono: formatPhoneNumber(formData.get('telefono') || formData.get('patient-phone') || ''),
-        direccion: formData.get('direccion') || formData.get('patient-address') || '',
-        
-        // Información de la solicitud
-        cesfam: formData.get('cesfam') || formData.get('patient-cesfam') || 'CESFAM Karol Wojtyla',
-        descripcion: formData.get('descripcion') || formData.get('patient-description') || formData.get('motivoConsulta') || '',
-        
-        // Clasificación
-        prioridad: determinarPrioridad(formData),
-        urgencia: determinarUrgencia(formData),
-        motivacion: parseInt(formData.get('motivacion') || formData.get('motivacion-range')) || 5,
-        
-        // Información específica
-        sustancias: obtenerSustancias(formData),
-        tiempoConsumo: formData.get('tiempoConsumo') || formData.get('tiempo-consumo') || '',
-        tratamientoPrevio: formData.get('tratamientoPrevio') || 'no',
-        paraMi: formData.get('paraMi') || 'si',
-        
-        // Metadata del sistema
-        estado: 'pendiente',
-        tipoSolicitud: 'identificado',
-        origen: 'web_publica',
-        version: '2.0',
-        
-        // Timestamps
-        fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
-        fechaAgenda: null,
-        
-        // IDs relacionados
-        agendadaPor: null,
-        citaId: null
+      // Información personal
+      nombre: document.getElementById('patient-name')?.value?.trim() || '',
+      apellidos: document.getElementById('patient-lastname')?.value?.trim() || '',
+      rut: formatRUT(document.getElementById('patient-rut')?.value?.trim() || ''),
+      edad: parseInt(document.getElementById('patient-age')?.value) || 0,
+      email: document.getElementById('patient-email')?.value?.trim() || '',
+      telefono: formatPhoneNumber(document.getElementById('patient-phone')?.value?.trim() || ''),
+      direccion: document.getElementById('patient-address')?.value?.trim() || '',
+      
+      // Información de la solicitud
+      cesfam: document.getElementById('patient-cesfam')?.value || 'CESFAM Karol Wojtyla',
+      descripcion: document.getElementById('patient-description')?.value?.trim() || '',
+      
+      // Clasificación
+      prioridad: 'baja', // Se calculará después
+      urgencia: document.querySelector('input[name="urgencia"]:checked')?.value || 'media',
+      motivacion: parseInt(document.getElementById('motivacion-range')?.value) || 5,
+      
+      // Información específica
+      sustancias: obtenerSustancias(),
+      tiempoConsumo: document.getElementById('tiempo-consumo')?.value || '',
+      tratamientoPrevio: document.querySelector('input[name="tratamientoPrevio"]:checked')?.value || 'no',
+      paraMi: document.querySelector('input[name="paraMi"]:checked')?.value || 'si',
+      
+      // Metadata del sistema
+      estado: 'pendiente',
+      tipoSolicitud: tipoSolicitud,
+      origen: 'web_publica',
+      version: '2.0',
+      
+      // Timestamps
+      fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+      fechaAgenda: null,
+      
+      // IDs relacionados
+      agendadaPor: null,
+      citaId: null
     };
 
-    try {
-        const { getFirestore } = await import('../configuracion/firebase.js');
-        const db = getFirestore();
-        
-        const solicitudesRef = db.collection('solicitudes_ingreso');
-        const docRef = await solicitudesRef.add(solicitudData);
-        
-        console.log('✅ Solicitud de ingreso guardada con ID:', docRef.id);
-        showNotification('¡Solicitud de ayuda enviada correctamente! Te contactaremos pronto.', 'success');
-        
-        e.target.reset();
-        if (typeof resetForm === 'function') {
-            resetForm();
-        }
-        goToStep(1);
-        
-    } catch (error) {
-        console.error('❌ Error guardando solicitud de ingreso:', error);
-        showNotification('Error al enviar la solicitud. Por favor intente nuevamente.', 'error');
-    }
+    // Calcular prioridad
+    solicitudData.prioridad = calculatePriority(solicitudData);
+    
+    console.log('✅ Datos recopilados:', solicitudData);
+    return solicitudData;
+    
+  } catch (error) {
+    console.error('❌ Error recopilando datos:', error);
+    throw new Error('Error recopilando datos del formulario: ' + error.message);
+  }
 }
 
 /**
- * Determina la prioridad basada en los datos del formulario
+ * Obtiene las sustancias seleccionadas
  */
-function determinarPrioridad(formData) {
-    const motivacion = parseInt(formData.get('motivacion') || formData.get('motivacion-range')) || 5;
-    const sustancias = obtenerSustancias(formData);
-    const tiempoConsumo = formData.get('tiempoConsumo') || formData.get('tiempo-consumo') || '';
-    
-    if (motivacion >= 8 && (sustancias.includes('pasta_base') || sustancias.includes('cocaina'))) {
-        return 'alta';
-    } else if (motivacion >= 6 || tiempoConsumo === 'mas_5_años') {
-        return 'media';
-    } else {
-        return 'baja';
-    }
-}
-
-/**
- * Determina la urgencia basada en los datos del formulario
- */
-function determinarUrgencia(formData) {
-    const descripcion = (formData.get('descripcion') || formData.get('patient-description') || '').toLowerCase();
-    const sustancias = obtenerSustancias(formData);
-    
-    const palabrasUrgentes = ['crisis', 'urgente', 'emergencia', 'suicidio', 'violento', 'peligro'];
-    
-    if (palabrasUrgentes.some(palabra => descripcion.includes(palabra))) {
-        return 'alta';
-    } else if (sustancias.includes('pasta_base') || sustancias.includes('cocaina')) {
-        return 'media';
-    } else {
-        return 'baja';
-    }
-}
-
-/**
- * Obtiene las sustancias seleccionadas del formulario
- */
-function obtenerSustancias(formData) {
-    const sustancias = [];
-    
-    const sustanciasDisponibles = [
-        'alcohol',
-        'marihuana', 
-        'cocaina',
-        'pasta_base',
-        'benzodiacepinas',
-        'medicamentos',
-        'otros'
-    ];
-    
-    sustanciasDisponibles.forEach(sustancia => {
-        if (formData.get(`sustancia_${sustancia}`) || 
-            formData.get(sustancia) ||
-            formData.get(`sustancias`) === sustancia) {
-            sustancias.push(sustancia);
-        }
+function obtenerSustancias() {
+  const sustancias = [];
+  const sustanciasChecked = document.querySelectorAll('input[name="sustancias"]:checked');
+  
+  if (sustanciasChecked.length > 0) {
+    sustanciasChecked.forEach(checkbox => {
+      if (checkbox.value) {
+        sustancias.push(checkbox.value);
+      }
     });
-    
-    const sustanciasGenerales = formData.getAll('sustancias');
-    if (sustanciasGenerales.length > 0) {
-        sustanciasGenerales.forEach(sustancia => {
-            if (sustancia && !sustancias.includes(sustancia)) {
-                sustancias.push(sustancia);
-            }
-        });
-    }
-    
-    if (sustancias.length === 0) {
-        sustancias.push('no_especificada');
-    }
-    
-    return sustancias;
+  }
+  
+  if (sustancias.length === 0) {
+    sustancias.push('no_especificada');
+  }
+  
+  return sustancias;
 }
 
 /**
- * Formatea un RUT chileno
+ * Calcula la prioridad basada en los datos
  */
-function formatRUT(rut) {
-    if (!rut) return '';
+function calculatePriority(solicitudData) {
+  let score = 0;
+  
+  // Por urgencia
+  if (solicitudData.urgencia === 'alta') score += 3;
+  else if (solicitudData.urgencia === 'media') score += 2;
+  else score += 1;
+  
+  // Por edad
+  if (solicitudData.edad) {
+    if (solicitudData.edad < 18 || solicitudData.edad > 65) score += 2;
+    else score += 1;
+  }
+  
+  // Por sustancias
+  if (solicitudData.sustancias && Array.isArray(solicitudData.sustancias)) {
+    const sustanciasPeligrosas = ['cocaina', 'pasta_base'];
+    const tienePeligrosas = solicitudData.sustancias.some(s => sustanciasPeligrosas.includes(s));
     
-    const cleaned = rut.replace(/[^\dKk]/g, '').toUpperCase();
-    if (cleaned.length < 2) return cleaned;
-    
-    const body = cleaned.slice(0, -1);
-    const dv = cleaned.slice(-1);
-    
-    const formattedBody = body.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
-    
-    return `${formattedBody}-${dv}`;
+    if (tienePeligrosas) score += 3;
+    else if (solicitudData.sustancias.length > 2) score += 2;
+    else if (solicitudData.sustancias.length > 0) score += 1;
+  }
+  
+  // Por motivación
+  if (solicitudData.motivacion >= 8) score += 2;
+  else if (solicitudData.motivacion >= 6) score += 1;
+  
+  // Por descripción
+  if (solicitudData.descripcion) {
+    const palabrasCriticas = ['crisis', 'urgente', 'emergencia', 'violento', 'peligro'];
+    const tieneCriticas = palabrasCriticas.some(palabra => 
+      solicitudData.descripcion.toLowerCase().includes(palabra)
+    );
+    if (tieneCriticas) score += 3;
+  }
+  
+  if (score >= 10) return 'critica';
+  else if (score >= 7) return 'alta';
+  else if (score >= 4) return 'media';
+  else return 'baja';
 }
 
-/**
- * Formatea un número de teléfono chileno
- */
-function formatPhoneNumber(phone) {
-    if (!phone) return '';
-    
-    const cleaned = phone.replace(/\D/g, '');
-    
-    if (cleaned.length === 9) {
-        return `${cleaned.slice(0, 1)} ${cleaned.slice(1, 5)} ${cleaned.slice(5)}`;
-    }
-    
-    return phone;
-}
-
-/**
- * Actualiza la solicitud cuando se agenda una cita
- */
-export async function actualizarSolicitudAgendada(solicitudId, citaId, profesionalId, fechaAgenda) {
-    try {
-        const { getFirestore } = await import('../configuracion/firebase.js');
-        const db = getFirestore();
-        
-        await db.collection('solicitudes_ingreso').doc(solicitudId).update({
-            estado: 'agendada',
-            agendadaPor: profesionalId,
-            citaId: citaId,
-            fechaAgenda: firebase.firestore.Timestamp.fromDate(fechaAgenda)
-        });
-        
-        console.log('✅ Solicitud actualizada como agendada');
-        
-    } catch (error) {
-        console.error('❌ Error actualizando solicitud:', error);
-        throw error;
-    }
-}
-
-/**
- * Obtiene los datos actuales del formulario
- */
-export function getCurrentFormStep() {
-    return currentFormStep;
-}
-
-/**
- * Obtiene el máximo número de pasos
- */
-export function getMaxFormStep() {
-    return maxFormStep;
-}
+// Exportar las nuevas funciones
+export { collectFormDataSafe, obtenerSustancias, calculatePriority };
