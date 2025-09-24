@@ -8,7 +8,7 @@ import { handleLogout } from '../autenticacion/sesion.js';
 import { setupLoginForm } from '../autenticacion/login.js';
 import { setupRegisterForm } from '../autenticacion/registro.js';
 import { setupReentryForm } from '../formularios/formulario-reingreso.js';
-import { resetForm } from '../utilidades/modales.js';
+import { resetForm } from '../formularios/autoguardado.js';
 
 /**
  * Configura todos los event listeners de la aplicación
