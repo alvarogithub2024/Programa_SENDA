@@ -1,32 +1,31 @@
 /**
- * FORMULARIOS/FORMULARIO-PACIENTE.JS
- * Sistema completo de formulario multi-paso - VERSIÓN CORREGIDA
+ * FORMULARIOS/FORMULARIO-PACIENTE.JS - IMPORTS CORREGIDOS
  */
 
-import { getFirestore, getServerTimestamp, retryFirestoreOperation } from '../configuracion/firebase.js';
 import { showNotification } from '../utilidades/notificaciones.js';
-import { closeModal, toggleSubmitButton } from '../utilidades/modales.js';
 import { validateRUT, isValidEmail, formatRUT, formatPhoneNumber } from '../utilidades/validaciones.js';
+
+// ✅ IMPORTS CORREGIDOS - SIN getServerTimestamp
+import { getFirestore } from '../configuracion/firebase.js';
 
 let currentFormStep = 1;
 let maxFormStep = 4;
-let formData = {};
+
+// ✅ FUNCIÓN CORREGIDA PARA TIMESTAMP
+function getFirebaseTimestamp() {
+    return firebase.firestore.FieldValue.serverTimestamp();
+}
 
 /**
  * Configura el formulario multi-paso de pacientes
  */
 export function setupFormularios() {
     try {
-        console.log('🔧 Configurando formularios...');
-        
         setupMultiStepForm();
         setupAutoSave();
-        setupFormValidation();
-        
-        console.log('✅ Formularios configurados correctamente');
-        
+        console.log('Formularios configurados');
     } catch (error) {
-        console.error('❌ Error configurando formularios:', error);
+        console.error('Error configurando formularios:', error);
     }
 }
 
@@ -36,255 +35,111 @@ export function setupFormularios() {
 function setupMultiStepForm() {
     try {
         const form = document.getElementById('patient-form');
-        if (!form) {
-            console.warn('⚠️ Formulario patient-form no encontrado');
-            return;
-        }
+        if (!form) return;
 
-        // Configurar navegación entre pasos
         setupNavigationButtons();
-        
-        // Configurar listeners específicos
         setupTipoSolicitudListeners();
         setupMotivacionSlider();
         setupSubmitButtons();
         
-        // Event listener principal del formulario
         form.addEventListener('submit', handlePatientFormSubmit);
         
-        // Configurar validación en tiempo real
-        setupRealTimeValidation();
-        
-        console.log('✅ Formulario multi-step configurado');
+        console.log('Formulario multi-step configurado');
         
     } catch (error) {
-        console.error('❌ Error configurando formulario multi-step:', error);
+        console.error('Error configurando formulario multi-step:', error);
     }
 }
 
 /**
- * Configura los botones de navegación entre pasos
+ * Configura los botones de navegación
  */
 function setupNavigationButtons() {
     try {
-        // Botones "Siguiente"
-        const nextButtons = [
-            document.getElementById('next-step-1'),
-            document.getElementById('next-step-2'),
-            document.getElementById('next-step-3')
-        ].filter(btn => btn);
+        const form = document.getElementById('patient-form');
+        if (!form) return;
 
-        nextButtons.forEach((btn, index) => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                handleNextStep(index + 1);
-            });
+        const nextButtons = form.querySelectorAll('[id^="next-step"]');
+        const prevButtons = form.querySelectorAll('[id^="prev-step"]');
+        
+        nextButtons.forEach(btn => {
+            if (btn && typeof btn.addEventListener === 'function') {
+                btn.addEventListener('click', (e) => {
+                    try {
+                        e.preventDefault();
+                        const currentStep = parseInt(btn.id.split('-')[2]);
+                        
+                        if (validateStepBasic(currentStep)) {
+                            const nextStep = getNextStep(currentStep);
+                            if (nextStep) {
+                                goToStep(nextStep);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error en botón siguiente:', error);
+                    }
+                });
+            }
         });
 
-        // Botones "Anterior"
-        const prevButtons = [
-            document.getElementById('prev-step-2'),
-            document.getElementById('prev-step-3'),
-            document.getElementById('prev-step-4')
-        ].filter(btn => btn);
-
-        prevButtons.forEach((btn, index) => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                goToStep(index + 1); // prev-step-2 va al paso 1, etc.
-            });
+        prevButtons.forEach(btn => {
+            if (btn && typeof btn.addEventListener === 'function') {
+                btn.addEventListener('click', (e) => {
+                    try {
+                        e.preventDefault();
+                        const currentStep = parseInt(btn.id.split('-')[2]);
+                        const prevStep = getPreviousStep(currentStep);
+                        if (prevStep) {
+                            goToStep(prevStep);
+                        }
+                    } catch (error) {
+                        console.error('Error en botón anterior:', error);
+                    }
+                });
+            }
         });
         
+        console.log('Botones de navegación configurados');
+        
     } catch (error) {
-        console.error('Error configurando botones de navegación:', error);
+        console.error('Error configurando botones:', error);
     }
 }
 
 /**
- * Maneja el avance al siguiente paso
+ * Validación básica de pasos
  */
-function handleNextStep(currentStep) {
+function validateStepBasic(step) {
     try {
-        // Validar paso actual
-        if (!validateCurrentStep(currentStep)) {
-            return;
+        const currentStepElement = document.querySelector(`.form-step[data-step="${step}"]`);
+        if (!currentStepElement) return false;
+        
+        const requiredFields = currentStepElement.querySelectorAll('input[required], select[required], textarea[required]');
+        
+        for (let field of requiredFields) {
+            if (!field.value.trim()) {
+                field.focus();
+                showNotification(`Por favor completa el campo: ${field.name || field.id}`, 'warning');
+                return false;
+            }
         }
         
-        // Guardar datos del paso actual
-        saveCurrentStepData();
-        
-        // Determinar siguiente paso
-        const nextStep = getNextStep(currentStep);
-        if (nextStep) {
-            goToStep(nextStep);
-        }
-        
-    } catch (error) {
-        console.error('Error en handleNextStep:', error);
-    }
-}
-
-/**
- * Valida el paso actual
- */
-function validateCurrentStep(step) {
-    try {
-        const currentStepElement = document.querySelector(`.form-step[data-step="${step}"].active`);
-        if (!currentStepElement) {
-            console.warn('Elemento del paso actual no encontrado');
-            return false;
-        }
-        
-        // Validaciones específicas por paso
-        switch (step) {
-            case 1:
-                return validateStep1();
-            case 2:
-                return validateStep2();
-            case 3:
-                return validateStep3();
-            default:
-                return true;
-        }
-        
+        return true;
     } catch (error) {
         console.error('Error validando paso:', error);
-        return false;
-    }
-}
-
-/**
- * Valida el paso 1
- */
-function validateStep1() {
-    const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
-    
-    if (!tipoSolicitud) {
-        showNotification('Por favor selecciona un tipo de solicitud', 'warning');
-        return false;
-    }
-    
-    if (tipoSolicitud === 'informacion') {
-        const email = document.getElementById('info-email')?.value?.trim();
-        if (!email) {
-            showNotification('Ingresa un email para recibir información', 'warning');
-            return false;
-        }
-        if (!isValidEmail(email)) {
-            showNotification('Ingresa un email válido', 'warning');
-            return false;
-        }
         return true;
     }
-    
-    if (tipoSolicitud === 'identificado') {
-        // Validar campos básicos
-        const edad = document.getElementById('patient-age')?.value;
-        const cesfam = document.getElementById('patient-cesfam')?.value;
-        const paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
-        
-        if (!edad || edad < 12 || edad > 120) {
-            showNotification('La edad debe estar entre 12 y 120 años', 'warning');
-            return false;
-        }
-        
-        if (!cesfam) {
-            showNotification('Selecciona un CESFAM', 'warning');
-            return false;
-        }
-        
-        if (!paraMi) {
-            showNotification('Indica para quién solicitas ayuda', 'warning');
-            return false;
-        }
-    }
-    
-    return true;
 }
 
 /**
- * Valida el paso 2
- */
-function validateStep2() {
-    const nombre = document.getElementById('patient-name')?.value?.trim();
-    const apellidos = document.getElementById('patient-lastname')?.value?.trim();
-    const rut = document.getElementById('patient-rut')?.value?.trim();
-    const telefono = document.getElementById('patient-phone')?.value?.trim();
-    
-    if (!nombre) {
-        showNotification('El nombre es obligatorio', 'warning');
-        return false;
-    }
-    
-    if (!apellidos) {
-        showNotification('Los apellidos son obligatorios', 'warning');
-        return false;
-    }
-    
-    if (!rut) {
-        showNotification('El RUT es obligatorio', 'warning');
-        return false;
-    }
-    
-    if (!validateRUT(rut)) {
-        showNotification('RUT inválido', 'warning');
-        return false;
-    }
-    
-    if (!telefono) {
-        showNotification('El teléfono es obligatorio', 'warning');
-        return false;
-    }
-    
-    const phoneClean = telefono.replace(/\D/g, '');
-    if (phoneClean.length < 8) {
-        showNotification('Teléfono inválido', 'warning');
-        return false;
-    }
-    
-    const email = document.getElementById('patient-email')?.value?.trim();
-    if (email && !isValidEmail(email)) {
-        showNotification('Email inválido', 'warning');
-        return false;
-    }
-    
-    return true;
-}
-
-/**
- * Valida el paso 3
- */
-function validateStep3() {
-    const sustancias = document.querySelectorAll('input[name="sustancias"]:checked');
-    if (sustancias.length === 0) {
-        showNotification('Selecciona al menos una sustancia problemática', 'warning');
-        return false;
-    }
-    
-    const urgencia = document.querySelector('input[name="urgencia"]:checked')?.value;
-    if (!urgencia) {
-        showNotification('Selecciona el nivel de urgencia', 'warning');
-        return false;
-    }
-    
-    const tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked')?.value;
-    if (!tratamientoPrevio) {
-        showNotification('Indica si has recibido tratamiento previo', 'warning');
-        return false;
-    }
-    
-    return true;
-}
-
-/**
- * Configura listeners para tipo de solicitud
+ * Configura los listeners para el tipo de solicitud
  */
 function setupTipoSolicitudListeners() {
     const tipoSolicitudInputs = document.querySelectorAll('input[name="tipoSolicitud"]');
     
     tipoSolicitudInputs.forEach(input => {
-        input.addEventListener('change', (e) => {
-            const tipoSolicitud = e.target.value;
+        input.addEventListener('change', () => {
+            const tipoSolicitud = input.value;
             handleTipoSolicitudChange(tipoSolicitud);
         });
     });
@@ -330,44 +185,12 @@ function setupMotivacionSlider() {
     
     if (motivacionRange && motivacionValue) {
         motivacionRange.addEventListener('input', () => {
-            const value = motivacionRange.value;
-            motivacionValue.textContent = value;
-            updateMotivacionColor(value);
+            motivacionValue.textContent = motivacionRange.value;
+            updateMotivacionColor(motivacionRange.value);
         });
         
-        // Inicializar valor
         motivacionValue.textContent = motivacionRange.value;
         updateMotivacionColor(motivacionRange.value);
-    }
-}
-
-/**
- * Actualiza el color del valor de motivación
- */
-function updateMotivacionColor(value) {
-    try {
-        const motivacionValue = document.getElementById('motivacion-value');
-        if (!motivacionValue) return;
-        
-        const numValue = parseInt(value);
-        let color;
-        
-        if (numValue <= 3) {
-            color = '#ef4444'; // Rojo
-        } else if (numValue <= 6) {
-            color = '#f59e0b'; // Amarillo
-        } else {
-            color = '#10b981'; // Verde
-        }
-        
-        motivacionValue.style.backgroundColor = color;
-        motivacionValue.style.color = 'white';
-        motivacionValue.style.padding = '4px 12px';
-        motivacionValue.style.borderRadius = '20px';
-        motivacionValue.style.fontWeight = '600';
-        
-    } catch (error) {
-        console.error('Error actualizando color de motivación:', error);
     }
 }
 
@@ -388,7 +211,7 @@ function setupSubmitButtons() {
 }
 
 /**
- * Obtiene el siguiente paso
+ * Navega al siguiente paso
  */
 function getNextStep(currentStep) {
     const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
@@ -402,8 +225,20 @@ function getNextStep(currentStep) {
         case 2: return 3;
         case 3: return 4;
         case 4: return null;
-        default: return null;
     }
+    return null;
+}
+
+/**
+ * Navega al paso anterior
+ */
+function getPreviousStep(currentStep) {
+    switch (currentStep) {
+        case 2: return 1;
+        case 3: return 2;
+        case 4: return 3;
+    }
+    return null;
 }
 
 /**
@@ -411,10 +246,7 @@ function getNextStep(currentStep) {
  */
 export function goToStep(step) {
     try {
-        if (step < 1 || step > maxFormStep) {
-            console.warn(`Paso ${step} fuera de rango (1-${maxFormStep})`);
-            return;
-        }
+        if (step < 1 || step > maxFormStep) return;
 
         // Ocultar todos los pasos
         document.querySelectorAll('.form-step').forEach(stepDiv => {
@@ -426,27 +258,23 @@ export function goToStep(step) {
         if (targetStep) {
             targetStep.classList.add('active');
             
-            // Scroll al inicio del formulario
-            targetStep.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            
-            // Enfocar primer input después de un momento
+            // Enfocar primer input
             setTimeout(() => {
-                const firstInput = targetStep.querySelector('input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])');
-                if (firstInput) {
+                const firstInput = targetStep.querySelector('input:not([type="hidden"]), select, textarea');
+                if (firstInput && !firstInput.disabled) {
                     firstInput.focus();
                 }
-            }, 300);
+            }, 100);
         }
 
-        // Actualizar indicadores
-        currentFormStep = step;
         updateProgressIndicator(step, maxFormStep);
+        
+        currentFormStep = step;
         saveFormDraft();
 
         console.log(`Navegando a paso ${step} de ${maxFormStep}`);
-        
     } catch (error) {
-        console.error('Error navegando a paso:', error);
+        console.error('Error going to step:', error);
     }
 }
 
@@ -467,47 +295,43 @@ function updateProgressIndicator(current, total) {
             progressText.textContent = `Paso ${current} de ${total}`;
         }
     } catch (error) {
-        console.error('Error actualizando indicador de progreso:', error);
+        console.error('Error updating progress indicator:', error);
     }
 }
 
 /**
- * Guarda datos del paso actual
+ * Actualiza el color del valor de motivación
  */
-function saveCurrentStepData() {
+function updateMotivacionColor(value) {
     try {
-        const form = document.getElementById('patient-form');
-        if (!form) return;
+        const motivacionValue = document.getElementById('motivacion-value');
+        if (!motivacionValue) return;
         
-        const currentData = new FormData(form);
+        const numValue = parseInt(value);
+        let color;
         
-        // Actualizar formData global
-        for (let [key, value] of currentData.entries()) {
-            formData[key] = value;
+        if (numValue <= 3) {
+            color = '#ef4444';
+        } else if (numValue <= 6) {
+            color = '#f59e0b';
+        } else {
+            color = '#10b981';
         }
         
-        // Guardar sustancias seleccionadas
-        const sustancias = [];
-        document.querySelectorAll('input[name="sustancias"]:checked').forEach(checkbox => {
-            if (checkbox.value) {
-                sustancias.push(checkbox.value);
-            }
-        });
-        formData.sustancias = sustancias;
-        
+        motivacionValue.style.backgroundColor = color;
+        motivacionValue.style.color = 'white';
     } catch (error) {
-        console.error('Error guardando datos del paso:', error);
+        console.error('Error updating motivacion color:', error);
     }
 }
 
 /**
- * Maneja el envío del formulario principal
+ * Maneja el envío del formulario de pacientes completo
  */
 async function handlePatientFormSubmit(e) {
-    e.preventDefault();
-    
     try {
-        console.log('Enviando formulario de paciente...');
+        e.preventDefault();
+        console.log('Enviando formulario de paciente');
         
         const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
         
@@ -519,25 +343,24 @@ async function handlePatientFormSubmit(e) {
         
     } catch (error) {
         console.error('Error enviando formulario:', error);
-        showNotification('Error al procesar la solicitud: ' + error.message, 'error');
+        showNotification('Error al procesar la solicitud', 'error');
     }
 }
 
 /**
- * Maneja solicitud de información únicamente
+ * Maneja el envío de solicitudes de información únicamente
  */
 function handleInformationOnlySubmit() {
     try {
         const form = document.getElementById('patient-form');
         if (!form) return;
         
-        // Crear evento simulado
-        const event = {
+        const fakeEvent = {
             preventDefault: () => {},
             target: form
         };
         
-        handleInformationRequestSubmit(event);
+        handleInformationRequestSubmit(fakeEvent);
         
     } catch (error) {
         console.error('Error enviando solicitud de información:', error);
@@ -546,105 +369,112 @@ function handleInformationOnlySubmit() {
 }
 
 /**
- * Procesa solicitudes de información
+ * Maneja el envío de solicitudes de información
  */
 export async function handleInformationRequestSubmit(e) {
     e.preventDefault();
     
-    const submitBtn = document.getElementById('submit-step-1');
-    
-    try {
-        toggleSubmitButton(submitBtn, true);
-        
-        const email = document.getElementById('info-email')?.value?.trim();
-        const edad = document.getElementById('patient-age')?.value;
-        const cesfam = document.getElementById('patient-cesfam')?.value;
-        const paraMi = document.querySelector('input[name="paraMi"]:checked')?.value;
-        
-        if (!email || !isValidEmail(email)) {
-            showNotification('Ingresa un email válido', 'warning');
-            return;
-        }
-        
-        const requestData = {
-            tipo: 'informacion',
-            email: email,
-            edad: edad ? parseInt(edad) : null,
-            cesfam: cesfam || 'No especificado',
-            paraMi: paraMi || 'si',
-            fechaCreacion: getServerTimestamp(),
-            estado: 'pendiente',
-            origen: 'web_publica',
-            version: '2.0'
-        };
+    const formData = new FormData(e.target);
+    const requestData = {
+        nombre: formData.get('nombre') || '',
+        apellidos: formData.get('apellidos') || '',
+        email: formData.get('email') || document.getElementById('info-email')?.value || '',
+        telefono: formData.get('telefono') || '',
+        rut: formData.get('rut') || '',
+        tipoConsulta: 'informacion',
+        mensaje: formData.get('mensaje') || 'Solicitud de información general',
+        cesfam: formData.get('cesfam') || 'CESFAM Karol Wojtyla',
+        fechaCreacion: getFirebaseTimestamp(), // ✅ USANDO FUNCIÓN CORREGIDA
+        estado: 'pendiente',
+        origen: 'formulario_web',
+        version: '1.0'
+    };
 
+    try {
         const db = getFirestore();
-        const docRef = await retryFirestoreOperation(async () => {
-            return await db.collection('solicitudes_informacion').add(requestData);
-        });
+        const solicitudesRef = db.collection('solicitudes_informacion');
+        await solicitudesRef.add(requestData);
         
-        console.log('Solicitud de información guardada con ID:', docRef.id);
-        
-        showNotification('Solicitud de información enviada correctamente. Te contactaremos por email.', 'success');
-        
-        // Limpiar y cerrar
-        resetForm();
-        closeModal('patient-modal');
+        showNotification('Solicitud de información enviada correctamente', 'success');
+        e.target.reset();
         
     } catch (error) {
-        console.error('Error enviando solicitud de información:', error);
-        
-        let errorMessage = 'Error al enviar la solicitud';
-        if (error.code === 'permission-denied') {
-            errorMessage += ': Sin permisos para crear solicitudes';
-        } else if (error.code === 'network-request-failed') {
-            errorMessage += ': Problema de conexión';
-        }
-        
-        showNotification(errorMessage, 'error');
-        
-    } finally {
-        toggleSubmitButton(submitBtn, false);
+        console.error('Error enviando solicitud:', error);
+        showNotification('Error al enviar la solicitud', 'error');
     }
 }
 
 /**
- * Procesa solicitudes de ingreso identificadas
+ * Maneja el envío de solicitudes de ingreso - VERSIÓN CORREGIDA
  */
 async function handleSolicitudIngresoSubmit(e) {
     e.preventDefault();
     
-    const submitBtn = document.querySelector('#patient-form button[type="submit"]');
+    console.log('Iniciando envío de solicitud de ingreso...');
     
     try {
-        console.log('Procesando solicitud de ingreso...');
+        // Validar tipo de solicitud
+        const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+        if (tipoSolicitud !== 'identificado') {
+            showNotification('Este flujo es solo para solicitudes identificadas', 'error');
+            return;
+        }
+
+        // Validar campos obligatorios
+        const camposObligatorios = [
+            { id: 'patient-name', nombre: 'Nombre' },
+            { id: 'patient-lastname', nombre: 'Apellidos' },
+            { id: 'patient-rut', nombre: 'RUT' },
+            { id: 'patient-age', nombre: 'Edad' },
+            { id: 'patient-phone', nombre: 'Teléfono' },
+            { id: 'patient-cesfam', nombre: 'CESFAM' }
+        ];
         
-        toggleSubmitButton(submitBtn, true);
+        for (const campo of camposObligatorios) {
+            const elemento = document.getElementById(campo.id);
+            const valor = elemento?.value?.trim();
+            
+            if (!valor) {
+                showNotification(`El campo ${campo.nombre} es obligatorio`, 'warning');
+                elemento?.focus();
+                return;
+            }
+        }
         
-        // Validar formulario completo
-        if (!validateCompleteForm()) {
+        // Validaciones específicas
+        const rut = document.getElementById('patient-rut')?.value?.trim();
+        if (!validateRUT(rut)) {
+            showNotification('RUT inválido', 'warning');
             return;
         }
         
+        const telefono = document.getElementById('patient-phone')?.value?.trim();
+        if (!validatePhoneNumberString(telefono)) {
+            showNotification('Teléfono inválido', 'warning');
+            return;
+        }
+
+        // Validar sustancias
+        const sustanciasChecked = document.querySelectorAll('input[name="sustancias"]:checked');
+        if (sustanciasChecked.length === 0) {
+            showNotification('Selecciona al menos una sustancia problemática', 'warning');
+            return;
+        }
+
         // Recopilar datos
-        const solicitudData = collectSolicitudData();
+        const solicitudData = collectFormDataSafe();
         
         // Verificar datos críticos
         if (!solicitudData.nombre || !solicitudData.apellidos || !solicitudData.rut) {
             throw new Error('Datos críticos faltantes');
         }
         
-        console.log('Guardando solicitud de ingreso...', {
-            nombre: solicitudData.nombre,
-            rut: solicitudData.rut,
-            prioridad: solicitudData.prioridad
-        });
+        console.log('Guardando solicitud...', solicitudData);
         
         // Guardar en Firebase
         const db = getFirestore();
-        const docRef = await retryFirestoreOperation(async () => {
-            return await db.collection('solicitudes_ingreso').add(solicitudData);
-        });
+        const solicitudesRef = db.collection('solicitudes_ingreso');
+        const docRef = await solicitudesRef.add(solicitudData);
         
         console.log('Solicitud guardada con ID:', docRef.id);
         
@@ -658,89 +488,72 @@ async function handleSolicitudIngresoSubmit(e) {
             }
         }
         
-        const prioridadText = solicitudData.prioridad.toUpperCase();
-        showNotification(
-            `Solicitud enviada correctamente con prioridad ${prioridadText}. Te contactaremos pronto.`,
-            'success',
-            6000
-        );
+        showNotification(`Solicitud enviada correctamente con prioridad ${solicitudData.prioridad.toUpperCase()}. Te contactaremos pronto.`, 'success');
         
-        // Limpiar y cerrar
+        e.target.reset();
         resetForm();
-        closeModal('patient-modal');
+        goToStep(1);
         
     } catch (error) {
-        console.error('Error enviando solicitud de ingreso:', error);
+        console.error('Error enviando solicitud:', error);
         
-        let errorMessage = 'Error al enviar la solicitud';
+        let errorMessage = 'Error al enviar la solicitud: ';
         if (error.code === 'permission-denied') {
-            errorMessage += ': Sin permisos para crear solicitudes';
+            errorMessage += 'Sin permisos para crear solicitudes';
         } else if (error.code === 'network-request-failed') {
-            errorMessage += ': Problema de conexión';
-        } else if (error.message) {
-            errorMessage += ': ' + error.message;
+            errorMessage += 'Problema de conexión';
+        } else {
+            errorMessage += error.message;
         }
         
         showNotification(errorMessage, 'error');
-        
-    } finally {
-        toggleSubmitButton(submitBtn, false);
     }
 }
 
 /**
- * Valida el formulario completo
+ * Recopila datos del formulario de manera segura
  */
-function validateCompleteForm() {
-    // Validar todos los pasos
-    for (let step = 1; step <= 3; step++) {
-        if (!validateCurrentStep(step)) {
-            goToStep(step);
-            return false;
-        }
-    }
-    return true;
-}
-
-/**
- * Recopila todos los datos de la solicitud
- */
-function collectSolicitudData() {
+function collectFormDataSafe() {
     try {
-        saveCurrentStepData(); // Asegurar datos actuales
+        const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+        
+        if (!tipoSolicitud) {
+            throw new Error('Tipo de solicitud no seleccionado');
+        }
         
         const solicitudData = {
             // Información personal
-            nombre: formData['patient-name'] || '',
-            apellidos: formData['patient-lastname'] || '',
-            rut: formatRUT(formData['patient-rut'] || ''),
-            edad: parseInt(formData['patient-age']) || 0,
-            email: formData['patient-email'] || '',
-            telefono: formatPhoneNumber(formData['patient-phone'] || ''),
-            direccion: formData['patient-address'] || '',
+            nombre: document.getElementById('patient-name')?.value?.trim() || '',
+            apellidos: document.getElementById('patient-lastname')?.value?.trim() || '',
+            rut: formatRUT(document.getElementById('patient-rut')?.value?.trim() || ''),
+            edad: parseInt(document.getElementById('patient-age')?.value) || 0,
+            email: document.getElementById('patient-email')?.value?.trim() || '',
+            telefono: formatPhoneNumber(document.getElementById('patient-phone')?.value?.trim() || ''),
+            direccion: document.getElementById('patient-address')?.value?.trim() || '',
             
             // Información de la solicitud
-            cesfam: formData['patient-cesfam'] || '',
-            descripcion: formData['patient-description'] || '',
+            cesfam: document.getElementById('patient-cesfam')?.value || 'CESFAM Karol Wojtyla',
+            descripcion: document.getElementById('patient-description')?.value?.trim() || '',
             
             // Clasificación
-            urgencia: formData['urgencia'] || 'media',
-            motivacion: parseInt(formData['motivacion-range']) || 5,
+            prioridad: 'baja', // Se calculará después
+            urgencia: document.querySelector('input[name="urgencia"]:checked')?.value || 'media',
+            motivacion: parseInt(document.getElementById('motivacion-range')?.value) || 5,
             
             // Información específica
-            sustancias: formData.sustancias || [],
-            tiempoConsumo: formData['tiempo-consumo'] || '',
-            tratamientoPrevio: formData['tratamientoPrevio'] || 'no',
-            paraMi: formData['paraMi'] || 'si',
+            sustancias: obtenerSustancias(),
+            tiempoConsumo: document.getElementById('tiempo-consumo')?.value || '',
+            tratamientoPrevio: document.querySelector('input[name="tratamientoPrevio"]:checked')?.value || 'no',
+            paraMi: document.querySelector('input[name="paraMi"]:checked')?.value || 'si',
             
             // Metadata del sistema
             estado: 'pendiente',
-            tipoSolicitud: 'identificado',
+            tipoSolicitud: tipoSolicitud,
             origen: 'web_publica',
             version: '2.0',
             
-            // Timestamps
-            fechaCreacion: getServerTimestamp(),
+            // Timestamps - ✅ USANDO FUNCIÓN CORREGIDA
+            fechaCreacion: getFirebaseTimestamp(),
             fechaAgenda: null,
             
             // IDs relacionados
@@ -751,12 +564,35 @@ function collectSolicitudData() {
         // Calcular prioridad
         solicitudData.prioridad = calculatePriority(solicitudData);
         
+        console.log('Datos recopilados:', solicitudData);
         return solicitudData;
         
     } catch (error) {
         console.error('Error recopilando datos:', error);
         throw new Error('Error recopilando datos del formulario: ' + error.message);
     }
+}
+
+/**
+ * Obtiene las sustancias seleccionadas
+ */
+function obtenerSustancias() {
+    const sustancias = [];
+    const sustanciasChecked = document.querySelectorAll('input[name="sustancias"]:checked');
+    
+    if (sustanciasChecked.length > 0) {
+        sustanciasChecked.forEach(checkbox => {
+            if (checkbox.value) {
+                sustancias.push(checkbox.value);
+            }
+        });
+    }
+    
+    if (sustancias.length === 0) {
+        sustancias.push('no_especificada');
+    }
+    
+    return sustancias;
 }
 
 /**
@@ -792,7 +628,7 @@ function calculatePriority(solicitudData) {
     
     // Por descripción
     if (solicitudData.descripcion) {
-        const palabrasCriticas = ['crisis', 'urgente', 'emergencia', 'violento', 'peligro', 'suicidio'];
+        const palabrasCriticas = ['crisis', 'urgente', 'emergencia', 'violento', 'peligro'];
         const tieneCriticas = palabrasCriticas.some(palabra => 
             solicitudData.descripcion.toLowerCase().includes(palabra)
         );
@@ -813,14 +649,14 @@ async function createCriticalAlert(solicitudData, solicitudId) {
         const db = getFirestore();
         
         const alertData = {
-            solicitudId: solicitudId,
+            id_solicitud: solicitudId,
             mensaje: `Caso crítico: ${solicitudData.nombre} ${solicitudData.apellidos}, ${solicitudData.edad} años`,
             prioridad: 'maxima',
-            tipo: 'caso_critico_nuevo',
+            tipo_alerta: 'caso_critico_nuevo',
             estado: 'pendiente',
-            fechaCreacion: getServerTimestamp(),
+            fecha_creacion: getFirebaseTimestamp(), // ✅ USANDO FUNCIÓN CORREGIDA
             cesfam: solicitudData.cesfam,
-            datosPaciente: {
+            datos_paciente: {
                 edad: solicitudData.edad,
                 sustancias: solicitudData.sustancias,
                 urgencia: solicitudData.urgencia,
@@ -837,36 +673,16 @@ async function createCriticalAlert(solicitudData, solicitudId) {
 }
 
 /**
- * Configura validación en tiempo real
+ * Validación de teléfono
  */
-function setupRealTimeValidation() {
-    try {
-        const form = document.getElementById('patient-form');
-        if (!form) return;
-        
-        // RUT formatting
-        const rutInput = document.getElementById('patient-rut');
-        if (rutInput) {
-            rutInput.addEventListener('input', (e) => {
-                e.target.value = formatRUT(e.target.value);
-            });
-        }
-        
-        // Phone formatting
-        const phoneInput = document.getElementById('patient-phone');
-        if (phoneInput) {
-            phoneInput.addEventListener('input', (e) => {
-                e.target.value = formatPhoneNumber(e.target.value);
-            });
-        }
-        
-    } catch (error) {
-        console.error('Error configurando validación en tiempo real:', error);
-    }
+function validatePhoneNumberString(phone) {
+    if (!phone) return false;
+    const cleaned = phone.replace(/\D/g, '');
+    return cleaned.length >= 8 && cleaned.length <= 12;
 }
 
 /**
- * Configura auto-guardado
+ * Auto-guardado de formulario
  */
 function setupAutoSave() {
     try {
@@ -880,34 +696,28 @@ function setupAutoSave() {
             autoSaveTimer = setTimeout(saveFormDraft, 2000);
         });
         
-        form.addEventListener('change', () => {
-            clearTimeout(autoSaveTimer);
-            autoSaveTimer = setTimeout(saveFormDraft, 1000);
-        });
-        
         loadFormDraft();
-        
+        console.log('Auto-guardado configurado');
     } catch (error) {
         console.error('Error configurando auto-guardado:', error);
     }
 }
 
-/**
- * Guarda borrador del formulario
- */
 function saveFormDraft() {
     try {
         const form = document.getElementById('patient-form');
         if (!form) return;
         
-        saveCurrentStepData();
+        const formData = new FormData(form);
+        const draftData = {};
         
-        const draftData = {
-            ...formData,
-            currentStep: currentFormStep,
-            maxFormStep: maxFormStep,
-            timestamp: Date.now()
-        };
+        for (let [key, value] of formData.entries()) {
+            draftData[key] = value;
+        }
+        
+        draftData.currentStep = currentFormStep;
+        draftData.maxFormStep = maxFormStep;
+        draftData.timestamp = Date.now();
         
         localStorage.setItem('senda_form_draft', JSON.stringify(draftData));
         
@@ -916,9 +726,6 @@ function saveFormDraft() {
     }
 }
 
-/**
- * Carga borrador del formulario
- */
 function loadFormDraft() {
     try {
         const savedDraft = localStorage.getItem('senda_form_draft');
@@ -926,107 +733,39 @@ function loadFormDraft() {
         
         const draftData = JSON.parse(savedDraft);
         
-        // Verificar antigüedad (24 horas)
+        // Borrar borradores viejos (24h)
         if (Date.now() - draftData.timestamp > 24 * 60 * 60 * 1000) {
             localStorage.removeItem('senda_form_draft');
             return;
         }
         
-        // Preguntar si restaurar
-        if (confirm('Se encontró un borrador guardado. ¿Deseas continuar donde lo dejaste?')) {
-            restoreFormDraft(draftData);
-        } else {
-            localStorage.removeItem('senda_form_draft');
-        }
+        // Restaurar datos aquí si es necesario
         
     } catch (error) {
         console.error('Error cargando borrador:', error);
     }
 }
 
-/**
- * Restaura borrador del formulario
- */
-function restoreFormDraft(draftData) {
-    try {
-        const form = document.getElementById('patient-form');
-        if (!form) return;
-        
-        // Restaurar valores
-        Object.keys(draftData).forEach(key => {
-            if (['currentStep', 'maxFormStep', 'timestamp', 'sustancias'].includes(key)) return;
-            
-            const field = form.querySelector(`[name="${key}"], #${key}`);
-            if (field) {
-                if (field.type === 'radio' || field.type === 'checkbox') {
-                    field.checked = field.value === draftData[key];
-                } else {
-                    field.value = draftData[key];
-                }
-            }
-        });
-        
-        // Restaurar sustancias
-        if (draftData.sustancias && Array.isArray(draftData.sustancias)) {
-            draftData.sustancias.forEach(sustancia => {
-                const checkbox = form.querySelector(`input[name="sustancias"][value="${sustancia}"]`);
-                if (checkbox) {
-                    checkbox.checked = true;
-                }
-            });
-        }
-        
-        // Restaurar configuración
-        if (draftData.maxFormStep) {
-            maxFormStep = draftData.maxFormStep;
-        }
-        
-        // Navegar al paso guardado
-        if (draftData.currentStep) {
-            setTimeout(() => {
-                goToStep(draftData.currentStep);
-            }, 100);
-        }
-        
-        formData = { ...draftData };
-        
-        showNotification('Borrador restaurado correctamente', 'success');
-        
-    } catch (error) {
-        console.error('Error restaurando borrador:', error);
-    }
-}
-
-/**
- * Resetea el formulario
- */
-export function resetForm() {
+function resetForm() {
     try {
         const form = document.getElementById('patient-form');
         if (form) {
             form.reset();
+            goToStep(1);
             
-            // Resetear campos especiales
-            resetSpecialFields();
+            const motivacionRange = document.getElementById('motivacion-range');
+            const motivacionValue = document.getElementById('motivacion-value');
+            if (motivacionRange && motivacionValue) {
+                motivacionRange.value = 5;
+                motivacionValue.textContent = '5';
+                updateMotivacionColor(5);
+            }
             
-            // Limpiar estilos de error
-            form.querySelectorAll('.error').forEach(field => {
-                field.classList.remove('error');
-            });
+            maxFormStep = 4;
+            updateProgressIndicator(1, 4);
         }
         
-        // Limpiar datos globales
-        formData = {};
-        currentFormStep = 1;
-        maxFormStep = 4;
-        
-        // Ir al primer paso
-        goToStep(1);
-        
-        // Limpiar borrador
         localStorage.removeItem('senda_form_draft');
-        
-        console.log('Formulario reseteado');
         
     } catch (error) {
         console.error('Error reseteando formulario:', error);
@@ -1034,65 +773,40 @@ export function resetForm() {
 }
 
 /**
- * Resetea campos especiales
+ * Actualiza la solicitud cuando se agenda una cita
  */
-function resetSpecialFields() {
+export async function actualizarSolicitudAgendada(solicitudId, citaId, profesionalId, fechaAgenda) {
     try {
-        // Resetear slider de motivación
-        const motivacionRange = document.getElementById('motivacion-range');
-        const motivacionValue = document.getElementById('motivacion-value');
-        if (motivacionRange && motivacionValue) {
-            motivacionRange.value = 5;
-            motivacionValue.textContent = '5';
-            updateMotivacionColor(5);
-        }
+        const db = getFirestore();
         
-        // Resetear contenedores
-        const infoEmailContainer = document.getElementById('info-email-container');
-        const basicInfoContainer = document.getElementById('basic-info-container');
-        const nextBtn = document.getElementById('next-step-1');
-        const submitBtn = document.getElementById('submit-step-1');
+        await db.collection('solicitudes_ingreso').doc(solicitudId).update({
+            estado: 'agendada',
+            agendadaPor: profesionalId,
+            citaId: citaId,
+            fechaAgenda: firebase.firestore.Timestamp.fromDate(fechaAgenda)
+        });
         
-        if (infoEmailContainer) infoEmailContainer.style.display = 'none';
-        if (basicInfoContainer) basicInfoContainer.style.display = 'block';
-        if (nextBtn) nextBtn.style.display = 'inline-flex';
-        if (submitBtn) submitBtn.style.display = 'none';
-        
-        // Resetear progreso
-        updateProgressIndicator(1, 4);
+        console.log('Solicitud actualizada como agendada');
         
     } catch (error) {
-        console.error('Error reseteando campos especiales:', error);
+        console.error('Error actualizando solicitud:', error);
+        throw error;
     }
 }
 
 /**
- * Configura validación del formulario
+ * Obtiene los datos actuales del formulario
  */
-function setupFormValidation() {
-    try {
-        const form = document.getElementById('patient-form');
-        if (!form) return;
-        
-        // Event listener para validación en envío
-        form.addEventListener('submit', (e) => {
-            const isValid = validateCompleteForm();
-            if (!isValid) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-        });
-        
-    } catch (error) {
-        console.error('Error configurando validación:', error);
-    }
-}
-
-// Obtener funciones actuales del formulario
 export function getCurrentFormStep() {
     return currentFormStep;
 }
 
+/**
+ * Obtiene el máximo número de pasos
+ */
 export function getMaxFormStep() {
     return maxFormStep;
 }
+
+// Exportar resetForm para uso externo
+export { resetForm };
