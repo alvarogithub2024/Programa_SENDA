@@ -350,7 +350,7 @@ export {
         if (logoutBtn) logoutBtn.style.display = 'none';
 
         console.log('📄 Mostrando contenido público');
-    } catch (error) {
+    catch (error) {
         console.error('Error mostrando contenido público:', error);
     }
 }
