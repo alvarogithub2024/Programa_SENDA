@@ -1,29 +1,11 @@
-// MAIN.JS - SISTEMA SENDA PUENTE ALTO v2.0 - VERSIÓN CORREGIDA
-// Importar todos los módulos
+// MAIN.JS - SISTEMA SENDA PUENTE ALTO v2.0 - VERSIÓN COMPLETAMENTE CORREGIDA
 import { initializeFirebase, isFirebaseInitialized } from './configuracion/firebase.js';
 import { setupAuth } from './autenticacion/sesion.js';
 import { setupTabs } from './navegacion/tabs.js';
 import { setupFormularios } from './formularios/formulario-paciente.js';
 import { setupEventListeners } from './navegacion/eventos.js';
-
-// Calendario
-import { initCalendar } from './calendario/agenda.js';
-import { initUpcomingAppointments } from './calendario/citas.js';
-import { initScheduleManager } from './calendario/horarios.js';
-
-// Pacientes
-import { initPatientsManager } from './pacientes/gestor-pacientes.js';
-import { initPatientSearch } from './pacientes/busqueda.js';
-import { initPatientRecord } from './pacientes/fichas.js';
-
-// Seguimiento
-import { initTimeline } from './seguimiento/timeline.js';
-import { initAttentions } from './seguimiento/atenciones.js';
-import { initUpcomingAppointments as initUpcomingAppointmentsFromSeguimiento } from './seguimiento/citas-proximas.js';
-
-// Utilidades
-import { closeModal, showModal } from './utilidades/modales.js';
 import { showNotification } from './utilidades/notificaciones.js';
+import { closeModal, showModal, setupModalEventListeners } from './utilidades/modales.js';
 
 // Variables globales para control de inicialización
 let initializationCompleted = false;
@@ -35,19 +17,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('=====================================');
     console.log(`📅 Fecha: ${new Date().toLocaleString('es-CL')}`);
     console.log(`👤 Desarrollado por: CamiMoralesM`);
-    console.log(`🌐 GitHub: https://github.com/CamiMoralesM`);
     console.log('🔄 Iniciando sistema SENDA completo...\n');
     
-    // Timeout de seguridad mejorado
+    // Timeout de seguridad
     initializationTimer = setTimeout(() => {
         if (!initializationCompleted) {
             console.error('❌ TIMEOUT: La inicialización está tomando demasiado tiempo');
-            showInitializationError();
+            showInitializationError('Timeout de inicialización');
         }
-    }, 15000); // 15 segundos para dar más margen
+    }, 20000);
 
     try {
-        // Paso 1: Inicializar Firebase PRIMERO
+        // Paso 1: Verificar dependencias
+        if (!verifyDependencies()) {
+            throw new Error('Dependencias no disponibles');
+        }
+
+        // Paso 2: Inicializar Firebase
         console.log('🔧 Paso 1: Inicializando Firebase...');
         const firebaseInitialized = initializeFirebase();
         
@@ -55,35 +41,39 @@ document.addEventListener('DOMContentLoaded', async () => {
             throw new Error('Firebase no se pudo inicializar');
         }
         
-        // Verificar que Firebase se inicializó correctamente
         await waitForFirebaseInitialization();
         console.log('✅ Firebase verificado y listo\n');
         
-        // Paso 2: Configurar autenticación
-        console.log('🔧 Paso 2: Configurando autenticación...');
+        // Paso 3: Configurar componentes básicos
+        console.log('🔧 Paso 2: Configurando componentes básicos...');
+        setupBasicComponents();
+        console.log('✅ Componentes básicos configurados\n');
+        
+        // Paso 4: Configurar autenticación
+        console.log('🔧 Paso 3: Configurando autenticación...');
         setupAuth();
         console.log('✅ Autenticación configurada\n');
         
-        // Paso 3: Configurar navegación
-        console.log('🔧 Paso 3: Configurando navegación...');
+        // Paso 5: Configurar navegación
+        console.log('🔧 Paso 4: Configurando navegación...');
         setupTabs();
         console.log('✅ Navegación configurada\n');
         
-        // Paso 4: Configurar formularios
-        console.log('🔧 Paso 4: Configurando formularios...');
+        // Paso 6: Configurar formularios
+        console.log('🔧 Paso 5: Configurando formularios...');
         setupFormularios();
         console.log('✅ Formularios configurados\n');
         
-        // Paso 5: Configurar eventos globales
-        console.log('🔧 Paso 5: Configurando eventos globales...');
+        // Paso 7: Configurar eventos globales
+        console.log('🔧 Paso 6: Configurando eventos globales...');
         setupEventListeners();
         console.log('✅ Eventos configurados\n');
         
-        // Paso 6: Inicializar módulos del sistema
-        console.log('🔧 Paso 6: Inicializando módulos del sistema...');
-        await initializeSystemModules();
+        // Paso 8: Inicializar módulos avanzados de forma lazy
+        console.log('🔧 Paso 7: Preparando módulos avanzados...');
+        setupLazyModules();
         
-        // Paso 7: Configurar funciones globales
+        // Paso 9: Configurar funciones globales
         setupGlobalFunctions();
         
         console.log('\n🎉 ¡SISTEMA SENDA INICIALIZADO CORRECTAMENTE!');
@@ -101,16 +91,101 @@ document.addEventListener('DOMContentLoaded', async () => {
         clearTimeout(initializationTimer);
         console.error('❌ ERROR CRÍTICO durante la inicialización:', error);
         
-        // Mostrar error detallado al usuario
         showInitializationError(error);
-        
-        // Intentar recuperación básica
         attemptBasicRecovery();
     }
 });
 
 /**
- * Espera a que Firebase se inicialice completamente
+ * Verifica que las dependencias estén disponibles
+ */
+function verifyDependencies() {
+    const required = ['firebase', 'localStorage', 'sessionStorage'];
+    
+    for (const dep of required) {
+        if (dep === 'firebase' && typeof firebase === 'undefined') {
+            console.error('❌ Firebase SDK no cargado');
+            return false;
+        }
+        if (dep === 'localStorage' && typeof localStorage === 'undefined') {
+            console.error('❌ localStorage no disponible');
+            return false;
+        }
+        if (dep === 'sessionStorage' && typeof sessionStorage === 'undefined') {
+            console.error('❌ sessionStorage no disponible');
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+/**
+ * Configura componentes básicos
+ */
+function setupBasicComponents() {
+    // Configurar modales
+    setupModalEventListeners();
+    
+    // Configurar notificaciones
+    if (!document.getElementById('notifications')) {
+        const notificationsContainer = document.createElement('div');
+        notificationsContainer.id = 'notifications';
+        notificationsContainer.className = 'notifications-container';
+        document.body.appendChild(notificationsContainer);
+    }
+    
+    // Configurar loading overlay
+    if (!document.getElementById('loading-overlay')) {
+        const loadingOverlay = document.createElement('div');
+        loadingOverlay.id = 'loading-overlay';
+        loadingOverlay.className = 'loading-overlay hidden';
+        loadingOverlay.innerHTML = `
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+                <p>Cargando...</p>
+            </div>
+        `;
+        document.body.appendChild(loadingOverlay);
+    }
+}
+
+/**
+ * Configura módulos de carga lazy
+ */
+function setupLazyModules() {
+    // Configurar carga lazy de módulos pesados
+    const lazyModules = {
+        calendario: () => import('./calendario/agenda.js'),
+        pacientes: () => import('./pacientes/gestor-pacientes.js'),
+        solicitudes: () => import('./solicitudes/gestor-solicitudes.js'),
+        seguimiento: () => import('./seguimiento/timeline.js')
+    };
+    
+    // Event listener para tabs que activa la carga lazy
+    document.addEventListener('tabChanged', async (e) => {
+        const tabName = e.detail?.tabName;
+        if (tabName && lazyModules[tabName]) {
+            try {
+                console.log(`📦 Cargando módulo: ${tabName}`);
+                const module = await lazyModules[tabName]();
+                
+                // Inicializar el módulo si tiene función init
+                if (module.init && typeof module.init === 'function') {
+                    module.init();
+                }
+                
+                console.log(`✅ Módulo ${tabName} cargado`);
+            } catch (error) {
+                console.error(`❌ Error cargando módulo ${tabName}:`, error);
+                showNotification(`Error cargando ${tabName}`, 'warning');
+            }
+        }
+    });
+}
+
+/**
+ * Espera a que Firebase se inicialice
  */
 async function waitForFirebaseInitialization(maxRetries = 10) {
     for (let i = 0; i < maxRetries; i++) {
@@ -123,92 +198,6 @@ async function waitForFirebaseInitialization(maxRetries = 10) {
     }
     
     throw new Error('Firebase no se inicializó en el tiempo esperado');
-}
-
-/**
- * Inicializa todos los módulos del sistema
- */
-async function initializeSystemModules() {
-    const modules = [
-        {
-            name: 'Calendario',
-            init: async () => {
-                try {
-                    console.log('  📅 Inicializando calendario...');
-                    initCalendar();
-                    console.log('  ✅ Calendario inicializado');
-                    
-                    console.log('  📋 Inicializando citas próximas...');
-                    initUpcomingAppointments();
-                    console.log('  ✅ Citas próximas inicializadas');
-                    
-                    console.log('  ⏰ Inicializando gestión de horarios...');
-                    initScheduleManager();
-                    console.log('  ✅ Horarios inicializados');
-                } catch (error) {
-                    console.warn('  ⚠️ Error en módulo calendario:', error);
-                    throw error;
-                }
-            }
-        },
-        {
-            name: 'Pacientes',
-            init: async () => {
-                try {
-                    console.log('  👥 Inicializando gestor de pacientes...');
-                    initPatientsManager();
-                    console.log('  ✅ Gestor de pacientes inicializado');
-                    
-                    console.log('  🔍 Inicializando búsqueda de pacientes...');
-                    initPatientSearch();
-                    console.log('  ✅ Búsqueda de pacientes inicializada');
-                    
-                    console.log('  📋 Inicializando fichas de pacientes...');
-                    initPatientRecord();
-                    console.log('  ✅ Fichas de pacientes inicializadas');
-                } catch (error) {
-                    console.warn('  ⚠️ Error en módulo pacientes:', error);
-                    throw error;
-                }
-            }
-        },
-        {
-            name: 'Seguimiento',
-            init: async () => {
-                try {
-                    console.log('  📊 Inicializando timeline...');
-                    initTimeline();
-                    console.log('  ✅ Timeline inicializado');
-                    
-                    console.log('  🩺 Inicializando registro de atenciones...');
-                    initAttentions();
-                    console.log('  ✅ Atenciones inicializadas');
-                    
-                    console.log('  📅 Inicializando citas próximas (seguimiento)...');
-                    if (typeof initUpcomingAppointmentsFromSeguimiento === 'function') {
-                        initUpcomingAppointmentsFromSeguimiento();
-                        console.log('  ✅ Citas próximas (seguimiento) inicializadas');
-                    }
-                } catch (error) {
-                    console.warn('  ⚠️ Error en módulo seguimiento:', error);
-                    throw error;
-                }
-            }
-        }
-    ];
-
-    // Inicializar módulos secuencialmente
-    for (const module of modules) {
-        try {
-            console.log(`🔧 Inicializando módulo: ${module.name}`);
-            await module.init();
-            console.log(`✅ Módulo ${module.name} inicializado correctamente\n`);
-        } catch (error) {
-            console.warn(`⚠️ Error inicializando módulo ${module.name}:`, error);
-            // Continuar con otros módulos aunque uno falle
-            continue;
-        }
-    }
 }
 
 /**
@@ -276,7 +265,7 @@ function setupGlobalFunctions() {
  * Muestra error de inicialización al usuario
  */
 function showInitializationError(error = null) {
-    const errorMessage = error ? error.message : 'Timeout de inicialización';
+    const errorMessage = error ? error.message : 'Error de inicialización';
     
     // Crear modal de error si no existe
     let errorModal = document.getElementById('initialization-error-modal');
@@ -362,34 +351,28 @@ function attemptBasicRecovery() {
     }
 }
 
-/**
- * Mensaje de bienvenida y información del sistema
- */
-console.log(`
-╔════════════════════════════════════════╗
-║        SISTEMA SENDA PUENTE ALTO       ║
-║              Versión 2.0               ║
-╠════════════════════════════════════════╣
-║  👥 Gestión de Pacientes               ║
-║  📅 Sistema de Citas                   ║
-║  📊 Seguimiento de Tratamientos        ║
-║  🏥 8 CESFAM de Puente Alto           ║
-╠════════════════════════════════════════╣
-║  Desarrollado por: CamiMoralesM        ║
-║  GitHub: github.com/CamiMoralesM       ║
-║  Fecha: ${new Date().toLocaleDateString('es-CL').padEnd(26)}║
-╚════════════════════════════════════════╝
-`);
+// Event listeners adicionales para manejo de errores
+window.addEventListener('error', (event) => {
+    console.error('❌ Error no capturado:', event.error);
+    
+    if (event.error && event.error.message && 
+        (event.error.message.includes('Firebase') || 
+         event.error.message.includes('network') ||
+         event.error.message.includes('auth'))) {
+        showNotification('Error del sistema detectado. Si persiste, recarga la página.', 'error');
+    }
+});
 
-// Información del navegador para debugging
-console.log('🔍 Información del Sistema:');
-console.log(`   Navegador: ${navigator.userAgent}`);
-console.log(`   Idioma: ${navigator.language}`);
-console.log(`   Conexión: ${navigator.onLine ? 'Online' : 'Offline'}`);
-console.log(`   Local Storage: ${typeof Storage !== 'undefined' ? 'Disponible' : 'No disponible'}`);
-console.log(`   Service Worker: ${'serviceWorker' in navigator ? 'Disponible' : 'No disponible'}`);
+window.addEventListener('unhandledrejection', (event) => {
+    console.error('❌ Promesa rechazada no capturada:', event.reason);
+    event.preventDefault();
+    
+    if (event.reason && typeof event.reason === 'object' && event.reason.code) {
+        console.warn(`Código de error: ${event.reason.code}`);
+    }
+});
 
-// Event listener para cambios de conectividad
+// Detectar conexión
 window.addEventListener('online', () => {
     console.log('🌐 Conexión restaurada');
     showNotification('Conexión a Internet restaurada', 'success');
@@ -400,38 +383,4 @@ window.addEventListener('offline', () => {
     showNotification('Sin conexión a Internet. Algunas funciones pueden no estar disponibles.', 'warning', 5000);
 });
 
-// Event listener para errores no capturados
-window.addEventListener('error', (event) => {
-    console.error('❌ Error no capturado:', event.error);
-    
-    // Solo mostrar errores críticos al usuario
-    if (event.error && event.error.message && 
-        (event.error.message.includes('Firebase') || 
-         event.error.message.includes('network') ||
-         event.error.message.includes('auth'))) {
-        showNotification('Error del sistema detectado. Si persiste, recarga la página.', 'error');
-    }
-});
-
-// Event listener para promesas rechazadas no capturadas
-window.addEventListener('unhandledrejection', (event) => {
-    console.error('❌ Promesa rechazada no capturada:', event.reason);
-    
-    // Prevenir que se muestre en la consola del navegador
-    event.preventDefault();
-    
-    // Solo log interno, no molestar al usuario
-    if (event.reason && typeof event.reason === 'object' && event.reason.code) {
-        console.warn(`Código de error: ${event.reason.code}`);
-    }
-});
-
-// Detectar si es la primera carga o una recarga
-if (performance.navigation.type === performance.navigation.TYPE_RELOAD) {
-    console.log('🔄 Página recargada por el usuario');
-} else {
-    console.log('🆕 Primera carga de la página');
-}
-
-// Log final
 console.log('\n📝 Sistema SENDA listo para inicialización...\n');
