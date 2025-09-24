@@ -110,21 +110,29 @@ async function inicializarSistema() {
     }
 }
 document.addEventListener('DOMContentLoaded', function() {
+  // Inicializa tu sistema
+  inicializarSistema();
+
+  // Escucha el botón "Sobre el Programa"
+  const aboutBtn = document.getElementById('about-program');
+  if (aboutBtn) {
+    aboutBtn.addEventListener('click', function() {
+      showModal('about-program-modal');
+    });
+  }
+
+  // Escucha el formulario de paciente
   const patientForm = document.getElementById('patient-form');
   if (patientForm) {
     patientForm.addEventListener('submit', function(e) {
-      e.preventDefault(); // Evita la recarga y el mensaje de confirmación
-      // Aquí pon tu lógica para procesar la solicitud de ayuda
-      // Por ejemplo, mostrar un mensaje de éxito, enviar datos vía AJAX, etc.
+      e.preventDefault();
+      // Tu lógica para enviar la solicitud de ayuda
+      mostrarExito('¡Solicitud enviada correctamente!');
+      document.getElementById('patient-modal').style.display = 'none';
+      patientForm.reset();
     });
   }
 });
-/**
- * Event listener para cuando el DOM esté listo
- */
-document.addEventListener('DOMContentLoaded', function() {
-  // Inicializa tu sistema
-  inicializarSistema();
 
   // Protege el formulario de ayuda
   const patientForm = document.getElementById('patient-form');
