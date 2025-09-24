@@ -211,15 +211,14 @@ ASEGÚRATE QUE EN index.html TENGAS ESTE ORDEN:
 */
 
 // 4. CONSTANTES.JS - VERIFICA TU CONFIGURACIÓN
-export const FIREBASE_CONFIG = {
-    // ✅ REEMPLAZA CON TUS CREDENCIALES REALES DE FIREBASE
-    apiKey: "tu-api-key-real",
-    authDomain: "tu-proyecto.firebaseapp.com",
-    projectId: "tu-proyecto-id",
-    storageBucket: "tu-proyecto.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcdef123456"
-};
+const firebaseConfig = {
+  apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
+  authDomain: "senda-6d5c9.firebaseapp.com",
+  projectId: "senda-6d5c9",
+  storageBucket: "senda-6d5c9.firebasestorage.app",
+  messagingSenderId: "1090028669785",
+  appId: "1:1090028669785:web:d4e1c1b9945fc2fddc1a48",
+  measurementId: "G-82DCLW5R2W
 
 // 5. REGLAS DE FIRESTORE - AGREGAR EN FIREBASE CONSOLE
 /*
