@@ -5,7 +5,7 @@
 
 import { loadSolicitudes } from '../solicitudes/gestor-solicitudes.js';
 import { loadPacientes } from '../pacientes/gestor-pacientes.js';
-import { loadTodayAppointments, renderCalendar } from '../calendario/calendario.js';
+import { initCalendar, loadAppointments } from '../calendario/agenda.js';
 import { loadSeguimiento } from '../seguimiento/timeline.js';
 import { showNotification } from '../utilidades/notificaciones.js';
 
