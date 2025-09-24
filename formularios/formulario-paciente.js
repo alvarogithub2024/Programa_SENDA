@@ -31,6 +31,19 @@ export function initPatientForm() {
 }
 
 /**
+ * Navega a un paso específico del formulario
+ * @param {number} step - Número del paso a mostrar
+ */
+export function goToStep(step) {
+    if (step >= 1 && step <= maxFormStep) {
+        currentFormStep = step;
+        showFormStep(step);
+        updateProgressIndicator(step);
+    } else {
+        console.error(`Paso inválido: ${step}. Debe estar entre 1 y ${maxFormStep}`);
+    }
+}
+/**
  * Configura los pasos del formulario
  */
 function setupFormSteps() {
