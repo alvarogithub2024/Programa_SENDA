@@ -81,18 +81,18 @@ function loadTabData(tabName) {
         switch (tabName) {
             case 'solicitudes':
                 if (hasAccessToSolicitudes()) {
-                   loadSolicitudesData();
+                    loadSolicitudesData(); // ✅ CORREGIDO
                 }
                 break;
             case 'agenda':
-                initCalendar();              // ✅ Función que existe en agenda.js
-    loadAppointments();          // ✅ Función que existe en agenda.js
-    break;
+                initCalendar();
+                loadAppointments();
+                break;
             case 'seguimiento':
-                loadSeguimientoData();
+                loadSeguimientoData(); // ✅ CORREGIDO
                 break;
             case 'pacientes':
-                 loadPatientsData();
+                loadPatientsData(); // ✅ CORREGIDO
                 break;
         }
     } catch (error) {
@@ -120,16 +120,13 @@ function hasAccessToSolicitudes() {
     return currentUserData.profession === 'asistente_social';
 }
 
-export function setCurrentUserData(userData) {
-    currentUserData = userData;
-    updateTabVisibility();
-}
-// Funciones de carga de datos con manejo de errores
+// ✅ FUNCIONES AGREGADAS
 async function loadSeguimientoData() {
     try {
         console.log('📊 Cargando datos de seguimiento...');
-        // Si tienes loadPatientTimeline, puedes usarla aquí
-        // await loadPatientTimeline();
+        if (typeof loadPatientTimeline === 'function') {
+            await loadPatientTimeline();
+        }
         showNotification('Seguimiento cargado', 'info');
     } catch (error) {
         console.error('Error cargando seguimiento:', error);
@@ -140,15 +137,17 @@ async function loadSeguimientoData() {
 async function loadPatientsData() {
     try {
         console.log('👥 Cargando pacientes...');
-        // Si tienes loadPatients, úsala aquí
         if (typeof loadPatients === 'function') {
             await loadPatients();
-        } else {
-            console.log('Función loadPatients no disponible');
         }
         showNotification('Pacientes cargados', 'info');
     } catch (error) {
         console.error('Error cargando pacientes:', error);
         showNotification('Error cargando pacientes', 'error');
     }
+}
+
+export function setCurrentUserData(userData) {
+    currentUserData = userData;
+    updateTabVisibility();
 }
