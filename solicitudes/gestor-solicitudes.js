@@ -1085,14 +1085,3 @@ console.log(`
 ║  ✅ Manejo de errores robusto                  ║
 ╚════════════════════════════════════════════════╝
 `);
-
-export { 
-    initSolicitudesManager,
-    loadSolicitudesData, 
-    refreshSolicitudes, 
-    disableAutoRefresh,
-    enableAutoRefresh,
-    applyCurrentFilters,
-    updateSolicitudesStats,
-    exportSolicitudesToExcel
-};
