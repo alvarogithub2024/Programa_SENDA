@@ -1,6 +1,6 @@
+// 1. CORREGIR firebase.js
 /**
- * CONFIGURACION/FIREBASE.JS
- * Configuración e inicialización de Firebase - VERSIÓN CORREGIDA
+ * CONFIGURACION/FIREBASE.JS - VERSIÓN CORREGIDA
  */
 
 import { FIREBASE_CONFIG } from './constantes.js';
@@ -8,261 +8,241 @@ import { FIREBASE_CONFIG } from './constantes.js';
 let auth, db, isInitialized = false;
 
 /**
- * Inicializa Firebase con configuración completa
+ * Inicializa Firebase
  */
 export function initializeFirebase() {
     try {
-        console.log('🔧 Iniciando configuración de Firebase...');
-        
         if (typeof firebase === 'undefined') {
-            throw new Error('Firebase SDK no está cargado. Verifica los scripts en index.html');
+            throw new Error('Firebase SDK no está cargado');
         }
 
-        if (isInitialized) {
+        if (isInitialized && auth && db) {
             console.log('✅ Firebase ya está inicializado');
-            return true;
+            return;
         }
 
-        // Inicializar Firebase app
-        if (!firebase.apps.length) {
-            firebase.initializeApp(FIREBASE_CONFIG);
-            console.log('🔥 Firebase app inicializada');
+        // ✅ EVITAR MÚLTIPLE INICIALIZACIÓN
+        let app;
+        if (firebase.apps.length === 0) {
+            app = firebase.initializeApp(FIREBASE_CONFIG);
+            console.log('🔧 Nueva app Firebase inicializada');
+        } else {
+            app = firebase.apps[0];
+            console.log('✅ Usando app Firebase existente');
         }
         
-        // Obtener referencias
-        auth = firebase.auth();
-        db = firebase.firestore();
+        // Obtener servicios
+        auth = firebase.auth(app);
+        db = firebase.firestore(app);
         
-        // Configurar persistencia offline
-        configurePersistence();
-        
-        // Configurar configuración de red
-        db.settings({
-            experimentalForceLongPolling: true
-        });
+        // NO configurar persistencia si ya está configurada
+        if (!isInitialized) {
+            configurePersistence();
+        }
         
         isInitialized = true;
         console.log('✅ Firebase inicializado correctamente');
         
-        // Crear colecciones iniciales si no existen
-        initializeCollections();
-        
-        return true;
-        
     } catch (error) {
         console.error('❌ Error inicializando Firebase:', error);
-        throw error;
+        // NO lanzar error, continuar con lo que tenemos
+        if (firebase.apps.length > 0) {
+            auth = firebase.auth();
+            db = firebase.firestore();
+            isInitialized = true;
+        }
     }
 }
 
 /**
- * Configura la persistencia de Firestore
+ * Configura la persistencia SOLO si no está ya configurada
  */
 function configurePersistence() {
     if (!db) return;
-
-    db.enablePersistence({ synchronizeTabs: true })
-        .then(() => {
+    
+    // ✅ VERIFICAR SI PERSISTENCIA YA ESTÁ HABILITADA
+    try {
+        db.enablePersistence({ 
+            synchronizeTabs: false  // ✅ CAMBIAR A FALSE para evitar conflictos entre pestañas
+        }).then(() => {
             console.log('💾 Persistencia offline habilitada');
-        })
-        .catch((err) => {
+        }).catch((err) => {
+            // ✅ MANEJAR TODOS LOS POSIBLES ERRORES
             if (err.code === 'failed-precondition') {
-                console.warn('⚠️ Persistencia fallida: múltiples tabs abiertos');
+                console.warn('⚠️ Persistencia: Ya hay otra pestaña activa');
             } else if (err.code === 'unimplemented') {
                 console.warn('⚠️ Persistencia no soportada en este navegador');
+            } else if (err.code === 'already-enabled') {
+                console.log('✅ Persistencia ya estaba habilitada');
             } else {
-                console.warn('⚠️ Error configurando persistencia:', err);
+                console.warn('⚠️ Error configurando persistencia:', err.code, err.message);
             }
+            // ✅ LA APP CONTINÚA FUNCIONANDO SIN PERSISTENCIA
         });
-}
-
-/**
- * Inicializa colecciones básicas del sistema
- */
-async function initializeCollections() {
-    try {
-        const collections = [
-            'profesionales',
-            'pacientes', 
-            'solicitudes_ingreso',
-            'solicitudes_informacion',
-            'reingresos',
-            'citas',
-            'historial_pacientes',
-            'centros_salud',
-            'alertas_criticas'
-        ];
-
-        console.log('📁 Verificando colecciones del sistema...');
-        
-        // Crear CESFAM predeterminados
-        await createDefaultCenters();
-        
-        // Verificar que las colecciones existan
-        for (const collectionName of collections) {
-            try {
-                const collectionRef = db.collection(collectionName);
-                const snapshot = await collectionRef.limit(1).get();
-                
-                if (snapshot.empty && collectionName !== 'profesionales') {
-                    // Crear documento inicial para establecer la colección
-                    await collectionRef.add({
-                        _initialized: true,
-                        _timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                        _collection: collectionName
-                    });
-                    console.log(`📁 Colección creada: ${collectionName}`);
-                }
-            } catch (error) {
-                console.warn(`⚠️ Error verificando colección ${collectionName}:`, error);
-            }
-        }
-        
-    } catch (error) {
-        console.error('Error inicializando colecciones:', error);
+    } catch (syncError) {
+        console.warn('⚠️ Error sincronizando persistencia:', syncError);
     }
 }
 
-/**
- * Crea los CESFAM predeterminados
- */
-async function createDefaultCenters() {
-    try {
-        const centrosRef = db.collection('centros_salud');
-        const snapshot = await centrosRef.limit(1).get();
-        
-        if (snapshot.empty) {
-            const cesfams = [
-                "CESFAM Alejandro del Río",
-                "CESFAM Karol Wojtyla", 
-                "CESFAM Laurita Vicuña",
-                "CESFAM Padre Manuel Villaseca",
-                "CESFAM San Gerónimo",
-                "CESFAM Vista Hermosa",
-                "CESFAM Bernardo Leighton",
-                "CESFAM Cardenal Raúl Silva Henríquez"
-            ];
-
-            const batch = db.batch();
-            
-            cesfams.forEach((nombre, index) => {
-                const docRef = centrosRef.doc(`cesfam_${index + 1}`);
-                batch.set(docRef, {
-                    nombre: nombre,
-                    codigo: `CESFAM_PA_${index + 1}`,
-                    activo: true,
-                    comuna: 'Puente Alto',
-                    region: 'Región Metropolitana',
-                    telefono: `+56 2 ${2800 + index}${1000 + index}`,
-                    direccion: `Dirección ${nombre}`,
-                    fechaCreacion: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            });
-
-            await batch.commit();
-            console.log('🏥 CESFAM predeterminados creados');
-        }
-    } catch (error) {
-        console.error('Error creando CESFAM:', error);
-    }
-}
-
-/**
- * Obtiene la instancia de Auth
- */
+// ✅ FUNCIONES DE ACCESO SEGURAS
 export function getAuth() {
-    if (!auth) {
+    if (!isInitialized) {
         initializeFirebase();
     }
     return auth;
 }
 
-/**
- * Obtiene la instancia de Firestore
- */
 export function getFirestore() {
-    if (!db) {
+    if (!isInitialized) {
         initializeFirebase();
     }
     return db;
 }
 
-/**
- * Exportación adicional para compatibilidad
- */
+export function isFirebaseInitialized() {
+    return isInitialized;
+}
+
+// ✅ EXPORTACIÓN ADICIONAL PARA COMPATIBILIDAD
 export { db };
 
+// 2. CORREGIR main.js - INICIALIZACIÓN MEJORADA
 /**
- * Verifica si Firebase está inicializado
+ * MAIN.JS - VERSIÓN CORREGIDA
  */
-export function isFirebaseInitialized() {
-    return isInitialized && auth && db;
-}
-
-/**
- * Verifica conectividad con Firebase
- */
-export async function checkFirebaseConnection() {
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 SISTEMA SENDA PUENTE ALTO v2.0');
+    console.log('=====================================');
+    
     try {
-        if (!db) {
-            throw new Error('Firestore no inicializado');
+        // ✅ VERIFICAR QUE FIREBASE ESTÉ CARGADO ANTES DE CONTINUAR
+        if (typeof firebase === 'undefined') {
+            throw new Error('Firebase SDK no está cargado. Verifica los scripts en index.html');
         }
         
-        const testRef = db.collection('_connection_test');
-        await testRef.add({
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            test: true
-        });
+        console.log('🔧 Inicializando Firebase...');
         
-        console.log('✅ Conexión a Firebase verificada');
-        return true;
+        // ✅ IMPORTAR E INICIALIZAR FIREBASE
+        const { initializeFirebase, isFirebaseInitialized } = await import('./configuracion/firebase.js');
+        initializeFirebase();
+        
+        // ✅ VERIFICAR INICIALIZACIÓN
+        if (!isFirebaseInitialized()) {
+            throw new Error('Firebase no se inicializó correctamente');
+        }
+        console.log('✅ Firebase verificado y listo');
+        
+        // ✅ IMPORTAR MÓDULOS DESPUÉS DE FIREBASE
+        const { setupAuth } = await import('./autenticacion/sesion.js');
+        const { setupTabs } = await import('./navegacion/tabs.js');
+        const { setupFormularios } = await import('./formularios/formulario-paciente.js');
+        const { setupEventListeners } = await import('./navegacion/eventos.js');
+        
+        console.log('🔧 Configurando componentes...');
+        setupAuth();
+        setupTabs();
+        setupFormularios(); 
+        setupEventListeners();
+        
+        // ✅ INICIALIZAR MÓDULOS ESPECÍFICOS
+        await initializeModules();
+        
+        console.log('✅ Sistema SENDA inicializado correctamente');
         
     } catch (error) {
-        console.error('❌ Error de conexión a Firebase:', error);
-        return false;
+        console.error('❌ Error durante la inicialización:', error);
+        showErrorToUser(error);
     }
-}
+});
 
-/**
- * Maneja errores de Firestore con reintentos
- */
-export async function retryFirestoreOperation(operation, maxRetries = 3) {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            return await operation();
-        } catch (error) {
-            if (attempt === maxRetries) throw error;
-            
-            console.warn(`Intento ${attempt} falló, reintentando...`, error);
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+async function initializeModules() {
+    try {
+        // ✅ IMPORTAR DINÁMICAMENTE PARA EVITAR ERRORES DE DEPENDENCIAS
+        const modules = [
+            () => import('./calendario/agenda.js').then(m => m.initCalendar?.()),
+            () => import('./pacientes/gestor-pacientes.js').then(m => m.initPatientsManager?.()),
+            () => import('./seguimiento/timeline.js').then(m => m.initTimeline?.()),
+        ];
+        
+        for (const moduleLoader of modules) {
+            try {
+                await moduleLoader();
+            } catch (error) {
+                console.warn('⚠️ Error inicializando módulo:', error);
+            }
         }
+        
+    } catch (error) {
+        console.error('Error inicializando módulos:', error);
     }
 }
 
-/**
- * Obtiene timestamp del servidor
- */
-export function getServerTimestamp() {
-    return firebase.firestore.FieldValue.serverTimestamp();
+function showErrorToUser(error) {
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = `
+        position: fixed; top: 20px; right: 20px; z-index: 10000;
+        background: #ef4444; color: white; padding: 16px; border-radius: 8px;
+        max-width: 300px; font-family: system-ui;
+    `;
+    errorDiv.innerHTML = `
+        <strong>Error de inicialización</strong><br>
+        ${error.message}<br>
+        <button onclick="location.reload()" style="background: white; color: #ef4444; border: none; padding: 4px 8px; border-radius: 4px; margin-top: 8px; cursor: pointer;">
+            Recargar página
+        </button>
+    `;
+    document.body.appendChild(errorDiv);
 }
 
-/**
- * Obtiene timestamp actual como Date
- */
-export function getCurrentTimestamp() {
-    return firebase.firestore.Timestamp.now();
-}
+// 3. VERIFICAR index.html - ORDEN CORRECTO DE SCRIPTS
+/*
+ASEGÚRATE QUE EN index.html TENGAS ESTE ORDEN:
 
-/**
- * Convierte timestamp de Firestore a Date
- */
-export function timestampToDate(timestamp) {
-    if (!timestamp) return null;
-    if (timestamp.toDate && typeof timestamp.toDate === 'function') {
-        return timestamp.toDate();
+1. Firebase SDKs PRIMERO:
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+2. EmailJS (opcional):
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+3. TU SCRIPT AL FINAL:
+<script type="module" src="main.js"></script>
+*/
+
+// 4. CONSTANTES.JS - VERIFICA TU CONFIGURACIÓN
+export const FIREBASE_CONFIG = {
+    // ✅ REEMPLAZA CON TUS CREDENCIALES REALES DE FIREBASE
+    apiKey: "tu-api-key-real",
+    authDomain: "tu-proyecto.firebaseapp.com",
+    projectId: "tu-proyecto-id",
+    storageBucket: "tu-proyecto.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "1:123456789:web:abcdef123456"
+};
+
+// 5. REGLAS DE FIRESTORE - AGREGAR EN FIREBASE CONSOLE
+/*
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Permitir lectura y escritura para usuarios autenticados
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
-    if (timestamp instanceof Date) {
-        return timestamp;
+    
+    // Permitir creación de solicitudes desde la web pública
+    match /solicitudes_ingreso/{document} {
+      allow create: if true;
     }
-    return new Date(timestamp);
+    
+    match /reingresos/{document} {
+      allow create: if true;
+    }
+    
+    match /solicitudes_informacion/{document} {
+      allow create: if true;
+    }
+  }
 }
+*/
