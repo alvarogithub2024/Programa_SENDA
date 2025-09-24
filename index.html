@@ -289,7 +289,7 @@
     <!-- ================= MODAL LOGIN ================= -->
     <div class="modal-overlay" id="login-modal">
         <div class="modal">
-            <button class="modal-close" onclick="closeModal('login-modal')">
+            <button class="modal-close">
                 <i class="fas fa-times"></i>
             </button>
             
@@ -297,8 +297,8 @@
             <p class="modal-description">Ingresa con tu cuenta autorizada para acceder al sistema.</p>
 
             <div class="modal-tabs">
-                <button class="modal-tab active" onclick="switchLoginTab('login')">Iniciar Sesión</button>
-                <button class="modal-tab" onclick="switchLoginTab('register')">Registrarse</button>
+                <button class="modal-tab active">Iniciar Sesión</button>
+                <button class="modal-tab">Registrarse</button>
             </div>
 
             <!-- Login Form -->
@@ -380,7 +380,7 @@
     <!-- ================= MODAL SOLICITUD PACIENTE ================= -->
     <div class="modal-overlay" id="patient-modal">
         <div class="modal large-modal">
-            <button class="modal-close" onclick="closeModal('patient-modal')">
+            <button class="modal-close">
                 <i class="fas fa-times"></i>
             </button>
             
@@ -679,11 +679,11 @@
             </form>
         </div>
     </div>
-
+    
     <!-- ================= MODAL REINGRESO ================= -->
     <div class="modal-overlay" id="reentry-modal">
         <div class="modal">
-            <button class="modal-close" onclick="closeModal('reentry-modal')">
+            <button class="modal-close">
                 <i class="fas fa-times"></i>
             </button>
             
@@ -762,28 +762,8 @@
     </footer>
 
     <!-- ================= JAVASCRIPT ================= -->
-    <script>
-        function switchLoginTab(tab) {
-            const loginTab = document.querySelector('.modal-tab[onclick*="login"]');
-            const registerTab = document.querySelector('.modal-tab[onclick*="register"]');
-            const loginForm = document.getElementById('login-form');
-            const registerForm = document.getElementById('register-form');
-
-            if (tab === 'login') {
-                loginTab.classList.add('active');
-                registerTab.classList.remove('active');
-                loginForm.classList.add('active');
-                registerForm.classList.remove('active');
-            } else {
-                registerTab.classList.add('active');
-                loginTab.classList.remove('active');
-                registerForm.classList.add('active');
-                loginForm.classList.remove('active');
-            }
-        }
-    </script>
-    
-    <!-- Cargar archivo JavaScript principal -->
-   <script type="module" src="./main.js"></script>
+    <script type="module" src="./main.js"></script>
 </body>
 </html>
+
+   
