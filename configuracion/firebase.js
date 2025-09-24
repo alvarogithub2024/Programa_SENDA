@@ -21,21 +21,15 @@ export function initializeFirebase() {
         db = firebase.firestore();
         
         // Configurar persistencia
-        db.enablePersistence({
-            synchronizeTabs: true
-        }).catch((err) => {
-            if (err.code === 'failed-precondition') {
-                console.warn('Persistencia falló: múltiples tabs abiertas');
-            } else if (err.code === 'unimplemented') {
-                console.warn('Persistencia no soportada en este navegador');
-            }
-        });
-        
-        console.log('✅ Firebase inicializado correctamente');
-        
-    } catch (error) {
-        console.error('❌ Error inicializando Firebase:', error);
-        throw error;
+     try {
+    await db.enablePersistence({
+        synchronizeTabs: true
+    });
+} catch (err) {
+    if (err.code === 'failed-precondition') {
+        console.warn('Persistencia fallida: múltiples tabs abiertas');
+    } else if (err.code === 'unimplemented') {
+        console.warn('Persistencia no soportada en este navegador');
     }
 }
 
