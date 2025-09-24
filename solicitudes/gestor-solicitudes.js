@@ -1087,9 +1087,11 @@ console.log(`
 `);
 
 export { 
+    initSolicitudesManager,
     loadSolicitudesData, 
     refreshSolicitudes, 
     disableAutoRefresh,
+    enableAutoRefresh,
     applyCurrentFilters,
     updateSolicitudesStats,
     exportSolicitudesToExcel
