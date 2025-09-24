@@ -1,4 +1,4 @@
-/**
+/*
  * MANEJO DE LOGIN DE USUARIOS
  * Gestiona el proceso de inicio de sesión
  */
