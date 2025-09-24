@@ -1,22 +1,24 @@
 /**
  * UTILIDADES/VALIDACIONES.JS
- * Funciones de validación para formularios
+ * Funciones de validación para la aplicación
  */
 
 /**
  * Valida un RUT chileno
+ * @param {string} rut - RUT a validar
+ * @returns {boolean} True si es válido
  */
 export function validateRUT(rut) {
     if (!rut) return false;
     
-    const cleaned = rut.replace(/[^\dKk]/g, '').toUpperCase();
-    if (cleaned.length < 8 || cleaned.length > 9) return false;
+    // Limpiar RUT
+    const cleanRut = rut.replace(/[^0-9kK]/g, '');
+    if (cleanRut.length < 8 || cleanRut.length > 9) return false;
     
-    const body = cleaned.slice(0, -1);
-    const dv = cleaned.slice(-1);
+    const body = cleanRut.slice(0, -1);
+    const dv = cleanRut.slice(-1).toUpperCase();
     
-    if (!/^\d+$/.test(body)) return false;
-    
+    // Calcular dígito verificador
     let sum = 0;
     let multiplier = 2;
     
@@ -25,62 +27,80 @@ export function validateRUT(rut) {
         multiplier = multiplier === 7 ? 2 : multiplier + 1;
     }
     
-    const expectedDV = 11 - (sum % 11);
-    let finalDV;
+    const calculatedDv = 11 - (sum % 11);
+    const finalDv = calculatedDv === 11 ? '0' : calculatedDv === 10 ? 'K' : calculatedDv.toString();
     
-    if (expectedDV === 11) finalDV = '0';
-    else if (expectedDV === 10) finalDV = 'K';
-    else finalDV = expectedDV.toString();
-    
-    return dv === finalDV;
+    return dv === finalDv;
 }
 
 /**
  * Valida un email
+ * @param {string} email - Email a validar
+ * @returns {boolean} True si es válido
  */
 export function isValidEmail(email) {
     if (!email) return false;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email.trim());
+    return emailRegex.test(email);
 }
 
 /**
- * Valida un número de teléfono
+ * Valida un número de teléfono chileno
+ * @param {string} phone - Teléfono a validar
+ * @returns {boolean} True si es válido
  */
-export function isValidPhoneNumber(phone) {
+export function validatePhoneNumberString(phone) {
     if (!phone) return false;
     const cleaned = phone.replace(/\D/g, '');
     return cleaned.length >= 8 && cleaned.length <= 12;
 }
 
 /**
- * Formatea un RUT chileno
+ * Valida que un campo no esté vacío
+ * @param {string} value - Valor a validar
+ * @returns {boolean} True si no está vacío
  */
-export function formatRUT(rut) {
-    if (!rut) return '';
-    
-    const cleaned = rut.replace(/[^\dKk]/g, '').toUpperCase();
-    if (cleaned.length < 2) return cleaned;
-    
-    const body = cleaned.slice(0, -1);
-    const dv = cleaned.slice(-1);
-    
-    const formattedBody = body.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
-    
-    return `${formattedBody}-${dv}`;
+export function isRequired(value) {
+    return value && value.toString().trim().length > 0;
 }
 
 /**
- * Formatea un número de teléfono chileno
+ * Valida longitud mínima
+ * @param {string} value - Valor a validar
+ * @param {number} minLength - Longitud mínima
+ * @returns {boolean} True si cumple la longitud
  */
-export function formatPhoneNumber(phone) {
-    if (!phone) return '';
-    
-    const cleaned = phone.replace(/\D/g, '');
-    
-    if (cleaned.length === 9) {
-        return `${cleaned.slice(0, 1)} ${cleaned.slice(1, 5)} ${cleaned.slice(5)}`;
-    }
-    
-    return phone;
+export function minLength(value, minLength) {
+    return value && value.length >= minLength;
+}
+
+/**
+ * Valida que solo contenga letras y espacios
+ * @param {string} value - Valor a validar
+ * @returns {boolean} True si solo contiene letras
+ */
+export function isAlphabetic(value) {
+    if (!value) return false;
+    const alphaRegex = /^[a-zA-ZÀ-ÿ\u00f1\u00d1\s]+$/;
+    return alphaRegex.test(value);
+}
+
+/**
+ * Valida que sea un número
+ * @param {any} value - Valor a validar
+ * @returns {boolean} True si es número
+ */
+export function isNumeric(value) {
+    return !isNaN(parseFloat(value)) && isFinite(value);
+}
+
+/**
+ * Valida rango de edad
+ * @param {number} age - Edad a validar
+ * @param {number} min - Edad mínima
+ * @param {number} max - Edad máxima
+ * @returns {boolean} True si está en rango
+ */
+export function isValidAge(age, min = 0, max = 120) {
+    return isNumeric(age) && age >= min && age <= max;
 }
