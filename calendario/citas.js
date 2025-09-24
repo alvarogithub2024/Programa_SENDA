@@ -204,3 +204,7 @@ function formatDateForInput(date) {
 if (typeof window !== 'undefined') {
     window.openNewAppointmentModal = openNewAppointmentModal;
 }
+// En ./calendario/citas.js
+export function initUpcomingAppointments() {
+    // tu código aquí
+}
