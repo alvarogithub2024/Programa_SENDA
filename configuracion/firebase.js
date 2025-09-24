@@ -46,3 +46,4 @@ export function getAuth() {
 export function getFirestore() {
     return db;
 }
+export { db };
