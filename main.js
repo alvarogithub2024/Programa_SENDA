@@ -14,7 +14,7 @@ import { inicializarTabs } from './navegacion/tabs.js';
 import { inicializarEventos } from './navegacion/eventos.js';
 import { inicializarNotificaciones } from './utilidades/notificaciones.js';
 import { inicializarModales } from './utilidades/modales.js';
-import { verificarFirebase } from './configuracion/firebase.js';
+import { verificarFirebase, inicializarFirebase } from './configuracion/firebase.js';
 import { inicializarAutenticacion, manejarCambioAutenticacion } from './autenticacion/sesion.js';
 
 // Variables globales del sistema
@@ -38,7 +38,7 @@ async function inicializarSistema() {
         }
 
         // Inicializar Firebase
-       await inicializarFirebase(); // inicializa Firebase primero
+        await inicializarFirebase(); // inicializa Firebase primero
         inicializarAutenticacion(); // luego inicializa autenticación
         
         // Inicializar utilidades básicas
@@ -109,35 +109,31 @@ async function inicializarSistema() {
         document.body.appendChild(errorContainer);
     }
 }
-document.addEventListener('DOMContentLoaded', function() {
-  const patientForm = document.getElementById('patient-form');
-  if (patientForm) {
-    patientForm.addEventListener('submit', function(e) {
-      e.preventDefault(); // Evita la recarga y el mensaje de confirmación
-      // Aquí pon tu lógica para procesar la solicitud de ayuda
-      // Por ejemplo, mostrar un mensaje de éxito, enviar datos vía AJAX, etc.
-    });
-  }
-});
-/**
- * Event listener para cuando el DOM esté listo
- */
-document.addEventListener('DOMContentLoaded', function() {
-  // Inicializa tu sistema
-  inicializarSistema();
 
-  // Protege el formulario de ayuda
-  const patientForm = document.getElementById('patient-form');
-  if (patientForm) {
-    patientForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      // Usa la notificación visual, no el alert nativo
-      mostrarExito('¡Solicitud enviada correctamente!');
-      document.getElementById('patient-modal').style.display = 'none';
-      patientForm.reset();
-    });
-  }
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializa tu sistema
+    inicializarSistema();
+
+    // Escucha el botón "Sobre el Programa"
+    const aboutBtn = document.getElementById('about-program');
+    if (aboutBtn) {
+        aboutBtn.addEventListener('click', function() {
+            showModal('about-program-modal');
+        });
+    }
+
+    // Escucha el formulario de paciente
+    const patientForm = document.getElementById('patient-form');
+    if (patientForm) {
+        patientForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            mostrarExito('¡Solicitud enviada correctamente!');
+            document.getElementById('patient-modal').style.display = 'none';
+            patientForm.reset();
+        });
+    }
 });
+
 /**
  * Exportar funciones globales para compatibilidad
  */
