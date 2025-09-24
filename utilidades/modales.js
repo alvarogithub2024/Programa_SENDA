@@ -148,13 +148,6 @@ function verificarCambiosFormulario(modal) {
             }
         }
 
-        if (hayDatos) {
-            const confirmar = confirm('¿Estás seguro de cerrar? Los cambios no guardados se perderán.');
-            if (!confirmar) {
-                return false;
-            }
-        }
-
         return true;
 
     } catch (error) {
