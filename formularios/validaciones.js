@@ -4,8 +4,7 @@
  */
 
 import { showNotification } from '../utilidades/notificaciones.js';
-import { isValidEmail, validateStep, validateRUT, validatePhoneNumberString } from '../utilidades/validaciones.js';
-
+import { isValidEmail, validateRUT, validatePhoneNumberString } from '../utilidades/validaciones.js';
 /**
  * Valida un paso específico del formulario multi-paso
  * @param {number} step - Número del paso a validar
