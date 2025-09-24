@@ -1,4 +1,4 @@
-/**
+**
  * UTILIDADES/MODALES.JS
  * Sistema completo de gestión de modales - VERSIÓN CORREGIDA
  */
