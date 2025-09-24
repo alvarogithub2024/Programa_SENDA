@@ -6,7 +6,7 @@
 import { loadSolicitudes } from '../solicitudes/gestor-solicitudes.js';
 import { loadPatients } from '../pacientes/gestor-pacientes.js';
 import { initCalendar, loadAppointments } from '../calendario/agenda.js';
-import { loadSeguimiento } from '../seguimiento/timeline.js';
+import { loadPatientTimeline } from '../seguimiento/timeline.js';
 import { showNotification } from '../utilidades/notificaciones.js';
 
 let currentUserData = null;
