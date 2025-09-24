@@ -6,7 +6,7 @@
 import { obtenerAuth, obtenerFirestore } from '../configuracion/firebase.js';
 import { APP_CONFIG, CACHE_KEYS } from '../configuracion/constantes.js';
 import { mostrarNotificacion } from '../utilidades/notificaciones.js';
-import { mostrarCarga } from '../utilidades/modales.js';
+import { mostrarCarga, mostrarModal } from '../utilidades/modales.js';
 import { limpiarCache, obtenerCache, establecerCache } from '../utilidades/cache.js';
 
 let auth, db;
@@ -56,6 +56,7 @@ async function manejarCambioAutenticacion(user) {
             limpiarCacheUsuario();
             mostrarContenidoPublico();
             
+            mostrarModal('login-modal');
             // Limpiar variables globales
             if (window.SENDASystem) {
                 window.SENDASystem.currentUser = null;
