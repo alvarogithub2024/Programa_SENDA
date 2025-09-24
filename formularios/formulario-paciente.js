@@ -4,7 +4,7 @@
  */
 
 import { showNotification } from '../utilidades/notificaciones.js';
-import { validateRUT, isValidEmail , validateStep} from '../utilidades/validaciones.js';
+import { validateRUT, isValidEmail } from '../utilidades/validaciones.js';
 import { setupAutoSave, saveFormDraft, loadFormDraft, resetForm } from './autoguardado.js';
 import { handlePatientFormSubmit, handleInformationOnlySubmit } from '../solicitudes/gestor-solicitudes.js';
 
