@@ -320,5 +320,22 @@ async function saveToFirebase(data) {
     }
 }
 
+/**
+ * Configura todos los formularios del sistema
+ */
+export function setupFormularios() {
+    try {
+        // Inicializar formulario de paciente
+        initPatientForm();
+        
+        // Configurar autoguardado
+        setupAutoSave();
+        
+        console.log('✅ Formularios configurados correctamente');
+    } catch (error) {
+        console.error('Error configurando formularios:', error);
+    }
+}
+
 // Inicializar cuando se carga el DOM
 document.addEventListener('DOMContentLoaded', initPatientForm);
