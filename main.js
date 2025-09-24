@@ -66,3 +66,29 @@ console.log(`
    SISTEMA SENDA PUENTE ALTO v2.0
    ====================================
 `);
+
+import { closeModal, showModal } from './utilidades/modales.js';
+
+
+window.closeModal = closeModal;
+window.showModal = showModal;
+
+
+window.switchLoginTab = function(tab) {
+    const loginTab = document.querySelector('.modal-tab[onclick*="login"]');
+    const registerTab = document.querySelector('.modal-tab[onclick*="register"]');
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+
+    if (tab === 'login') {
+        if (loginTab) loginTab.classList.add('active');
+        if (registerTab) registerTab.classList.remove('active');
+        if (loginForm) loginForm.classList.add('active');
+        if (registerForm) registerForm.classList.remove('active');
+    } else {
+        if (registerTab) registerTab.classList.add('active');
+        if (loginTab) loginTab.classList.remove('active');
+        if (registerForm) registerForm.classList.add('active');
+        if (loginForm) loginForm.classList.remove('active');
+    }
+};
