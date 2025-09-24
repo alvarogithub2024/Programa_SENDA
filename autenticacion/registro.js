@@ -10,7 +10,7 @@ import { mostrarCarga, cerrarModal } from '../utilidades/modales.js';
 import { alternarBotonEnvio } from '../utilidades/formato.js';
 
 let auth;
-let db = obtenerFirestore();
+let db;
 
 /**
  * Inicializa el sistema de login
@@ -18,6 +18,7 @@ let db = obtenerFirestore();
 function inicializarRegistro() {
     try {
         auth = obtenerAuth();
+        db = obtenerFirestore();
         configurarFormularioRegistro();
         console.log('✅ Sistema de registro inicializado');
     } catch (error) {
@@ -46,7 +47,7 @@ async function manejarEnvioRegistro(e) {
     e.preventDefault();
 
     try {
-        mostrarCarga(true, 'Creando cuenta...');
+        mostrarCarga(true, 'Registrando profesional...');
 
         const nombre = document.getElementById('register-nombre')?.value?.trim();
         const apellidos = document.getElementById('register-apellidos')?.value?.trim();
@@ -89,7 +90,6 @@ async function manejarEnvioRegistro(e) {
         if (submitBtn) alternarBotonEnvio(submitBtn, false);
     }
 }
-
 /**
  * Valida el formato de email
  */
@@ -104,12 +104,12 @@ function validarEmail(email) {
 function obtenerMensajeError(error) {
     const mensajesFirebase = MENSAJES_ERROR.FIREBASE;
     const mensajePersonalizado = mensajesFirebase[error.code];
-    
+
     if (mensajePersonalizado) {
         return mensajePersonalizado;
     }
-    
-    return `Error al iniciar sesión: ${error.message}`;
+
+    return `Error en el registro: ${error.message}`;
 }
 
 /**
@@ -187,9 +187,9 @@ async function manejarOlvidoPassword() {
 }
 
 export {
-    inicializarLogin,
     cambiarTabLogin,
     resetearFormularioLogin,
     manejarOlvidoPassword,
     inicializarRegistro,
+    configurarFormularioRegistro,
 };
