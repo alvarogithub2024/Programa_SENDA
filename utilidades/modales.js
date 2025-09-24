@@ -1,7 +1,4 @@
-**
- * UTILIDADES/MODALES.JS
- * Sistema completo de gestión de modales - VERSIÓN CORREGIDA
- */
+
 
 import { APP_CONFIG } from '../configuracion/constantes.js';
 import { resetForm } from '../formularios/formulario-paciente.js';
