@@ -1,4 +1,4 @@
-import { obtenerFirestore } from './configuracion/firebase.js';
+import { obtenerFirestore } from '../configuracion/firebase.js';
 import { mostrarNotificacion } from '../utilidades/notificaciones.js';
 import { mostrarCarga, cerrarModal } from '../utilidades/modales.js';
 import { alternarBotonEnvio } from '../utilidades/formato.js';
