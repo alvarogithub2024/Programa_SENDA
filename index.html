@@ -4,25 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SENDA Puente Alto - Sistema de Gestión</title>
-    <meta name="description" content="Sistema de gestión para el programa SENDA Puente Alto">
-    <meta name="author" content="SENDA Puente Alto">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
+    <!-- CSS Styles -->
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <!-- EmailJS para envío de correos -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
+    <!-- jsPDF para generar PDFs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-    <div id="notifications" class="notifications-container"></div>
-    <div id="loading-overlay" class="loading-overlay hidden">
-        <div class="loading-content">
-            <div class="loading-spinner">
-                <i class="fas fa-spinner fa-spin"></i>
-            </div>
-            <p class="loading-message">Cargando...</p>
-        </div>
-    </div>
+    <!-- ================= HEADER PRINCIPAL ================= -->
     <header class="header">
         <div class="header-content">
             <div class="logo">
@@ -37,6 +38,8 @@
             </div>
         </div>
     </header>
+
+    <!-- ================= HEADER PROFESIONAL ================= -->
     <div class="professional-header" id="professional-header" style="display: none;">
         <div class="header-content">
             <div class="professional-info">
@@ -55,8 +58,13 @@
             </div>
         </div>
     </div>
+
+    <!-- ================= CONTENIDO PRINCIPAL ================= -->
     <main class="main-content">
+        
+        <!-- ================= CONTENIDO PÚBLICO ================= -->
         <div id="public-content">
+            <!-- Hero Card -->
             <div class="hero-card">
                 <h1>Programa SENDA</h1>
                 <p class="subtitle">Servicio Nacional para la Prevención y Rehabilitación</p>
@@ -64,6 +72,8 @@
                     Ofrecemos tratamiento y apoyo integral para la prevención y recuperación 
                     del consumo problemático de drogas y alcohol. Tu bienestar es nuestra prioridad.
                 </p>
+                
+                <!-- Estadísticas -->
                 <div class="stats-grid">
                     <div class="stat-item">
                         <span class="stat-number">1,200+</span>
@@ -82,6 +92,8 @@
                         <span class="stat-label">Tasa de éxito</span>
                     </div>
                 </div>
+
+                <!-- Botones principales -->
                 <div class="btn-group">
                     <button class="btn btn-primary" id="register-patient">
                         <i class="fas fa-user-plus"></i>
@@ -96,6 +108,8 @@
                         Sobre el Programa
                     </button>
                 </div>
+
+                <!-- Características -->
                 <div class="features">
                     <span><i class="fas fa-shield-alt"></i> Confidencial</span>
                     <span><i class="fas fa-heart"></i> Apoyo integral</span>
@@ -103,6 +117,8 @@
                     <span><i class="fas fa-users"></i> Equipo especializado</span>
                 </div>
             </div>
+
+            <!-- Información de emergencia -->
             <div class="emergency-info">
                 <div class="emergency-title">
                     <i class="fas fa-phone-alt"></i>
@@ -115,7 +131,10 @@
                 </div>
             </div>
         </div>
+
+        <!-- ================= CONTENIDO PROFESIONAL ================= -->
         <div id="professional-content" style="display: none;">
+            <!-- Navegación por pestañas -->
             <nav class="tab-navigation">
                 <button class="tab-btn active" data-tab="agenda">
                     <i class="fas fa-calendar-alt"></i>
@@ -134,10 +153,14 @@
                     Seguimiento
                 </button>
             </nav>
+
+            <!-- ================= TAB AGENDA ================= -->
             <div class="tab-pane active" id="agenda-tab">
                 <div class="section-header">
                     <h2>Gestión de Agenda</h2>
                 </div>
+                
+                <!-- Calendario -->
                 <div class="calendar-container">
                     <div class="calendar-header">
                         <h3 id="calendar-month-year">Cargando...</h3>
@@ -154,8 +177,12 @@
                             </button>
                         </div>
                     </div>
-                    <div class="calendar-grid" id="calendar-grid"></div>
+                    <div class="calendar-grid" id="calendar-grid">
+                        <!-- El calendario se genera dinámicamente -->
+                    </div>
                 </div>
+
+                <!-- Citas del día seleccionado -->
                 <div class="daily-appointments">
                     <h3>Citas del Día</h3>
                     <div class="appointments-list" id="appointments-list">
@@ -166,15 +193,19 @@
                     </div>
                 </div>
             </div>
+
+            <!-- ================= TAB SOLICITUDES ================= -->
             <div class="tab-pane" id="solicitudes-tab">
                 <div class="section-header">
                     <h2>Solicitudes de Ingreso</h2>
                 </div>
+
                 <div class="filters-container">
                     <div class="filter-tabs">
-                        <button class="filter-btn active" id="filter-todas">Todas</button>
-                        <button class="filter-btn" id="filter-pendiente">Pendientes</button>
+                        <button class="filter-btn active" onclick="currentFilter = 'todas'; filterSolicitudes()">Todas</button>
+                        <button class="filter-btn" onclick="currentFilter = 'pendiente'; filterSolicitudes()">Pendientes</button>
                     </div>
+                    
                     <div class="filter-priority">
                         <label>Prioridad:</label>
                         <select id="priority-filter">
@@ -186,6 +217,7 @@
                         </select>
                     </div>
                 </div>
+
                 <div class="requests-container" id="requests-container">
                     <div class="loading-message">
                         <i class="fas fa-spinner fa-spin"></i>
@@ -193,6 +225,8 @@
                     </div>
                 </div>
             </div>
+
+            <!-- ================= TAB PACIENTES ================= -->
             <div class="tab-pane" id="pacientes-tab">
                 <div class="section-header">
                     <h2>Pacientes</h2>
@@ -207,18 +241,24 @@
                         </button>
                     </div>
                 </div>
+
                 <div class="patients-grid" id="patients-grid">
                     <div class="loading-message">
                         <i class="fas fa-spinner fa-spin"></i>
                         Cargando pacientes...
                     </div>
                 </div>
+
                 <div id="pacientes-search-results"></div>
             </div>
+
+            <!-- ================= TAB SEGUIMIENTO ================= -->
             <div class="tab-pane" id="seguimiento-tab">
                 <div class="section-header">
                     <h2>Seguimiento y Control</h2>
                 </div>
+
+                <!-- Pacientes de hoy -->
                 <div class="daily-appointments">
                     <h3>Pacientes de Hoy</h3>
                     <div class="patients-timeline" id="patients-timeline">
@@ -228,9 +268,13 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Próximas citas -->
                 <div class="daily-appointments" style="margin-top: 2rem;">
                     <h3>Próximas Citas</h3>
-                    <div class="appointments-grid" id="upcoming-appointments-grid"></div>
+                    <div class="appointments-grid" id="upcoming-appointments-grid">
+                        <!-- Se cargan dinámicamente -->
+                    </div>
                     <div id="no-upcoming-section" style="display: none;">
                         <div class="no-results">
                             <i class="fas fa-calendar-check"></i>
@@ -241,97 +285,116 @@
             </div>
         </div>
     </main>
-    <div class="modal-overlay" id="login-modal" style="display: none;">
+
+    <!-- ================= MODAL LOGIN ================= -->
+    <div class="modal-overlay" id="login-modal">
         <div class="modal">
-            <button class="modal-close" type="button" data-modal="login-modal">
+            <button class="modal-close" onclick="closeModal('login-modal')">
                 <i class="fas fa-times"></i>
             </button>
+            
+            <h2>Acceso Profesionales</h2>
+            <p class="modal-description">Ingresa con tu cuenta autorizada para acceder al sistema.</p>
+
             <div class="modal-tabs">
-                <button class="modal-tab active" type="button" data-tab="login">Iniciar Sesión</button>
-                <button class="modal-tab" type="button" data-tab="register">Registrarse</button>
+                <button class="modal-tab active" onclick="switchLoginTab('login')">Iniciar Sesión</button>
+                <button class="modal-tab" onclick="switchLoginTab('register')">Registrarse</button>
             </div>
+
+            <!-- Login Form -->
             <form class="auth-form active" id="login-form">
-                <h3>Acceso Profesional</h3>
                 <div class="form-group">
-                    <label class="form-label">Email Institucional</label>
-                    <input type="email" id="login-email" class="form-input" placeholder="usuario@senda.cl" required>
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="login-email" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Contraseña</label>
-                    <input type="password" id="login-password" class="form-input" required>
+                    <input type="password" class="form-input" id="login-password" required>
                 </div>
-                <button type="submit" class="btn btn-primary btn-full">
-                    <i class="fas fa-sign-in-alt"></i>
-                    Iniciar Sesión
-                </button>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-full">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Iniciar Sesión
+                    </button>
+                </div>
             </form>
+
+            <!-- Register Form -->
             <form class="auth-form" id="register-form">
-                <h3>Registro de Profesional</h3>
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Nombre *</label>
-                        <input type="text" id="register-nombre" class="form-input" required>
+                        <label class="form-label">Nombre</label>
+                        <input type="text" class="form-input" id="register-nombre" required>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Apellidos *</label>
-                        <input type="text" id="register-apellidos" class="form-input" required>
+                        <label class="form-label">Apellidos</label>
+                        <input type="text" class="form-input" id="register-apellidos" required>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Email Institucional *</label>
-                    <input type="email" id="register-email" class="form-input" placeholder="nombre@senda.cl" required>
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="register-email" 
+                           pattern=".*@senda\.cl$" 
+                           title="Solo se permiten emails @senda.cl"
+                           placeholder="usuario@senda.cl" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Contraseña *</label>
-                    <input type="password" id="register-password" class="form-input" minlength="6" required>
+                    <label class="form-label">Contraseña</label>
+                    <input type="password" class="form-input" id="register-password" required>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Profesión *</label>
-                        <select id="register-profession" class="form-select" required>
-                            <option value="">Seleccionar...</option>
-                            <option value="asistente_social">Asistente Social</option>
-                            <option value="medico">Médico</option>
-                            <option value="psicologo">Psicólogo</option>
-                            <option value="terapeuta">Terapeuta Ocupacional</option>
-                            <option value="coordinador">Coordinador</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">CESFAM *</label>
-                        <select id="register-cesfam" class="form-select" required>
-                            <option value="">Seleccionar...</option>
-                            <option value="CESFAM Alejandro del Río">CESFAM Alejandro del Río</option>
-                            <option value="CESFAM Karol Wojtyla">CESFAM Karol Wojtyla</option>
-                            <option value="CESFAM Laurita Vicuña">CESFAM Laurita Vicuña</option>
-                            <option value="CESFAM Padre Manuel Villaseca">CESFAM Padre Manuel Villaseca</option>
-                            <option value="CESFAM San Gerónimo">CESFAM San Gerónimo</option>
-                            <option value="CESFAM Vista Hermosa">CESFAM Vista Hermosa</option>
-                            <option value="CESFAM Bernardo Leighton">CESFAM Bernardo Leighton</option>
-                            <option value="CESFAM Cardenal Raúl Silva Henríquez">CESFAM Cardenal Raúl Silva Henríquez</option>
-                        </select>
-                    </div>
+                <div class="form-group">
+                    <label class="form-label">Profesión</label>
+                    <select class="form-select" id="register-profession" required>
+                        <option value="">Seleccionar profesión...</option>
+                        <option value="asistente_social">Asistente Social</option>
+                        <option value="medico">Médico</option>
+                        <option value="psicologo">Psicólogo</option>
+                        <option value="terapeuta">Terapeuta Ocupacional</option>
+                        <option value="coordinador">Coordinador Regional</option>
+                    </select>
                 </div>
-                <button type="submit" class="btn btn-success btn-full">
-                    <i class="fas fa-user-plus"></i>
-                    Registrarse
-                </button>
+                <div class="form-group">
+                    <label class="form-label">CESFAM</label>
+                    <select class="form-select" id="register-cesfam" required>
+                        <option value="">Seleccionar CESFAM...</option>
+                        <option value="CESFAM Alejandro del Río">CESFAM Alejandro del Río</option>
+                        <option value="CESFAM Karol Wojtyla">CESFAM Karol Wojtyla</option>
+                        <option value="CESFAM Laurita Vicuña">CESFAM Laurita Vicuña</option>
+                        <option value="CESFAM Padre Manuel Villaseca">CESFAM Padre Manuel Villaseca</option>
+                        <option value="CESFAM San Gerónimo">CESFAM San Gerónimo</option>
+                        <option value="CESFAM Vista Hermosa">CESFAM Vista Hermosa</option>
+                        <option value="CESFAM Bernardo Leighton">CESFAM Bernardo Leighton</option>
+                        <option value="CESFAM Cardenal Raúl Silva Henríquez">CESFAM Cardenal Raúl Silva Henríquez</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success btn-full">
+                        <i class="fas fa-user-plus"></i>
+                        Registrarse
+                    </button>
+                </div>
             </form>
         </div>
     </div>
-    <div class="modal-overlay" id="patient-modal" style="display: none;">
+
+    <!-- ================= MODAL SOLICITUD PACIENTE ================= -->
+    <div class="modal-overlay" id="patient-modal">
         <div class="modal large-modal">
-            <button class="modal-close" type="button" data-modal="patient-modal">
+            <button class="modal-close" onclick="closeModal('patient-modal')">
                 <i class="fas fa-times"></i>
             </button>
+            
+            <h2>Solicitud de Ayuda</h2>
+            
             <div class="form-progress">
                 <div class="progress-bar">
                     <div class="progress-fill" id="form-progress"></div>
                 </div>
                 <span class="progress-text" id="progress-text">Paso 1 de 4</span>
             </div>
+
             <form id="patient-form">
-         <!-- PASO 1: Tipo de solicitud -->
+                <!-- PASO 1: Tipo de solicitud -->
                 <div class="form-step active" data-step="1">
                     <h3>Tipo de Solicitud</h3>
                     <p class="step-description">Selecciona el tipo de solicitud que mejor se adapte a tu situación.</p>
@@ -616,34 +679,36 @@
             </form>
         </div>
     </div>
-            </form>
-        </div>
-    </div>
-    <div class="modal-overlay" id="reentry-modal" style="display: none;">
+
+    <!-- ================= MODAL REINGRESO ================= -->
+    <div class="modal-overlay" id="reentry-modal">
         <div class="modal">
-            <button class="modal-close" type="button" data-modal="reentry-modal">
+            <button class="modal-close" onclick="closeModal('reentry-modal')">
                 <i class="fas fa-times"></i>
             </button>
-            <h3><i class="fas fa-redo"></i> Solicitud de Reingreso</h3>
-            <p>Si ya participaste en el programa SENDA y necesitas volver a ingresar, completa este formulario.</p>
+            
+            <h2>Reingreso al Programa</h2>
+            <p class="modal-description">Si ya fuiste parte del programa SENDA, completa este formulario para solicitar tu reingreso.</p>
+
             <form id="reentry-form">
                 <div class="form-group">
                     <label class="form-label">Nombre completo *</label>
-                    <input type="text" id="reentry-name" class="form-input" required>
+                    <input type="text" class="form-input" id="reentry-name" required>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">RUT *</label>
-                        <input type="text" id="reentry-rut" class="form-input" placeholder="12.345.678-9" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Teléfono *</label>
-                        <input type="tel" id="reentry-phone" class="form-input" placeholder="9 1234 5678" required>
-                    </div>
-                </div>
+                
                 <div class="form-group">
-                    <label class="form-label">CESFAM donde recibiste tratamiento *</label>
-                    <select id="reentry-cesfam" class="form-select" required>
+                    <label class="form-label">RUT *</label>
+                    <input type="text" class="form-input" id="reentry-rut" placeholder="12.345.678-9" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Teléfono *</label>
+                    <input type="tel" class="form-input" id="reentry-phone" placeholder="9 1234 5678" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">CESFAM *</label>
+                    <select class="form-select" id="reentry-cesfam" required>
                         <option value="">Seleccionar CESFAM...</option>
                         <option value="CESFAM Alejandro del Río">CESFAM Alejandro del Río</option>
                         <option value="CESFAM Karol Wojtyla">CESFAM Karol Wojtyla</option>
@@ -655,23 +720,36 @@
                         <option value="CESFAM Cardenal Raúl Silva Henríquez">CESFAM Cardenal Raúl Silva Henríquez</option>
                     </select>
                 </div>
+                
                 <div class="form-group">
                     <label class="form-label">Motivo del reingreso *</label>
-                    <textarea id="reentry-reason" class="form-textarea" rows="4" 
-                              placeholder="Explica brevemente por qué necesitas reingresar al programa..." required></textarea>
+                    <textarea class="form-textarea" id="reentry-reason" rows="4" 
+                              placeholder="Explica por qué deseas reingresar al programa..." required></textarea>
                 </div>
+
                 <div class="form-actions">
-                    <button type="button" class="btn btn-outline" id="close-reentry-modal">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('reentry-modal')">
+                        <i class="fas fa-times"></i>
                         Cancelar
                     </button>
                     <button type="submit" class="btn btn-success">
-                        <i class="fas fa-paper-plane"></i>
-                        Enviar Solicitud
+                        <i class="fas fa-redo"></i>
+                        Solicitar Reingreso
                     </button>
                 </div>
             </form>
         </div>
     </div>
+
+    <!-- ================= LOADING OVERLAY ================= -->
+    <div class="loading-overlay hidden" id="loading-overlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Cargando...</p>
+        </div>
+    </div>
+
+    <!-- ================= FOOTER ================= -->
     <footer class="footer">
         <div class="footer-content">
             <p>&copy; 2024 SENDA Puente Alto. Todos los derechos reservados.</p>
@@ -682,86 +760,30 @@
             </a>
         </div>
     </footer>
-    <script src="main.js"></script>
+
+    <!-- ================= JAVASCRIPT ================= -->
     <script>
-    function showModal(id) {
-        document.getElementById(id).style.display = 'flex';
-    }
-    function closeModal(id) {
-        document.getElementById(id).style.display = 'none';
-    }
-    document.addEventListener('DOMContentLoaded', function() {
-        document.getElementById('login-professional').addEventListener('click', function() {
-            showModal('login-modal');
-        });
-        document.querySelectorAll('.modal-close').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                const modalId = btn.getAttribute('data-modal');
-                if(modalId) closeModal(modalId);
-                else btn.closest('.modal-overlay').style.display = 'none';
-            });
-        });
-        document.querySelectorAll('.modal-tab').forEach(function(tab) {
-            tab.addEventListener('click', function() {
-                document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                if(tab.dataset.tab === 'login') {
-                    document.getElementById('login-form').classList.add('active');
-                    document.getElementById('register-form').classList.remove('active');
-                } else {
-                    document.getElementById('register-form').classList.add('active');
-                    document.getElementById('login-form').classList.remove('active');
-                }
-            });
-        });
-        document.getElementById('register-patient').addEventListener('click', function() {
-            showModal('patient-modal');
-        });
-        document.getElementById('reentry-program').addEventListener('click', function() {
-            showModal('reentry-modal');
-        });
-        document.getElementById('close-reentry-modal').addEventListener('click', function() {
-            closeModal('reentry-modal');
-        });
-        const nuevaCitaBtn = document.getElementById('nueva-cita-btn');
-        if(nuevaCitaBtn) {
-            nuevaCitaBtn.addEventListener('click', function() {
-                if(window.crearModalNuevaCita) window.crearModalNuevaCita();
-            });
+        function switchLoginTab(tab) {
+            const loginTab = document.querySelector('.modal-tab[onclick*="login"]');
+            const registerTab = document.querySelector('.modal-tab[onclick*="register"]');
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+
+            if (tab === 'login') {
+                loginTab.classList.add('active');
+                registerTab.classList.remove('active');
+                loginForm.classList.add('active');
+                registerForm.classList.remove('active');
+            } else {
+                registerTab.classList.add('active');
+                loginTab.classList.remove('active');
+                registerForm.classList.add('active');
+                loginForm.classList.remove('active');
+            }
         }
-        const logoutBtn = document.getElementById('logout-professional');
-        if(logoutBtn) {
-            logoutBtn.addEventListener('click', function() {
-                if(window.cerrarSesion) window.cerrarSesion();
-            });
-        }
-        document.querySelectorAll('.tab-btn').forEach(function(tabBtn){
-            tabBtn.addEventListener('click',function(){
-                document.querySelectorAll('.tab-btn').forEach(t=>t.classList.remove('active'));
-                document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
-                tabBtn.classList.add('active');
-                const tabName = tabBtn.getAttribute('data-tab');
-                document.getElementById(tabName+'-tab').classList.add('active');
-            });
-        });
-        document.getElementById('filter-todas').addEventListener('click', function() {
-            window.currentFilter = 'todas';
-            if(window.filterSolicitudes) window.filterSolicitudes();
-        });
-        document.getElementById('filter-pendiente').addEventListener('click', function() {
-            window.currentFilter = 'pendiente';
-            if(window.filterSolicitudes) window.filterSolicitudes();
-        });
-        document.getElementById('priority-filter').addEventListener('change', function() {
-            if(window.filterSolicitudes) window.filterSolicitudes();
-        });
-        document.getElementById('buscar-paciente-btn').addEventListener('click', function() {
-            if(window.buscarPacientePorRUT) window.buscarPacientePorRUT();
-        });
-        document.getElementById('about-program').addEventListener('click', function() {
-            alert("Programa SENDA Puente Alto\nServicio Nacional para la Prevención y Rehabilitación de Drogas y Alcohol.\nContamos con profesionales y atención integral.");
-        });
-    });
     </script>
+    
+    <!-- Cargar archivo JavaScript principal -->
+  <script src="main.js"></script>
 </body>
 </html>
