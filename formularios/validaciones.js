@@ -62,7 +62,19 @@ export function formatPhoneNumber(phone) {
     return cleaned;
 }
 
+/**
+ * Validación de teléfono
+ * SOLO UNA DECLARACIÓN - Sin duplicados
+ */
+export function validatePhoneNumberString(phone) {
+    if (!phone) return false;
+    const cleaned = phone.replace(/\D/g, '');
+    return cleaned.length >= 8 && cleaned.length <= 12;
+}
 
+/**
+ * Auto-guardado de formulario  
+ */
 export function autoSaveForm(formData, formId) {
     try {
         const dataToSave = {
