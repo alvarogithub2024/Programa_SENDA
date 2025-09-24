@@ -343,16 +343,17 @@ export {
     obtenerNombreProfesion,
     mostrarContenidoPublico,
     mostrarContenidoProfesional
-};
-      if (professionalContent) professionalContent.style.display = 'none';
+}; = 'block';
+        if (professionalContent) professionalContent.style.display = 'none';
         if (professionalHeader) professionalHeader.style.display = 'none';
         if (loginBtn) loginBtn.style.display = 'flex';
         if (logoutBtn) logoutBtn.style.display = 'none';
 
         console.log('📄 Mostrando contenido público');
-    catch (error) {
+    } catch (error) {
         console.error('Error mostrando contenido público:', error);
     }
+}
 
 /**
  * Muestra el contenido profesional (autenticado)
