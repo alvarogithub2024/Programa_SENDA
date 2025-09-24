@@ -7,7 +7,7 @@ import { showNotification } from '../utilidades/notificaciones.js';
 import { validateRUT, isValidEmail } from '../utilidades/validaciones.js';
 import { validateStep } from '../formularios/validaciones.js';
 import { setupAutoSave, saveFormDraft, loadFormDraft, resetForm } from './autoguardado.js';
-import { handlePatientFormSubmit, handleInformationOnlySubmit } from '../solicitudes/gestor-solicitudes.js';
+import { handleInformationRequestSubmit } from './formulario-paciente.js';
 
 let currentFormStep = 1;
 let maxFormStep = 4;
@@ -299,4 +299,40 @@ export function getCurrentFormStep() {
  */
 export function getMaxFormStep() {
     return maxFormStep;
+}
+
+/**
+ * Maneja el envío de solicitudes de información
+ */
+export async function handleInformationRequestSubmit(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const requestData = {
+        nombre: formData.get('nombre'),
+        apellidos: formData.get('apellidos'),
+        email: formData.get('email'),
+        telefono: formData.get('telefono'),
+        rut: formData.get('rut'),
+        tipoConsulta: formData.get('tipo-consulta'),
+        mensaje: formData.get('mensaje'),
+        cesfam: formData.get('cesfam'),
+        fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+        estado: 'pendiente',
+        origen: 'formulario_web',
+        version: '1.0'
+    };
+
+    try {
+        const db = getFirestore();
+        const solicitudesRef = db.collection('solicitudes_informacion');
+        await solicitudesRef.add(requestData);
+        
+        showNotification('Solicitud de información enviada correctamente', 'success');
+        e.target.reset();
+        
+    } catch (error) {
+        console.error('Error enviando solicitud:', error);
+        showNotification('Error al enviar la solicitud', 'error');
+    }
 }
