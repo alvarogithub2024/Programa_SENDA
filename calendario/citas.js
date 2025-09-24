@@ -1,6 +1,3 @@
-/**
- * SEGUIMIENTO/CITAS-PROXIMAS.JS - VERSIÓN CORREGIDA
- */
 
 import { getFirestore } from '../configuracion/firebase.js';
 import { showNotification } from '../utilidades/notificaciones.js';
