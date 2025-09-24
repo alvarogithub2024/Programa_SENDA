@@ -672,9 +672,6 @@ async function createCriticalAlert(solicitudData, solicitudId) {
     }
 }
 
-/**
- * Validación de teléfono
- */
 function validatePhoneNumberString(phone) {
     if (!phone) return false;
     const cleaned = phone.replace(/\D/g, '');
