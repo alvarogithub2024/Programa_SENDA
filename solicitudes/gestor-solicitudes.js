@@ -241,17 +241,14 @@ function crearTarjetaSolicitud(solicitud) {
         const sustanciasHtml = sustancias.length > 0 ? 
             sustancias.map(s => `<span class="substance-tag">${s}</span>`).join('') : '';
 
-        const prioridadColor = COLORES_PRIORIDAD[prioridad] || COLORES_PRIORIDAD.baja;
-        const estadoIcon = ICONOS_ESTADO[estado] || ICONOS_ESTADO.pendiente;
-
         const responderBtn = (solicitud.tipo === 'informacion' || solicitud.tipoSolicitud === 'informacion') ? 
-            `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); mostrarModalResponder('${solicitud.id}')" title="Responder solicitud de información">
+            `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); mostrarModalRespuesta('${solicitud.id}')" title="Responder solicitud de información">
                 <i class="fas fa-reply"></i>
                 Responder
             </button>` : '';
 
         return `
-            <div class="request-card" data-id="${solicitud.id}" style="transition: all 0.2s ease;">
+            <div class="request-card" data-id="${solicitud.id}" style="transition: all 0.2s ease; cursor: pointer;">
                 <div class="request-header">
                     <div class="request-info">
                         <h3>
@@ -261,7 +258,7 @@ function crearTarjetaSolicitud(solicitud) {
                         <p style="color: var(--gray-600);">${subtitulo}</p>
                     </div>
                     <div class="request-meta">
-                        <span class="priority-badge ${prioridad}" style="background-color: ${prioridadColor}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+                        <span class="priority-badge ${prioridad}" style="background-color: ${COLORES_PRIORIDAD[prioridad]}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
                             ${prioridad.toUpperCase()}
                         </span>
                         ${solicitud.tipo === 'reingreso' ? '<span class="request-type reingreso" style="background: #e0e7ff; color: #3730a3; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">REINGRESO</span>' : ''}
@@ -278,7 +275,7 @@ function crearTarjetaSolicitud(solicitud) {
                         ${solicitud.cesfam ? `<div><strong>CESFAM:</strong> ${solicitud.cesfam}</div>` : ''}
                         <div><strong>Estado:</strong> 
                             <span class="status-${estado}" style="display: inline-flex; align-items: center; gap: 4px;">
-                                <i class="fas ${estadoIcon}"></i>
+                                <i class="fas ${ICONOS_ESTADO[estado] || 'fa-circle'}"></i>
                                 ${estado.replace('_', ' ').toUpperCase()}
                             </span>
                         </div>
@@ -290,12 +287,12 @@ function crearTarjetaSolicitud(solicitud) {
                 <div class="request-actions" style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px;">
                     ${responderBtn}
                     ${solicitud.tipo !== 'informacion' ? 
-                        `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); mostrarModalAgendaDesdeSolicitud('${solicitud.id}')" title="Agendar cita">
+                        `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); mostrarModalAgenda('${solicitud.id}')" title="Agendar cita">
                             <i class="fas fa-calendar-plus"></i>
                             Agendar
                         </button>` : ''
                     }
-                    <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); mostrarDetalleSolicitudPorId('${solicitud.id}')" title="Ver detalles completos">
+                    <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); mostrarDetalleSolicitud('${solicitud.id}')" title="Ver detalles completos">
                         <i class="fas fa-eye"></i>
                         Ver Detalle
                     </button>
@@ -310,21 +307,28 @@ function crearTarjetaSolicitud(solicitud) {
         `;
     } catch (error) {
         console.error('Error creando tarjeta de solicitud:', error);
-        return `
-            <div class="request-card error-card">
-                <div class="request-header">
-                    <h3>Error al cargar solicitud</h3>
-                </div>
-                <div class="request-body">
-                    <p>No se pudo cargar la información de esta solicitud</p>
-                </div>
-            </div>
-        `;
+        return crearTarjetaError();
     }
 }
 
 /**
- * Crea el mensaje cuando no hay solicitudes
+ * Crea una tarjeta de error
+ */
+function crearTarjetaError() {
+    return `
+        <div class="request-card error-card">
+            <div class="request-header">
+                <h3>Error al cargar solicitud</h3>
+            </div>
+            <div class="request-body">
+                <p>No se pudo cargar la información de esta solicitud</p>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Crea mensaje cuando no hay solicitudes
  */
 function crearMensajeSinSolicitudes() {
     const userData = obtenerDatosUsuarioActual();
@@ -342,63 +346,26 @@ function crearMensajeSinSolicitudes() {
 }
 
 /**
- * Agrega event listeners a las tarjetas de solicitudes
+ * Agrega event listeners a las tarjetas
  */
 function agregarEventListenersTarjetas(container) {
-    try {
-        container.querySelectorAll('.request-card').forEach(card => {
-            card.addEventListener('click', (e) => {
-                if (e.target.closest('button')) return;
-                
-                const solicitudId = card.dataset.id;
-                const solicitud = solicitudesData.find(s => s.id === solicitudId);
-                if (solicitud) {
-                    mostrarDetalleSolicitud(solicitud);
-                }
-            });
+    const tarjetas = container.querySelectorAll('.request-card');
+    
+    tarjetas.forEach(tarjeta => {
+        tarjeta.addEventListener('click', (e) => {
+            if (e.target.closest('button')) return;
+            
+            const solicitudId = tarjeta.dataset.id;
+            const solicitud = solicitudesData.find(s => s.id === solicitudId);
+            if (solicitud) {
+                mostrarDetalleSolicitud(solicitudId);
+            }
         });
-    } catch (error) {
-        console.error('Error agregando event listeners:', error);
-    }
+    });
 }
 
 /**
- * Renderiza error al cargar solicitudes
- */
-function renderizarErrorSolicitudes(error) {
-    const container = document.getElementById('requests-container');
-    if (!container) return;
-    
-    let errorMessage = 'Error al cargar solicitudes';
-    let errorDetails = '';
-    
-    if (error.code === 'permission-denied') {
-        errorMessage = 'Sin permisos de acceso';
-        errorDetails = 'No tienes permisos para ver las solicitudes de este CESFAM';
-    } else if (error.code === 'unavailable') {
-        errorMessage = 'Servicio no disponible';
-        errorDetails = 'El servicio está temporalmente no disponible';
-    } else {
-        errorDetails = error.message;
-    }
-    
-    container.innerHTML = `
-        <div class="no-results">
-            <i class="fas fa-exclamation-triangle" style="color: var(--danger-red);"></i>
-            <h3>${errorMessage}</h3>
-            <p>${errorDetails}</p>
-            <div class="mt-4">
-                <button class="btn btn-primary" onclick="cargarSolicitudes()">
-                    <i class="fas fa-redo"></i>
-                    Reintentar
-                </button>
-            </div>
-        </div>
-    `;
-}
-
-/**
- * Filtra las solicitudes según los criterios actuales
+ * Filtra las solicitudes según los criterios seleccionados
  */
 function filtrarSolicitudes() {
     try {
@@ -420,27 +387,63 @@ function filtrarSolicitudes() {
 }
 
 /**
- * Muestra el detalle de una solicitud
+ * Renderiza error al cargar solicitudes
  */
-function mostrarDetalleSolicitud(solicitud) {
-    try {
-        const detailModal = crearModalDetalleSolicitud(solicitud);
-        document.body.insertAdjacentHTML('beforeend', detailModal);
-        
-        // Importar función de modales
-        if (typeof window.showModal === 'function') {
-            window.showModal('solicitud-detail-modal');
-        }
-    } catch (error) {
-        console.error('Error mostrando detalle de solicitud:', error);
-        mostrarNotificacion('Error al mostrar detalle de solicitud', 'error');
+function renderizarErrorSolicitudes(error) {
+    const container = document.getElementById('requests-container');
+    if (!container) return;
+    
+    let mensajeError = 'Error al cargar solicitudes';
+    let detallesError = '';
+    
+    if (error.code === 'permission-denied') {
+        mensajeError = 'Sin permisos de acceso';
+        detallesError = 'No tienes permisos para ver las solicitudes de este CESFAM';
+    } else if (error.code === 'unavailable') {
+        mensajeError = 'Servicio no disponible';
+        detallesError = 'El servicio está temporalmente no disponible';
+    } else {
+        detallesError = error.message;
     }
+    
+    container.innerHTML = `
+        <div class="no-results">
+            <i class="fas fa-exclamation-triangle" style="color: var(--danger-red);"></i>
+            <h3>${mensajeError}</h3>
+            <p>${detallesError}</p>
+            <div class="mt-4">
+                <button class="btn btn-primary" onclick="cargarSolicitudes()">
+                    <i class="fas fa-redo"></i>
+                    Reintentar
+                </button>
+            </div>
+        </div>
+    `;
 }
 
 /**
- * Crea el modal de detalle de solicitud
+ * Muestra el detalle de una solicitud específica
  */
-function crearModalDetalleSolicitud(solicitud) {
+function mostrarDetalleSolicitud(solicitudId) {
+    const solicitud = solicitudesData.find(s => s.id === solicitudId);
+    if (!solicitud) {
+        mostrarNotificacion('Solicitud no encontrada', 'error');
+        return;
+    }
+
+    // Crear modal temporal con detalles
+    import('../utilidades/modales.js')
+        .then(modulo => {
+            const modalId = modulo.crearModalTemporal(crearHTMLDetalleSolicitud(solicitud));
+            modulo.mostrarModal(modalId);
+        })
+        .catch(error => console.error('Error creando modal de detalle:', error));
+}
+
+/**
+ * Crea el HTML para el detalle de solicitud
+ */
+function crearHTMLDetalleSolicitud(solicitud) {
     const fecha = formatearFecha(solicitud.fechaCreacion);
     const prioridad = solicitud.prioridad || 'baja';
     const estado = solicitud.estado || 'pendiente';
@@ -454,87 +457,83 @@ function crearModalDetalleSolicitud(solicitud) {
         tipoSolicitud = 'Solicitud de Información';
     }
     
-    const prioridadColor = COLORES_PRIORIDAD[prioridad] || COLORES_PRIORIDAD.baja;
-    
     return `
-        <div class="modal-overlay temp-modal" id="solicitud-detail-modal">
-            <div class="modal large-modal">
-                <button class="modal-close" onclick="closeModal('solicitud-detail-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
+        <div class="modal">
+            <button class="modal-close" onclick="closeModal(this.closest('.modal-overlay').id)">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div style="padding: 24px;">
+                <h2><i class="fas fa-file-alt"></i> Detalle de Solicitud</h2>
                 
-                <div style="padding: 24px;">
-                    <h2><i class="fas fa-file-alt"></i> Detalle de Solicitud</h2>
+                <div class="solicitud-info" style="background: var(--light-blue); padding: 20px; border-radius: 12px; margin-bottom: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+                        <div>
+                            <h3 style="margin: 0; color: var(--primary-blue);">
+                                ${tipoSolicitud}
+                            </h3>
+                            <p style="margin: 4px 0; font-weight: 500;">ID: ${solicitud.id}</p>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <span class="priority-badge ${prioridad}" style="padding: 6px 12px; border-radius: 6px; font-weight: bold; color: white; background-color: ${COLORES_PRIORIDAD[prioridad]};">
+                                ${prioridad.toUpperCase()}
+                            </span>
+                            <span class="status-badge ${estado}" style="padding: 6px 12px; border-radius: 6px; font-weight: bold;">
+                                ${estado.replace('_', ' ').toUpperCase()}
+                            </span>
+                        </div>
+                    </div>
                     
-                    <div class="solicitud-info" style="background: var(--light-blue); padding: 20px; border-radius: 12px; margin-bottom: 24px;">
-                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
-                            <div>
-                                <h3 style="margin: 0; color: var(--primary-blue);">
-                                    ${tipoSolicitud}
-                                </h3>
-                                <p style="margin: 4px 0; font-weight: 500;">ID: ${solicitud.id}</p>
-                            </div>
-                            <div style="display: flex; gap: 8px;">
-                                <span class="priority-badge ${prioridad}" style="padding: 6px 12px; border-radius: 6px; font-weight: bold; color: white; background-color: ${prioridadColor};">
-                                    ${prioridad.toUpperCase()}
-                                </span>
-                                <span class="status-badge ${estado}" style="padding: 6px 12px; border-radius: 6px; font-weight: bold;">
-                                    ${estado.replace('_', ' ').toUpperCase()}
-                                </span>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div>
+                            <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Datos Personales</h4>
+                            <div style="font-size: 14px; line-height: 1.6;">
+                                ${solicitud.nombre ? `<div><strong>Nombre:</strong> ${solicitud.nombre} ${solicitud.apellidos || ''}</div>` : ''}
+                                ${solicitud.rut ? `<div><strong>RUT:</strong> ${solicitud.rut}</div>` : ''}
+                                ${solicitud.email ? `<div><strong>Email:</strong> ${solicitud.email}</div>` : ''}
+                                ${solicitud.telefono ? `<div><strong>Teléfono:</strong> ${solicitud.telefono}</div>` : ''}
+                                ${solicitud.edad ? `<div><strong>Edad:</strong> ${solicitud.edad} años</div>` : ''}
+                                ${solicitud.direccion ? `<div><strong>Dirección:</strong> ${solicitud.direccion}</div>` : ''}
                             </div>
                         </div>
                         
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                            <div>
-                                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Datos Personales</h4>
-                                <div style="font-size: 14px; line-height: 1.6;">
-                                    ${solicitud.nombre ? `<div><strong>Nombre:</strong> ${solicitud.nombre} ${solicitud.apellidos || ''}</div>` : ''}
-                                    ${solicitud.rut ? `<div><strong>RUT:</strong> ${solicitud.rut}</div>` : ''}
-                                    ${solicitud.email ? `<div><strong>Email:</strong> ${solicitud.email}</div>` : ''}
-                                    ${solicitud.telefono ? `<div><strong>Teléfono:</strong> ${solicitud.telefono}</div>` : ''}
-                                    ${solicitud.edad ? `<div><strong>Edad:</strong> ${solicitud.edad} años</div>` : ''}
-                                    ${solicitud.direccion ? `<div><strong>Dirección:</strong> ${solicitud.direccion}</div>` : ''}
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Información de Solicitud</h4>
-                                <div style="font-size: 14px; line-height: 1.6;">
-                                    <div><strong>CESFAM:</strong> ${solicitud.cesfam || 'No especificado'}</div>
-                                    <div><strong>Fecha:</strong> ${fecha}</div>
-                                    <div><strong>Origen:</strong> ${solicitud.origen || 'Web pública'}</div>
-                                    ${solicitud.paraMi ? `<div><strong>Para:</strong> ${solicitud.paraMi === 'si' ? 'Sí mismo' : 'Otra persona'}</div>` : ''}
-                                    ${solicitud.urgencia ? `<div><strong>Urgencia:</strong> ${solicitud.urgencia.toUpperCase()}</div>` : ''}
-                                    ${solicitud.motivacion ? `<div><strong>Motivación:</strong> ${solicitud.motivacion}/10</div>` : ''}
-                                </div>
+                        <div>
+                            <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Información de Solicitud</h4>
+                            <div style="font-size: 14px; line-height: 1.6;">
+                                <div><strong>CESFAM:</strong> ${solicitud.cesfam || 'No especificado'}</div>
+                                <div><strong>Fecha:</strong> ${fecha}</div>
+                                <div><strong>Origen:</strong> ${solicitud.origen || 'Web pública'}</div>
+                                ${solicitud.paraMi ? `<div><strong>Para:</strong> ${solicitud.paraMi === 'si' ? 'Sí mismo' : 'Otra persona'}</div>` : ''}
+                                ${solicitud.urgencia ? `<div><strong>Urgencia:</strong> ${solicitud.urgencia.toUpperCase()}</div>` : ''}
+                                ${solicitud.motivacion ? `<div><strong>Motivación:</strong> ${solicitud.motivacion}/10</div>` : ''}
                             </div>
                         </div>
-                        
-                        ${solicitud.sustancias && solicitud.sustancias.length > 0 ? 
-                            `<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5);">
-                                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Sustancias Problemáticas</h4>
-                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                    ${solicitud.sustancias.map(s => `<span class="substance-tag" style="background: var(--primary-blue); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${s}</span>`).join('')}
-                                </div>
-                            </div>` : ''
-                        }
-                        
-                        ${solicitud.descripcion || solicitud.motivo ? 
-                            `<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5);">
-                                <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Descripción/Motivo</h4>
-                                <p style="margin: 0; background: rgba(255,255,255,0.7); padding: 12px; border-radius: 6px; line-height: 1.5;">
-                                    ${solicitud.descripcion || solicitud.motivo}
-                                </p>
-                            </div>` : ''
-                        }
                     </div>
                     
-                    <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                        <button class="btn btn-outline" onclick="closeModal('solicitud-detail-modal')">
-                            <i class="fas fa-times"></i>
-                            Cerrar
-                        </button>
-                    </div>
+                    ${solicitud.sustancias && solicitud.sustancias.length > 0 ? 
+                        `<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5);">
+                            <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Sustancias Problemáticas</h4>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                ${solicitud.sustancias.map(s => `<span class="substance-tag" style="background: var(--primary-blue); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${s}</span>`).join('')}
+                            </div>
+                        </div>` : ''
+                    }
+                    
+                    ${solicitud.descripcion || solicitud.motivo ? 
+                        `<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.5);">
+                            <h4 style="color: var(--primary-blue); margin-bottom: 8px;">Descripción/Motivo</h4>
+                            <p style="margin: 0; background: rgba(255,255,255,0.7); padding: 12px; border-radius: 6px; line-height: 1.5;">
+                                ${solicitud.descripcion || solicitud.motivo}
+                            </p>
+                        </div>` : ''
+                    }
+                </div>
+                
+                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <button class="btn btn-outline" onclick="closeModal(this.closest('.modal-overlay').id)">
+                        <i class="fas fa-times"></i>
+                        Cerrar
+                    </button>
                 </div>
             </div>
         </div>
@@ -542,92 +541,52 @@ function crearModalDetalleSolicitud(solicitud) {
 }
 
 /**
- * Muestra detalle de solicitud por ID
- */
-function mostrarDetalleSolicitudPorId(solicitudId) {
-    try {
-        const solicitud = solicitudesData.find(s => s.id === solicitudId);
-        if (solicitud) {
-            mostrarDetalleSolicitud(solicitud);
-        } else {
-            mostrarNotificacion('Solicitud no encontrada', 'error');
-        }
-    } catch (error) {
-        console.error('Error mostrando detalle de solicitud por ID:', error);
-    }
-}
-
-/**
  * Actualiza el estado de una solicitud
  */
-async function actualizarEstadoSolicitud(solicitudId, nuevoEstado, datosAdicionales = {}) {
+async function actualizarEstadoSolicitud(solicitudId, nuevoEstado) {
     try {
         const solicitud = solicitudesData.find(s => s.id === solicitudId);
-        if (!solicitud) {
-            throw new Error('Solicitud no encontrada');
-        }
+        if (!solicitud) return;
 
         let coleccion = 'solicitudes_ingreso';
-        
         if (solicitud.tipo === 'reingreso') {
             coleccion = 'reingresos';
         } else if (solicitud.tipo === 'informacion') {
             coleccion = 'solicitudes_informacion';
         }
 
-        const updateData = {
+        await db.collection(coleccion).doc(solicitudId).update({
             estado: nuevoEstado,
-            fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp(),
-            ...datosAdicionales
-        };
+            fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
-        await db.collection(coleccion).doc(solicitudId).update(updateData);
-
-        // Actualizar datos locales
-        const index = solicitudesData.findIndex(s => s.id === solicitudId);
-        if (index !== -1) {
-            solicitudesData[index] = { ...solicitudesData[index], ...updateData };
-        }
-
-        console.log(`Estado de solicitud ${solicitudId} actualizado a '${nuevoEstado}'`);
+        // Actualizar en memoria
+        solicitud.estado = nuevoEstado;
         
-        // Refrescar vista
+        // Re-renderizar
         filtrarSolicitudes();
         
-        return true;
+        mostrarNotificacion('Estado actualizado correctamente', 'success');
     } catch (error) {
-        console.error('Error actualizando estado de solicitud:', error);
-        throw error;
+        console.error('Error actualizando estado:', error);
+        mostrarNotificacion('Error al actualizar estado', 'error');
     }
 }
 
-/**
- * Obtiene las solicitudes actuales
- */
-function obtenerSolicitudes() {
-    return solicitudesData;
-}
-
-/**
- * Limpia los datos de solicitudes
- */
-function limpiarSolicitudes() {
-    solicitudesData = [];
-    filtroActual = 'todas';
-    filtroPrioridadActual = '';
-}
-
-// Funciones para ser llamadas desde el HTML/otros módulos
-window.mostrarDetalleSolicitudPorId = mostrarDetalleSolicitudPorId;
-window.cargarSolicitudes = cargarSolicitudes;
-window.mostrarModalResponder = function(solicitudId) {
-    // Esta función debe ser implementada en el módulo de respuestas
-    console.log('Abrir modal responder para solicitud:', solicitudId);
+// Funciones globales para los botones de las tarjetas
+window.mostrarDetalleSolicitud = mostrarDetalleSolicitud;
+window.mostrarModalRespuesta = function(solicitudId) {
+    import('./respuestas.js')
+        .then(modulo => modulo.mostrarModalRespuesta(solicitudId))
+        .catch(error => console.error('Error cargando módulo de respuestas:', error));
 };
-window.mostrarModalAgendaDesdeSolicitud = function(solicitudId) {
-    // Esta función debe ser implementada en el módulo de calendario
-    console.log('Abrir modal agenda para solicitud:', solicitudId);
+
+window.mostrarModalAgenda = function(solicitudId) {
+    import('../calendario/citas.js')
+        .then(modulo => modulo.mostrarModalAgendaDesdeSolicitud(solicitudId))
+        .catch(error => console.error('Error cargando módulo de citas:', error));
 };
+
 window.manejarCasoUrgente = function(solicitudId) {
     mostrarNotificacion('Caso urgente identificado. Se notificará al coordinador.', 'warning');
     console.log('Caso urgente identificado:', solicitudId);
@@ -637,9 +596,6 @@ export {
     inicializarGestorSolicitudes,
     cargarSolicitudes,
     filtrarSolicitudes,
-    actualizarEstadoSolicitud,
-    obtenerSolicitudes,
-    limpiarSolicitudes,
     mostrarDetalleSolicitud,
-    mostrarDetalleSolicitudPorId
+    actualizarEstadoSolicitud
 };
