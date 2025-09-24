@@ -7,7 +7,7 @@ const firebaseConfig = {
     apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
     authDomain: "senda-6d5c9.firebaseapp.com",
     projectId: "senda-6d5c9",
-    storageBucket: "senda-6d5c9.appspot.com", // <---- MODIFICADO!
+    storageBucket: "senda-6d5c9.appspot.com",
     messagingSenderId: "1090028669785",
     appId: "1:1090028669785:web:d4e1c1b9945fc2fddc1a48",
     measurementId: "G-82DCLW5R2W"
@@ -32,9 +32,9 @@ function inicializarFirebase() {
     return db;
 }
 
-// Verifica si Firebase está inicializado
+// Verifica si Firebase está disponible y Firestore está cargado
 function verificarFirebase() {
-    return typeof firebase !== 'undefined' && firebase.apps.length > 0;
+    return typeof firebase !== 'undefined' && typeof firebase.firestore === 'function' && firebase.apps.length > 0;
 }
 
 function obtenerFirestore() {
@@ -122,7 +122,7 @@ async function manejarEnvioRegistro(e) {
     }
 }
 
-// Solo un bloque de export al final
+// Exports (solo uno)
 export {
     inicializarFirebase,
     verificarFirebase,
