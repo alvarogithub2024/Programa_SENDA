@@ -109,12 +109,36 @@ async function inicializarSistema() {
         document.body.appendChild(errorContainer);
     }
 }
-
+document.addEventListener('DOMContentLoaded', function() {
+  const patientForm = document.getElementById('patient-form');
+  if (patientForm) {
+    patientForm.addEventListener('submit', function(e) {
+      e.preventDefault(); // Evita la recarga y el mensaje de confirmación
+      // Aquí pon tu lógica para procesar la solicitud de ayuda
+      // Por ejemplo, mostrar un mensaje de éxito, enviar datos vía AJAX, etc.
+    });
+  }
+});
 /**
  * Event listener para cuando el DOM esté listo
  */
-document.addEventListener('DOMContentLoaded', inicializarSistema);
+document.addEventListener('DOMContentLoaded', function() {
+  // Inicializa tu sistema
+  inicializarSistema();
 
+  // Protege el formulario de ayuda
+  const patientForm = document.getElementById('patient-form');
+  if (patientForm) {
+    patientForm.addEventListener('submit', function(e) {
+      e.preventDefault(); // Evita recarga y mensaje
+      // Aquí tu lógica de envío
+      alert('¡Solicitud enviada correctamente!');
+      // Puedes cerrar el modal si lo deseas:
+      document.getElementById('patient-modal').style.display = 'none';
+      patientForm.reset();
+    });
+  }
+});
 /**
  * Exportar funciones globales para compatibilidad
  */
