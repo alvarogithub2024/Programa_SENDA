@@ -1,4 +1,4 @@
-import { db } from '../configuracion/firebase.js';
+import { getFirestore } from '../configuracion/firebase.js';
 import { showNotification } from '../utilidades/notificaciones.js';
 
 // Variables para búsqueda avanzada
@@ -70,6 +70,7 @@ async function performQuickSearch(query) {
         return searchCache.get(cacheKey);
     }
 
+    const db = getFirestore();
     const searchQuery = query.toLowerCase();
     const results = [];
 
@@ -252,6 +253,7 @@ async function handleAdvancedSearch(e) {
 
 // Realizar búsqueda avanzada
 async function performAdvancedSearch(filters) {
+    const db = getFirestore();
     let query = db.collection('pacientes');
     
     // Aplicar filtros simples
@@ -436,6 +438,7 @@ async function loadComunasFilter() {
     if (!comunasSelect) return;
 
     try {
+        const db = getFirestore();
         const pacientesRef = db.collection('pacientes');
         const snapshot = await pacientesRef.get();
         const comunas = new Set();
@@ -457,6 +460,51 @@ async function loadComunasFilter() {
 
     } catch (error) {
         console.error('Error cargando comunas:', error);
+    }
+}
+
+/**
+ * Carga profesionales para el filtro de búsqueda
+ */
+export async function loadProfessionalsFilter() {
+    try {
+        const db = getFirestore();
+        if (!db) {
+            console.warn('Base de datos no inicializada');
+            return;
+        }
+
+        const profRef = db.collection('profesionales');
+        const snapshot = await profRef.where('activo', '==', true).get();
+        
+        const select = document.getElementById('professional-filter');
+        if (!select) {
+            console.warn('Elemento professional-filter no encontrado');
+            return;
+        }
+
+        // Limpiar opciones existentes
+        select.innerHTML = '<option value="">Todos los profesionales</option>';
+
+        // Agregar profesionales
+        snapshot.forEach(doc => {
+            const prof = doc.data();
+            const option = document.createElement('option');
+            option.value = prof.id || doc.id;
+            option.textContent = `${prof.nombre} - ${prof.especialidad || 'Sin especialidad'}`;
+            select.appendChild(option);
+        });
+
+        console.log(`✅ ${snapshot.size} profesionales cargados en filtro`);
+
+    } catch (error) {
+        console.error('❌ Error cargando profesionales para filtro:', error);
+        
+        // Fallback: crear opción por defecto
+        const select = document.getElementById('professional-filter');
+        if (select) {
+            select.innerHTML = '<option value="">Todos los profesionales</option>';
+        }
     }
 }
 
