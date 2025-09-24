@@ -1,5 +1,5 @@
 /**
- * CONFIGURACION/FIREBASE.JS - VERSIÓN COMPLETAMENTE CORREGIDA
+ * CONFIGURACION/FIREBASE.JS - VERSIÓN COMPLETA CORREGIDA
  */
 
 import { FIREBASE_CONFIG } from './constantes.js';
@@ -12,12 +12,12 @@ let auth, db, storage, isInitialized = false;
 export function initializeFirebase() {
     try {
         if (typeof firebase === 'undefined') {
-            console.error('❌ Firebase SDK no está cargado. Verifica los scripts en index.html');
+            console.error('Firebase SDK no está cargado. Verifica los scripts en index.html');
             return false;
         }
 
         if (isInitialized && auth && db) {
-            console.log('✅ Firebase ya está inicializado');
+            console.log('Firebase ya está inicializado');
             return true;
         }
 
@@ -25,10 +25,10 @@ export function initializeFirebase() {
         let app;
         if (firebase.apps.length === 0) {
             app = firebase.initializeApp(FIREBASE_CONFIG);
-            console.log('🆕 Nueva app Firebase inicializada');
+            console.log('Nueva app Firebase inicializada');
         } else {
             app = firebase.apps[0];
-            console.log('♻️ Usando app Firebase existente');
+            console.log('Usando app Firebase existente');
         }
         
         // Obtener servicios
@@ -42,23 +42,23 @@ export function initializeFirebase() {
         }
         
         isInitialized = true;
-        console.log('✅ Firebase inicializado correctamente');
+        console.log('Firebase inicializado correctamente');
         return true;
         
     } catch (error) {
-        console.error('❌ Error inicializando Firebase:', error);
+        console.error('Error inicializando Firebase:', error);
         
         // Intentar usar Firebase existente si falla la inicialización
-        if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+        if (firebase.apps.length > 0) {
             try {
                 auth = firebase.auth();
                 db = firebase.firestore();
                 storage = firebase.storage ? firebase.storage() : null;
                 isInitialized = true;
-                console.log('♻️ Usando Firebase existente tras error');
+                console.log('Usando Firebase existente tras error');
                 return true;
             } catch (fallbackError) {
-                console.error('❌ Error en fallback:', fallbackError);
+                console.error('Error en fallback:', fallbackError);
             }
         }
         return false;
@@ -75,20 +75,20 @@ function configurePersistence() {
         db.enablePersistence({ 
             synchronizeTabs: false 
         }).then(() => {
-            console.log('💾 Persistencia offline habilitada');
+            console.log('Persistencia offline habilitada');
         }).catch((err) => {
             if (err.code === 'failed-precondition') {
-                console.warn('⚠️ Persistencia: Múltiples pestañas abiertas');
+                console.warn('Persistencia: Múltiples pestañas abiertas');
             } else if (err.code === 'unimplemented') {
-                console.warn('⚠️ Persistencia no soportada en este navegador');
+                console.warn('Persistencia no soportada en este navegador');
             } else if (err.code === 'already-enabled') {
-                console.log('✅ Persistencia ya estaba habilitada');
+                console.log('Persistencia ya estaba habilitada');
             } else {
-                console.warn('⚠️ Error configurando persistencia:', err.code);
+                console.warn('Error configurando persistencia:', err.code);
             }
         });
     } catch (syncError) {
-        console.warn('⚠️ Error con persistencia:', syncError);
+        console.warn('Error con persistencia:', syncError);
     }
 }
 
@@ -129,12 +129,9 @@ export function getStorage() {
 }
 
 /**
- * Obtiene un timestamp del servidor
+ * Obtiene un timestamp del servidor - FUNCIÓN QUE FALTABA
  */
 export function getServerTimestamp() {
-    if (typeof firebase === 'undefined') {
-        throw new Error('Firebase no disponible');
-    }
     return firebase.firestore.FieldValue.serverTimestamp();
 }
 
@@ -146,12 +143,10 @@ export async function retryFirestoreOperation(operation, maxRetries = 3) {
         try {
             return await operation();
         } catch (error) {
-            console.warn(`⚠️ Operación falló (intento ${i + 1}/${maxRetries}):`, error.code || error.message);
-            
             if (i === maxRetries - 1) throw error;
             
-            // Delay exponencial
             const delay = Math.pow(2, i) * 1000;
+            console.warn(`Operación falló, reintentando en ${delay}ms...`, error);
             await new Promise(resolve => setTimeout(resolve, delay));
         }
     }
@@ -161,7 +156,7 @@ export async function retryFirestoreOperation(operation, maxRetries = 3) {
  * Verifica si Firebase está inicializado
  */
 export function isFirebaseInitialized() {
-    return isInitialized && !!auth && !!db && typeof firebase !== 'undefined';
+    return isInitialized && !!auth && !!db;
 }
 
 /**
@@ -179,7 +174,7 @@ export function onAuthStateChanged(callback) {
     if (!auth) {
         if (!initializeFirebase()) {
             callback(null);
-            return () => {};
+            return;
         }
     }
     return auth.onAuthStateChanged(callback);
@@ -190,10 +185,7 @@ export function onAuthStateChanged(callback) {
  */
 export async function createInitialCollections() {
     try {
-        if (!db) {
-            console.warn('⚠️ Firestore no disponible para crear colecciones');
-            return;
-        }
+        if (!db) return;
         
         const collections = [
             'profesionales',
@@ -207,15 +199,13 @@ export async function createInitialCollections() {
             'configuracion'
         ];
 
-        console.log('🏗️ Verificando colecciones iniciales...');
-
         for (const collectionName of collections) {
             try {
                 const collectionRef = db.collection(collectionName);
                 const snapshot = await collectionRef.limit(1).get();
                 
                 if (snapshot.empty) {
-                    console.log(`📁 Creando colección: ${collectionName}`);
+                    console.log(`Creando colección inicial: ${collectionName}`);
                     await collectionRef.add({
                         _created: firebase.firestore.FieldValue.serverTimestamp(),
                         _type: 'initial_document',
@@ -223,18 +213,18 @@ export async function createInitialCollections() {
                     });
                 }
             } catch (collectionError) {
-                console.warn(`⚠️ Error verificando colección ${collectionName}:`, collectionError);
+                console.warn(`Error verificando colección ${collectionName}:`, collectionError);
             }
         }
         
-        console.log('✅ Colecciones iniciales verificadas');
+        console.log('Colecciones iniciales verificadas/creadas');
         
     } catch (error) {
-        console.error('❌ Error creando colecciones iniciales:', error);
+        console.error('Error creando colecciones iniciales:', error);
     }
 }
 
-// Exportaciones para compatibilidad
+// Exportaciones adicionales para compatibilidad
 export { db, auth, storage };
 
 // Funciones de utilidad para Firestore
@@ -316,7 +306,7 @@ export function handleFirebaseError(error) {
     };
 
     const message = errorMessages[error.code] || error.message || 'Error desconocido';
-    console.error('🔥 Firebase Error:', error.code, message);
+    console.error('Firebase Error:', error.code, message);
     
     return {
         code: error.code,
