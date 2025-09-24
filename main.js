@@ -25,14 +25,16 @@ import { initFilters } from './solicitudes/filtros.js';              // ← AGRE
 import { initResponses } from './solicitudes/respuestas.js';         // ← AGREGAR
 
 // Inicializar la aplicación
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async () => {
     try {
-        console.log('🚀 Iniciando sistema SENDA completo...');
+        console.log('🚀 SISTEMA SENDA PUENTE ALTO v2.0');
+        console.log('=====================================');
+        console.log('🔄 Iniciando sistema SENDA completo...');
         
         initializeFirebase();
         setupAuth();
         setupTabs();
-        setupFormularios();
+        setupFormularios(); 
         setupEventListeners();
         
         // Calendario
@@ -54,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
         initFilters();
         initResponses();
         
-        console.log('🎉 SENDA Puente Alto - Sistema completo inicializado');
+       console.log('✅ Sistema SENDA inicializado correctamente');
         
     } catch (error) {
         console.error('❌ Error durante la inicialización:', error);
