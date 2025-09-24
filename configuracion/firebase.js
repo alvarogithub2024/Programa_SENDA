@@ -1,14 +1,8 @@
 /**
  * CONFIGURACIÓN DE FIREBASE
- * Maneja la inicialización y configuración de Firebase
+ * Inicializa Firestore y permite el registro directo de profesionales
  */
 
-// Variables globales para Firebase
-let auth, db;
-
-/**
- * Configuración de Firebase
- */
 const firebaseConfig = {
     apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
     authDomain: "senda-6d5c9.firebaseapp.com",
@@ -19,76 +13,20 @@ const firebaseConfig = {
     measurementId: "G-82DCLW5R2W"
 };
 
-/**
- * Verifica si Firebase está disponible
- */
-function verificarFirebase() {
+let db;
+
+// Inicializa Firebase solo una vez
+function inicializarFirebase() {
     if (typeof firebase === 'undefined') {
-        console.error('❌ Firebase no está cargado');
-        return false;
+        throw new Error('Firebase no está cargado');
     }
-    return true;
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    db = firebase.firestore();
+    return db;
 }
 
-/**
- * Inicializa Firebase con configuración de persistencia
- */
-async function inicializarFirebase() {
-    try {
-        // Verificar si Firebase ya está inicializado
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-
-        // Inicializar servicios
-        auth = firebase.auth();
-        db = firebase.firestore();
-
-        // Habilitar persistencia offline
-        await habilitarPersistencia();
-
-        console.log('✅ Firebase inicializado correctamente');
-        return { auth, db };
-
-    } catch (error) {
-        console.error('❌ Error inicializando Firebase:', error);
-        throw error;
-    }
-}
-
-/**
- * Habilita la persistencia offline de Firestore
- */
-async function habilitarPersistencia() {
-    try {
-        await db.enablePersistence({
-            synchronizeTabs: true
-        });
-        console.log('✅ Persistencia offline habilitada');
-    } catch (error) {
-        if (error.code === 'failed-precondition') {
-            console.warn('⚠️ Persistencia falló: múltiples tabs abiertas');
-        } else if (error.code === 'unimplemented') {
-            console.warn('⚠️ Persistencia no soportada en este navegador');
-        } else {
-            console.error('❌ Error habilitando persistencia:', error);
-        }
-    }
-}
-
-/**
- * Obtiene la instancia de Auth
- */
-function obtenerAuth() {
-    if (!auth) {
-        throw new Error('Firebase Auth no está inicializado');
-    }
-    return auth;
-}
-
-/**
- * Obtiene la instancia de Firestore
- */
 function obtenerFirestore() {
     if (!db) {
         throw new Error('Firestore no está inicializado');
@@ -96,40 +34,81 @@ function obtenerFirestore() {
     return db;
 }
 
-/**
- * Verifica el estado de conexión de Firebase
- */
-function verificarConexion() {
-    return new Promise((resolve) => {
-        const connectedRef = db.collection('.info/connected');
-        connectedRef.onSnapshot((snap) => {
-            if (snap.exists()) {
-                console.log('🔗 Conectado a Firebase');
-                resolve(true);
-            } else {
-                console.log('🔌 Desconectado de Firebase');
-                resolve(false);
-            }
+// ================= REGISTRO DE PROFESIONAL =================
+
+import { mostrarNotificacion } from '../utilidades/notificaciones.js';
+import { mostrarCarga, cerrarModal } from '../utilidades/modales.js';
+import { alternarBotonEnvio } from '../utilidades/formato.js';
+
+function inicializarRegistro() {
+    try {
+        db = obtenerFirestore();
+        configurarFormularioRegistro();
+        console.log('✅ Sistema de registro inicializado');
+    } catch (error) {
+        console.error('❌ Error inicializando registro:', error);
+        throw error;
+    }
+}
+
+function configurarFormularioRegistro() {
+    const registerForm = document.getElementById('register-form');
+    if (registerForm) {
+        registerForm.addEventListener('submit', manejarEnvioRegistro);
+        console.log('✅ Formulario de registro configurado');
+    } else {
+        console.warn('⚠️ Formulario de registro no encontrado');
+    }
+}
+
+async function manejarEnvioRegistro(e) {
+    e.preventDefault();
+
+    try {
+        mostrarCarga(true, 'Registrando profesional...');
+
+        const nombre = document.getElementById('register-nombre')?.value?.trim();
+        const apellidos = document.getElementById('register-apellidos')?.value?.trim();
+        const email = document.getElementById('register-email')?.value?.trim();
+        const cesfam = document.getElementById('register-cesfam')?.value?.trim();
+        const profession = document.getElementById('register-profession')?.value?.trim();
+
+        if (!email || !nombre || !apellidos || !cesfam || !profession) {
+            mostrarNotificacion('Completa todos los campos obligatorios', 'warning');
+            return;
+        }
+
+        // Guarda directamente en Firestore (colección profesionales)
+        await db.collection('profesionales').add({
+            nombre,
+            apellidos,
+            email,
+            cesfam,
+            profession,
+            activo: true,
+            fechaCreacion: firebase.firestore.FieldValue
+                ? firebase.firestore.FieldValue.serverTimestamp()
+                : new Date()
         });
-    });
+
+        cerrarModal('register-modal');
+        mostrarNotificacion('¡Registro exitoso! Tu información fue guardada.', 'success');
+        e.target.reset();
+
+    } catch (error) {
+        console.error('❌ Error en registro:', error);
+        mostrarNotificacion('Error al registrar: ' + error.message, 'error');
+    } finally {
+        mostrarCarga(false);
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        if (submitBtn) alternarBotonEnvio(submitBtn, false);
+    }
 }
 
-/**
- * Configuración de reglas de seguridad offline
- */
-function configurarReglasOffline() {
-    // Configurar reglas para funcionamiento offline
-    db.settings({
-        cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
-    });
-}
-
+// Solo un bloque de export al final
 export {
     inicializarFirebase,
-    verificarFirebase,
-    obtenerAuth,
     obtenerFirestore,
-    verificarConexion,
-    auth,
-    db
+    inicializarRegistro,
+    configurarFormularioRegistro
 };
