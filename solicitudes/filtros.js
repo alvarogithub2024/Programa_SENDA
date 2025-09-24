@@ -481,6 +481,5 @@ export {
     applyFiltersToSolicitudes,
     getActiveFilters,
     setFilters,
-    resetFilters,
     updateFilterStats
 };
