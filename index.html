@@ -461,90 +461,58 @@
     </footer>
 
     <!-- ================= JAVASCRIPT ================= -->
-    <script>
-        // Función global para mostrar modales
-        function mostrarModal(id) {
-            const modal = document.getElementById(id);
-            if (modal) {
-                modal.style.display = 'flex';
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mostrar modal de login
+    document.getElementById('login-professional')?.addEventListener('click', function() {
+        document.getElementById('login-modal').style.display = 'flex';
+        // Por defecto muestra la pestaña de login
+        document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+        document.querySelector('.modal-tab[data-tab="login"]').classList.add('active');
+        document.getElementById('login-form').classList.add('active');
+    });
+
+    // Botón "Solicitar Ayuda" (puedes abrir un modal, aquí solo ejemplo)
+    document.getElementById('register-patient')?.addEventListener('click', function() {
+        // Aquí debería abrir el modal real de paciente si existe
+        alert('Funcionalidad de Solicitar Ayuda: Aquí debería abrir el formulario de paciente.');
+        // Si tienes un modal, reemplaza la línea anterior por: document.getElementById('patient-modal').style.display = 'flex';
+    });
+
+    // Botón "Sobre el Programa"
+    document.getElementById('about-program')?.addEventListener('click', function() {
+        // Aquí debería abrir el modal real de información
+        alert('Funcionalidad de Sobre el Programa: Aquí debería mostrar información sobre el programa.');
+        // Si tienes un modal, reemplaza la línea anterior por: document.getElementById('about-program-modal').style.display = 'flex';
+    });
+
+    // Cambiar entre login y registro en el modal
+    document.querySelectorAll('.modal-tab').forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            const tabType = tab.getAttribute('data-tab');
+            document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+            tab.classList.add('active');
+            if (tabType === 'login') {
+                document.getElementById('login-form').classList.add('active');
+            } else {
+                document.getElementById('register-form').classList.add('active');
             }
-        }
-        
-        // Función global para cerrar modales
-        function cerrarModal(id) {
-            const modal = document.getElementById(id);
+        });
+    });
+
+    // Cerrar modales con botón X (y limpiar formularios si quieres)
+    document.querySelectorAll('.modal-close').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const modal = btn.closest('.modal-overlay');
             if (modal) {
                 modal.style.display = 'none';
             }
-        }
-
-        // Event listeners básicos para modales
-        document.addEventListener('DOMContentLoaded', function() {
-            // Botón login
-            const loginBtn = document.getElementById('login-professional');
-            if (loginBtn) {
-                loginBtn.addEventListener('click', function() {
-                    mostrarModal('login-modal');
-                });
-            }
-
-            // Botón registro paciente
-            const registerPatientBtn = document.getElementById('register-patient');
-            if (registerPatientBtn) {
-                registerPatientBtn.addEventListener('click', function() {
-                    console.log('Botón registro paciente clickeado');
-                    // Aquí se abrirá el modal del paciente cuando esté implementado
-                });
-            }
-
-            // Botón reingreso
-            const reentryBtn = document.getElementById('reentry-program');
-            if (reentryBtn) {
-                reentryBtn.addEventListener('click', function() {
-                    mostrarModal('reentry-modal');
-                });
-            }
-
-            // Botón sobre el programa
-            const aboutBtn = document.getElementById('about-program');
-            if (aboutBtn) {
-                aboutBtn.addEventListener('click', function() {
-                    console.log('Sobre el programa clickeado');
-                    // Aquí se implementará el modal de información
-                });
-            }
-
-            // Cerrar modales con botón X
-            document.querySelectorAll('.modal-close').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    const modal = btn.closest('.modal-overlay');
-                    if (modal) {
-                        modal.style.display = 'none';
-                    }
-                });
-            });
-
-            // Cambiar entre tabs de login/registro
-            document.querySelectorAll('.modal-tab').forEach(function(tab) {
-                tab.addEventListener('click', function() {
-                    const tabType = tab.getAttribute('data-tab');
-                    
-                    // Remover active de todos los tabs
-                    document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
-                    
-                    // Activar tab seleccionado
-                    tab.classList.add('active');
-                    
-                    if (tabType === 'login') {
-                        document.getElementById('login-form').classList.add('active');
-                    } else {
-                        document.getElementById('register-form').classList.add('active');
-                    }
-                });
-            });
         });
-    </script>
+    });
+});
+</script>    
 
     <!-- Tu main.js -->
     <script type="module" src="main.js"></script>
