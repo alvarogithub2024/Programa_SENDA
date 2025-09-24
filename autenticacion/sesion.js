@@ -69,7 +69,6 @@ async function manejarCambioAutenticacion(user) {
         console.error('❌ Error en cambio de estado de autenticación:', error);
         mostrarNotificacion('Error en autenticación', 'error');
     }
-}}
 }
 
 /**
