@@ -21,7 +21,7 @@ function setupScheduleView() {
 }
 
 // Renderizar vista semanal
-function renderWeekView() {
+export function renderWeekView() {
     const weekContainer = document.getElementById('week-schedule');
     if (!weekContainer) return;
 
@@ -31,7 +31,6 @@ function renderWeekView() {
     if (weekTitle) {
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(endOfWeek.getDate() + 6);
-        
         weekTitle.textContent = `${formatDate(startOfWeek)} - ${formatDate(endOfWeek)}`;
     }
 
@@ -89,7 +88,7 @@ function renderTimeSlots() {
             timeLabel.textContent = timeString;
             timeSlotRow.appendChild(timeLabel);
 
-            // Crear slots para cada día de la semana
+            // Crear slots para cada día de la semana (lunes a sábado)
             for (let day = 0; day < 6; day++) {
                 const daySlot = document.createElement('div');
                 daySlot.className = 'time-slot';
@@ -120,7 +119,7 @@ function getSlotDateTime(dayIndex, hour, minutes) {
 }
 
 // Alternar disponibilidad del slot
-async function toggleSlotAvailability(slotElement) {
+export async function toggleSlotAvailability(slotElement) {
     const professional = document.getElementById('professional-filter').value;
     
     if (!professional) {
@@ -143,7 +142,6 @@ async function toggleSlotAvailability(slotElement) {
             slotElement.classList.remove('unavailable');
             slotElement.classList.add('available');
         }
-
     } catch (error) {
         console.error('Error actualizando disponibilidad:', error);
         showNotification('Error al actualizar horario', 'error');
@@ -183,7 +181,7 @@ async function removeAvailability(professional, datetime) {
 }
 
 // Cargar horarios de profesionales
-async function loadProfessionalSchedules() {
+export async function loadProfessionalSchedules() {
     try {
         const db = getFirestore();
         const horariosRef = db.collection('horarios_disponibles');
@@ -209,7 +207,8 @@ async function loadProfessionalSchedules() {
     }
 }
 
-function updateScheduleView() {
+// Actualizar la vista de horarios según profesional seleccionado
+export function updateScheduleView() {
     const professional = document.getElementById('professional-filter')?.value;
     if (!professional) {
         console.warn('No hay profesional seleccionado');
@@ -218,17 +217,17 @@ function updateScheduleView() {
 
     // Limpiar clases anteriores
     document.querySelectorAll('.time-slot').forEach(slot => {
-        if (slot) { // ✅ Verificar que slot no sea null
+        if (slot) {
             slot.classList.remove('available', 'unavailable', 'booked');
         }
     });
 
     // Aplicar disponibilidad actual
     document.querySelectorAll('.time-slot').forEach(slot => {
-        if (!slot || !slot.dataset) return; // ✅ Verificar null
+        if (!slot || !slot.dataset) return;
         
         const datetime = slot.dataset.datetime;
-        if (!datetime) return; // ✅ Verificar datetime existe
+        if (!datetime) return;
         
         const [date, time] = datetime.split(' ');
         const key = `${professional}-${date}-${time}`;
@@ -249,7 +248,7 @@ function updateScheduleView() {
     markExistingAppointments(professional);
 }
 
-// Marcar citas existentes
+// Marcar citas existentes como ocupadas
 async function markExistingAppointments(professional) {
     try {
         const db = getFirestore();
@@ -274,7 +273,7 @@ async function markExistingAppointments(professional) {
             if (slot) {
                 slot.classList.remove('available', 'unavailable');
                 slot.classList.add('booked');
-                slot.title = `Cita: ${cita.paciente}`;
+                slot.title = `Cita: ${cita.paciente || ''}`;
             }
         });
 
@@ -308,8 +307,8 @@ async function loadProfessionalsForFilter() {
         snapshot.forEach(doc => {
             const prof = doc.data();
             const option = document.createElement('option');
-            option.value = prof.nombre;
-            option.textContent = `${prof.nombre} - ${prof.especialidad}`;
+            option.value = doc.id;  // Usar el ID del profesional aquí para consistencia
+            option.textContent = `${prof.nombre} - ${prof.especialidad || ''}`;
             select.appendChild(option);
         });
 
@@ -318,9 +317,8 @@ async function loadProfessionalsForFilter() {
     }
 }
 
-// Configurar eventos de horarios
+// Configurar eventos de horarios (navegación, recurrente, etc)
 function setupScheduleEvents() {
-    // Botones de navegación semanal
     const prevWeekBtn = document.getElementById('prev-week');
     const nextWeekBtn = document.getElementById('next-week');
 
@@ -355,7 +353,7 @@ function openRecurringScheduleModal() {
     }
 }
 
-// Establecer horario recurrente
+// Establecer horario recurrente para profesional
 export async function setRecurringSchedule(scheduleData) {
     const { professional, days, startTime, endTime, startDate, endDate } = scheduleData;
     
@@ -367,18 +365,13 @@ export async function setRecurringSchedule(scheduleData) {
 
         while (current <= end) {
             const dayOfWeek = current.getDay();
-            
-            // Si el día está seleccionado (lunes = 1, domingo = 0)
             if (days.includes(dayOfWeek)) {
                 const dateStr = formatDate(current);
-                
-                // Generar slots cada 30 minutos
                 const start = parseTime(startTime);
-                const endTime = parseTime(endTime);
-                
-                while (start < endTime) {
+                const endT = parseTime(endTime);
+
+                while (start < endT) {
                     const timeStr = formatTime(start);
-                    
                     const availabilityRef = db.collection('horarios_disponibles').doc();
                     batch.set(availabilityRef, {
                         profesional: professional,
@@ -388,11 +381,9 @@ export async function setRecurringSchedule(scheduleData) {
                         recurrente: true,
                         fechaCreacion: firebase.firestore.FieldValue.serverTimestamp()
                     });
-
                     start.setMinutes(start.getMinutes() + 30);
                 }
             }
-            
             current.setDate(current.getDate() + 1);
         }
 
@@ -410,20 +401,17 @@ export async function setRecurringSchedule(scheduleData) {
 function getStartOfWeek(date) {
     const start = new Date(date);
     const day = start.getDay();
-    const diff = start.getDate() - day + (day === 0 ? -6 : 1); // Ajustar para que lunes sea el primer día
+    const diff = start.getDate() - day + (day === 0 ? -6 : 1); // Lunes
     start.setDate(diff);
     start.setHours(0, 0, 0, 0);
     return start;
 }
-
 function formatDate(date) {
     return date.toISOString().split('T')[0];
 }
-
 function formatTime(date) {
     return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 }
-
 function parseTime(timeStr) {
     const [hours, minutes] = timeStr.split(':');
     const date = new Date();
@@ -431,13 +419,18 @@ function parseTime(timeStr) {
     return date;
 }
 
-// Obtener horarios disponibles para una fecha y profesional
-export async function getAvailableSlots(professional, date) {
+/**
+ * Retorna los horarios disponibles para un profesional en una fecha (para agendar nueva cita)
+ * @param {string} professionalId
+ * @param {string} date formato YYYY-MM-DD
+ * @returns {Promise<string[]>}
+ */
+export async function getAvailableSlots(professionalId, date) {
     try {
         const db = getFirestore();
         const horariosRef = db.collection('horarios_disponibles');
         const query = horariosRef
-            .where('profesional', '==', professional)
+            .where('profesional', '==', professionalId)
             .where('fecha', '==', date)
             .where('disponible', '==', true);
 
@@ -449,10 +442,10 @@ export async function getAvailableSlots(professional, date) {
             availableSlots.push(data.hora);
         });
 
-        // Filtrar slots que ya tienen citas
+        // Filtrar slots que ya tienen citas tomadas
         const citasRef = db.collection('citas');
         const citasQuery = citasRef
-            .where('profesional', '==', professional)
+            .where('profesional', '==', professionalId)
             .where('fecha', '==', date)
             .where('estado', 'in', ['programada', 'confirmada']);
 
@@ -464,7 +457,6 @@ export async function getAvailableSlots(professional, date) {
         });
 
         return availableSlots.filter(slot => !bookedSlots.includes(slot));
-
     } catch (error) {
         console.error('Error obteniendo slots disponibles:', error);
         return [];
@@ -472,7 +464,7 @@ export async function getAvailableSlots(professional, date) {
 }
 
 /**
- * Configura los slots de tiempo para las citas
+ * Configura los slots de tiempo para las citas (si lo necesitas en algún formulario extra)
  */
 export function setupTimeSlots() {
     try {
@@ -500,7 +492,7 @@ export function setupTimeSlots() {
 }
 
 /**
- * Genera los slots de tiempo disponibles
+ * Genera los slots de tiempo disponibles (por si lo necesitas)
  */
 function generateTimeSlots() {
     const slots = [];
@@ -522,22 +514,9 @@ function generateTimeSlots() {
 
     return slots;
 }
-
-/**
- * Formatea la etiqueta de tiempo
- */
 function formatTimeLabel(hour, minutes) {
     const period = hour >= 12 ? 'PM' : 'AM';
     const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
     const displayMinutes = minutes.toString().padStart(2, '0');
-    
     return `${displayHour}:${displayMinutes} ${period}`;
 }
-
-// Exportar funciones principales
-export { 
-    renderWeekView,
-    loadProfessionalSchedules,
-    updateScheduleView,
-    toggleSlotAvailability
-};
