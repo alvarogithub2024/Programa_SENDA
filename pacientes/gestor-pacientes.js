@@ -1,4 +1,4 @@
-import { db } from '../configuracion/firebase.js';
+import { firestore } from '../configuracion/firebase.js';
 import { showNotification } from '../utilidades/notificaciones.js';
 import { validateRUT } from '../formularios/validaciones.js';
 
