@@ -66,7 +66,7 @@ export function formatPhoneNumber(phone) {
  * Validación de teléfono
  * SOLO UNA DECLARACIÓN - Sin duplicados
  */
-export function validatePhoneNumberString(phone) {
+function validatePhoneNumberString(phone) {
     if (!phone) return false;
     const cleaned = phone.replace(/\D/g, '');
     return cleaned.length >= 8 && cleaned.length <= 12;
