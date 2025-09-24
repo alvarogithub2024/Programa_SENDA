@@ -6,7 +6,7 @@
 import { getFirestore } from '../configuracion/firebase.js';
 import { showNotification } from '../utilidades/notificaciones.js';
 import { formatDate, formatTime, formatRUT, formatPhoneNumber } from '../utilidades/formato.js';
-import { createModal, showModal, closeModal } from '../utilidades/mordales.js';
+import { createModal, showModal, closeModal } from '../utilidades/modales.js';
 
 // Variables globales
 let solicitudesData = [];
