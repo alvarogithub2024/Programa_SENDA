@@ -14,9 +14,8 @@ import { inicializarTabs } from './navegacion/tabs.js';
 import { inicializarEventos } from './navegacion/eventos.js';
 import { inicializarNotificaciones } from './utilidades/notificaciones.js';
 import { inicializarModales } from './utilidades/modales.js';
-import { verificarFirebase, inicializarFirebase } from './configuracion/firebase.js';
+import { verificarFirebase } from './configuracion/firebase.js';
 import { inicializarAutenticacion, manejarCambioAutenticacion } from './autenticacion/sesion.js';
-import { inicializarRegistro } from './autenticacion/registro.js';
 
 // Variables globales del sistema
 window.SENDASystem = {
@@ -39,7 +38,7 @@ async function inicializarSistema() {
         }
 
         // Inicializar Firebase
-        await inicializarFirebase(); // inicializa Firebase primero
+       await inicializarFirebase(); // inicializa Firebase primero
         inicializarAutenticacion(); // luego inicializa autenticación
         
         // Inicializar utilidades básicas
@@ -65,7 +64,6 @@ async function inicializarSistema() {
         // Inicializar eventos globales
         inicializarEventos();
         
-        inicializarRegistro();
         // Marcar sistema como inicializado
         window.SENDASystem.isInitialized = true;
         
@@ -111,46 +109,34 @@ async function inicializarSistema() {
         document.body.appendChild(errorContainer);
     }
 }
-
 document.addEventListener('DOMContentLoaded', function() {
-    try {
-        // Inicializa tu sistema
-        if (typeof inicializarSistema === 'function') {
-            inicializarSistema();
-        }
+  const patientForm = document.getElementById('patient-form');
+  if (patientForm) {
+    patientForm.addEventListener('submit', function(e) {
+      e.preventDefault(); // Evita la recarga y el mensaje de confirmación
+      // Aquí pon tu lógica para procesar la solicitud de ayuda
+      // Por ejemplo, mostrar un mensaje de éxito, enviar datos vía AJAX, etc.
+    });
+  }
+});
+/**
+ * Event listener para cuando el DOM esté listo
+ */
+document.addEventListener('DOMContentLoaded', function() {
+  // Inicializa tu sistema
+  inicializarSistema();
 
-        // Botón "Sobre el Programa"
-        const aboutBtn = document.getElementById('about-program');
-        if (aboutBtn) {
-            aboutBtn.addEventListener('click', function() {
-                if (typeof showModal === 'function') {
-                    showModal('about-program-modal');
-                } else {
-                    document.getElementById('about-program-modal').style.display = 'flex';
-                }
-            });
-        }
-
-        // Formulario de paciente
-        const patientForm = document.getElementById('patient-form');
-        if (patientForm) {
-            patientForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                if (typeof mostrarExito === 'function') {
-                    mostrarExito('¡Solicitud enviada correctamente!');
-                } else {
-                    alert('¡Solicitud enviada correctamente!');
-                }
-                const patientModal = document.getElementById('patient-modal');
-                if (patientModal) {
-                    patientModal.style.display = 'none';
-                }
-                patientForm.reset();
-            });
-        }
-    } catch (error) {
-        console.error('Error en inicialización de eventos:', error);
-    }
+  // Protege el formulario de ayuda
+  const patientForm = document.getElementById('patient-form');
+  if (patientForm) {
+    patientForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      // Usa la notificación visual, no el alert nativo
+      mostrarExito('¡Solicitud enviada correctamente!');
+      document.getElementById('patient-modal').style.display = 'none';
+      patientForm.reset();
+    });
+  }
 });
 /**
  * Exportar funciones globales para compatibilidad
