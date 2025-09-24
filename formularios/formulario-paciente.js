@@ -356,46 +356,45 @@ async function handleSolicitudIngresoSubmit(e) {
     const formData = new FormData(e.target);
     
     // Construir datos para solicitud de ingreso
-    const solicitudData = {
-        // Información personal
-        nombre: formData.get('nombre') || '',
-        apellidos: formData.get('apellidos') || formData.get('apellido') || '',
-        rut: formData.get('rut') || '',
-        edad: parseInt(formData.get('edad')) || 0,
-        email: formData.get('email') || '',
-        telefono: formData.get('telefono') || '',
-        direccion: formData.get('direccion') || '',
-        
-        // Información de la solicitud
-        cesfam: formData.get('cesfam') || 'CESFAM Karol Wojtyla',
-        descripcion: formData.get('descripcion') || formData.get('motivoConsulta') || '',
-        
-        // Clasificación
-        prioridad: determinarPrioridad(formData),
-        urgencia: determinarUrgencia(formData),
-        motivacion: parseInt(formData.get('motivacion')) || 5,
-        
-        // Información específica
-        sustancias: obtenerSustancias(formData),
-        tiempoConsumo: formData.get('tiempoConsumo') || '',
-        tratamientoPrevio: formData.get('tratamientoPrevio') || 'no',
-        paraMi: formData.get('paraMi') || formData.get('esPara') || 'si',
-        
-        // Metadata del sistema
-        estado: 'pendiente',
-        tipoSolicitud: 'identificado',
-        origen: 'web_publica',
-        version: '2.0',
-        
-        // Timestamps
-        fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
-        fechaAgenda: null,
-        
-        // IDs relacionados
-        agendadaPor: null,
-        citaId: null
-    };
-
+  const solicitudData = {
+    // Información personal
+    nombre: formData.get('nombre') || formData.get('patient-name') || '',
+    apellidos: formData.get('apellidos') || formData.get('patient-lastname') || '',
+    rut: formatRUT(formData.get('rut') || formData.get('patient-rut') || ''),
+    edad: parseInt(formData.get('edad') || formData.get('patient-age')) || 0,
+    email: formData.get('email') || formData.get('patient-email') || '',
+    telefono: formatPhoneNumber(formData.get('telefono') || formData.get('patient-phone') || ''),
+    direccion: formData.get('direccion') || formData.get('patient-address') || '',
+    
+    // Información de la solicitud
+    cesfam: formData.get('cesfam') || formData.get('patient-cesfam') || 'CESFAM Karol Wojtyla',
+    descripcion: formData.get('descripcion') || formData.get('patient-description') || formData.get('motivoConsulta') || '',
+    
+    // Clasificación
+    prioridad: determinarPrioridad(formData),
+    urgencia: determinarUrgencia(formData),
+    motivacion: parseInt(formData.get('motivacion') || formData.get('motivacion-range')) || 5,
+    
+    // Información específica
+    sustancias: obtenerSustancias(formData), // Ya devuelve array como en el ejemplo
+    tiempoConsumo: formData.get('tiempoConsumo') || formData.get('tiempo-consumo') || '',
+    tratamientoPrevio: formData.get('tratamientoPrevio') || 'no',
+    paraMi: formData.get('paraMi') || 'si',
+    
+    // Metadata del sistema
+    estado: 'pendiente', // Se cambiará a 'agendada' cuando se programe cita
+    tipoSolicitud: 'identificado',
+    origen: 'web_publica',
+    version: '2.0',
+    
+    // Timestamps
+    fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+    fechaAgenda: null, // Se llenará cuando se programe la cita
+    
+    // IDs relacionados (se llenarán posteriormente)
+    agendadaPor: null, // ID del profesional que agenda
+    citaId: null       // ID de la cita creada
+};
     try {
         // Importar getFirestore dinámicamente para evitar errores de import
         const { getFirestore } = await import('../configuracion/firebase.js');
