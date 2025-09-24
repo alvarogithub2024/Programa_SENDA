@@ -4,6 +4,7 @@
 
 import { showNotification } from '../utilidades/notificaciones.js';
 import { isValidEmail, validateRUT } from '../utilidades/validaciones.js';
+
 // IMPORTS CORREGIDOS - SIN getServerTimestamp
 import { getFirestore } from '../configuracion/firebase.js';
 
@@ -165,29 +166,11 @@ function setupValidationListeners() {
     // Validación de RUT en tiempo real
     const rutField = document.getElementById('patient-rut');
     if (rutField) {
-        rutField.addEventListener('input', function() {
-            const formatted = formatRUT(this.value);
-            if (formatted !== this.value) {
-                this.value = formatted;
-            }
-        });
-        
         rutField.addEventListener('blur', function() {
             if (this.value.trim() && !validateRUT(this.value.trim())) {
                 this.classList.add('error');
             } else {
                 this.classList.remove('error');
-            }
-        });
-    }
-    
-    // Validación de teléfono en tiempo real
-    const phoneField = document.getElementById('patient-phone');
-    if (phoneField) {
-        phoneField.addEventListener('input', function() {
-            const formatted = formatPhoneNumber(this.value);
-            if (formatted !== this.value) {
-                this.value = formatted;
             }
         });
     }
@@ -230,6 +213,34 @@ function loadSavedData() {
         
     } catch (error) {
         console.error('Error cargando datos guardados:', error);
+    }
+}
+
+/**
+ * Limpia los datos guardados
+ */
+function clearSavedData() {
+    localStorage.removeItem('patient-form-data');
+}
+
+/**
+ * FUNCIÓN FALTANTE - resetForm
+ * Resetea el formulario completamente
+ */
+export function resetForm() {
+    try {
+        const form = document.getElementById('patient-form');
+        if (form) {
+            form.reset();
+            currentFormStep = 1;
+            showFormStep(1);
+            clearSavedData();
+            // Limpiar clases de error
+            const errorFields = form.querySelectorAll('.error');
+            errorFields.forEach(field => field.classList.remove('error'));
+        }
+    } catch (error) {
+        console.error('Error resetting form:', error);
     }
 }
 
@@ -294,13 +305,6 @@ async function saveToFirebase(data) {
         console.error('Error guardando en Firebase:', error);
         showNotification('Error al guardar datos', 'error');
     }
-}
-
-/**
- * Limpia los datos guardados
- */
-function clearSavedData() {
-    localStorage.removeItem('patient-form-data');
 }
 
 // Inicializar cuando se carga el DOM
