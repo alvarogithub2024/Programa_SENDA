@@ -6,7 +6,7 @@
 import { obtenerAuth, obtenerFirestore } from '../configuracion/firebase.js';
 import { APP_CONFIG, CACHE_KEYS } from '../configuracion/constantes.js';
 import { mostrarNotificacion } from '../utilidades/notificaciones.js';
-import { mostrarCarga, mostrarModal } from '../utilidades/modales.js';
+import { mostrarCarga } from '../utilidades/modales.js';
 import { limpiarCache, obtenerCache, establecerCache } from '../utilidades/cache.js';
 
 let auth, db;
@@ -42,8 +42,8 @@ async function manejarCambioAutenticacion(user) {
 
         if (user) {
             currentUser = user;
-            await cargarDatosUsuario(); // Carga datos del usuario desde Firestore
-            mostrarContenidoProfesional(); // Muestra la interfaz profesional
+            await cargarDatosUsuario();
+            mostrarContenidoProfesional();
             
             // Actualizar variables globales
             if (window.SENDASystem) {
@@ -54,8 +54,8 @@ async function manejarCambioAutenticacion(user) {
             currentUser = null;
             currentUserData = null;
             limpiarCacheUsuario();
-            mostrarContenidoPublico(); // Muestra la interfaz pública
-        
+            mostrarContenidoPublico();
+            
             // Limpiar variables globales
             if (window.SENDASystem) {
                 window.SENDASystem.currentUser = null;
