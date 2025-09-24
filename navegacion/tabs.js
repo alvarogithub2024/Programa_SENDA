@@ -81,7 +81,7 @@ function loadTabData(tabName) {
         switch (tabName) {
             case 'solicitudes':
                 if (hasAccessToSolicitudes()) {
-                    loadSolicitudes();
+                   loadSolicitudesData();
                 }
                 break;
             case 'agenda':
@@ -89,10 +89,10 @@ function loadTabData(tabName) {
     loadAppointments();          // ✅ Función que existe en agenda.js
     break;
             case 'seguimiento':
-                loadSeguimiento();
+                loadSeguimientoData();
                 break;
             case 'pacientes':
-                loadPacientes();
+                 loadPatientsData();
                 break;
         }
     } catch (error) {
@@ -123,4 +123,32 @@ function hasAccessToSolicitudes() {
 export function setCurrentUserData(userData) {
     currentUserData = userData;
     updateTabVisibility();
+}
+// Funciones de carga de datos con manejo de errores
+async function loadSeguimientoData() {
+    try {
+        console.log('📊 Cargando datos de seguimiento...');
+        // Si tienes loadPatientTimeline, puedes usarla aquí
+        // await loadPatientTimeline();
+        showNotification('Seguimiento cargado', 'info');
+    } catch (error) {
+        console.error('Error cargando seguimiento:', error);
+        showNotification('Error cargando seguimiento', 'error');
+    }
+}
+
+async function loadPatientsData() {
+    try {
+        console.log('👥 Cargando pacientes...');
+        // Si tienes loadPatients, úsala aquí
+        if (typeof loadPatients === 'function') {
+            await loadPatients();
+        } else {
+            console.log('Función loadPatients no disponible');
+        }
+        showNotification('Pacientes cargados', 'info');
+    } catch (error) {
+        console.error('Error cargando pacientes:', error);
+        showNotification('Error cargando pacientes', 'error');
+    }
 }
