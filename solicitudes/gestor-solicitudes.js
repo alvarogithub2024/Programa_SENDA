@@ -433,3 +433,5 @@ export {
     mostrarDetalleSolicitud,
     mostrarDetalleSolicitudPorId
 };
+    mostrarDetalleSolicitudPorId
+};
