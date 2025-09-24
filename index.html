@@ -805,6 +805,41 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Paso 1: Radios de tipo de solicitud
+    function actualizarPaso1() {
+        const tipoInfo = document.querySelector('input[name="tipoSolicitud"][value="informacion"]');
+        const tipoIdentificado = document.querySelector('input[name="tipoSolicitud"][value="identificado"]');
+        const infoEmailContainer = document.getElementById('info-email-container');
+        const basicInfoContainer = document.getElementById('basic-info-container');
+        const submitStep1Btn = document.getElementById('submit-step-1');
+        const nextStep1Btn = document.getElementById('next-step-1');
+
+        // Si "Solo información" está seleccionado
+        if (tipoInfo.checked) {
+            infoEmailContainer.style.display = 'block';
+            basicInfoContainer.style.display = 'none';
+            submitStep1Btn.style.display = 'inline-block';
+            nextStep1Btn.style.display = 'none';
+        } else {
+            infoEmailContainer.style.display = 'none';
+            basicInfoContainer.style.display = 'block';
+            submitStep1Btn.style.display = 'none';
+            nextStep1Btn.style.display = 'inline-block';
+        }
+    }
+
+    document.querySelectorAll('input[name="tipoSolicitud"]').forEach(function(radio){
+        radio.addEventListener('change', actualizarPaso1);
+    });
+
+    // Ejecutar al cargar (por si hay seleccionado por defecto)
+    actualizarPaso1();
+});
+</script>
+    
     <script src="main.js"></script>
 </body>
     </html>
