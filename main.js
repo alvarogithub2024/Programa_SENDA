@@ -15,7 +15,7 @@ import { inicializarEventos } from './navegacion/eventos.js';
 import { inicializarNotificaciones } from './utilidades/notificaciones.js';
 import { inicializarModales } from './utilidades/modales.js';
 import { verificarFirebase, inicializarFirebase } from './configuracion/firebase.js';
-import { inicializarAutenticacion, manejarCambioAutenticacion } from './autenticacion/sesion.js';
+import { inicializarAutenticacion } from './autenticacion/sesion.js';
 
 // Variables globales del sistema
 window.SENDASystem = {
