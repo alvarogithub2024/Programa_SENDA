@@ -4,6 +4,7 @@ import { setupAuth } from './autenticacion/sesion.js';
 import { setupTabs } from './navegacion/tabs.js';
 import { setupFormularios } from './formularios/formulario-paciente.js';
 import { setupEventListeners } from './navegacion/eventos.js';
+import { showNotification } from './utilidades/notificaciones.js';
 
 // Inicializar la aplicación
 document.addEventListener('DOMContentLoaded', function() {
