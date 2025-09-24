@@ -59,6 +59,12 @@ async function loadPatients() {
     try {
         showLoadingState(true);
         
+        // Obtener instancia de Firestore
+        const db = getFirestore();
+        if (!db) {
+            throw new Error('Base de datos no inicializada');
+        }
+        
         const pacientesRef = db.collection('pacientes');
         const snapshot = await pacientesRef.orderBy('fechaRegistro', 'desc').get();
         
@@ -345,6 +351,12 @@ window.archivePatient = async function(patientId) {
     if (!confirmed) return;
 
     try {
+        // Obtener instancia de Firestore
+        const db = getFirestore();
+        if (!db) {
+            throw new Error('Base de datos no inicializada');
+        }
+
         await db.collection('pacientes').doc(patientId).update({
             estadoPaciente: 'archivado',
             fechaArchivo: firebase.firestore.FieldValue.serverTimestamp()
