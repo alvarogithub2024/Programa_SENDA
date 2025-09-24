@@ -299,7 +299,7 @@
             <p class="modal-description">Ingresa con tu cuenta autorizada para acceder al sistema.</p>
             <div class="modal-tabs">
                 <button class="modal-tab active" type="button" data-tab="login">Iniciar Sesión</button>
-                <button class="modal-tab" type="button" data-tab="register">Registrarse</button>
+<button class="modal-tab" type="button" data-tab="register">Registrarse</button>
             </div>
             <!-- Login Form -->
             <form class="auth-form active" id="login-form">
@@ -788,7 +788,23 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-    
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.modal-tab').forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            if(tab.getAttribute('data-tab') === 'login') {
+                document.getElementById('login-form').classList.add('active');
+                document.getElementById('register-form').classList.remove('active');
+            } else {
+                document.getElementById('register-form').classList.add('active');
+                document.getElementById('login-form').classList.remove('active');
+            }
+        });
+    });
+});
+</script>
     <script src="main.js"></script>
 </body>
     </html>
