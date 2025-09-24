@@ -1,6 +1,6 @@
 import { getFirestore } from '../configuracion/firebase.js';
 import { showNotification } from '../utilidades/notificaciones.js';
-import { validateRUT } from '../formularios/validaciones.js';
+import { validateRUT } from '../utilidades/validaciones.js';
 
 // Variables globales
 let allPatients = [];
