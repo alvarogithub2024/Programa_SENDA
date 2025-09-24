@@ -1,10 +1,10 @@
 /**
  * UTILIDADES/MODALES.JS
- * Gestión de modales y overlays
+ * Sistema completo de gestión de modales - VERSIÓN CORREGIDA
  */
 
 import { APP_CONFIG } from '../configuracion/constantes.js';
-import { hasUnsavedChanges, resetForm } from '../formularios/autoguardado.js';
+import { resetForm } from '../formularios/formulario-paciente.js';
 
 /**
  * Muestra un modal por su ID
@@ -12,25 +12,38 @@ import { hasUnsavedChanges, resetForm } from '../formularios/autoguardado.js';
  */
 export function showModal(modalId) {
     try {
+        console.log('🔧 Intentando mostrar modal:', modalId);
+        
         const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-            
-            // Enfocar primer input después de un breve delay
-            setTimeout(() => {
-                const firstInput = modal.querySelector('input:not([type="hidden"]), select, textarea');
-                if (firstInput && !firstInput.disabled) {
-                    firstInput.focus();
-                }
-            }, 100);
-            
-            if (APP_CONFIG.DEBUG_MODE) {
-                console.log(`🔧 Modal abierto: ${modalId}`);
-            }
+        if (!modal) {
+            console.error('❌ Modal no encontrado:', modalId);
+            return false;
         }
+
+        // Cerrar otros modales abiertos primero
+        closeAllModals();
+
+        // Mostrar modal
+        modal.style.display = 'flex';
+        modal.classList.add('modal-open');
+        
+        // Prevenir scroll del body
+        document.body.style.overflow = 'hidden';
+        
+        // Enfocar primer input después de animación
+        setTimeout(() => {
+            const firstInput = modal.querySelector('input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])');
+            if (firstInput) {
+                firstInput.focus();
+            }
+        }, 150);
+        
+        console.log('✅ Modal mostrado:', modalId);
+        return true;
+        
     } catch (error) {
-        console.error('Error showing modal:', error);
+        console.error('❌ Error mostrando modal:', error);
+        return false;
     }
 }
 
@@ -40,36 +53,97 @@ export function showModal(modalId) {
  */
 export function closeModal(modalId) {
     try {
+        console.log('🔧 Intentando cerrar modal:', modalId);
+        
         const modal = document.getElementById(modalId);
-        if (modal) {
-            // Verificar cambios no guardados en formularios específicos
-            if (modalId === 'patient-modal' && hasUnsavedChanges()) {
+        if (!modal) {
+            console.warn('⚠️ Modal no encontrado para cerrar:', modalId);
+            return false;
+        }
+
+        // Verificar cambios no guardados en formularios específicos
+        if (modalId === 'patient-modal') {
+            const hasChanges = checkUnsavedChanges();
+            if (hasChanges) {
                 const confirmed = confirm('¿Estás seguro de cerrar? Los cambios no guardados se perderán.');
                 if (!confirmed) {
-                    return;
+                    return false;
                 }
                 resetForm();
             }
-            
-            modal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-            
-            // Remover modales temporales
-            if (modal.classList.contains('temp-modal')) {
-                modal.remove();
-            }
-            
-            if (APP_CONFIG.DEBUG_MODE) {
-                console.log(`🔧 Modal cerrado: ${modalId}`);
-            }
         }
+        
+        // Ocultar modal
+        modal.style.display = 'none';
+        modal.classList.remove('modal-open');
+        
+        // Restaurar scroll del body
+        document.body.style.overflow = 'auto';
+        
+        // Remover modales temporales
+        if (modal.classList.contains('temp-modal')) {
+            modal.remove();
+        }
+        
+        console.log('✅ Modal cerrado:', modalId);
+        return true;
+        
     } catch (error) {
-        console.error('Error closing modal:', error);
+        console.error('❌ Error cerrando modal:', error);
+        return false;
     }
 }
 
 /**
- * Alterna el estado de un botón de envío (loading/normal)
+ * Cierra todos los modales abiertos
+ */
+export function closeAllModals() {
+    try {
+        const openModals = document.querySelectorAll('.modal-overlay[style*="flex"], .modal-overlay.modal-open');
+        
+        openModals.forEach(modal => {
+            if (modal.id) {
+                closeModal(modal.id);
+            } else {
+                modal.style.display = 'none';
+                modal.classList.remove('modal-open');
+            }
+        });
+        
+        document.body.style.overflow = 'auto';
+        
+    } catch (error) {
+        console.error('Error cerrando todos los modales:', error);
+    }
+}
+
+/**
+ * Verifica si hay cambios sin guardar
+ */
+function checkUnsavedChanges() {
+    try {
+        const form = document.getElementById('patient-form');
+        if (!form) return false;
+        
+        const formData = new FormData(form);
+        let hasData = false;
+        
+        for (let [key, value] of formData.entries()) {
+            if (value && value.toString().trim() !== '') {
+                hasData = true;
+                break;
+            }
+        }
+        
+        return hasData;
+    } catch (error) {
+        console.error('Error checking unsaved changes:', error);
+        return false;
+    }
+}
+
+/**
+ * Alterna el estado de un botón de envío
  * @param {HTMLElement} button - Botón a alternar
  * @param {boolean} isLoading - Estado de carga
  */
@@ -79,11 +153,13 @@ export function toggleSubmitButton(button, isLoading) {
     try {
         if (isLoading) {
             button.disabled = true;
+            button.classList.add('loading');
             const originalText = button.innerHTML;
             button.setAttribute('data-original-text', originalText);
             button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
         } else {
             button.disabled = false;
+            button.classList.remove('loading');
             const originalText = button.getAttribute('data-original-text');
             if (originalText) {
                 button.innerHTML = originalText;
@@ -101,11 +177,10 @@ export function toggleSubmitButton(button, isLoading) {
  * @param {string} title - Título del modal
  * @param {string} content - Contenido HTML del modal
  * @param {Object} options - Opciones adicionales
- * @returns {HTMLElement} Elemento del modal creado
  */
 export function createModal(id, title, content, options = {}) {
     try {
-        // Remover modal existente si existe
+        // Remover modal existente
         const existingModal = document.getElementById(id);
         if (existingModal) {
             existingModal.remove();
@@ -123,26 +198,57 @@ export function createModal(id, title, content, options = {}) {
                     <i class="fas fa-times"></i>
                 </button>
                 
-                <div style="padding: 24px;">
+                <div class="modal-header">
                     <h2>${title}</h2>
-                    <div class="modal-content">
-                        ${content}
-                    </div>
+                </div>
+                
+                <div class="modal-body">
+                    ${content}
                 </div>
             </div>
         `;
         
         document.body.appendChild(modal);
         
+        // Configurar eventos
+        setupModalEvents(modal);
+        
         return modal;
+        
     } catch (error) {
-        console.error('Error creating modal:', error);
+        console.error('Error creando modal:', error);
         return null;
     }
 }
 
 /**
- * Muestra un modal de confirmación personalizado
+ * Configura eventos del modal
+ * @param {HTMLElement} modal - Elemento del modal
+ */
+function setupModalEvents(modal) {
+    try {
+        // Click fuera del modal para cerrar
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal(modal.id);
+            }
+        });
+        
+        // Botón de cerrar
+        const closeBtn = modal.querySelector('.modal-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                closeModal(modal.id);
+            });
+        }
+        
+    } catch (error) {
+        console.error('Error configurando eventos del modal:', error);
+    }
+}
+
+/**
+ * Muestra un modal de confirmación
  * @param {string} title - Título del modal
  * @param {string} message - Mensaje de confirmación
  * @param {Function} onConfirm - Callback para confirmación
@@ -150,50 +256,51 @@ export function createModal(id, title, content, options = {}) {
  */
 export function showConfirmationModal(title, message, onConfirm, onCancel = null) {
     try {
-        const modalId = 'confirmation-modal';
+        const modalId = 'confirmation-modal-' + Date.now();
         const content = `
-            <p style="margin-bottom: 24px; line-height: 1.6;">${message}</p>
-            <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                <button class="btn btn-outline" onclick="handleConfirmationCancel('${modalId}')">
-                    <i class="fas fa-times"></i>
-                    Cancelar
-                </button>
-                <button class="btn btn-danger" onclick="handleConfirmationConfirm('${modalId}')">
-                    <i class="fas fa-check"></i>
-                    Confirmar
-                </button>
+            <div class="confirmation-content">
+                <div class="confirmation-icon">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <p class="confirmation-message">${message}</p>
+                <div class="confirmation-actions">
+                    <button class="btn btn-outline" data-action="cancel">
+                        <i class="fas fa-times"></i>
+                        Cancelar
+                    </button>
+                    <button class="btn btn-primary" data-action="confirm">
+                        <i class="fas fa-check"></i>
+                        Confirmar
+                    </button>
+                </div>
             </div>
         `;
         
         const modal = createModal(modalId, title, content);
+        if (!modal) return;
         
-        // Guardar callbacks en el elemento modal
-        if (modal) {
-            modal.onConfirm = onConfirm;
-            modal.onCancel = onCancel;
+        // Configurar callbacks
+        const cancelBtn = modal.querySelector('[data-action="cancel"]');
+        const confirmBtn = modal.querySelector('[data-action="confirm"]');
+        
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                closeModal(modalId);
+                if (onCancel) onCancel();
+            });
+        }
+        
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', () => {
+                closeModal(modalId);
+                if (onConfirm) onConfirm();
+            });
         }
         
         showModal(modalId);
         
-        // Funciones globales para manejar confirmación
-        window.handleConfirmationConfirm = (modalId) => {
-            const modal = document.getElementById(modalId);
-            if (modal && modal.onConfirm) {
-                modal.onConfirm();
-            }
-            closeModal(modalId);
-        };
-        
-        window.handleConfirmationCancel = (modalId) => {
-            const modal = document.getElementById(modalId);
-            if (modal && modal.onCancel) {
-                modal.onCancel();
-            }
-            closeModal(modalId);
-        };
-        
     } catch (error) {
-        console.error('Error showing confirmation modal:', error);
+        console.error('Error mostrando modal de confirmación:', error);
     }
 }
 
@@ -202,6 +309,11 @@ export function showConfirmationModal(title, message, onConfirm, onCancel = null
  */
 export function setupModalEventListeners() {
     try {
+        // Prevenir múltiples configuraciones
+        if (window.modalEventListenersSetup) {
+            return;
+        }
+        
         // Click fuera del modal para cerrar
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal-overlay')) {
@@ -215,7 +327,7 @@ export function setupModalEventListeners() {
         // Tecla ESC para cerrar modales
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                const openModals = document.querySelectorAll('.modal-overlay[style*="flex"]');
+                const openModals = document.querySelectorAll('.modal-overlay[style*="flex"], .modal-overlay.modal-open');
                 if (openModals.length > 0) {
                     const lastModal = openModals[openModals.length - 1];
                     if (lastModal.id) {
@@ -225,98 +337,63 @@ export function setupModalEventListeners() {
             }
         });
         
-        console.log('✅ Modal event listeners configurados');
-    } catch (error) {
-        console.error('Error setting up modal event listeners:', error);
-    }
-}
-
-/**
- * Resetea campos especiales del formulario
- */
-function resetSpecialFormFields() {
-    try {
-        // Resetear slider de motivación
-        const motivacionRange = document.getElementById('motivacion-range');
-        const motivacionValue = document.getElementById('motivacion-value');
-        if (motivacionRange && motivacionValue) {
-            motivacionRange.value = 5;
-            motivacionValue.textContent = '5';
-            motivacionValue.style.backgroundColor = 'var(--warning-orange)';
-        }
-        
-        // Resetear contenedores de tipo de solicitud
-        const infoEmailContainer = document.getElementById('info-email-container');
-        const basicInfoContainer = document.getElementById('basic-info-container');
-        const nextBtn = document.getElementById('next-step-1');
-        const submitBtn = document.getElementById('submit-step-1');
-        
-        if (infoEmailContainer) infoEmailContainer.style.display = 'none';
-        if (basicInfoContainer) basicInfoContainer.style.display = 'block';
-        if (nextBtn) nextBtn.style.display = 'inline-flex';
-        if (submitBtn) submitBtn.style.display = 'none';
-        
-        // Resetear progreso del formulario
-        const progressFill = document.getElementById('form-progress');
-        const progressText = document.getElementById('progress-text');
-        
-        if (progressFill) progressFill.style.width = '25%';
-        if (progressText) progressText.textContent = 'Paso 1 de 4';
-        
-        // Mostrar primer paso
-        document.querySelectorAll('.form-step').forEach((step, index) => {
-            if (index === 0) {
-                step.classList.add('active');
-            } else {
-                step.classList.remove('active');
-            }
+        // Event listeners para botones de cerrar modales existentes
+        document.querySelectorAll('.modal-close').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const modal = e.target.closest('.modal-overlay');
+                if (modal && modal.id) {
+                    closeModal(modal.id);
+                }
+            });
         });
         
+        window.modalEventListenersSetup = true;
+        console.log('✅ Event listeners de modales configurados');
+        
     } catch (error) {
-        console.error('Error resetting special form fields:', error);
+        console.error('Error configurando event listeners de modales:', error);
     }
 }
 
 /**
- * Muestra el modal para responder solicitudes
+ * Muestra loading en un modal específico
+ * @param {string} modalId - ID del modal
+ * @param {boolean} show - Mostrar o ocultar loading
  */
-window.showResponderModal = function(solicitudId, tipo) {
+export function showModalLoading(modalId, show) {
     try {
-        // Buscar el modal
-        const modal = document.getElementById('responder-modal');
-        if (!modal) {
-            console.error('Modal responder-modal no encontrado');
-            return;
-        }
-
-        // Configurar el modal con datos de la solicitud
-        const solicitudIdInput = modal.querySelector('#solicitud-id');
-        const tipoSolicitudSpan = modal.querySelector('#tipo-solicitud');
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
         
-        if (solicitudIdInput) {
-            solicitudIdInput.value = solicitudId;
-        }
+        let loadingOverlay = modal.querySelector('.modal-loading-overlay');
         
-        if (tipoSolicitudSpan) {
-            tipoSolicitudSpan.textContent = tipo || 'Solicitud';
+        if (show) {
+            if (!loadingOverlay) {
+                loadingOverlay = document.createElement('div');
+                loadingOverlay.className = 'modal-loading-overlay';
+                loadingOverlay.innerHTML = `
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                        <p>Cargando...</p>
+                    </div>
+                `;
+                modal.appendChild(loadingOverlay);
+            }
+            loadingOverlay.style.display = 'flex';
+        } else {
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'none';
+            }
         }
-
-        // Limpiar formulario anterior
-        const form = modal.querySelector('#responder-form');
-        if (form) {
-            form.reset();
-        }
-
-        // Mostrar modal
-        modal.style.display = 'flex';
-        
-        console.log(`Modal de respuesta abierto para solicitud ${solicitudId}`);
         
     } catch (error) {
-        console.error('Error abriendo modal de respuesta:', error);
-        showNotification('Error abriendo modal de respuesta', 'error');
+        console.error('Error mostrando loading en modal:', error);
     }
-};
+}
 
-// Exportar la función closeModal para uso global
-window.closeModal = closeModal;
+// Exportar funciones para uso global
+if (typeof window !== 'undefined') {
+    window.showModal = showModal;
+    window.closeModal = closeModal;
+    window.showConfirmationModal = showConfirmationModal;
+}
