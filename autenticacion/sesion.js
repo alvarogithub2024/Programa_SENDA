@@ -372,5 +372,6 @@ export {
     puedeAccederTab,
     obtenerNombreProfesion,
     mostrarContenidoPublico,
-    mostrarContenidoProfesional
+    mostrarContenidoProfesional,
+    manejarCambioAutenticacion,
 };
