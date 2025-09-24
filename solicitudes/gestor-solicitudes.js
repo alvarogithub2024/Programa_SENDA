@@ -6,7 +6,7 @@
 import { getFirestore } from '../configuracion/firebase.js';
 import { showNotification } from '../utilidades/notificaciones.js';
 import { formatDate, formatTime, formatRUT, formatPhoneNumber } from '../utilidades/formato.js';
-import { initSolicitudesManager } from './solicitudes/gestor-solicitudes.js';
+import { createModal, showModal, closeModal } from '../utilidades/modal-utils.js';
 
 // Variables globales
 let solicitudesData = [];
@@ -990,9 +990,6 @@ function debounce(func, wait) {
         timeout = setTimeout(later, wait);
     };
 }
-
-// Importar funciones necesarias
-import { createModal, showModal, closeModal } from '../utilidades/modal-utils.js';
 
 // Exportar funciones principales
 export {
