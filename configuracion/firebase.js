@@ -7,13 +7,15 @@ const firebaseConfig = {
     apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
     authDomain: "senda-6d5c9.firebaseapp.com",
     projectId: "senda-6d5c9",
-    storageBucket: "senda-6d5c9.firebasestorage.app",
+    storageBucket: "senda-6d5c9.appspot.com", // <---- MODIFICADO!
     messagingSenderId: "1090028669785",
     appId: "1:1090028669785:web:d4e1c1b9945fc2fddc1a48",
     measurementId: "G-82DCLW5R2W"
 };
 
-let db;
+let app = null;
+let db = null;
+let auth = null;
 
 // Inicializa Firebase solo una vez
 function inicializarFirebase() {
@@ -21,17 +23,32 @@ function inicializarFirebase() {
         throw new Error('Firebase no está cargado');
     }
     if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
+        app = firebase.initializeApp(firebaseConfig);
+    } else {
+        app = firebase.app();
     }
     db = firebase.firestore();
+    auth = firebase.auth();
     return db;
+}
+
+// Verifica si Firebase está inicializado
+function verificarFirebase() {
+    return typeof firebase !== 'undefined' && firebase.apps.length > 0;
 }
 
 function obtenerFirestore() {
     if (!db) {
-        throw new Error('Firestore no está inicializado');
+        inicializarFirebase();
     }
     return db;
+}
+
+function obtenerAuth() {
+    if (!auth) {
+        inicializarFirebase();
+    }
+    return auth;
 }
 
 // ================= REGISTRO DE PROFESIONAL =================
@@ -108,7 +125,8 @@ async function manejarEnvioRegistro(e) {
 // Solo un bloque de export al final
 export {
     inicializarFirebase,
+    verificarFirebase,
     obtenerFirestore,
-    inicializarRegistro,
-    configurarFormularioRegistro
+    obtenerAuth,
+    inicializarRegistro
 };
