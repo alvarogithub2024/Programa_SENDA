@@ -333,6 +333,56 @@
         </table>
     </div>
 </div>
+
+            <div id="solicitudes-tab" class="tab-pane">
+    <div class="section-header">
+        <h2>Solicitudes de Ingreso</h2>
+        <div class="section-actions">
+            <button id="refresh-solicitudes" class="btn btn-secondary">
+                <i class="fas fa-sync"></i> Actualizar
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtros rápidos -->
+    <div class="quick-filters">
+        <button id="filter-todas" class="filter-btn active" onclick="filterSolicitudes('todos')">
+            Todas
+        </button>
+        <button id="filter-pendientes" class="filter-btn" onclick="filterSolicitudes('pendientes')">
+            Pendientes
+        </button>
+        <button id="filter-en-proceso" class="filter-btn" onclick="filterSolicitudes('en_proceso')">
+            En Proceso
+        </button>
+        <button id="filter-completadas" class="filter-btn" onclick="filterSolicitudes('completadas')">
+            Completadas
+        </button>
+        
+        <div class="filter-separator"></div>
+        
+        <div class="dropdown">
+            <button class="filter-btn dropdown-toggle">
+                Prioridad: Todas
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="dropdown-content">
+                <button onclick="filterSolicitudes('alta_prioridad')">🔴 Alta Prioridad</button>
+                <button onclick="filterSolicitudes('media_prioridad')">🟡 Media Prioridad</button>
+                <button onclick="filterSolicitudes('baja_prioridad')">🟢 Baja Prioridad</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aquí va el resto del HTML de la tabla -->
+    <div id="solicitudes-table-container">
+        <table class="solicitudes-table">
+            <tbody id="solicitudes-table-body">
+                <!-- Se llena dinámicamente -->
+            </tbody>
+        </table>
+    </div>
+</div>
             <!-- ================= TAB PACIENTES ================= -->
             <div class="tab-pane" id="pacientes-tab">
                 <div class="section-header">
