@@ -1,6 +1,6 @@
 import { db } from '../configuracion/firebase.js';
 import { showNotification } from '../utilidades/notificaciones.js';
-import { formatDate, formatDateTime } from '../utilidades/helpers.js';
+import { formatDate } from '../utilidades/formato.js';
 
 // Variables globales para el timeline
 let timelineData = [];
