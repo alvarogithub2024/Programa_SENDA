@@ -85,9 +85,9 @@ function loadTabData(tabName) {
                 }
                 break;
             case 'agenda':
-                loadTodayAppointments();
-                renderCalendar();
-                break;
+                initCalendar();              // ✅ Función que existe en agenda.js
+    loadAppointments();          // ✅ Función que existe en agenda.js
+    break;
             case 'seguimiento':
                 loadSeguimiento();
                 break;
