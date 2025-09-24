@@ -1,4 +1,4 @@
-import { db } from '../configuracion/firebase.js';
+import { getFirestore } from '../configuracion/firebase.js';
 import { showNotification } from '../utilidades/notificaciones.js';
 
 // Variables globales
@@ -23,7 +23,7 @@ function setupAttentionForm() {
 
     // Configurar campos dinámicos
     setupAttentionTypeSelect();
-    setupProfessionalSelect();
+    setupProfessionalsSelect();
     setupDurationCalculator();
 }
 
@@ -118,6 +118,7 @@ function validateAttentionData(data) {
 
 // Guardar atención
 async function saveAttention(attentionData) {
+    const db = getFirestore();
     const atencionesRef = db.collection('atenciones');
     const docRef = await atencionesRef.add(attentionData);
     
@@ -129,6 +130,7 @@ async function saveAttention(attentionData) {
 
 // Agregar al historial del paciente
 async function addToPatientHistory(attentionData, attentionId) {
+    const db = getFirestore();
     const historialRef = db.collection('historial_pacientes');
     await historialRef.add({
         pacienteId: attentionData.pacienteId,
@@ -146,6 +148,7 @@ async function addToPatientHistory(attentionData, attentionId) {
 
 // Actualizar última atención del paciente
 async function updatePatientLastAttention(patientId, attentionData) {
+    const db = getFirestore();
     const pacienteRef = db.collection('pacientes').doc(patientId);
     await pacienteRef.update({
         ultimaAtencion: attentionData.fechaAtencion,
@@ -217,6 +220,51 @@ function showRelevantFields(type) {
             section.style.display = 'block';
         }
     });
+}
+
+/**
+ * Configura el selector de profesionales
+ */
+async function setupProfessionalsSelect() {
+    try {
+        const db = getFirestore();
+        if (!db) {
+            console.warn('Base de datos no inicializada');
+            return;
+        }
+
+        const profRef = db.collection('profesionales');
+        const snapshot = await profRef.where('activo', '==', true).get();
+        
+        const select = document.getElementById('professional-select') || document.getElementById('professional');
+        if (!select) {
+            console.warn('Elemento professional-select o professional no encontrado');
+            return;
+        }
+
+        // Limpiar opciones existentes
+        select.innerHTML = '<option value="">Seleccionar profesional</option>';
+
+        // Agregar profesionales
+        snapshot.forEach(doc => {
+            const prof = doc.data();
+            const option = document.createElement('option');
+            option.value = prof.id || doc.id;
+            option.textContent = `${prof.nombre} - ${prof.especialidad || 'Sin especialidad'}`;
+            select.appendChild(option);
+        });
+
+        console.log(`✅ ${snapshot.size} profesionales cargados en selector`);
+
+    } catch (error) {
+        console.error('❌ Error cargando profesionales para selector:', error);
+        
+        // Fallback: crear opción por defecto
+        const select = document.getElementById('professional-select') || document.getElementById('professional');
+        if (select) {
+            select.innerHTML = '<option value="">Seleccionar profesional</option>';
+        }
+    }
 }
 
 // Configurar calculador de duración
@@ -324,6 +372,7 @@ function setupAttentionTemplates() {
 // Cargar plantillas de atención
 async function loadAttentionTemplates() {
     try {
+        const db = getFirestore();
         const templatesRef = db.collection('plantillas_atencion');
         const snapshot = await templatesRef.where('activa', '==', true).get();
         
@@ -432,6 +481,7 @@ async function handleAttentionSearch(e) {
 
 // Buscar atenciones
 async function searchAttentions(query) {
+    const db = getFirestore();
     const atencionesRef = db.collection('atenciones');
     
     // Buscar por diferentes campos
@@ -519,5 +569,6 @@ export {
     handleAttentionSubmit,
     saveAttention,
     loadAttentionTemplates,
-    searchAttentions
+    searchAttentions,
+    setupProfessionalsSelect
 };
