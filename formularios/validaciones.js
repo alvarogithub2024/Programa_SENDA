@@ -4,7 +4,8 @@
  */
 
 import { showNotification } from '../utilidades/notificaciones.js';
-import { isValidEmail, validateRUT, validatePhoneNumberString } from '../utilidades/validaciones.js';
+import { isValidEmail, validateRUT, validatePhoneNumberString, formatPhoneNumber } from '../utilidades/validaciones.js';
+
 /**
  * Valida un paso específico del formulario multi-paso
  * @param {number} step - Número del paso a validar
@@ -237,5 +238,62 @@ export function validateCompleteForm() {
     } catch (error) {
         console.error('Error validating complete form:', error);
         return false;
+    }
+}
+
+/**
+ * Formatea automáticamente el teléfono mientras el usuario escribe
+ * @param {HTMLInputElement} phoneInput - Campo de teléfono
+ */
+export function formatPhoneInput(phoneInput) {
+    if (!phoneInput) return;
+    
+    phoneInput.addEventListener('input', function(e) {
+        const formatted = formatPhoneNumber(e.target.value);
+        if (formatted !== e.target.value) {
+            e.target.value = formatted;
+        }
+    });
+}
+
+/**
+ * Inicializa validaciones en tiempo real para un formulario
+ * @param {HTMLFormElement} form - Formulario a validar
+ */
+export function initRealTimeValidation(form) {
+    if (!form) return;
+    
+    // Validación de RUT en tiempo real
+    const rutInput = form.querySelector('#patient-rut');
+    if (rutInput) {
+        rutInput.addEventListener('blur', function(e) {
+            const rut = e.target.value.trim();
+            if (rut && !validateRUT(rut)) {
+                e.target.classList.add('error');
+                showNotification('RUT inválido', 'warning', 3000);
+            } else {
+                e.target.classList.remove('error');
+            }
+        });
+    }
+    
+    // Validación de email en tiempo real
+    const emailInputs = form.querySelectorAll('input[type="email"]');
+    emailInputs.forEach(emailInput => {
+        emailInput.addEventListener('blur', function(e) {
+            const email = e.target.value.trim();
+            if (email && !isValidEmail(email)) {
+                e.target.classList.add('error');
+                showNotification('Email inválido', 'warning', 3000);
+            } else {
+                e.target.classList.remove('error');
+            }
+        });
+    });
+    
+    // Formateo automático de teléfono
+    const phoneInput = form.querySelector('#patient-phone');
+    if (phoneInput) {
+        formatPhoneInput(phoneInput);
     }
 }
