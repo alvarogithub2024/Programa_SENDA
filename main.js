@@ -1,5 +1,5 @@
 // Importar todos los módulos
-import { initializeFirebase } from './configuracion/firebase.js';
+import { initializeFirebase, isFirebaseInitialized } from './configuracion/firebase.js';
 import { setupAuth } from './autenticacion/sesion.js';
 import { setupTabs } from './navegacion/tabs.js';
 import { setupFormularios } from './formularios/formulario-paciente.js';
@@ -20,12 +20,24 @@ import { initTimeline } from './seguimiento/timeline.js';
 import { initAttentions } from './seguimiento/atenciones.js';
 import { initUpcomingAppointments } from './seguimiento/citas-proximas.js';
 
-// Solicitudes - COMENTADOS TEMPORALMENTE PARA EVITAR ERRORES
-// import { initFilters } from './solicitudes/filtros.js';
-// import { initResponses } from './solicitudes/respuestas.js';
-
 // Inicializar la aplicación
 document.addEventListener('DOMContentLoaded', async () => {
+    // Timeout de seguridad
+    const initTimeout = setTimeout(() => {
+        console.error('❌ Timeout: La inicialización está tomando demasiado tiempo');
+        document.body.innerHTML += `
+            <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                        background: white; padding: 20px; border: 2px solid #ef4444; border-radius: 8px; 
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; z-index: 10000;">
+                <h3 style="color: #ef4444;">⚠️ Cargando...</h3>
+                <p>La aplicación está tomando más tiempo del esperado.</p>
+                <button onclick="window.location.reload()" style="background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                    Recargar página
+                </button>
+            </div>
+        `;
+    }, 10000);
+
     try {
         console.log('🚀 SISTEMA SENDA PUENTE ALTO v2.0');
         console.log('=====================================');
@@ -34,6 +46,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Paso 1: Inicializar Firebase PRIMERO
         console.log('🔧 Inicializando Firebase...');
         initializeFirebase();
+        
+        // Verificar que Firebase se inicializó correctamente
+        if (!isFirebaseInitialized()) {
+            throw new Error('Firebase no se pudo inicializar correctamente');
+        }
+        console.log('✅ Firebase verificado y listo');
         
         // Paso 2: Configurar autenticación
         console.log('🔧 Configurando autenticación...');
@@ -81,17 +99,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.warn('⚠️ Error inicializando seguimiento:', error);
         }
         
-        // Solicitudes (comentado temporalmente)
-        // try {
-        //     initFilters();
-        //     initResponses();
-        // } catch (error) {
-        //     console.warn('⚠️ Error inicializando solicitudes:', error);
-        // }
-        
         console.log('✅ Sistema SENDA inicializado correctamente');
+        clearTimeout(initTimeout);
         
     } catch (error) {
+        clearTimeout(initTimeout);
         console.error('❌ Error durante la inicialización:', error);
         
         // Mostrar mensaje de error al usuario
@@ -108,7 +120,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         `;
         document.body.appendChild(errorDiv);
         
-        // Auto-remover después de 10 segundos
         setTimeout(() => errorDiv.remove(), 10000);
     }
 });
@@ -120,6 +131,7 @@ console.log(`
    ====================================
    Estado: Inicializando...
    Fecha: ${new Date().toLocaleString('es-CL')}
+   Desarrollado por: CamiMoralesM
 `);
 
 // Importar y configurar funciones globales para modales
