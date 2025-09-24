@@ -3,7 +3,7 @@
  */
 
 import { showNotification } from '../utilidades/notificaciones.js';
-import { validateRUT, isValidEmail, formatRUT, validatePhoneNumberString } from '../utilidades/validaciones.js';
+import { validateRUT, isValidEmail, formatRUT, formatPhoneNumber } from '../utilidades/validaciones.js';
 
 // ✅ IMPORTS CORREGIDOS - SIN getServerTimestamp
 import { getFirestore } from '../configuracion/firebase.js';
@@ -672,6 +672,18 @@ async function createCriticalAlert(solicitudData, solicitudId) {
     }
 }
 
+/**
+ * Validación de teléfono
+ */
+function validatePhoneNumberString(phone) {
+    if (!phone) return false;
+    const cleaned = phone.replace(/\D/g, '');
+    return cleaned.length >= 8 && cleaned.length <= 12;
+}
+
+/**
+ * Auto-guardado de formulario
+ */
 function setupAutoSave() {
     try {
         const form = document.getElementById('patient-form');
