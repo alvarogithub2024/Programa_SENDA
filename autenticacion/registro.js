@@ -3,24 +3,25 @@
  * Gestiona el proceso de inicio de sesión
  */
 
-import { obtenerAuth } from '../configuracion/firebase.js';
+import { obtenerAuth, obtenerFirestore } from '../configuracion/firebase.js';
 import { MENSAJES_ERROR } from '../configuracion/constantes.js';
 import { mostrarNotificacion } from '../utilidades/notificaciones.js';
 import { mostrarCarga, cerrarModal } from '../utilidades/modales.js';
 import { alternarBotonEnvio } from '../utilidades/formato.js';
 
 let auth;
+let db = obtenerFirestore();
 
 /**
  * Inicializa el sistema de login
  */
-function inicializarLogin() {
+function inicializarRegistro() {
     try {
         auth = obtenerAuth();
-        configurarFormularioLogin();
-        console.log('✅ Sistema de login inicializado');
+        configurarFormularioRegistro();
+        console.log('✅ Sistema de registro inicializado');
     } catch (error) {
-        console.error('❌ Error inicializando login:', error);
+        console.error('❌ Error inicializando registro:', error);
         throw error;
     }
 }
@@ -28,55 +29,59 @@ function inicializarLogin() {
 /**
  * Configura el formulario de login
  */
-function configurarFormularioLogin() {
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-        loginForm.addEventListener('submit', manejarEnvioLogin);
-        console.log('✅ Formulario de login configurado');
+function configurarFormularioRegistro() {
+    const registerForm = document.getElementById('register-form');
+    if (registerForm) {
+        registerForm.addEventListener('submit', manejarEnvioRegistro);
+        console.log('✅ Formulario de registro configurado');
     } else {
-        console.warn('⚠️ Formulario de login no encontrado');
+        console.warn('⚠️ Formulario de registro no encontrado');
     }
 }
 
 /**
  * Maneja el envío del formulario de login
  */
-async function manejarEnvioLogin(e) {
+async function manejarEnvioRegistro(e) {
     e.preventDefault();
 
     try {
-        console.log('🔐 Iniciando proceso de login...');
+        mostrarCarga(true, 'Creando cuenta...');
 
-        const email = document.getElementById('login-email')?.value?.trim();
-        const password = document.getElementById('login-password')?.value?.trim();
+        const nombre = document.getElementById('register-nombre')?.value?.trim();
+        const apellidos = document.getElementById('register-apellidos')?.value?.trim();
+        const email = document.getElementById('register-email')?.value?.trim();
+        const password = document.getElementById('register-password')?.value?.trim();
+        const cesfam = document.getElementById('register-cesfam')?.value?.trim();
+        const profession = document.getElementById('register-profession')?.value?.trim();
 
-        if (!email || !password) {
-            mostrarNotificacion('Completa todos los campos', 'warning');
+        if (!email || !password || !nombre || !apellidos || !cesfam || !profession) {
+            mostrarNotificacion('Completa todos los campos obligatorios', 'warning');
             return;
         }
 
-        if (!validarEmail(email)) {
-            mostrarNotificacion('Email inválido', 'warning');
-            return;
-        }
+        // Crear usuario en Firebase Auth
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        const uid = userCredential.user.uid;
 
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        alternarBotonEnvio(submitBtn, true);
+        // Registrar profesional en Firestore
+        await db.collection('profesionales').doc(uid).set({
+            nombre,
+            apellidos,
+            email,
+            cesfam,
+            profession,
+            uid,
+            activo: true,
+            fechaCreacion: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
-        mostrarCarga(true, 'Iniciando sesión...');
-
-        console.log('🔍 Intentando login con email:', email);
-
-        const userCredential = await auth.signInWithEmailAndPassword(email, password);
-        console.log('✅ Login exitoso:', userCredential.user.uid);
-
-        cerrarModal('login-modal');
-        mostrarNotificacion('Sesión iniciada correctamente', 'success');
-
+        cerrarModal('register-modal');
+        mostrarNotificacion('¡Registro exitoso! Ahora puedes iniciar sesión.', 'success');
         e.target.reset();
 
     } catch (error) {
-        console.error('❌ Error en login:', error);
+        console.error('❌ Error en registro:', error);
         mostrarNotificacion(obtenerMensajeError(error), 'error');
     } finally {
         mostrarCarga(false);
@@ -185,5 +190,6 @@ export {
     inicializarLogin,
     cambiarTabLogin,
     resetearFormularioLogin,
-    manejarOlvidoPassword
+    manejarOlvidoPassword,
+    inicializarRegistro,
 };
