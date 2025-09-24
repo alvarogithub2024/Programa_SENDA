@@ -191,7 +191,7 @@ function mostrarContenidoPublico() {
         const professionalContent = document.getElementById('professional-content');
         const professionalHeader = document.getElementById('professional-header');
         const loginBtn = document.getElementById('login-professional');
-        const logoutBtn = document.getElementById('logout-btn');
+        const logoutBtn = document.getElementById('logout-btn') || document.getElementById('logout-professional'); // Detecta ambos
 
         if (publicContent) publicContent.style.display = 'block';
         if (professionalContent) professionalContent.style.display = 'none';
@@ -214,7 +214,7 @@ function mostrarContenidoProfesional() {
         const professionalContent = document.getElementById('professional-content');
         const professionalHeader = document.getElementById('professional-header');
         const loginBtn = document.getElementById('login-professional');
-        const logoutBtn = document.getElementById('logout-btn');
+        const logoutBtn = document.getElementById('logout-btn') || document.getElementById('logout-professional'); // Detecta ambos
 
         if (publicContent) publicContent.style.display = 'none';
         if (professionalContent) professionalContent.style.display = 'block';
