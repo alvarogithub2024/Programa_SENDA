@@ -683,10 +683,3 @@ function getCurrentUser() {
     // Implementar obtención del usuario actual
     return 'Usuario Actual';
 }
-
-// Exportar funciones principales
-export {
-    loadSolicitudForResponse,
-    saveResponse,
-    sendNotifications
-};
