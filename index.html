@@ -61,12 +61,14 @@
             </div>
         </div>
     </div>
+<!-- BOTÓN PARA ABRIR EL MODAL (debe ir fuera del modal) -->
+<button onclick="document.getElementById('register-modal').style.display='block'">
+  Registrar profesional
+</button>
+
 <!-- MODAL DE REGISTRO DE PROFESIONAL -->
 <div id="register-modal" class="modal-overlay" style="display:none;">
   <div class="modal">
-      <button onclick="document.getElementById('register-modal').style.display='block'">
-  Registrar profesional
-</button>
     <button class="modal-close" onclick="document.getElementById('register-modal').style.display='none'">
       <i class="fas fa-times"></i>
     </button>
