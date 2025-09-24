@@ -67,6 +67,7 @@ async function manejarEnvioLogin(e) {
 
         console.log('🔍 Intentando login con email:', email);
 
+        // Usar la función correcta de Firebase Auth
         const userCredential = await auth.signInWithEmailAndPassword(email, password);
         console.log('✅ Login exitoso:', userCredential.user.uid);
 
@@ -97,7 +98,17 @@ function validarEmail(email) {
  * Obtiene el mensaje de error apropiado
  */
 function obtenerMensajeError(error) {
-    const mensajesFirebase = MENSAJES_ERROR.FIREBASE;
+    const mensajesFirebase = {
+        'auth/user-not-found': 'Usuario no encontrado',
+        'auth/wrong-password': 'Contraseña incorrecta',
+        'auth/invalid-email': 'Email inválido',
+        'auth/user-disabled': 'Usuario deshabilitado',
+        'auth/too-many-requests': 'Demasiados intentos. Intenta más tarde',
+        'auth/network-request-failed': 'Error de conexión',
+        'auth/invalid-credential': 'Credenciales inválidas',
+        'auth/missing-password': 'Falta la contraseña'
+    };
+    
     const mensajePersonalizado = mensajesFirebase[error.code];
     
     if (mensajePersonalizado) {
@@ -114,21 +125,23 @@ function cambiarTabLogin(tab) {
     try {
         console.log('🔄 Cambiando tab a:', tab);
 
-        const loginTab = document.querySelector('.modal-tab[onclick*="login"]');
-        const registerTab = document.querySelector('.modal-tab[onclick*="register"]');
+        const loginTab = document.querySelector('.modal-tab[data-tab="login"]');
+        const registerTab = document.querySelector('.modal-tab[data-tab="register"]');
         const loginForm = document.getElementById('login-form');
         const registerForm = document.getElementById('register-form');
 
+        // Remover active de ambos
+        if (loginTab) loginTab.classList.remove('active');
+        if (registerTab) registerTab.classList.remove('active');
+        if (loginForm) loginForm.classList.remove('active');
+        if (registerForm) registerForm.classList.remove('active');
+
         if (tab === 'login') {
             if (loginTab) loginTab.classList.add('active');
-            if (registerTab) registerTab.classList.remove('active');
             if (loginForm) loginForm.classList.add('active');
-            if (registerForm) registerForm.classList.remove('active');
         } else if (tab === 'register') {
             if (registerTab) registerTab.classList.add('active');
-            if (loginTab) loginTab.classList.remove('active');
             if (registerForm) registerForm.classList.add('active');
-            if (loginForm) loginForm.classList.remove('active');
         }
     } catch (error) {
         console.error('Error cambiando tab de login:', error);
