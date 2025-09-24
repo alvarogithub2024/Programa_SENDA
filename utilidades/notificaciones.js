@@ -1,4 +1,4 @@
-/**
+//**
  * SISTEMA DE NOTIFICACIONES
  * Maneja la creación y gestión de notificaciones en la interfaz
  */
@@ -45,11 +45,10 @@ function mostrarNotificacion(mensaje, tipo = 'info', duracion = 4000) {
         if (APP_CONFIG.DEBUG_MODE) {
             console.log(`📢 Notificación [${tipo.toUpperCase()}]: ${mensaje}`);
         }
-
-   catch (error) {
-    console.error('Error mostrando notificación:', error);
-    // Puedes mostrar un mensaje en consola, pero NO el alert
-    // alert(`${tipo.toUpperCase()}: ${mensaje}`);
+    } catch (error) {
+        console.error('Error mostrando notificación:', error);
+        // NO usar alert nativo, solo log
+    }
 }
 
 /**
@@ -221,12 +220,8 @@ function mostrarConfirmacion(mensaje, onConfirmar, onCancelar) {
 
     } catch (error) {
         console.error('Error mostrando confirmación:', error);
-        // Fallback a confirm nativo
-        if (confirm(mensaje)) {
-            if (onConfirmar) onConfirmar();
-        } else {
-            if (onCancelar) onCancelar();
-        }
+        // NO usar confirm nativo, solo log
+        // Si lo deseas, puedes llamar a onCancelar();
     }
 }
 
