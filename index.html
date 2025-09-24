@@ -762,6 +762,33 @@
     </footer>
 
     <!-- ================= JAVASCRIPT ================= -->
+<script>
+function showModal(id) {
+    document.getElementById(id).style.display = 'flex';
+}
+function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+}
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('login-professional').addEventListener('click', function() {
+        showModal('login-modal');
+    });
+    document.getElementById('register-patient').addEventListener('click', function() {
+        showModal('patient-modal');
+    });
+    document.getElementById('reentry-program').addEventListener('click', function() {
+        showModal('reentry-modal');
+    });
+    document.querySelectorAll('.modal-close').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const modalId = btn.getAttribute('data-modal');
+            if(modalId) closeModal(modalId);
+            else btn.closest('.modal-overlay').style.display = 'none';
+        });
+    });
+});
+</script>
+    
     <script src="main.js"></script>
 </body>
     </html>
