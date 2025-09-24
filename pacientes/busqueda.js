@@ -1,60 +1,62 @@
-// busqueda.js
-import { showNotification } from "../utilidades/notificaciones.js";
-import { loadPacientes } from "./gestor-pacientes.js";
+/**
+ * BÚSQUEDA DE PACIENTES
+ * Módulo para búsqueda avanzada por RUT y nombre
+ */
 
-let pacientesData = [];
+import { db } from '../configuracion/firebase.js';
+import { mostrarNotificacion } from '../utilidades/notificaciones.js';
+import { formatRUT, limpiarTexto } from '../utilidades/formato.js';
 
 /**
- * Inicializa la búsqueda de pacientes
+ * Busca paciente por RUT en el CESFAM actual
+ * @param {string} rut
+ * @param {string} cesfam
+ * @returns {Promise<Array>}
  */
-export function setupBusquedaPacientes(data) {
-  pacientesData = data;
+async function buscarPacientePorRUT(rut, cesfam) {
+    try {
+        const rutFormateado = formatRUT(rut);
+        const snapshot = await db.collection('pacientes')
+            .where('rut', '==', rutFormateado)
+            .where('cesfam', '==', cesfam)
+            .get();
 
-  const input = document.getElementById("search-pacientes");
-  if (!input) return;
-
-  input.addEventListener("input", () => {
-    const query = input.value.trim().toLowerCase();
-    buscarPacientes(query);
-  });
+        if (snapshot.empty) {
+            mostrarNotificacion(`No se encontró paciente con RUT ${rutFormateado}`, 'warning');
+            return [];
+        }
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+        mostrarNotificacion('Error en búsqueda de paciente: ' + error.message, 'error');
+        return [];
+    }
 }
 
 /**
- * Buscar pacientes por nombre, rut o cesfam
+ * Busca pacientes por nombre parcial y CESFAM
+ * @param {string} nombre
+ * @param {string} cesfam
+ * @returns {Promise<Array>}
  */
-export function buscarPacientes(query) {
-  const container = document.getElementById("patients-grid");
-  if (!container) return;
+async function buscarPacientesPorNombre(nombre, cesfam) {
+    try {
+        const nombreLimpo = limpiarTexto(nombre);
+        let consulta = db.collection('pacientes').where('cesfam', '==', cesfam);
 
-  if (!query) {
-    loadPacientes(false); // recarga todos
-    return;
-  }
+        if (nombreLimpo) {
+            consulta = consulta.where('nombre', '>=', nombreLimpo)
+                .where('nombre', '<=', nombreLimpo + '\uf8ff');
+        }
 
-  const resultados = pacientesData.filter(p => {
-    return (
-      (p.nombre && p.nombre.toLowerCase().includes(query)) ||
-      (p.rut && p.rut.toLowerCase().includes(query)) ||
-      (p.cesfam && p.cesfam.toLowerCase().includes(query))
-    );
-  });
-
-  if (resultados.length === 0) {
-    container.innerHTML = `
-      <div class="no-results">
-        <i class="fas fa-search"></i>
-        <h3>Sin resultados</h3>
-        <p>No se encontraron pacientes con "${query}"</p>
-      </div>
-    `;
-    return;
-  }
-
-  container.innerHTML = resultados.map(p => `
-    <div class="patient-card">
-      <h3>${p.nombre || "Sin nombre"}</h3>
-      <p><strong>RUT:</strong> ${p.rut || "N/A"}</p>
-      <p><strong>CESFAM:</strong> ${p.cesfam || "N/A"}</p>
-    </div>
-  `).join("");
+        const snapshot = await consulta.limit(20).get();
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+        mostrarNotificacion('Error buscando pacientes: ' + error.message, 'error');
+        return [];
+    }
 }
+
+export {
+    buscarPacientePorRUT,
+    buscarPacientesPorNombre
+};
