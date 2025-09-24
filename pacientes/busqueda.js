@@ -1,442 +1,537 @@
 /**
  * BÚSQUEDA DE PACIENTES
- * Funciones para búsqueda y filtrado de pacientes
+ * Sistema de búsqueda avanzada de pacientes por diferentes criterios
  */
 
-// Variables globales para búsqueda
-let currentSearchResults = [];
-let searchCache = new Map();
+import { obtenerFirestore } from '../configuracion/firebase.js';
+import { obtenerDatosUsuarioActual } from '../autenticacion/sesion.js';
+import { mostrarNotificacion } from '../utilidades/notificaciones.js';
+import { mostrarCarga } from '../utilidades/modales.js';
+import { formatearRUT, validarRUT } from '../utilidades/formato.js';
+
+let db;
+let resultadosBusqueda = [];
 
 /**
- * Busca un paciente por RUT
+ * Inicializa el sistema de búsqueda
+ */
+function inicializarBusquedaPacientes() {
+    try {
+        db = obtenerFirestore();
+        configurarFormularioBusqueda();
+        console.log('✅ Sistema de búsqueda de pacientes inicializado');
+    } catch (error) {
+        console.error('❌ Error inicializando búsqueda de pacientes:', error);
+    }
+}
+
+/**
+ * Configura el formulario de búsqueda
+ */
+function configurarFormularioBusqueda() {
+    const searchInput = document.getElementById('search-pacientes-rut');
+    const searchBtn = document.getElementById('buscar-paciente-btn');
+    const advancedSearchBtn = document.getElementById('advanced-search-btn');
+
+    if (searchInput) {
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                buscarPacientePorRUT();
+            }
+        });
+        
+        searchInput.addEventListener('input', (e) => {
+            e.target.value = formatearRUT(e.target.value);
+        });
+    }
+
+    if (searchBtn) {
+        searchBtn.addEventListener('click', buscarPacientePorRUT);
+    }
+
+    if (advancedSearchBtn) {
+        advancedSearchBtn.addEventListener('click', mostrarBusquedaAvanzada);
+    }
+}
+
+/**
+ * Búsqueda principal por RUT
  */
 async function buscarPacientePorRUT() {
-  try {
-    const rutInput = document.getElementById('search-pacientes-rut');
-    const resultsContainer = document.getElementById('pacientes-search-results');
-    
-    if (!rutInput || !resultsContainer) {
-      console.error('Elementos de búsqueda no encontrados');
-      return;
+    try {
+        const rutInput = document.getElementById('search-pacientes-rut');
+        const resultsContainer = document.getElementById('pacientes-search-results');
+        
+        if (!rutInput || !resultsContainer) {
+            console.error('Elementos de búsqueda no encontrados');
+            return;
+        }
+        
+        const rut = rutInput.value.trim();
+        
+        if (!rut) {
+            mostrarNotificacion('Ingresa un RUT para buscar', 'warning');
+            return;
+        }
+        
+        if (!validarRUT(rut)) {
+            mostrarNotificacion('RUT inválido', 'error');
+            return;
+        }
+        
+        mostrarCarga(true, 'Buscando paciente...');
+        
+        const userData = obtenerDatosUsuarioActual();
+        if (!userData) {
+            mostrarNotificacion('Error de autenticación', 'error');
+            return;
+        }
+        
+        const rutFormateado = formatearRUT(rut);
+        
+        const snapshot = await db.collection('pacientes')
+            .where('rut', '==', rutFormateado)
+            .where('cesfam', '==', userData.cesfam)
+            .get();
+        
+        if (snapshot.empty) {
+            resultsContainer.innerHTML = crearMensajeSinResultados(rutFormateado);
+        } else {
+            const pacientes = [];
+            snapshot.forEach(doc => {
+                pacientes.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+            
+            resultadosBusqueda = pacientes;
+            renderizarResultadosBusqueda(pacientes, resultsContainer);
+        }
+        
+    } catch (error) {
+        console.error('Error buscando paciente:', error);
+        mostrarNotificacion('Error al buscar paciente: ' + error.message, 'error');
+    } finally {
+        mostrarCarga(false);
     }
-    
-    const rut = rutInput.value.trim();
-    
-    if (!rut) {
-      showNotification('Ingresa un RUT para buscar', 'warning');
-      return;
-    }
-    
-    if (!validateRUT(rut)) {
-      showNotification('RUT inválido', 'error');
-      return;
-    }
-    
-    showLoading(true, 'Buscando paciente...');
-    
-    const rutFormatted = formatRUT(rut);
-    
-    // Verificar cache primero
-    const cacheKey = `search_${rutFormatted}`;
-    if (searchCache.has(cacheKey)) {
-      const cachedResult = searchCache.get(cacheKey);
-      if (Date.now() - cachedResult.timestamp < 300000) { // 5 minutos
-        displaySearchResults(cachedResult.data, resultsContainer, rutFormatted);
-        showLoading(false);
-        return;
-      }
-    }
-    
-    const snapshot = await db.collection('pacientes')
-      .where('rut', '==', rutFormatted)
-      .where('cesfam', '==', currentUserData.cesfam)
-      .get();
-    
-    const pacientes = [];
-    snapshot.forEach(doc => {
-      pacientes.push({
-        id: doc.id,
-        ...doc.data()
-      });
-    });
-    
-    // Guardar en cache
-    searchCache.set(cacheKey, {
-      data: pacientes,
-      timestamp: Date.now()
-    });
-    
-    currentSearchResults = pacientes;
-    displaySearchResults(pacientes, resultsContainer, rutFormatted);
-    
-  } catch (error) {
-    console.error('Error buscando paciente:', error);
-    showNotification('Error al buscar paciente: ' + error.message, 'error');
-  } finally {
-    showLoading(false);
-  }
 }
 
 /**
- * Muestra los resultados de búsqueda
+ * Búsqueda avanzada con múltiples criterios
  */
-function displaySearchResults(pacientes, container, rutBuscado) {
-  if (pacientes.length === 0) {
-    container.innerHTML = `
-      <div class="no-results">
-        <i class="fas fa-user-slash"></i>
-        <h3>Paciente no encontrado</h3>
-        <p>No se encontró ningún paciente con el RUT ${rutBuscado} en tu CESFAM</p>
-        <button class="btn btn-outline btn-sm mt-3" onclick="clearSearchResults()">
-          <i class="fas fa-times"></i>
-          Limpiar búsqueda
-        </button>
-      </div>
-    `;
-  } else {
-    container.innerHTML = `
-      <div class="search-results-header">
-        <h4>
-          <i class="fas fa-search"></i>
-          Resultados de búsqueda (${pacientes.length})
-        </h4>
-        <button class="btn btn-outline btn-sm" onclick="clearSearchResults()">
-          <i class="fas fa-times"></i>
-          Limpiar
-        </button>
-      </div>
-      <div class="patients-grid">
-        ${pacientes.map(createPatientCard).join('')}
-      </div>
-    `;
-  }
-}
-
-/**
- * Búsqueda por nombre
- */
-async function buscarPacientePorNombre(nombre) {
-  try {
-    if (!nombre || nombre.length < 3) {
-      showNotification('Ingresa al menos 3 caracteres', 'warning');
-      return;
-    }
-    
-    showLoading(true, 'Buscando pacientes...');
-    
-    // Búsqueda por nombre (case insensitive)
-    const nombreLower = nombre.toLowerCase();
-    
-    const snapshot = await db.collection('pacientes')
-      .where('cesfam', '==', currentUserData.cesfam)
-      .get();
-    
-    const pacientes = [];
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      const nombreCompleto = `${data.nombre} ${data.apellidos || ''}`.toLowerCase();
-      
-      if (nombreCompleto.includes(nombreLower)) {
-        pacientes.push({
-          id: doc.id,
-          ...data
+async function busquedaAvanzada(criterios) {
+    try {
+        mostrarCarga(true, 'Realizando búsqueda avanzada...');
+        
+        const userData = obtenerDatosUsuarioActual();
+        if (!userData) return [];
+        
+        let query = db.collection('pacientes')
+            .where('cesfam', '==', userData.cesfam);
+        
+        // Aplicar filtros según criterios
+        if (criterios.rut && validarRUT(criterios.rut)) {
+            query = query.where('rut', '==', formatearRUT(criterios.rut));
+        }
+        
+        if (criterios.estado) {
+            query = query.where('estado', '==', criterios.estado);
+        }
+        
+        if (criterios.prioridad) {
+            query = query.where('prioridad', '==', criterios.prioridad);
+        }
+        
+        // Agregar ordenamiento
+        query = query.orderBy('fechaCreacion', 'desc').limit(50);
+        
+        const snapshot = await query.get();
+        
+        let pacientes = [];
+        snapshot.forEach(doc => {
+            pacientes.push({
+                id: doc.id,
+                ...doc.data()
+            });
         });
-      }
-    });
-    
-    currentSearchResults = pacientes;
-    
-    const resultsContainer = document.getElementById('pacientes-search-results');
-    if (resultsContainer) {
-      displaySearchResults(pacientes, resultsContainer, nombre);
+        
+        // Filtros adicionales que no se pueden hacer en Firestore
+        pacientes = aplicarFiltrosAdicionales(pacientes, criterios);
+        
+        resultadosBusqueda = pacientes;
+        return pacientes;
+        
+    } catch (error) {
+        console.error('Error en búsqueda avanzada:', error);
+        mostrarNotificacion('Error en búsqueda avanzada', 'error');
+        return [];
+    } finally {
+        mostrarCarga(false);
     }
-    
-  } catch (error) {
-    console.error('Error buscando por nombre:', error);
-    showNotification('Error en la búsqueda: ' + error.message, 'error');
-  } finally {
-    showLoading(false);
-  }
 }
 
 /**
- * Búsqueda avanzada con filtros múltiples
+ * Aplica filtros adicionales que no se pueden hacer en Firestore
  */
-async function busquedaAvanzada(filtros) {
-  try {
-    showLoading(true, 'Realizando búsqueda avanzada...');
+function aplicarFiltrosAdicionales(pacientes, criterios) {
+    let pacientesFiltrados = [...pacientes];
     
-    let query = db.collection('pacientes')
-      .where('cesfam', '==', currentUserData.cesfam);
-    
-    // Aplicar filtros
-    if (filtros.estado && filtros.estado !== 'todos') {
-      query = query.where('estado', '==', filtros.estado);
+    // Filtro por nombre
+    if (criterios.nombre) {
+        const nombreBusqueda = criterios.nombre.toLowerCase();
+        pacientesFiltrados = pacientesFiltrados.filter(p => {
+            const nombreCompleto = `${p.nombre} ${p.apellidos || ''}`.toLowerCase();
+            return nombreCompleto.includes(nombreBusqueda);
+        });
     }
     
-    if (filtros.prioridad && filtros.prioridad !== 'todas') {
-      query = query.where('prioridad', '==', filtros.prioridad);
+    // Filtro por edad
+    if (criterios.edadMin || criterios.edadMax) {
+        pacientesFiltrados = pacientesFiltrados.filter(p => {
+            if (!p.edad) return false;
+            
+            let cumpleMin = true;
+            let cumpleMax = true;
+            
+            if (criterios.edadMin) {
+                cumpleMin = p.edad >= parseInt(criterios.edadMin);
+            }
+            
+            if (criterios.edadMax) {
+                cumpleMax = p.edad <= parseInt(criterios.edadMax);
+            }
+            
+            return cumpleMin && cumpleMax;
+        });
     }
     
-    const snapshot = await query.get();
-    
-    let pacientes = [];
-    snapshot.forEach(doc => {
-      pacientes.push({
-        id: doc.id,
-        ...doc.data()
-      });
-    });
-    
-    // Filtros adicionales en memoria
-    if (filtros.edadMin || filtros.edadMax) {
-      pacientes = pacientes.filter(p => {
-        const edad = p.edad || 0;
-        const min = filtros.edadMin || 0;
-        const max = filtros.edadMax || 999;
-        return edad >= min && edad <= max;
-      });
+    // Filtro por sustancias
+    if (criterios.sustancias && criterios.sustancias.length > 0) {
+        pacientesFiltrados = pacientesFiltrados.filter(p => {
+            if (!p.sustanciasProblematicas || p.sustanciasProblematicas.length === 0) {
+                return false;
+            }
+            
+            return criterios.sustancias.some(sustancia => 
+                p.sustanciasProblematicas.includes(sustancia)
+            );
+        });
     }
     
-    if (filtros.fechaDesde || filtros.fechaHasta) {
-      pacientes = pacientes.filter(p => {
-        if (!p.fechaCreacion) return false;
-        
-        const fechaPaciente = p.fechaCreacion.toDate();
-        let incluir = true;
-        
-        if (filtros.fechaDesde) {
-          incluir = incluir && fechaPaciente >= new Date(filtros.fechaDesde);
-        }
-        
-        if (filtros.fechaHasta) {
-          const fechaHasta = new Date(filtros.fechaHasta);
-          fechaHasta.setHours(23, 59, 59, 999);
-          incluir = incluir && fechaPaciente <= fechaHasta;
-        }
-        
-        return incluir;
-      });
+    // Filtro por fecha de registro
+    if (criterios.fechaInicio || criterios.fechaFin) {
+        pacientesFiltrados = pacientesFiltrados.filter(p => {
+            if (!p.fechaCreacion) return false;
+            
+            const fechaPaciente = p.fechaCreacion.toDate();
+            let cumpleFechaInicio = true;
+            let cumpleFechaFin = true;
+            
+            if (criterios.fechaInicio) {
+                const fechaInicio = new Date(criterios.fechaInicio);
+                cumpleFechaInicio = fechaPaciente >= fechaInicio;
+            }
+            
+            if (criterios.fechaFin) {
+                const fechaFin = new Date(criterios.fechaFin);
+                fechaFin.setHours(23, 59, 59, 999);
+                cumpleFechaFin = fechaPaciente <= fechaFin;
+            }
+            
+            return cumpleFechaInicio && cumpleFechaFin;
+        });
     }
     
-    // Ordenar resultados
-    pacientes.sort((a, b) => {
-      const fechaA = a.fechaCreacion?.toDate() || new Date(0);
-      const fechaB = b.fechaCreacion?.toDate() || new Date(0);
-      return fechaB - fechaA;
-    });
-    
-    currentSearchResults = pacientes;
-    
-    const resultsContainer = document.getElementById('pacientes-search-results');
-    if (resultsContainer) {
-      displayAdvancedSearchResults(pacientes, filtros);
-    }
-    
-  } catch (error) {
-    console.error('Error en búsqueda avanzada:', error);
-    showNotification('Error en la búsqueda: ' + error.message, 'error');
-  } finally {
-    showLoading(false);
-  }
+    return pacientesFiltrados;
 }
 
 /**
- * Muestra resultados de búsqueda avanzada
+ * Muestra el modal de búsqueda avanzada
  */
-function displayAdvancedSearchResults(pacientes, filtros) {
-  const container = document.getElementById('pacientes-search-results');
-  if (!container) return;
-  
-  const filtrosAplicados = Object.entries(filtros)
-    .filter(([key, value]) => value && value !== '' && value !== 'todos' && value !== 'todas')
-    .map(([key, value]) => `${key}: ${value}`)
-    .join(', ');
-  
-  if (pacientes.length === 0) {
-    container.innerHTML = `
-      <div class="no-results">
-        <i class="fas fa-search-minus"></i>
-        <h3>Sin resultados</h3>
-        <p>No se encontraron pacientes con los criterios especificados</p>
-        <small>Filtros aplicados: ${filtrosAplicados}</small>
-        <button class="btn btn-outline btn-sm mt-3" onclick="clearSearchResults()">
-          <i class="fas fa-times"></i>
-          Limpiar búsqueda
-        </button>
-      </div>
-    `;
-  } else {
-    container.innerHTML = `
-      <div class="search-results-header">
-        <h4>
-          <i class="fas fa-filter"></i>
-          Búsqueda avanzada: ${pacientes.length} resultado(s)
-        </h4>
-        <div class="search-filters-applied">
-          <small>Filtros: ${filtrosAplicados}</small>
+function mostrarBusquedaAvanzada() {
+    const modalHTML = crearModalBusquedaAvanzada();
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    import('../utilidades/modales.js')
+        .then(modulo => {
+            modulo.mostrarModal('advanced-search-modal');
+            configurarFormularioAvanzado();
+        });
+}
+
+/**
+ * Crea el modal de búsqueda avanzada
+ */
+function crearModalBusquedaAvanzada() {
+    return `
+        <div class="modal-overlay temp-modal" id="advanced-search-modal">
+            <div class="modal large-modal">
+                <button class="modal-close" onclick="cerrarModal('advanced-search-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+                
+                <div style="padding: 24px;">
+                    <h2><i class="fas fa-search-plus"></i> Búsqueda Avanzada de Pacientes</h2>
+                    
+                    <form id="advanced-search-form">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                            <div class="form-group">
+                                <label class="form-label">Nombre</label>
+                                <input type="text" class="form-input" id="search-nombre" placeholder="Nombre o apellidos">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">RUT</label>
+                                <input type="text" class="form-input" id="search-rut" placeholder="12.345.678-9">
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                            <div class="form-group">
+                                <label class="form-label">Estado</label>
+                                <select class="form-select" id="search-estado">
+                                    <option value="">Todos</option>
+                                    <option value="activo">Activo</option>
+                                    <option value="inactivo">Inactivo</option>
+                                    <option value="alta">Alta</option>
+                                    <option value="derivado">Derivado</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Prioridad</label>
+                                <select class="form-select" id="search-prioridad">
+                                    <option value="">Todas</option>
+                                    <option value="critica">Crítica</option>
+                                    <option value="alta">Alta</option>
+                                    <option value="media">Media</option>
+                                    <option value="baja">Baja</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Origen</label>
+                                <select class="form-select" id="search-origen">
+                                    <option value="">Todos</option>
+                                    <option value="web_publica">Web Pública</option>
+                                    <option value="derivacion">Derivación</option>
+                                    <option value="cita_directa">Cita Directa</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                            <div class="form-group">
+                                <label class="form-label">Edad Mínima</label>
+                                <input type="number" class="form-input" id="search-edad-min" min="12" max="120">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Edad Máxima</label>
+                                <input type="number" class="form-input" id="search-edad-max" min="12" max="120">
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                            <div class="form-group">
+                                <label class="form-label">Fecha Registro - Desde</label>
+                                <input type="date" class="form-input" id="search-fecha-inicio">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Fecha Registro - Hasta</label>
+                                <input type="date" class="form-input" id="search-fecha-fin">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Sustancias Problemáticas</label>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px;">
+                                <label><input type="checkbox" value="Alcohol"> Alcohol</label>
+                                <label><input type="checkbox" value="Marihuana"> Marihuana</label>
+                                <label><input type="checkbox" value="Cocaína"> Cocaína</label>
+                                <label><input type="checkbox" value="Pasta Base"> Pasta Base</label>
+                                <label><input type="checkbox" value="Benzodiacepinas"> Benzodiacepinas</label>
+                                <label><input type="checkbox" value="Otras"> Otras</label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions" style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                            <button type="button" class="btn btn-outline" onclick="limpiarBusquedaAvanzada()">
+                                <i class="fas fa-eraser"></i>
+                                Limpiar
+                            </button>
+                            <button type="button" class="btn btn-outline" onclick="cerrarModal('advanced-search-modal')">
+                                <i class="fas fa-times"></i>
+                                Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i>
+                                Buscar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-        <button class="btn btn-outline btn-sm" onclick="clearSearchResults()">
-          <i class="fas fa-times"></i>
-          Limpiar
-        </button>
-      </div>
-      <div class="patients-grid">
-        ${pacientes.map(createPatientCard).join('')}
-      </div>
     `;
-  }
 }
 
 /**
- * Limpia los resultados de búsqueda
+ * Configura el formulario de búsqueda avanzada
  */
-function clearSearchResults() {
-  const resultsContainer = document.getElementById('pacientes-search-results');
-  const searchInput = document.getElementById('search-pacientes-rut');
-  const nameSearchInput = document.getElementById('search-pacientes-nombre');
-  
-  if (resultsContainer) {
-    resultsContainer.innerHTML = '';
-  }
-  
-  if (searchInput) {
-    searchInput.value = '';
-  }
-  
-  if (nameSearchInput) {
-    nameSearchInput.value = '';
-  }
-  
-  currentSearchResults = [];
-  
-  // Recargar lista completa de pacientes
-  loadPacientes();
-}
-
-/**
- * Búsqueda en tiempo real (debounced)
- */
-function setupLiveSearch() {
-  const searchInput = document.getElementById('search-pacientes-nombre');
-  if (!searchInput) return;
-  
-  let searchTimeout;
-  
-  searchInput.addEventListener('input', (e) => {
-    clearTimeout(searchTimeout);
-    const query = e.target.value.trim();
+function configurarFormularioAvanzado() {
+    const form = document.getElementById('advanced-search-form');
+    const rutInput = document.getElementById('search-rut');
     
-    if (query.length === 0) {
-      clearSearchResults();
-      return;
+    if (rutInput) {
+        rutInput.addEventListener('input', (e) => {
+            e.target.value = formatearRUT(e.target.value);
+        });
     }
     
-    if (query.length < 3) {
-      return; // Esperar al menos 3 caracteres
+    if (form) {
+        form.addEventListener('submit', manejarBusquedaAvanzada);
     }
-    
-    searchTimeout = setTimeout(() => {
-      buscarPacientePorNombre(query);
-    }, 500); // Debounce de 500ms
-  });
 }
 
 /**
- * Exporta resultados de búsqueda a CSV
+ * Maneja el envío del formulario de búsqueda avanzada
  */
-function exportarResultadosBusqueda() {
-  try {
-    if (currentSearchResults.length === 0) {
-      showNotification('No hay resultados para exportar', 'warning');
-      return;
+async function manejarBusquedaAvanzada(e) {
+    e.preventDefault();
+    
+    try {
+        const criterios = {
+            nombre: document.getElementById('search-nombre')?.value?.trim(),
+            rut: document.getElementById('search-rut')?.value?.trim(),
+            estado: document.getElementById('search-estado')?.value,
+            prioridad: document.getElementById('search-prioridad')?.value,
+            origen: document.getElementById('search-origen')?.value,
+            edadMin: document.getElementById('search-edad-min')?.value,
+            edadMax: document.getElementById('search-edad-max')?.value,
+            fechaInicio: document.getElementById('search-fecha-inicio')?.value,
+            fechaFin: document.getElementById('search-fecha-fin')?.value,
+            sustancias: Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value)
+        };
+        
+        // Validar al menos un criterio
+        const tieneCriterios = Object.values(criterios).some(valor => {
+            if (Array.isArray(valor)) return valor.length > 0;
+            return valor && valor.toString().trim() !== '';
+        });
+        
+        if (!tieneCriterios) {
+            mostrarNotificacion('Debe especificar al menos un criterio de búsqueda', 'warning');
+            return;
+        }
+        
+        const pacientes = await busquedaAvanzada(criterios);
+        
+        import('../utilidades/modales.js')
+            .then(modulo => modulo.cerrarModal('advanced-search-modal'));
+        
+        const resultsContainer = document.getElementById('pacientes-search-results');
+        if (resultsContainer) {
+            if (pacientes.length === 0) {
+                resultsContainer.innerHTML = crearMensajeSinResultadosAvanzada();
+            } else {
+                renderizarResultadosBusqueda(pacientes, resultsContainer);
+                mostrarNotificacion(`Se encontraron ${pacientes.length} pacientes`, 'success');
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error en búsqueda avanzada:', error);
+        mostrarNotificacion('Error realizando búsqueda', 'error');
     }
-    
-    const headers = [
-      'Nombre',
-      'RUT',
-      'Edad',
-      'Teléfono',
-      'Email',
-      'Estado',
-      'Prioridad',
-      'CESFAM',
-      'Fecha Registro'
-    ];
-    
-    const csvData = currentSearchResults.map(paciente => [
-      `${paciente.nombre} ${paciente.apellidos || ''}`,
-      paciente.rut,
-      paciente.edad || '',
-      paciente.telefono || '',
-      paciente.email || '',
-      paciente.estado || 'activo',
-      paciente.prioridad || 'media',
-      paciente.cesfam,
-      paciente.fechaCreacion ? 
-        paciente.fechaCreacion.toDate().toLocaleDateString('es-CL') : ''
-    ]);
-    
-    const csvContent = [
-      headers.join(','),
-      ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', `busqueda_pacientes_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    showNotification('Resultados exportados correctamente', 'success');
-    
-  } catch (error) {
-    console.error('Error exportando resultados:', error);
-    showNotification('Error al exportar: ' + error.message, 'error');
-  }
 }
 
 /**
- * Configura los event listeners para búsqueda
+ * Renderiza los resultados de búsqueda
  */
-function setupSearchEventListeners() {
-  const searchButton = document.getElementById('buscar-paciente-btn');
-  const rutInput = document.getElementById('search-pacientes-rut');
-  
-  if (searchButton) {
-    searchButton.addEventListener('click', buscarPacientePorRUT);
-  }
-  
-  if (rutInput) {
-    rutInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        buscarPacientePorRUT();
-      }
-    });
-    
-    rutInput.addEventListener('input', (e) => {
-      e.target.value = formatRUT(e.target.value);
-    });
-  }
-  
-  setupLiveSearch();
+function renderizarResultadosBusqueda(pacientes, container) {
+    container.innerHTML = `
+        <h4>Resultados de búsqueda (${pacientes.length}):</h4>
+        <div class="patients-grid">
+            ${pacientes.map(paciente => crearTarjetaPacienteBasica(paciente)).join('')}
+        </div>
+    `;
 }
 
-// Exportar funciones
-if (typeof window !== 'undefined') {
-  window.buscarPacientePorRUT = buscarPacientePorRUT;
-  window.buscarPacientePorNombre = buscarPacientePorNombre;
-  window.busquedaAvanzada = busquedaAvanzada;
-  window.clearSearchResults = clearSearchResults;
-  window.exportarResultadosBusqueda = exportarResultadosBusqueda;
-  window.setupSearchEventListeners = setupSearchEventListeners;
+/**
+ * Crea una tarjeta básica de paciente
+ */
+function crearTarjetaPacienteBasica(paciente) {
+    return `
+        <div class="patient-card" onclick="mostrarFichaPaciente('${paciente.id}')">
+            <div class="patient-header">
+                <h3>${paciente.nombre} ${paciente.apellidos || ''}</h3>
+                <p>RUT: ${paciente.rut}</p>
+            </div>
+            <div class="patient-details">
+                <p>Edad: ${paciente.edad || 'No especificada'} años</p>
+                <p>Estado: ${(paciente.estado || 'activo').toUpperCase()}</p>
+                <p>Teléfono: ${paciente.telefono || 'No disponible'}</p>
+            </div>
+        </div>
+    `;
 }
 
-console.log('✅ Módulo de búsqueda de pacientes cargado');
+/**
+ * Crea mensaje cuando no hay resultados por RUT
+ */
+function crearMensajeSinResultados(rut) {
+    return `
+        <div class="no-results">
+            <i class="fas fa-user-slash"></i>
+            <h3>Paciente no encontrado</h3>
+            <p>No se encontró ningún paciente con el RUT ${rut} en tu CESFAM</p>
+        </div>
+    `;
+}
+
+/**
+ * Crea mensaje cuando no hay resultados en búsqueda avanzada
+ */
+function crearMensajeSinResultadosAvanzada() {
+    return `
+        <div class="no-results">
+            <i class="fas fa-search"></i>
+            <h3>Sin resultados</h3>
+            <p>No se encontraron pacientes que coincidan con los criterios especificados</p>
+            <button class="btn btn-primary btn-sm" onclick="mostrarBusquedaAvanzada()">
+                <i class="fas fa-search-plus"></i>
+                Modificar búsqueda
+            </button>
+        </div>
+    `;
+}
+
+/**
+ * Limpia el formulario de búsqueda avanzada
+ */
+function limpiarBusquedaAvanzada() {
+    const form = document.getElementById('advanced-search-form');
+    if (form) {
+        form.reset();
+        // Limpiar checkboxes
+        form.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+        });
+    }
+}
+
+// Funciones globales
+window.buscarPacientePorRUT = buscarPacientePorRUT;
+window.mostrarBusquedaAvanzada = mostrarBusquedaAvanzada;
+window.limpiarBusquedaAvanzada = limpiarBusquedaAvanzada;
+
+export {
+    inicializarBusquedaPacientes,
+    buscarPacientePorRUT,
+    busquedaAvanzada,
+    mostrarBusquedaAvanzada
+};
