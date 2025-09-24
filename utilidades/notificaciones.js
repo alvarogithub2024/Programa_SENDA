@@ -1,8 +1,3 @@
-//**
- * SISTEMA DE NOTIFICACIONES
- * Maneja la creación y gestión de notificaciones en la interfaz
- */
-
 import { ICONOS_NOTIFICACION, APP_CONFIG } from '../configuracion/constantes.js';
 
 let contenedorNotificaciones = null;
