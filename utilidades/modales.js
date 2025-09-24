@@ -277,5 +277,46 @@ function resetSpecialFormFields() {
     }
 }
 
+/**
+ * Muestra el modal para responder solicitudes
+ */
+window.showResponderModal = function(solicitudId, tipo) {
+    try {
+        // Buscar el modal
+        const modal = document.getElementById('responder-modal');
+        if (!modal) {
+            console.error('Modal responder-modal no encontrado');
+            return;
+        }
+
+        // Configurar el modal con datos de la solicitud
+        const solicitudIdInput = modal.querySelector('#solicitud-id');
+        const tipoSolicitudSpan = modal.querySelector('#tipo-solicitud');
+        
+        if (solicitudIdInput) {
+            solicitudIdInput.value = solicitudId;
+        }
+        
+        if (tipoSolicitudSpan) {
+            tipoSolicitudSpan.textContent = tipo || 'Solicitud';
+        }
+
+        // Limpiar formulario anterior
+        const form = modal.querySelector('#responder-form');
+        if (form) {
+            form.reset();
+        }
+
+        // Mostrar modal
+        modal.style.display = 'flex';
+        
+        console.log(`Modal de respuesta abierto para solicitud ${solicitudId}`);
+        
+    } catch (error) {
+        console.error('Error abriendo modal de respuesta:', error);
+        showNotification('Error abriendo modal de respuesta', 'error');
+    }
+};
+
 // Exportar la función closeModal para uso global
 window.closeModal = closeModal;
