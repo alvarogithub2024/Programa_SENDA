@@ -344,7 +344,7 @@ export {
     mostrarContenidoPublico,
     mostrarContenidoProfesional
 };
-        if (professionalContent) professionalContent.style.display = 'none';
+      if (professionalContent) professionalContent.style.display = 'none';
         if (professionalHeader) professionalHeader.style.display = 'none';
         if (loginBtn) loginBtn.style.display = 'flex';
         if (logoutBtn) logoutBtn.style.display = 'none';
