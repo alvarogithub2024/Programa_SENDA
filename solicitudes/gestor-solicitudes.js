@@ -3,7 +3,8 @@
 // Desarrollado por: CamiMoralesM
 // Fecha: 2024
 
-import { getFirestore, showNotification } from '../utilidades/utilidades-firebase.js';
+import { getFirestore } from '../configuracion/firebase.js';
+import { showNotification } from '../utilidades/notificaciones.js';
 
 // Variables globales
 let solicitudesData = [];
