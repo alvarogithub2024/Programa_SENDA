@@ -4,21 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SENDA Puente Alto - Sistema de Gestión</title>
-    
     <!-- CSS Styles -->
     <link rel="stylesheet" href="styles.css">
-    
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    
     <!-- EmailJS para envío de correos -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    
     <!-- jsPDF para generar PDFs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -31,7 +26,7 @@
                 <span>SENDA Puente Alto</span>
             </div>
             <div class="header-actions">
-                <button class="btn btn-professional" id="login-professional">
+                <button class="btn btn-professional" id="login-professional" onclick="openModal('login-modal')">
                     <i class="fas fa-user-md"></i>
                     Acceso Profesionales
                 </button>
@@ -61,7 +56,6 @@
 
     <!-- ================= CONTENIDO PRINCIPAL ================= -->
     <main class="main-content">
-        
         <!-- ================= CONTENIDO PÚBLICO ================= -->
         <div id="public-content">
             <!-- Hero Card -->
@@ -72,7 +66,6 @@
                     Ofrecemos tratamiento y apoyo integral para la prevención y recuperación 
                     del consumo problemático de drogas y alcohol. Tu bienestar es nuestra prioridad.
                 </p>
-                
                 <!-- Estadísticas -->
                 <div class="stats-grid">
                     <div class="stat-item">
@@ -95,15 +88,15 @@
 
                 <!-- Botones principales -->
                 <div class="btn-group">
-                    <button class="btn btn-primary" id="register-patient">
+                    <button class="btn btn-primary" id="register-patient" onclick="openModal('patient-modal')">
                         <i class="fas fa-user-plus"></i>
                         Solicitar Ayuda
                     </button>
-                    <button class="btn btn-secondary" id="reentry-program">
+                    <button class="btn btn-secondary" id="reentry-program" onclick="openModal('reentry-modal')">
                         <i class="fas fa-redo"></i>
                         Reingreso al Programa
                     </button>
-                    <button class="btn btn-outline" id="about-program">
+                    <button class="btn btn-outline" id="about-program" onclick="openModal('about-modal')">
                         <i class="fas fa-info-circle"></i>
                         Sobre el Programa
                     </button>
@@ -159,7 +152,6 @@
                 <div class="section-header">
                     <h2>Gestión de Agenda</h2>
                 </div>
-                
                 <!-- Calendario -->
                 <div class="calendar-container">
                     <div class="calendar-header">
@@ -181,7 +173,6 @@
                         <!-- El calendario se genera dinámicamente -->
                     </div>
                 </div>
-
                 <!-- Citas del día seleccionado -->
                 <div class="daily-appointments">
                     <h3>Citas del Día</h3>
@@ -199,13 +190,11 @@
                 <div class="section-header">
                     <h2>Solicitudes de Ingreso</h2>
                 </div>
-
                 <div class="filters-container">
                     <div class="filter-tabs">
                         <button class="filter-btn active" onclick="currentFilter = 'todas'; filterSolicitudes()">Todas</button>
                         <button class="filter-btn" onclick="currentFilter = 'pendiente'; filterSolicitudes()">Pendientes</button>
                     </div>
-                    
                     <div class="filter-priority">
                         <label>Prioridad:</label>
                         <select id="priority-filter">
@@ -217,7 +206,6 @@
                         </select>
                     </div>
                 </div>
-
                 <div class="requests-container" id="requests-container">
                     <div class="loading-message">
                         <i class="fas fa-spinner fa-spin"></i>
@@ -241,14 +229,12 @@
                         </button>
                     </div>
                 </div>
-
                 <div class="patients-grid" id="patients-grid">
                     <div class="loading-message">
                         <i class="fas fa-spinner fa-spin"></i>
                         Cargando pacientes...
                     </div>
                 </div>
-
                 <div id="pacientes-search-results"></div>
             </div>
 
@@ -257,7 +243,6 @@
                 <div class="section-header">
                     <h2>Seguimiento y Control</h2>
                 </div>
-
                 <!-- Pacientes de hoy -->
                 <div class="daily-appointments">
                     <h3>Pacientes de Hoy</h3>
@@ -268,7 +253,6 @@
                         </div>
                     </div>
                 </div>
-
                 <!-- Próximas citas -->
                 <div class="daily-appointments" style="margin-top: 2rem;">
                     <h3>Próximas Citas</h3>
@@ -287,20 +271,17 @@
     </main>
 
     <!-- ================= MODAL LOGIN ================= -->
-    <div class="modal-overlay" id="login-modal">
+    <div class="modal-overlay" id="login-modal" style="display:none;">
         <div class="modal">
-            <button class="modal-close">
+            <button class="modal-close" onclick="closeModal('login-modal')">
                 <i class="fas fa-times"></i>
             </button>
-            
             <h2>Acceso Profesionales</h2>
             <p class="modal-description">Ingresa con tu cuenta autorizada para acceder al sistema.</p>
-
             <div class="modal-tabs">
-                <button class="modal-tab active">Iniciar Sesión</button>
-                <button class="modal-tab">Registrarse</button>
+                <button class="modal-tab active" onclick="switchLoginTab('login')">Iniciar Sesión</button>
+                <button class="modal-tab" onclick="switchLoginTab('register')">Registrarse</button>
             </div>
-
             <!-- Login Form -->
             <form class="auth-form active" id="login-form">
                 <div class="form-group">
@@ -318,7 +299,6 @@
                     </button>
                 </div>
             </form>
-
             <!-- Register Form -->
             <form class="auth-form" id="register-form">
                 <div class="form-row">
@@ -378,9 +358,9 @@
     </div>
 
     <!-- ================= MODAL SOLICITUD PACIENTE ================= -->
-    <div class="modal-overlay" id="patient-modal">
+   <div class="modal-overlay" id="patient-modal" style="display:none;">
         <div class="modal large-modal">
-            <button class="modal-close">
+            <button class="modal-close" onclick="closeModal('patient-modal')">
                 <i class="fas fa-times"></i>
             </button>
             
@@ -681,9 +661,9 @@
     </div>
     
     <!-- ================= MODAL REINGRESO ================= -->
-    <div class="modal-overlay" id="reentry-modal">
+    <div class="modal-overlay" id="reentry-modal" style="display:none;">
         <div class="modal">
-            <button class="modal-close">
+            <button class="modal-close" onclick="closeModal('reentry-modal')">
                 <i class="fas fa-times"></i>
             </button>
             
@@ -742,15 +722,7 @@
     </div>
 
     <!-- ================= LOADING OVERLAY ================= -->
-    <div class="loading-overlay hidden" id="loading-overlay">
-        <div class="loading-spinner">
-            <div class="spinner"></div>
-            <p>Cargando...</p>
-        </div>
-    </div>
-
-    <!-- ================= FOOTER ================= -->
-    <footer class="footer">
+      <footer class="footer">
         <div class="footer-content">
             <p>&copy; 2024 SENDA Puente Alto. Todos los derechos reservados.</p>
             <p>Desarrollado para el bienestar de nuestra comunidad</p>
@@ -762,8 +734,45 @@
     </footer>
 
     <!-- ================= JAVASCRIPT ================= -->
-    <script type="module" src="./main.js"></script>
+    <script>
+        // Funciones para abrir/cerrar modales
+        window.openModal = function(id) {
+            document.getElementById(id).style.display = 'block';
+            document.body.classList.add('modal-open');
+        };
+        window.closeModal = function(id) {
+            document.getElementById(id).style.display = 'none';
+            document.body.classList.remove('modal-open');
+        };
+        // Cerrar modal al hacer clic fuera del modal
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) {
+                    overlay.style.display = 'none';
+                    document.body.classList.remove('modal-open');
+                }
+            });
+        });
+        // Evitar que el clic dentro del modal cierre el modal
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        });
+        // Cambiar tab login/registro
+        window.switchLoginTab = function(tab) {
+            document.querySelectorAll('.modal-tab').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
+            if(tab === 'login') {
+                document.querySelector('.modal-tab:nth-child(1)').classList.add('active');
+                document.getElementById('login-form').classList.add('active');
+            } else {
+                document.querySelector('.modal-tab:nth-child(2)').classList.add('active');
+                document.getElementById('register-form').classList.add('active');
+            }
+        };
+    </script>
+    <!-- Cargar archivo JavaScript principal -->
+    <script src="app.js"></script>
 </body>
 </html>
-
-   
