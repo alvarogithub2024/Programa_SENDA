@@ -5,7 +5,6 @@
 
 import { showNotification } from '../utilidades/notificaciones.js';
 import { validateRUT, isValidEmail } from '../utilidades/validaciones.js';
-import { validateStep } from '../formularios/validaciones.js';
 import { setupAutoSave, saveFormDraft, loadFormDraft, resetForm } from './autoguardado.js';
 
 let currentFormStep = 1;
@@ -17,7 +16,9 @@ let maxFormStep = 4;
 export function setupFormularios() {
     try {
         setupMultiStepForm();
-        setupAutoSave();
+        if (typeof setupAutoSave === 'function') {
+            setupAutoSave();
+        }
         console.log('✅ Formularios configurados');
     } catch (error) {
         console.error('❌ Error configurando formularios:', error);
@@ -50,35 +51,86 @@ function setupMultiStepForm() {
  * Configura los botones de navegación
  */
 function setupNavigationButtons() {
-    const form = document.getElementById('patient-form');
-    if (!form) return;
+    try {
+        const form = document.getElementById('patient-form');
+        if (!form) {
+            console.warn('⚠️ Formulario patient-form no encontrado');
+            return;
+        }
 
-    const nextButtons = form.querySelectorAll('[id^="next-step"]');
-    const prevButtons = form.querySelectorAll('[id^="prev-step"]');
-    
-    nextButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const currentStep = parseInt(btn.id.split('-')[2]);
-            if (validateStep(currentStep)) {
-                const nextStep = getNextStep(currentStep);
-                if (nextStep) {
-                    goToStep(nextStep);
-                }
+        const nextButtons = form.querySelectorAll('[id^="next-step"]');
+        const prevButtons = form.querySelectorAll('[id^="prev-step"]');
+        
+        console.log(`🔧 Configurando ${nextButtons.length} botones "siguiente" y ${prevButtons.length} botones "anterior"`);
+        
+        nextButtons.forEach(btn => {
+            if (btn && typeof btn.addEventListener === 'function') {
+                btn.addEventListener('click', (e) => {
+                    try {
+                        e.preventDefault();
+                        const currentStep = parseInt(btn.id.split('-')[2]);
+                        
+                        // Validar paso antes de continuar
+                        if (validateStepBasic(currentStep)) {
+                            const nextStep = getNextStep(currentStep);
+                            if (nextStep) {
+                                goToStep(nextStep);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error en botón siguiente:', error);
+                    }
+                });
             }
         });
-    });
 
-    prevButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const currentStep = parseInt(btn.id.split('-')[2]);
-            const prevStep = getPreviousStep(currentStep);
-            if (prevStep) {
-                goToStep(prevStep);
+        prevButtons.forEach(btn => {
+            if (btn && typeof btn.addEventListener === 'function') {
+                btn.addEventListener('click', (e) => {
+                    try {
+                        e.preventDefault();
+                        const currentStep = parseInt(btn.id.split('-')[2]);
+                        const prevStep = getPreviousStep(currentStep);
+                        if (prevStep) {
+                            goToStep(prevStep);
+                        }
+                    } catch (error) {
+                        console.error('Error en botón anterior:', error);
+                    }
+                });
             }
         });
-    });
+        
+        console.log('✅ Botones de navegación configurados correctamente');
+        
+    } catch (error) {
+        console.error('❌ Error configurando botones de navegación:', error);
+    }
+}
+
+/**
+ * Validación básica de pasos
+ */
+function validateStepBasic(step) {
+    try {
+        const currentStepElement = document.querySelector(`.form-step[data-step="${step}"]`);
+        if (!currentStepElement) return false;
+        
+        const requiredFields = currentStepElement.querySelectorAll('input[required], select[required], textarea[required]');
+        
+        for (let field of requiredFields) {
+            if (!field.value.trim()) {
+                field.focus();
+                showNotification(`Por favor completa el campo: ${field.name || field.id}`, 'warning');
+                return false;
+            }
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Error validando paso:', error);
+        return true; // Permitir navegación en caso de error
+    }
 }
 
 /**
@@ -97,7 +149,6 @@ function setupTipoSolicitudListeners() {
 
 /**
  * Maneja el cambio de tipo de solicitud
- * @param {string} tipoSolicitud - Tipo de solicitud seleccionado
  */
 function handleTipoSolicitudChange(tipoSolicitud) {
     const infoEmailContainer = document.getElementById('info-email-container');
@@ -124,7 +175,9 @@ function handleTipoSolicitudChange(tipoSolicitud) {
         if (submitBtn) submitBtn.style.display = 'none';
     }
     
-    saveFormDraft();
+    if (typeof saveFormDraft === 'function') {
+        saveFormDraft();
+    }
 }
 
 /**
@@ -163,8 +216,6 @@ function setupSubmitButtons() {
 
 /**
  * Navega al siguiente paso
- * @param {number} currentStep - Paso actual
- * @returns {number|null} Siguiente paso o null
  */
 function getNextStep(currentStep) {
     const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
@@ -184,8 +235,6 @@ function getNextStep(currentStep) {
 
 /**
  * Navega al paso anterior
- * @param {number} currentStep - Paso actual
- * @returns {number|null} Paso anterior o null
  */
 function getPreviousStep(currentStep) {
     switch (currentStep) {
@@ -198,7 +247,6 @@ function getPreviousStep(currentStep) {
 
 /**
  * Navega a un paso específico
- * @param {number} step - Paso al que navegar
  */
 export function goToStep(step) {
     try {
@@ -226,7 +274,9 @@ export function goToStep(step) {
         updateProgressIndicator(step, maxFormStep);
         
         currentFormStep = step;
-        saveFormDraft();
+        if (typeof saveFormDraft === 'function') {
+            saveFormDraft();
+        }
 
         console.log(`🔧 Navegando a paso ${step} de ${maxFormStep}`);
     } catch (error) {
@@ -236,8 +286,6 @@ export function goToStep(step) {
 
 /**
  * Actualiza el indicador de progreso
- * @param {number} current - Paso actual
- * @param {number} total - Total de pasos
  */
 function updateProgressIndicator(current, total) {
     try {
@@ -259,7 +307,6 @@ function updateProgressIndicator(current, total) {
 
 /**
  * Actualiza el color del valor de motivación
- * @param {number} value - Valor de motivación
  */
 function updateMotivacionColor(value) {
     try {
@@ -285,19 +332,26 @@ function updateMotivacionColor(value) {
 }
 
 /**
- * Obtiene los datos actuales del formulario
- * @returns {Object} Datos del formulario
+ * Maneja el envío del formulario de pacientes completo
  */
-export function getCurrentFormStep() {
-    return currentFormStep;
-}
-
-/**
- * Obtiene el máximo número de pasos
- * @returns {number} Máximo de pasos
- */
-export function getMaxFormStep() {
-    return maxFormStep;
+async function handlePatientFormSubmit(e) {
+    try {
+        e.preventDefault();
+        console.log('📤 Enviando formulario de paciente');
+        
+        const formData = new FormData(e.target);
+        const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
+        
+        if (tipoSolicitud === 'informacion') {
+            await handleInformationRequestSubmit(e);
+        } else if (tipoSolicitud === 'identificado') {
+            await handleSolicitudIngresoSubmit(e);
+        }
+        
+    } catch (error) {
+        console.error('Error enviando formulario:', error);
+        showNotification('Error al procesar la solicitud', 'error');
+    }
 }
 
 /**
@@ -308,7 +362,6 @@ function handleInformationOnlySubmit() {
         const form = document.getElementById('patient-form');
         if (!form) return;
         
-        // Crear evento simulado para usar la función existente
         const fakeEvent = {
             preventDefault: () => {},
             target: form
@@ -322,163 +375,6 @@ function handleInformationOnlySubmit() {
     }
 }
 
-/**
- * Maneja el envío del formulario de pacientes completo
- */
-async function handlePatientFormSubmit(e) {
-    try {
-        e.preventDefault();
-        console.log('📤 Enviando formulario de paciente');
-        
-        const formData = new FormData(e.target);
-        const tipoSolicitud = document.querySelector('input[name="tipoSolicitud"]:checked')?.value;
-        
-        if (tipoSolicitud === 'informacion') {
-            // Usar función existente para solicitudes de información
-            await handleInformationRequestSubmit(e);
-        } else if (tipoSolicitud === 'identificado') {
-            // Manejar como solicitud de ingreso
-            await handleSolicitudIngresoSubmit(e);
-        }
-        
-    } catch (error) {
-        console.error('Error enviando formulario:', error);
-        showNotification('Error al procesar la solicitud', 'error');
-    }
-}
-
-/**
- * Maneja el envío de solicitudes de ingreso (guardado en solicitudes_ingreso)
- */
-async function handleSolicitudIngresoSubmit(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(e.target);
-    
-    // Construir datos para solicitud de ingreso
-  const solicitudData = {
-    // Información personal
-    nombre: formData.get('nombre') || formData.get('patient-name') || '',
-    apellidos: formData.get('apellidos') || formData.get('patient-lastname') || '',
-    rut: formatRUT(formData.get('rut') || formData.get('patient-rut') || ''),
-    edad: parseInt(formData.get('edad') || formData.get('patient-age')) || 0,
-    email: formData.get('email') || formData.get('patient-email') || '',
-    telefono: formatPhoneNumber(formData.get('telefono') || formData.get('patient-phone') || ''),
-    direccion: formData.get('direccion') || formData.get('patient-address') || '',
-    
-    // Información de la solicitud
-    cesfam: formData.get('cesfam') || formData.get('patient-cesfam') || 'CESFAM Karol Wojtyla',
-    descripcion: formData.get('descripcion') || formData.get('patient-description') || formData.get('motivoConsulta') || '',
-    
-    // Clasificación
-    prioridad: determinarPrioridad(formData),
-    urgencia: determinarUrgencia(formData),
-    motivacion: parseInt(formData.get('motivacion') || formData.get('motivacion-range')) || 5,
-    
-    // Información específica
-    sustancias: obtenerSustancias(formData), // Ya devuelve array como en el ejemplo
-    tiempoConsumo: formData.get('tiempoConsumo') || formData.get('tiempo-consumo') || '',
-    tratamientoPrevio: formData.get('tratamientoPrevio') || 'no',
-    paraMi: formData.get('paraMi') || 'si',
-    
-    // Metadata del sistema
-    estado: 'pendiente', // Se cambiará a 'agendada' cuando se programe cita
-    tipoSolicitud: 'identificado',
-    origen: 'web_publica',
-    version: '2.0',
-    
-    // Timestamps
-    fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
-    fechaAgenda: null, // Se llenará cuando se programe la cita
-    
-    // IDs relacionados (se llenarán posteriormente)
-    agendadaPor: null, // ID del profesional que agenda
-    citaId: null       // ID de la cita creada
-};
-    try {
-        // Importar getFirestore dinámicamente para evitar errores de import
-        const { getFirestore } = await import('../configuracion/firebase.js');
-        const db = getFirestore();
-        
-        // Guardar en la colección correcta: solicitudes_ingreso
-        const solicitudesRef = db.collection('solicitudes_ingreso');
-        const docRef = await solicitudesRef.add(solicitudData);
-        
-        console.log('✅ Solicitud de ingreso guardada con ID:', docRef.id);
-        showNotification('¡Solicitud de ayuda enviada correctamente! Te contactaremos pronto.', 'success');
-        
-        // Limpiar formulario y resetear
-        e.target.reset();
-        resetForm();
-        goToStep(1);
-        
-    } catch (error) {
-        console.error('❌ Error guardando solicitud de ingreso:', error);
-        showNotification('Error al enviar la solicitud. Por favor intente nuevamente.', 'error');
-    }
-}
-
-/**
- * Determina la prioridad basada en los datos del formulario
- */
-function determinarPrioridad(formData) {
-    const motivacion = parseInt(formData.get('motivacion')) || 5;
-    const sustancias = obtenerSustancias(formData);
-    const tiempoConsumo = formData.get('tiempoConsumo');
-    
-    if (motivacion >= 8 && (sustancias.includes('pasta_base') || sustancias.includes('cocaina'))) {
-        return 'alta';
-    } else if (motivacion >= 6 || tiempoConsumo === 'mas_5_años') {
-        return 'media';
-    } else {
-        return 'baja';
-    }
-}
-
-/**
- * Determina la urgencia basada en los datos del formulario
- */
-function determinarUrgencia(formData) {
-    const descripcion = (formData.get('descripcion') || '').toLowerCase();
-    const sustancias = obtenerSustancias(formData);
-    
-    // Palabras clave que indican alta urgencia
-    const palabrasUrgentes = ['crisis', 'urgente', 'emergencia', 'suicidio', 'violento', 'peligro'];
-    
-    if (palabrasUrgentes.some(palabra => descripcion.includes(palabra))) {
-        return 'alta';
-    } else if (sustancias.includes('pasta_base') || sustancias.includes('cocaina')) {
-        return 'media';
-    } else {
-        return 'baja';
-    }
-}
-
-/**
- * Obtiene las sustancias seleccionadas del formulario
- */
-function obtenerSustancias(formData) {
-    const sustancias = [];
-    
-    // Verificar checkboxes de sustancias
-    const sustanciasDisponibles = ['alcohol', 'marihuana', 'cocaina', 'pasta_base', 'benzodiacepinas', 'otros'];
-    
-    sustanciasDisponibles.forEach(sustancia => {
-        if (formData.get(`sustancia_${sustancia}`) || formData.get(sustancia)) {
-            sustancias.push(sustancia);
-        }
-    });
-    
-    // Si no hay sustancias específicas, intentar obtener de un campo general
-    if (sustancias.length === 0) {
-        const sustanciaGeneral = formData.get('sustancias');
-        if (sustanciaGeneral) {
-            sustancias.push(sustanciaGeneral);
-        }
-    }
-    
-    return sustancias;
-}
 /**
  * Maneja el envío de solicitudes de información
  */
@@ -515,4 +411,218 @@ export async function handleInformationRequestSubmit(e) {
         console.error('Error enviando solicitud:', error);
         showNotification('Error al enviar la solicitud', 'error');
     }
+}
+
+/**
+ * Maneja el envío de solicitudes de ingreso
+ */
+async function handleSolicitudIngresoSubmit(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    
+    const solicitudData = {
+        // Información personal
+        nombre: formData.get('nombre') || formData.get('patient-name') || '',
+        apellidos: formData.get('apellidos') || formData.get('patient-lastname') || '',
+        rut: formatRUT(formData.get('rut') || formData.get('patient-rut') || ''),
+        edad: parseInt(formData.get('edad') || formData.get('patient-age')) || 0,
+        email: formData.get('email') || formData.get('patient-email') || '',
+        telefono: formatPhoneNumber(formData.get('telefono') || formData.get('patient-phone') || ''),
+        direccion: formData.get('direccion') || formData.get('patient-address') || '',
+        
+        // Información de la solicitud
+        cesfam: formData.get('cesfam') || formData.get('patient-cesfam') || 'CESFAM Karol Wojtyla',
+        descripcion: formData.get('descripcion') || formData.get('patient-description') || formData.get('motivoConsulta') || '',
+        
+        // Clasificación
+        prioridad: determinarPrioridad(formData),
+        urgencia: determinarUrgencia(formData),
+        motivacion: parseInt(formData.get('motivacion') || formData.get('motivacion-range')) || 5,
+        
+        // Información específica
+        sustancias: obtenerSustancias(formData),
+        tiempoConsumo: formData.get('tiempoConsumo') || formData.get('tiempo-consumo') || '',
+        tratamientoPrevio: formData.get('tratamientoPrevio') || 'no',
+        paraMi: formData.get('paraMi') || 'si',
+        
+        // Metadata del sistema
+        estado: 'pendiente',
+        tipoSolicitud: 'identificado',
+        origen: 'web_publica',
+        version: '2.0',
+        
+        // Timestamps
+        fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+        fechaAgenda: null,
+        
+        // IDs relacionados
+        agendadaPor: null,
+        citaId: null
+    };
+
+    try {
+        const { getFirestore } = await import('../configuracion/firebase.js');
+        const db = getFirestore();
+        
+        const solicitudesRef = db.collection('solicitudes_ingreso');
+        const docRef = await solicitudesRef.add(solicitudData);
+        
+        console.log('✅ Solicitud de ingreso guardada con ID:', docRef.id);
+        showNotification('¡Solicitud de ayuda enviada correctamente! Te contactaremos pronto.', 'success');
+        
+        e.target.reset();
+        if (typeof resetForm === 'function') {
+            resetForm();
+        }
+        goToStep(1);
+        
+    } catch (error) {
+        console.error('❌ Error guardando solicitud de ingreso:', error);
+        showNotification('Error al enviar la solicitud. Por favor intente nuevamente.', 'error');
+    }
+}
+
+/**
+ * Determina la prioridad basada en los datos del formulario
+ */
+function determinarPrioridad(formData) {
+    const motivacion = parseInt(formData.get('motivacion') || formData.get('motivacion-range')) || 5;
+    const sustancias = obtenerSustancias(formData);
+    const tiempoConsumo = formData.get('tiempoConsumo') || formData.get('tiempo-consumo') || '';
+    
+    if (motivacion >= 8 && (sustancias.includes('pasta_base') || sustancias.includes('cocaina'))) {
+        return 'alta';
+    } else if (motivacion >= 6 || tiempoConsumo === 'mas_5_años') {
+        return 'media';
+    } else {
+        return 'baja';
+    }
+}
+
+/**
+ * Determina la urgencia basada en los datos del formulario
+ */
+function determinarUrgencia(formData) {
+    const descripcion = (formData.get('descripcion') || formData.get('patient-description') || '').toLowerCase();
+    const sustancias = obtenerSustancias(formData);
+    
+    const palabrasUrgentes = ['crisis', 'urgente', 'emergencia', 'suicidio', 'violento', 'peligro'];
+    
+    if (palabrasUrgentes.some(palabra => descripcion.includes(palabra))) {
+        return 'alta';
+    } else if (sustancias.includes('pasta_base') || sustancias.includes('cocaina')) {
+        return 'media';
+    } else {
+        return 'baja';
+    }
+}
+
+/**
+ * Obtiene las sustancias seleccionadas del formulario
+ */
+function obtenerSustancias(formData) {
+    const sustancias = [];
+    
+    const sustanciasDisponibles = [
+        'alcohol',
+        'marihuana', 
+        'cocaina',
+        'pasta_base',
+        'benzodiacepinas',
+        'medicamentos',
+        'otros'
+    ];
+    
+    sustanciasDisponibles.forEach(sustancia => {
+        if (formData.get(`sustancia_${sustancia}`) || 
+            formData.get(sustancia) ||
+            formData.get(`sustancias`) === sustancia) {
+            sustancias.push(sustancia);
+        }
+    });
+    
+    const sustanciasGenerales = formData.getAll('sustancias');
+    if (sustanciasGenerales.length > 0) {
+        sustanciasGenerales.forEach(sustancia => {
+            if (sustancia && !sustancias.includes(sustancia)) {
+                sustancias.push(sustancia);
+            }
+        });
+    }
+    
+    if (sustancias.length === 0) {
+        sustancias.push('no_especificada');
+    }
+    
+    return sustancias;
+}
+
+/**
+ * Formatea un RUT chileno
+ */
+function formatRUT(rut) {
+    if (!rut) return '';
+    
+    const cleaned = rut.replace(/[^\dKk]/g, '').toUpperCase();
+    if (cleaned.length < 2) return cleaned;
+    
+    const body = cleaned.slice(0, -1);
+    const dv = cleaned.slice(-1);
+    
+    const formattedBody = body.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+    
+    return `${formattedBody}-${dv}`;
+}
+
+/**
+ * Formatea un número de teléfono chileno
+ */
+function formatPhoneNumber(phone) {
+    if (!phone) return '';
+    
+    const cleaned = phone.replace(/\D/g, '');
+    
+    if (cleaned.length === 9) {
+        return `${cleaned.slice(0, 1)} ${cleaned.slice(1, 5)} ${cleaned.slice(5)}`;
+    }
+    
+    return phone;
+}
+
+/**
+ * Actualiza la solicitud cuando se agenda una cita
+ */
+export async function actualizarSolicitudAgendada(solicitudId, citaId, profesionalId, fechaAgenda) {
+    try {
+        const { getFirestore } = await import('../configuracion/firebase.js');
+        const db = getFirestore();
+        
+        await db.collection('solicitudes_ingreso').doc(solicitudId).update({
+            estado: 'agendada',
+            agendadaPor: profesionalId,
+            citaId: citaId,
+            fechaAgenda: firebase.firestore.Timestamp.fromDate(fechaAgenda)
+        });
+        
+        console.log('✅ Solicitud actualizada como agendada');
+        
+    } catch (error) {
+        console.error('❌ Error actualizando solicitud:', error);
+        throw error;
+    }
+}
+
+/**
+ * Obtiene los datos actuales del formulario
+ */
+export function getCurrentFormStep() {
+    return currentFormStep;
+}
+
+/**
+ * Obtiene el máximo número de pasos
+ */
+export function getMaxFormStep() {
+    return maxFormStep;
 }
