@@ -8,7 +8,8 @@ import { getCurrentUserData, getCurrentUser } from '../autenticacion/sesion.js';
 import { showNotification, showLoading } from '../utilidades/notificaciones.js';
 import { getCachedData, setCachedData } from '../utilidades/cache.js';
 import { retryOperation } from '../utilidades/validaciones.js';
-import { closeModal, resetForm } from '../utilidades/modales.js';
+import { closeModal } from '../utilidades/modales.js';
+import { resetForm } from '../formularios/autoguardado.js';
 import { APP_CONFIG } from '../configuracion/constantes.js';
 
 let solicitudesData = [];
