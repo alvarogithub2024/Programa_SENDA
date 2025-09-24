@@ -6,7 +6,7 @@
 import { obtenerAuth, obtenerFirestore } from '../configuracion/firebase.js';
 import { APP_CONFIG, CACHE_KEYS } from '../configuracion/constantes.js';
 import { mostrarNotificacion } from '../utilidades/notificaciones.js';
-import { mostrarCarga } from '../utilidades/modales.js';
+import { mostrarCarga, mostrarModal } from '../utilidades/modales.js';
 import { limpiarCache, obtenerCache, establecerCache } from '../utilidades/cache.js';
 
 let auth, db;
@@ -42,23 +42,20 @@ async function manejarCambioAutenticacion(user) {
 
         if (user) {
             currentUser = user;
-            await cargarDatosUsuario();
-            mostrarContenidoProfesional();
+            await cargarDatosUsuario(); // Carga datos del usuario desde Firestore
+            mostrarContenidoProfesional(); // Muestra la interfaz profesional
             
             // Actualizar variables globales
             if (window.SENDASystem) {
                 window.SENDASystem.currentUser = currentUser;
                 window.SENDASystem.currentUserData = currentUserData;
             }
-            // Oculta el modal de login si está visible
-            const loginModal = document.getElementById('login-modal');
-            if (loginModal) loginModal.style.display = 'none';
         } else {
             currentUser = null;
             currentUserData = null;
             limpiarCacheUsuario();
-            mostrarContenidoPublico();
-            
+            mostrarContenidoPublico(); // Muestra la interfaz pública
+        
             // Limpiar variables globales
             if (window.SENDASystem) {
                 window.SENDASystem.currentUser = null;
@@ -194,7 +191,7 @@ function mostrarContenidoPublico() {
         const professionalContent = document.getElementById('professional-content');
         const professionalHeader = document.getElementById('professional-header');
         const loginBtn = document.getElementById('login-professional');
-        const logoutBtn = document.getElementById('logout-professional'); // Arreglado aquí
+        const logoutBtn = document.getElementById('logout-btn');
 
         if (publicContent) publicContent.style.display = 'block';
         if (professionalContent) professionalContent.style.display = 'none';
@@ -217,7 +214,7 @@ function mostrarContenidoProfesional() {
         const professionalContent = document.getElementById('professional-content');
         const professionalHeader = document.getElementById('professional-header');
         const loginBtn = document.getElementById('login-professional');
-        const logoutBtn = document.getElementById('logout-professional'); // Arreglado aquí
+        const logoutBtn = document.getElementById('logout-btn');
 
         if (publicContent) publicContent.style.display = 'none';
         if (professionalContent) professionalContent.style.display = 'block';
@@ -372,6 +369,5 @@ export {
     puedeAccederTab,
     obtenerNombreProfesion,
     mostrarContenidoPublico,
-    mostrarContenidoProfesional,
-    manejarCambioAutenticacion,
+    mostrarContenidoProfesional
 };
