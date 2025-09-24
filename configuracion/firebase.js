@@ -66,7 +66,6 @@ function configurePersistence() {
 
 /**
  * Obtiene la instancia de Auth
- * @returns {Object} Firebase Auth instance
  */
 export function getAuth() {
     if (!auth) {
@@ -77,7 +76,6 @@ export function getAuth() {
 
 /**
  * Obtiene la instancia de Firestore
- * @returns {Object} Firebase Firestore instance
  */
 export function getFirestore() {
     if (!db) {
@@ -93,7 +91,6 @@ export { db };
 
 /**
  * Verifica si Firebase está inicializado
- * @returns {boolean} Estado de inicialización
  */
 export function isFirebaseInitialized() {
     return isInitialized;
