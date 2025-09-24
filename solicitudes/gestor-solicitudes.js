@@ -6,6 +6,7 @@
 import { getFirestore } from '../configuracion/firebase.js';
 import { showNotification } from '../utilidades/notificaciones.js';
 import { formatDate, formatTime, formatRUT, formatPhoneNumber } from '../utilidades/formato.js';
+import { initSolicitudesManager } from './solicitudes/gestor-solicitudes.js';
 
 // Variables globales
 let solicitudesData = [];
