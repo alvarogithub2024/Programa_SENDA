@@ -16,6 +16,7 @@ import { inicializarNotificaciones } from './utilidades/notificaciones.js';
 import { inicializarModales } from './utilidades/modales.js';
 import { verificarFirebase, inicializarFirebase } from './configuracion/firebase.js';
 import { inicializarAutenticacion, manejarCambioAutenticacion } from './autenticacion/sesion.js';
+import { inicializarRegistro } from './autenticacion/registro.js';
 
 // Variables globales del sistema
 window.SENDASystem = {
@@ -64,6 +65,7 @@ async function inicializarSistema() {
         // Inicializar eventos globales
         inicializarEventos();
         
+        inicializarRegistro();
         // Marcar sistema como inicializado
         window.SENDASystem.isInitialized = true;
         
