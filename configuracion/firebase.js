@@ -1,11 +1,10 @@
-// 1. CORREGIR firebase.js
 /**
- * CONFIGURACION/FIREBASE.JS - VERSIÓN CORREGIDA
+ * CONFIGURACION/FIREBASE.JS - VERSIÓN COMPLETA CORREGIDA
  */
 
 import { FIREBASE_CONFIG } from './constantes.js';
 
-let auth, db, isInitialized = false;
+let auth, db, storage, isInitialized = false;
 
 /**
  * Inicializa Firebase
@@ -13,236 +12,305 @@ let auth, db, isInitialized = false;
 export function initializeFirebase() {
     try {
         if (typeof firebase === 'undefined') {
-            throw new Error('Firebase SDK no está cargado');
+            console.error('Firebase SDK no está cargado. Verifica los scripts en index.html');
+            return false;
         }
 
         if (isInitialized && auth && db) {
-            console.log('✅ Firebase ya está inicializado');
-            return;
+            console.log('Firebase ya está inicializado');
+            return true;
         }
 
-        // ✅ EVITAR MÚLTIPLE INICIALIZACIÓN
+        // Verificar si ya hay apps inicializadas
         let app;
         if (firebase.apps.length === 0) {
             app = firebase.initializeApp(FIREBASE_CONFIG);
-            console.log('🔧 Nueva app Firebase inicializada');
+            console.log('Nueva app Firebase inicializada');
         } else {
             app = firebase.apps[0];
-            console.log('✅ Usando app Firebase existente');
+            console.log('Usando app Firebase existente');
         }
         
         // Obtener servicios
         auth = firebase.auth(app);
         db = firebase.firestore(app);
+        storage = firebase.storage ? firebase.storage(app) : null;
         
-        // NO configurar persistencia si ya está configurada
+        // Configurar persistencia solo si no está configurada
         if (!isInitialized) {
             configurePersistence();
         }
         
         isInitialized = true;
-        console.log('✅ Firebase inicializado correctamente');
+        console.log('Firebase inicializado correctamente');
+        return true;
         
     } catch (error) {
-        console.error('❌ Error inicializando Firebase:', error);
-        // NO lanzar error, continuar con lo que tenemos
+        console.error('Error inicializando Firebase:', error);
+        
+        // Intentar usar Firebase existente si falla la inicialización
         if (firebase.apps.length > 0) {
-            auth = firebase.auth();
-            db = firebase.firestore();
-            isInitialized = true;
+            try {
+                auth = firebase.auth();
+                db = firebase.firestore();
+                storage = firebase.storage ? firebase.storage() : null;
+                isInitialized = true;
+                console.log('Usando Firebase existente tras error');
+                return true;
+            } catch (fallbackError) {
+                console.error('Error en fallback:', fallbackError);
+            }
         }
+        return false;
     }
 }
 
 /**
- * Configura la persistencia SOLO si no está ya configurada
+ * Configura la persistencia de Firestore
  */
 function configurePersistence() {
     if (!db) return;
     
-    // ✅ VERIFICAR SI PERSISTENCIA YA ESTÁ HABILITADA
     try {
         db.enablePersistence({ 
-            synchronizeTabs: false  // ✅ CAMBIAR A FALSE para evitar conflictos entre pestañas
+            synchronizeTabs: false 
         }).then(() => {
-            console.log('💾 Persistencia offline habilitada');
+            console.log('Persistencia offline habilitada');
         }).catch((err) => {
-            // ✅ MANEJAR TODOS LOS POSIBLES ERRORES
             if (err.code === 'failed-precondition') {
-                console.warn('⚠️ Persistencia: Ya hay otra pestaña activa');
+                console.warn('Persistencia: Múltiples pestañas abiertas');
             } else if (err.code === 'unimplemented') {
-                console.warn('⚠️ Persistencia no soportada en este navegador');
+                console.warn('Persistencia no soportada en este navegador');
             } else if (err.code === 'already-enabled') {
-                console.log('✅ Persistencia ya estaba habilitada');
+                console.log('Persistencia ya estaba habilitada');
             } else {
-                console.warn('⚠️ Error configurando persistencia:', err.code, err.message);
+                console.warn('Error configurando persistencia:', err.code);
             }
-            // ✅ LA APP CONTINÚA FUNCIONANDO SIN PERSISTENCIA
         });
     } catch (syncError) {
-        console.warn('⚠️ Error sincronizando persistencia:', syncError);
+        console.warn('Error con persistencia:', syncError);
     }
 }
 
-// ✅ FUNCIONES DE ACCESO SEGURAS
+/**
+ * Obtiene la instancia de Auth
+ */
 export function getAuth() {
-    if (!isInitialized) {
-        initializeFirebase();
+    if (!auth) {
+        if (!initializeFirebase()) {
+            throw new Error('No se pudo inicializar Firebase Auth');
+        }
     }
     return auth;
 }
 
+/**
+ * Obtiene la instancia de Firestore
+ */
 export function getFirestore() {
-    if (!isInitialized) {
-        initializeFirebase();
+    if (!db) {
+        if (!initializeFirebase()) {
+            throw new Error('No se pudo inicializar Firestore');
+        }
     }
     return db;
 }
 
-export function isFirebaseInitialized() {
-    return isInitialized;
+/**
+ * Obtiene la instancia de Storage
+ */
+export function getStorage() {
+    if (!storage) {
+        if (!initializeFirebase()) {
+            throw new Error('No se pudo inicializar Storage');
+        }
+    }
+    return storage;
 }
 
-// ✅ EXPORTACIÓN ADICIONAL PARA COMPATIBILIDAD
-export { db };
-
-// 2. CORREGIR main.js - INICIALIZACIÓN MEJORADA
 /**
- * MAIN.JS - VERSIÓN CORREGIDA
+ * Obtiene un timestamp del servidor - FUNCIÓN QUE FALTABA
  */
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 SISTEMA SENDA PUENTE ALTO v2.0');
-    console.log('=====================================');
-    
-    try {
-        // ✅ VERIFICAR QUE FIREBASE ESTÉ CARGADO ANTES DE CONTINUAR
-        if (typeof firebase === 'undefined') {
-            throw new Error('Firebase SDK no está cargado. Verifica los scripts en index.html');
-        }
-        
-        console.log('🔧 Inicializando Firebase...');
-        
-        // ✅ IMPORTAR E INICIALIZAR FIREBASE
-        const { initializeFirebase, isFirebaseInitialized } = await import('./configuracion/firebase.js');
-        initializeFirebase();
-        
-        // ✅ VERIFICAR INICIALIZACIÓN
-        if (!isFirebaseInitialized()) {
-            throw new Error('Firebase no se inicializó correctamente');
-        }
-        console.log('✅ Firebase verificado y listo');
-        
-        // ✅ IMPORTAR MÓDULOS DESPUÉS DE FIREBASE
-        const { setupAuth } = await import('./autenticacion/sesion.js');
-        const { setupTabs } = await import('./navegacion/tabs.js');
-        const { setupFormularios } = await import('./formularios/formulario-paciente.js');
-        const { setupEventListeners } = await import('./navegacion/eventos.js');
-        
-        console.log('🔧 Configurando componentes...');
-        setupAuth();
-        setupTabs();
-        setupFormularios(); 
-        setupEventListeners();
-        
-        // ✅ INICIALIZAR MÓDULOS ESPECÍFICOS
-        await initializeModules();
-        
-        console.log('✅ Sistema SENDA inicializado correctamente');
-        
-    } catch (error) {
-        console.error('❌ Error durante la inicialización:', error);
-        showErrorToUser(error);
-    }
-});
+export function getServerTimestamp() {
+    return firebase.firestore.FieldValue.serverTimestamp();
+}
 
-async function initializeModules() {
+/**
+ * Función de retry para operaciones de Firebase
+ */
+export async function retryFirestoreOperation(operation, maxRetries = 3) {
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            return await operation();
+        } catch (error) {
+            if (i === maxRetries - 1) throw error;
+            
+            const delay = Math.pow(2, i) * 1000;
+            console.warn(`Operación falló, reintentando en ${delay}ms...`, error);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+}
+
+/**
+ * Verifica si Firebase está inicializado
+ */
+export function isFirebaseInitialized() {
+    return isInitialized && !!auth && !!db;
+}
+
+/**
+ * Obtiene el usuario actual
+ */
+export function getCurrentUser() {
+    if (!auth) return null;
+    return auth.currentUser;
+}
+
+/**
+ * Escuchar cambios en autenticación
+ */
+export function onAuthStateChanged(callback) {
+    if (!auth) {
+        if (!initializeFirebase()) {
+            callback(null);
+            return;
+        }
+    }
+    return auth.onAuthStateChanged(callback);
+}
+
+/**
+ * Crear colecciones iniciales si no existen
+ */
+export async function createInitialCollections() {
     try {
-        // ✅ IMPORTAR DINÁMICAMENTE PARA EVITAR ERRORES DE DEPENDENCIAS
-        const modules = [
-            () => import('./calendario/agenda.js').then(m => m.initCalendar?.()),
-            () => import('./pacientes/gestor-pacientes.js').then(m => m.initPatientsManager?.()),
-            () => import('./seguimiento/timeline.js').then(m => m.initTimeline?.()),
-        ];
+        if (!db) return;
         
-        for (const moduleLoader of modules) {
+        const collections = [
+            'profesionales',
+            'pacientes', 
+            'solicitudes_ingreso',
+            'reingresos',
+            'solicitudes_informacion',
+            'citas',
+            'historial_pacientes',
+            'centros',
+            'configuracion'
+        ];
+
+        for (const collectionName of collections) {
             try {
-                await moduleLoader();
-            } catch (error) {
-                console.warn('⚠️ Error inicializando módulo:', error);
+                const collectionRef = db.collection(collectionName);
+                const snapshot = await collectionRef.limit(1).get();
+                
+                if (snapshot.empty) {
+                    console.log(`Creando colección inicial: ${collectionName}`);
+                    await collectionRef.add({
+                        _created: firebase.firestore.FieldValue.serverTimestamp(),
+                        _type: 'initial_document',
+                        _version: '1.0'
+                    });
+                }
+            } catch (collectionError) {
+                console.warn(`Error verificando colección ${collectionName}:`, collectionError);
             }
         }
         
+        console.log('Colecciones iniciales verificadas/creadas');
+        
     } catch (error) {
-        console.error('Error inicializando módulos:', error);
+        console.error('Error creando colecciones iniciales:', error);
     }
 }
 
-function showErrorToUser(error) {
-    const errorDiv = document.createElement('div');
-    errorDiv.style.cssText = `
-        position: fixed; top: 20px; right: 20px; z-index: 10000;
-        background: #ef4444; color: white; padding: 16px; border-radius: 8px;
-        max-width: 300px; font-family: system-ui;
-    `;
-    errorDiv.innerHTML = `
-        <strong>Error de inicialización</strong><br>
-        ${error.message}<br>
-        <button onclick="location.reload()" style="background: white; color: #ef4444; border: none; padding: 4px 8px; border-radius: 4px; margin-top: 8px; cursor: pointer;">
-            Recargar página
-        </button>
-    `;
-    document.body.appendChild(errorDiv);
+// Exportaciones adicionales para compatibilidad
+export { db, auth, storage };
+
+// Funciones de utilidad para Firestore
+export const FirestoreUtils = {
+    /**
+     * Crear documento con ID automático
+     */
+    async addDocument(collectionPath, data) {
+        const db = getFirestore();
+        return await db.collection(collectionPath).add({
+            ...data,
+            fechaCreacion: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    },
+
+    /**
+     * Obtener documento por ID
+     */
+    async getDocument(collectionPath, documentId) {
+        const db = getFirestore();
+        const doc = await db.collection(collectionPath).doc(documentId).get();
+        return doc.exists ? { id: doc.id, ...doc.data() } : null;
+    },
+
+    /**
+     * Actualizar documento
+     */
+    async updateDocument(collectionPath, documentId, data) {
+        const db = getFirestore();
+        return await db.collection(collectionPath).doc(documentId).update({
+            ...data,
+            fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    },
+
+    /**
+     * Eliminar documento
+     */
+    async deleteDocument(collectionPath, documentId) {
+        const db = getFirestore();
+        return await db.collection(collectionPath).doc(documentId).delete();
+    },
+
+    /**
+     * Obtener colección completa
+     */
+    async getCollection(collectionPath, orderBy = null, limit = null) {
+        const db = getFirestore();
+        let query = db.collection(collectionPath);
+        
+        if (orderBy) {
+            query = query.orderBy(orderBy.field, orderBy.direction || 'asc');
+        }
+        
+        if (limit) {
+            query = query.limit(limit);
+        }
+        
+        const snapshot = await query.get();
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    }
+};
+
+// Manejo de errores Firebase
+export function handleFirebaseError(error) {
+    const errorMessages = {
+        'permission-denied': 'Sin permisos para esta operación',
+        'not-found': 'Documento no encontrado',
+        'already-exists': 'El documento ya existe',
+        'resource-exhausted': 'Límite de operaciones excedido',
+        'failed-precondition': 'Condición previa fallida',
+        'aborted': 'Operación abortada',
+        'out-of-range': 'Fuera de rango',
+        'unimplemented': 'Operación no implementada',
+        'internal': 'Error interno',
+        'unavailable': 'Servicio no disponible',
+        'data-loss': 'Pérdida de datos',
+        'unauthenticated': 'Usuario no autenticado'
+    };
+
+    const message = errorMessages[error.code] || error.message || 'Error desconocido';
+    console.error('Firebase Error:', error.code, message);
+    
+    return {
+        code: error.code,
+        message: message,
+        originalError: error
+    };
 }
-
-// 3. VERIFICAR index.html - ORDEN CORRECTO DE SCRIPTS
-/*
-ASEGÚRATE QUE EN index.html TENGAS ESTE ORDEN:
-
-1. Firebase SDKs PRIMERO:
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
-2. EmailJS (opcional):
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-
-3. TU SCRIPT AL FINAL:
-<script type="module" src="main.js"></script>
-*/
-
-// 4. CONSTANTES.JS - VERIFICA TU CONFIGURACIÓN
-const firebaseConfig = {
-    apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
-    authDomain: "senda-6d5c9.firebaseapp.com",
-    projectId: "senda-6d5c9",
-    storageBucket: "senda-6d5c9.firebasestorage.app",
-    messagingSenderId: "1090028669785",
-    appId: "1:1090028669785:web:d4e1c1b9945fc2fddc1a48",
-    measurementId: "G-82DCLW5R2W"
-  };
-
-// 5. REGLAS DE FIRESTORE - AGREGAR EN FIREBASE CONSOLE
-/*
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Permitir lectura y escritura para usuarios autenticados
-    match /{document=**} {
-      allow read, write: if request.auth != null;
-    }
-    
-    // Permitir creación de solicitudes desde la web pública
-    match /solicitudes_ingreso/{document} {
-      allow create: if true;
-    }
-    
-    match /reingresos/{document} {
-      allow create: if true;
-    }
-    
-    match /solicitudes_informacion/{document} {
-      allow create: if true;
-    }
-  }
-}
-*/
