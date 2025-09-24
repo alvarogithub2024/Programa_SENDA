@@ -84,8 +84,6 @@ export const TIPOS_PROFESIONAL = {
     medico: 'Médico',
     psicologo: 'Psicólogo',
     terapeuta: 'Terapeuta Ocupacional',
-    coordinador: 'Coordinador Regional',
-    admin: 'Administrador'
 };
 
 // Iconos para tipos de notificación
