@@ -40,7 +40,8 @@ async function inicializarSistema() {
         }
 
         // Inicializar Firebase
-        await inicializarFirebase();
+       await inicializarFirebase(); // inicializa Firebase primero
+        inicializarAutenticacion(); // luego inicializa autenticación
         
         // Inicializar utilidades básicas
         inicializarNotificaciones();
