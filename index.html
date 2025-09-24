@@ -243,7 +243,96 @@
                     </div>
                 </div>
             </div>
+<!-- Agregar en tu archivo HTML principal, dentro del tab de solicitudes -->
+<div id="solicitudes-tab" class="tab-pane">
+    <div class="section-header">
+        <h2>Solicitudes de Ingreso</h2>
+        <div class="section-actions">
+            <button id="refresh-solicitudes" class="btn btn-secondary">
+                <i class="fas fa-sync"></i> Actualizar
+            </button>
+            <button id="export-solicitudes" class="btn btn-primary">
+                <i class="fas fa-download"></i> Exportar
+            </button>
+        </div>
+    </div>
 
+    <!-- Filtros -->
+    <div class="filters-container">
+        <div class="filter-group">
+            <label>Estado:</label>
+            <select id="filtro-estado-solicitudes">
+                <option value="todos">Todos los estados</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label>Prioridad:</label>
+            <select id="filtro-prioridad-solicitudes">
+                <option value="todos">Todas las prioridades</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label>CESFAM:</label>
+            <select id="filtro-cesfam-solicitudes">
+                <option value="todos">Todos los CESFAM</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label>Fecha:</label>
+            <select id="filtro-fecha-solicitudes">
+                <option value="todos">Todas las fechas</option>
+                <option value="hoy">Hoy</option>
+                <option value="semana">Esta semana</option>
+                <option value="mes">Este mes</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label>Buscar:</label>
+            <input type="text" id="buscar-solicitudes" placeholder="Nombre, RUT, email...">
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div id="solicitudes-stats" class="stats-container">
+        <!-- Se generan dinámicamente -->
+    </div>
+
+    <!-- Contador -->
+    <div class="counter-info">
+        Mostrando <span id="solicitudes-counter">0</span> de <span id="solicitudes-total-counter">0</span> solicitudes
+    </div>
+
+    <!-- Loading State -->
+    <div id="solicitudes-loading" class="loading-container" style="display: none;">
+        <div class="spinner"></div>
+        <p>Cargando solicitudes...</p>
+    </div>
+
+    <!-- Tabla de solicitudes -->
+    <div id="solicitudes-table-container" class="table-container">
+        <table class="solicitudes-table">
+            <thead>
+                <tr>
+                    <th>Paciente</th>
+                    <th>Contacto</th>
+                    <th>CESFAM</th>
+                    <th>Estado</th>
+                    <th>Prioridad</th>
+                    <th>Fecha</th>
+                    <th>Sustancias</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="solicitudes-table-body">
+                <!-- Se genera dinámicamente -->
+            </tbody>
+        </table>
+    </div>
+</div>
             <!-- ================= TAB PACIENTES ================= -->
             <div class="tab-pane" id="pacientes-tab">
                 <div class="section-header">
