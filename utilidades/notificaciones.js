@@ -46,11 +46,10 @@ function mostrarNotificacion(mensaje, tipo = 'info', duracion = 4000) {
             console.log(`📢 Notificación [${tipo.toUpperCase()}]: ${mensaje}`);
         }
 
-    } catch (error) {
-        console.error('Error mostrando notificación:', error);
-        // Fallback a alert nativo
-        alert(`${tipo.toUpperCase()}: ${mensaje}`);
-    }
+   catch (error) {
+    console.error('Error mostrando notificación:', error);
+    // Puedes mostrar un mensaje en consola, pero NO el alert
+    // alert(`${tipo.toUpperCase()}: ${mensaje}`);
 }
 
 /**
