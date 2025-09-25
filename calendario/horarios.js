@@ -26,36 +26,21 @@ window.HORARIOS_CONFIG = {
 function cargarHorariosDisponibles(fecha, profesionalId, callback) {
     var db = window.getFirestore ? window.getFirestore() : firebase.firestore();
     var horarios = [];
-    var dia = new Date(fecha).getDay(); // 0 = Domingo ... 6 = Sábado
+    var dia = new Date(fecha).getDay(); // 0 = domingo, 6 = sábado
 
-    // Determinar configuración por día
-    var cfg = window.HORARIOS_CONFIG && (
-        (window.HORARIOS_CONFIG.semana.diasSemana.includes(dia))
-            ? window.HORARIOS_CONFIG.semana
-            : window.HORARIOS_CONFIG.finSemana
-    );
+    // Determina la config
+    var cfg = (dia >= 1 && dia <= 5)
+        ? { horaInicio: 8, minutoInicio: 0, horaFin: 16, minutoFin: 30, intervaloMinutos: 30 }
+        : { horaInicio: 9, minutoInicio: 0, horaFin: 12, minutoFin: 30, intervaloMinutos: 30 };
 
-    if (!cfg) {
-        if (typeof callback === "function") callback([]);
-        return;
-    }
-
-    // Generar slots de horario
     var hora = cfg.horaInicio, minuto = cfg.minutoInicio;
-    while (
-        hora < cfg.horaFin ||
-        (hora === cfg.horaFin && minuto <= cfg.minutoFin)
-    ) {
+    while (hora < cfg.horaFin || (hora === cfg.horaFin && minuto <= cfg.minutoFin)) {
         var slot = (hora < 10 ? "0" : "") + hora + ":" + (minuto < 10 ? "0" : "") + minuto;
         horarios.push(slot);
         minuto += cfg.intervaloMinutos;
-        if (minuto >= 60) {
-            minuto = 0;
-            hora++;
-        }
+        if (minuto >= 60) { minuto = 0; hora++; }
     }
 
-    // Quitar horarios ya reservados para ese profesional y fecha
     db.collection("citas")
         .where("fecha", "==", fecha)
         .where("profesionalId", "==", profesionalId)
@@ -66,9 +51,7 @@ function cargarHorariosDisponibles(fecha, profesionalId, callback) {
                 var data = doc.data();
                 if (data.hora) ocupados.push(data.hora);
             });
-            var disponibles = horarios.filter(function(h) {
-                return ocupados.indexOf(h) === -1;
-            });
+            var disponibles = horarios.filter(h => !ocupados.includes(h));
             if (typeof callback === "function") callback(disponibles);
         })
         .catch(function(error) {
