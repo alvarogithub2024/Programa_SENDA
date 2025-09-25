@@ -1,3 +1,5 @@
+// FORMULARIOS/FORMULARIO-PACIENTE.JS
+
 function setupFormularioPaciente() {
     const form = document.getElementById("patient-form");
     if (!form) return;
@@ -21,11 +23,11 @@ function setupFormularioPaciente() {
         document.getElementById("progress-text").textContent = `Paso 1 de 1`;
         document.getElementById("form-progress").style.width = "100%";
         currentStep = 0;
-        // Ocultar navegación innecesaria
         form.querySelector("#next-step-1").style.display = "none";
-        // Mostrar solo el campo de correo y botón enviar
         form.querySelector("#info-email-container").style.display = "";
         form.querySelector("#basic-info-container").style.display = "none";
+        // Mostrar botón enviar solo-info
+        form.querySelector("#enviar-solo-info").style.display = "";
     }
 
     function mostrarIdentificado() {
@@ -33,12 +35,14 @@ function setupFormularioPaciente() {
         form.querySelector("#next-step-1").style.display = "";
         form.querySelector("#info-email-container").style.display = "none";
         form.querySelector("#basic-info-container").style.display = "";
+        // Ocultar botón enviar solo-info
+        form.querySelector("#enviar-solo-info").style.display = "none";
     }
 
     // Inicialización: mostrar identificado por defecto
     mostrarIdentificado();
 
-    // Navegación
+    // Navegación pasos
     form.querySelector("#next-step-1").onclick = function() {
         const tipo = form.querySelector('input[name="tipoSolicitud"]:checked');
         if (!tipo) return window.showNotification("Selecciona tipo de solicitud","warning");
@@ -46,7 +50,6 @@ function setupFormularioPaciente() {
             // No hacer nada, solo mostrar el paso único (botón Enviar se encarga del submit)
             return;
         }
-        // Validación para identificado
         const edad = form.querySelector("#patient-age").value;
         const cesfam = form.querySelector("#patient-cesfam").value;
         if (!edad || isNaN(edad) || edad < 12) return window.showNotification("Edad mínima 12 años","warning");
@@ -78,7 +81,7 @@ function setupFormularioPaciente() {
         if (btn) btn.onclick = ()=>mostrarPaso(idx);
     });
 
-    // Mostrar campo correo y botón enviar en "Solo información"
+    // Mostrar campo correo y botón enviar "solo info"
     const tipoSolicitudRadios = form.querySelectorAll('input[name="tipoSolicitud"]');
     tipoSolicitudRadios.forEach(radio=>{
         radio.addEventListener("change",function(){
