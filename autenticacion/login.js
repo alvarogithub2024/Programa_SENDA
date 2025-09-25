@@ -1,105 +1,54 @@
-// AUTENTICACION/LOGIN.JS
+// autenticacion/login.js
 
-// Requiere: window.getAuth, window.showNotification
+document.addEventListener("DOMContentLoaded", function() {
+  const loginForm = document.getElementById('login-form');
+  if (!loginForm) return;
 
-// Realiza login con email y password
-function loginProfesional(email, password) {
-    var auth = window.getAuth();
-    if (!auth) {
-        window.showNotification && window.showNotification("No se pudo inicializar autenticación", "error");
-        return;
-    }
-    window.showNotification && window.showNotification("Iniciando sesión...", "info");
+  loginForm.addEventListener('submit', function(e) {
+    e.preventDefault();
 
-    return auth.signInWithEmailAndPassword(email, password)
-        .then(function(cred) {
-            window.showNotification && window.showNotification("¡Bienvenido, sesión iniciada!", "success");
-            return cred.user;
-        })
-        .catch(function(error) {
-            var msg = "Error de inicio de sesión";
-            if (error.code === "auth/wrong-password" || error.code === "auth/user-not-found") {
-                msg = "Correo o contraseña incorrectos";
-            } else if (error.code === "auth/too-many-requests") {
-                msg = "Demasiados intentos fallidos. Intenta más tarde.";
-            }
-            window.showNotification && window.showNotification(msg, "error");
-            throw error;
-        });
-}
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
 
-// Permite login con Google (si está habilitado)
-function loginProfesionalGoogle() {
-    var auth = window.getAuth();
-    if (!auth || !firebase.auth.GoogleAuthProvider) {
-        window.showNotification && window.showNotification("No se pudo inicializar autenticación Google", "error");
-        return;
-    }
-    var provider = new firebase.auth.GoogleAuthProvider();
-    return auth.signInWithPopup(provider)
-        .then(function(result) {
-            window.showNotification && window.showNotification("¡Sesión iniciada con Google!", "success");
-            return result.user;
-        })
-        .catch(function(error) {
-            window.showNotification && window.showNotification("Error con Google: " + error.message, "error");
-            throw error;
-        });
-}
-
-// Recuperación de contraseña
-function recuperarPassword(email) {
-    var auth = window.getAuth();
-    if (!auth) {
-        window.showNotification && window.showNotification("No se pudo inicializar autenticación", "error");
-        return;
-    }
-    return auth.sendPasswordResetEmail(email)
-        .then(function() {
-            window.showNotification && window.showNotification("Correo de recuperación enviado", "success");
-        })
-        .catch(function(error) {
-            window.showNotification && window.showNotification("Error enviando recuperación: " + error.message, "error");
-            throw error;
-        });
-}
-
-// Asignar eventos a formularios en la página
-function setupLoginForm() {
-    var form = document.getElementById("login-form");
-    if (!form) return;
-
-    form.addEventListener("submit", function(e) {
-        e.preventDefault();
-        var email = form.email.value.trim();
-        var password = form.password.value;
-        loginProfesional(email, password);
-    });
-
-    var googleBtn = document.getElementById("login-google-btn");
-    if (googleBtn) {
-        googleBtn.addEventListener("click", function(e) {
-            e.preventDefault();
-            loginProfesionalGoogle();
-        });
+    if (!email || !password) {
+      window.showNotification && window.showNotification("Completa email y contraseña", "warning");
+      return;
     }
 
-    var recuperarBtn = document.getElementById("recuperar-password-btn");
-    if (recuperarBtn) {
-        recuperarBtn.addEventListener("click", function(e) {
-            e.preventDefault();
-            var email = form.email.value.trim();
-            if (!window.validarEmail || !window.validarEmail(email)) {
-                window.showNotification && window.showNotification("Ingresa un correo válido", "warning");
-                return;
-            }
-            recuperarPassword(email);
-        });
-    }
-}
+    firebase.auth().signInWithEmailAndPassword(email, password)
+      .then((userCredential) => {
+        const uid = userCredential.user.uid;
+        const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
 
-// Exportar globalmente
-window.loginProfesional = loginProfesional;
-window.loginProfesionalGoogle = loginProfesionalGoogle;
-window.recuperarPassword = recuperarPassword;
-window.setupLoginForm = setupLoginForm;
+        // Busca el profesional en la colección y verifica activo
+        return db.collection("profesionales").doc(uid).get();
+      })
+      .then((doc) => {
+        if (!doc.exists) {
+          window.showNotification && window.showNotification("No tienes permisos de acceso como profesional.", "error");
+          firebase.auth().signOut();
+          return;
+        }
+        const profesional = doc.data();
+        if (!profesional.activo) {
+          window.showNotification && window.showNotification("Tu usuario está inactivo. Contacta al administrador.", "error");
+          firebase.auth().signOut();
+          return;
+        }
+        window.showNotification && window.showNotification("Bienvenido/a, acceso correcto.", "success");
+        // Mostrar sección profesional y ocultar la pública
+        document.getElementById('professional-header').style.display = '';
+        document.getElementById('professional-content').style.display = '';
+        document.getElementById('public-content').style.display = 'none';
+        // Coloca datos en el header
+        document.getElementById('professional-name').textContent = profesional.nombre + ' ' + profesional.apellidos;
+        document.getElementById('professional-profession').textContent = profesional.profession || '';
+        document.getElementById('professional-cesfam').textContent = profesional.cesfam || '';
+        // Cierra modal login
+        window.closeModal && window.closeModal('login-modal');
+      })
+      .catch((error) => {
+        window.showNotification && window.showNotification("Error al iniciar sesión: " + error.message, "error");
+      });
+  });
+});
