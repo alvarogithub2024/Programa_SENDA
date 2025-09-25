@@ -149,5 +149,5 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('filtro-fecha-solicitudes').value = 'todos';
     document.getElementById('buscar-solicitudes').value = '';
     applyCurrentFilters();
-  });
 });
+)
