@@ -569,15 +569,24 @@ Buscar
         <label>RUT del paciente *</label>
         <input type="text" id="cita-paciente-rut" required>
       </div>
-      <div class="form-group">
-        <label>Profesional *</label>
-        <select id="cita-profesional" required></select>
-      </div>
-      <div class="form-group">
-        <label>Nombre del profesional</label>
-        <input type="text" id="cita-profesional-nombre" disabled>
-      </div>
-      <div class="form-group">
+  <div class="form-group">
+  <label>Profesión *</label>
+  <select id="cita-profession" required>
+    <option value="">Selecciona profesión...</option>
+    <!-- Opciones llenadas por JS -->
+  </select>
+</div>
+<div class="form-group">
+  <label>Profesional *</label>
+  <select id="cita-profesional" required>
+    <option value="">Selecciona profesional...</option>
+    <!-- Opciones llenadas por JS -->
+  </select>
+</div>
+<div class="form-group">
+  <label>Nombre del profesional</label>
+  <input type="text" id="cita-profesional-nombre" disabled>
+</div>
         <label>Fecha *</label>
         <input type="date" id="cita-fecha" required>
       <div class="form-group">
