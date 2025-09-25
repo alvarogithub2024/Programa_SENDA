@@ -191,3 +191,12 @@ function formatDateForInput(date) {
 if (typeof window !== 'undefined') {
     window.openNewAppointmentModal = openNewAppointmentModal;
 }
+
+/**
+ * Inicializa la sección de próximas citas
+ * (Exportada para evitar error de import en main.js)
+ */
+export function initUpcomingAppointments() {
+    // TODO: Agrega lógica para cargar y mostrar próximas citas aquí
+    console.log("initUpcomingAppointments() fue llamada.");
+}
