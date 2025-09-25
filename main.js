@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Paso 1: Inicializar Firebase PRIMERO
         console.log('🔧 Paso 1: Inicializando Firebase...');
         const firebaseInitialized = window.initializeFirebase && window.initializeFirebase();
+        console.log('Valor de firebaseInitialized:', firebaseInitialized);
         
         if (!firebaseInitialized) {
             throw new Error('Firebase no se pudo inicializar');
@@ -156,16 +157,19 @@ function setupGlobalFunctions() {
             const modal = document.getElementById(modalId);
             if (modal) modal.style.display = 'none';
         };
+        
         window.showModal = window.showModal || function(modalId) {
             const modal = document.getElementById(modalId);
             if (modal) modal.style.display = 'flex';
         };
+        
         window.switchLoginTab = function(tab) {
             try {
                 const loginTab = document.querySelector('.modal-tab[onclick*="login"]');
                 const registerTab = document.querySelector('.modal-tab[onclick*="register"]');
                 const loginForm = document.getElementById('login-form');
                 const registerForm = document.getElementById('register-form');
+                
                 if (tab === 'login') {
                     if (loginTab) loginTab.classList.add('active');
                     if (registerTab) registerTab.classList.remove('active');
@@ -181,6 +185,7 @@ function setupGlobalFunctions() {
                 console.error('Error switching login tab:', error);
             }
         };
+        
         window.SENDA_DEBUG = {
             getSystemInfo: () => ({
                 version: '2.0',
@@ -197,6 +202,7 @@ function setupGlobalFunctions() {
                 console.log('🗑️ Storage limpiado');
             }
         };
+        
         console.log('✅ Funciones globales configuradas');
     } catch (error) {
         console.error('❌ Error configurando funciones globales:', error);
@@ -206,6 +212,7 @@ function setupGlobalFunctions() {
 function showInitializationError(error = null) {
     const errorMessage = error ? error.message : 'Timeout de inicialización';
     let errorModal = document.getElementById('initialization-error-modal');
+    
     if (!errorModal) {
         errorModal = document.createElement('div');
         errorModal.id = 'initialization-error-modal';
@@ -260,24 +267,24 @@ function attemptBasicRecovery() {
             const modal = document.getElementById(modalId);
             if (modal) modal.style.display = 'none';
         };
+        
         window.showModal = (modalId) => {
             const modal = document.getElementById(modalId);
             if (modal) modal.style.display = 'flex';
         };
+        
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal-overlay')) {
                 e.target.style.display = 'none';
             }
         });
+        
         console.log('✅ Recuperación básica completada');
     } catch (recoveryError) {
         console.error('❌ Error en recuperación básica:', recoveryError);
     }
 }
-console.log('Valor de firebaseInitialized:', firebaseInitialized);
-if (!firebaseInitialized) {
-    throw new Error('Firebase no se pudo inicializar');
-}
+
 // Información del navegador para debugging
 console.log('🔍 Información del Sistema:');
 console.log(`   Navegador: ${navigator.userAgent}`);
@@ -286,12 +293,15 @@ console.log(`   Conexión: ${navigator.onLine ? 'Online' : 'Offline'}`);
 console.log(`   Local Storage: ${typeof Storage !== 'undefined' ? 'Disponible' : 'No disponible'}`);
 console.log(`   Service Worker: ${'serviceWorker' in navigator ? 'Disponible' : 'No disponible'}`);
 
+// Event listeners de conectividad
 window.addEventListener('online', () => {
     window.showNotification && window.showNotification('Conexión a Internet restaurada', 'success');
 });
+
 window.addEventListener('offline', () => {
     window.showNotification && window.showNotification('Sin conexión a Internet. Algunas funciones pueden no estar disponibles.', 'warning', 5000);
 });
+
 window.addEventListener('error', (event) => {
     if (event.error && event.error.message && 
         (event.error.message.includes('Firebase') || 
@@ -300,12 +310,17 @@ window.addEventListener('error', (event) => {
         window.showNotification && window.showNotification('Error del sistema detectado. Si persiste, recarga la página.', 'error');
     }
 });
+
 window.addEventListener('unhandledrejection', (event) => {
     event.preventDefault();
+    console.warn('Promise rejection capturada:', event.reason);
 });
+
+// Información de navegación
 if (performance.navigation.type === performance.navigation.TYPE_RELOAD) {
     console.log('🔄 Página recargada por el usuario');
 } else {
     console.log('🆕 Primera carga de la página');
 }
+
 console.log('\n📝 Sistema SENDA listo para inicialización...\n');
