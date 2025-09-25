@@ -140,6 +140,9 @@ function setCurrentUserData(userData) {
     currentUserData = userData;
     updateTabVisibility();
 }
+
+
 window.loadSolicitudForResponse = function(solicitudId) {
-    
+
+  console.log("loadSolicitudForResponse llamada con", solicitudId);
 };
