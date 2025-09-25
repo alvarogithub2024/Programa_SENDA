@@ -50,8 +50,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         console.error('❌ Error configurando eventos de formularios:', error);
     }
-}
-
 /**
  * Configurar navegación por pasos del formulario
  */
