@@ -1,5 +1,3 @@
-// autenticacion/login.js
-
 document.addEventListener("DOMContentLoaded", function() {
   const loginForm = document.getElementById('login-form');
   if (!loginForm) return;
@@ -35,11 +33,8 @@ document.addEventListener("DOMContentLoaded", function() {
           firebase.auth().signOut();
           return;
         }
-        // Coloca datos en el header
-        document.getElementById('professional-name').textContent = profesional.nombre + ' ' + profesional.apellidos;
-        document.getElementById('professional-profession').textContent = profesional.profession || '';
-        document.getElementById('professional-cesfam').textContent = profesional.cesfam || '';
-        // Cierra modal login
+        window.showNotification && window.showNotification("Bienvenido/a, acceso correcto.", "success");
+        // SOLO cerrar el modal. NO manipules visibilidad aquí.
         window.closeModal && window.closeModal('login-modal');
       })
       .catch((error) => {
