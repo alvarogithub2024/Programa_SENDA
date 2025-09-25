@@ -1,55 +1,36 @@
-// AUTENTICACION/SESION.JS
+// autenticacion/sesion.js
 
-// Estado actual de usuario
-var usuarioActual = null;
+document.addEventListener("DOMContentLoaded", function() {
+  var btnLogin = document.getElementById('login-professional');
+  var btnLogout = document.getElementById('logout-professional');
 
-// Llama a este método tras inicializar Firebase
-function setupAuth() {
-    if (!window.getAuth) {
-        console.error("Firebase Auth no está disponible");
-        return;
+  // Escucha el estado de autenticación de Firebase
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (user) {
+      // Usuario autenticado: ocultar botón login
+      if (btnLogin) btnLogin.style.display = 'none';
+    } else {
+      // Usuario no autenticado: mostrar botón login
+      if (btnLogin) btnLogin.style.display = '';
+      // Ocultar áreas profesionales por si acaso
+      var profHeader = document.getElementById('professional-header');
+      var profContent = document.getElementById('professional-content');
+      var pubContent = document.getElementById('public-content');
+      if (profHeader) profHeader.style.display = 'none';
+      if (profContent) profContent.style.display = 'none';
+      if (pubContent) pubContent.style.display = '';
     }
-    var auth = window.getAuth();
+  });
 
-    // Escuchar cambios de sesión
-    auth.onAuthStateChanged(function(user) {
-        usuarioActual = user;
-        window.usuarioActual = user;
-
-        if (user) {
-            // Usuario autenticado
-            document.body.classList.add("usuario-logueado");
-            document.body.classList.remove("usuario-desconectado");
-            if (window.onUsuarioLogueado) window.onUsuarioLogueado(user);
-        } else {
-            // Usuario no autenticado
-            document.body.classList.remove("usuario-logueado");
-            document.body.classList.add("usuario-desconectado");
-            if (window.onUsuarioDesconectado) window.onUsuarioDesconectado();
-        }
+  // Botón cerrar sesión
+  if (btnLogout) {
+    btnLogout.addEventListener('click', function() {
+      firebase.auth().signOut().then(function() {
+        window.showNotification && window.showNotification('Sesión cerrada.', 'success');
+        // El listener onAuthStateChanged se encarga del resto
+      }).catch(function(error) {
+        window.showNotification && window.showNotification('Error al cerrar sesión: ' + error.message, 'error');
+      });
     });
-}
-
-// Obtiene el usuario actual (sincronizado)
-function getUsuarioActual() {
-    return usuarioActual;
-}
-
-// Cierra la sesión
-function cerrarSesion() {
-    var auth = window.getAuth();
-    return auth.signOut().then(function() {
-        window.showNotification && window.showNotification("Sesión cerrada", "info");
-    }).catch(function(error) {
-        window.showNotification && window.showNotification("Error al cerrar sesión", "error");
-    });
-}
-
-// Permite otras funciones reaccionar a login/logout
-window.onUsuarioLogueado = null; // function(user) { ... }
-window.onUsuarioDesconectado = null; // function() { ... }
-
-// Exportar globalmente
-window.setupAuth = setupAuth;
-window.getUsuarioActual = getUsuarioActual;
-window.cerrarSesion = cerrarSesion;
+  }
+});
