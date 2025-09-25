@@ -181,7 +181,7 @@ function setupResponseInterface() {
 }
 
 // Cargar solicitud para responder
-export async function loadSolicitudForResponse(solicitudId) {
+async function loadSolicitudForResponse(solicitudId) {
     try {
         const doc = await db.collection('solicitudes').doc(solicitudId).get();
         
