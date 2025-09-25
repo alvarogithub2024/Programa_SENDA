@@ -1,19 +1,4 @@
-/**
- * NAVEGACION/EVENTOS.JS
- * Event listeners globales de la aplicación
- */
-
-import { showModal, closeModal } from '../utilidades/modales.js';
-import { handleLogout } from '../autenticacion/sesion.js';
-import { setupLoginForm } from '../autenticacion/login.js';
-import { setupRegisterForm } from '../autenticacion/registro.js';
-import { setupReentryForm } from '../formularios/formulario-reingreso.js';
-import { resetForm } from '../formularios/autoguardado.js';
-
-/**
- * Configura todos los event listeners de la aplicación
- */
-export function setupEventListeners() {
+function setupEventListeners() {
     try {
         console.log('🔧 Configurando event listeners globales...');
         
@@ -337,5 +322,5 @@ function createAboutProgramModal() {
     `;
 }
 
-// Exportar funciones para uso global
+
 window.switchLoginTab = switchLoginTab;
