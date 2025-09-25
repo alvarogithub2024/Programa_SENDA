@@ -558,58 +558,95 @@ Buscar
 </div>
 <!-- ========== FIN MODAL SOBRE EL PROGRAMA ========== -->
 <!-- ... TODO TU HTML ANTERIOR ... -->
-<!-- MODAL NUEVA CITA ORDENADA -->
-<div class="modal-overlay" id="modal-nueva-cita" style="display:none;">
+<!-- ...tu código anterior... -->
+
+<!-- ========== MODAL NUEVA CITA PACIENTE ========== -->
+<div class="modal-overlay" id="modal-nueva-cita-paciente" style="display:none;">
   <div class="modal large-modal">
-    <button class="modal-close" onclick="closeModal('modal-nueva-cita')">
+    <button class="modal-close" onclick="closeModal('modal-nueva-cita-paciente')">
       <i class="fas fa-times"></i>
     </button>
-    <h2 class="modal-title-main"><i class="fas fa-calendar-plus"></i> Nueva Cita</h2>
-    <form id="form-nueva-cita" class="cita-form">
+    <h2 class="modal-title-main"><i class="fas fa-calendar-plus"></i> Nueva Cita Paciente</h2>
+    <form id="form-nueva-cita-paciente" class="cita-form">
       <div class="form-group">
-        <label class="form-label" for="cita-paciente-nombre">Nombre del paciente *</label>
-        <input type="text" class="form-input" id="cita-paciente-nombre" required autocomplete="off">
+        <label class="form-label" for="pac-cita-paciente-nombre">Nombre del paciente *</label>
+        <input type="text" class="form-input" id="pac-cita-paciente-nombre" required autocomplete="off">
       </div>
       <div class="form-group">
-        <label class="form-label" for="cita-paciente-rut">RUT del paciente *</label>
-        <input type="text" class="form-input" id="cita-paciente-rut" required autocomplete="off">
+        <label class="form-label" for="pac-cita-paciente-rut">RUT del paciente *</label>
+        <input type="text" class="form-input" id="pac-cita-paciente-rut" required autocomplete="off">
       </div>
       <div class="form-group">
-        <label class="form-label" for="cita-profession">Profesión *</label>
-        <select class="form-select" id="cita-profession" required>
+        <label class="form-label" for="pac-cita-profession">Profesión *</label>
+        <select class="form-select" id="pac-cita-profession" required>
           <option value="">Seleccionar profesión...</option>
-          <option value="asistente_social">Asistente social</option>
-          <option value="medico">Médico</option>
-          <option value="psicologo">Psicólogo</option>
-          <option value="terapeuta">Terapeuta ocupacional</option>
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label" for="cita-profesional">Profesional *</label>
-        <select class="form-select" id="cita-profesional" required>
+        <label class="form-label" for="pac-cita-profesional">Profesional *</label>
+        <select class="form-select" id="pac-cita-profesional" required>
           <option value="">Selecciona profesional...</option>
-          <!-- Se llena dinámicamente según profesión -->
         </select>
+        <input type="hidden" id="pac-cita-profesional-nombre">
       </div>
       <div class="form-group">
-        <label class="form-label" for="cita-fecha">Fecha *</label>
-        <input type="date" class="form-input" id="cita-fecha" required min="2025-09-26" max="2026-09-26">
+        <label class="form-label" for="pac-cita-fecha">Fecha *</label>
+        <input type="date" class="form-input" id="pac-cita-fecha" required>
       </div>
       <div class="form-group">
-        <label class="form-label" for="cita-hora">Hora *</label>
-        <select class="form-select" id="cita-hora" required>
+        <label class="form-label" for="pac-cita-hora">Hora *</label>
+        <select class="form-select" id="pac-cita-hora" required>
           <option value="">Selecciona hora...</option>
         </select>
       </div>
       <div class="form-actions form-actions-row">
-        <button type="button" class="btn btn-outline" onclick="closeModal('modal-nueva-cita')">Cancelar</button>
+        <button type="button" class="btn btn-outline" onclick="closeModal('modal-nueva-cita-paciente')">Cancelar</button>
         <button type="submit" class="btn btn-primary">Agendar</button>
       </div>
     </form>
   </div>
 </div>
 
-  
+<!-- ========== MODAL NUEVA CITA PROFESIONALES ========== -->
+<div class="modal-overlay" id="modal-nueva-cita-profesional" style="display:none;">
+  <div class="modal large-modal">
+    <button class="modal-close" onclick="closeModal('modal-nueva-cita-profesional')">
+      <i class="fas fa-times"></i>
+    </button>
+    <h2 class="modal-title-main"><i class="fas fa-calendar-plus"></i> Nueva Cita entre Profesionales</h2>
+    <form id="form-nueva-cita-profesional" class="cita-form">
+      <div class="form-group">
+        <label class="form-label" for="prof-cita-profession">Profesión *</label>
+        <select class="form-select" id="prof-cita-profession" required>
+          <option value="">Seleccionar profesión...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="prof-cita-profesional">Profesional *</label>
+        <select class="form-select" id="prof-cita-profesional" required>
+          <option value="">Selecciona profesional...</option>
+        </select>
+        <input type="hidden" id="prof-cita-profesional-nombre">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="prof-cita-fecha">Fecha *</label>
+        <input type="date" class="form-input" id="prof-cita-fecha" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="prof-cita-hora">Hora *</label>
+        <select class="form-select" id="prof-cita-hora" required>
+          <option value="">Selecciona hora...</option>
+        </select>
+      </div>
+      <div class="form-actions form-actions-row">
+        <button type="button" class="btn btn-outline" onclick="closeModal('modal-nueva-cita-profesional')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Agendar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
 <script>
 document.addEventListener("DOMContentLoaded", function() {
   var btnSobre = document.getElementById("about-program");
