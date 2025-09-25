@@ -1,15 +1,11 @@
-/**
- * CONFIGURACION/FIREBASE.JS - VERSIÓN COMPLETA CORREGIDA
- */
 
-import { FIREBASE_CONFIG } from './constantes.js';
 
 let auth, db, storage, isInitialized = false;
 
 /**
  * Inicializa Firebase
  */
-export function initializeFirebase() {
+function initializeFirebase() {
     try {
         if (typeof firebase === 'undefined') {
             console.error('Firebase SDK no está cargado. Verifica los scripts en index.html');
@@ -95,7 +91,7 @@ function configurePersistence() {
 /**
  * Obtiene la instancia de Auth
  */
-export function getAuth() {
+function getAuth() {
     if (!auth) {
         if (!initializeFirebase()) {
             throw new Error('No se pudo inicializar Firebase Auth');
@@ -107,7 +103,7 @@ export function getAuth() {
 /**
  * Obtiene la instancia de Firestore
  */
-export function getFirestore() {
+function getFirestore() {
     if (!db) {
         if (!initializeFirebase()) {
             throw new Error('No se pudo inicializar Firestore');
@@ -119,7 +115,7 @@ export function getFirestore() {
 /**
  * Obtiene la instancia de Storage
  */
-export function getStorage() {
+function getStorage() {
     if (!storage) {
         if (!initializeFirebase()) {
             throw new Error('No se pudo inicializar Storage');
@@ -131,14 +127,14 @@ export function getStorage() {
 /**
  * Obtiene un timestamp del servidor - FUNCIÓN QUE FALTABA
  */
-export function getServerTimestamp() {
+function getServerTimestamp() {
     return firebase.firestore.FieldValue.serverTimestamp();
 }
 
 /**
  * Función de retry para operaciones de Firebase
  */
-export async function retryFirestoreOperation(operation, maxRetries = 3) {
+ async function retryFirestoreOperation(operation, maxRetries = 3) {
     for (let i = 0; i < maxRetries; i++) {
         try {
             return await operation();
@@ -155,14 +151,14 @@ export async function retryFirestoreOperation(operation, maxRetries = 3) {
 /**
  * Verifica si Firebase está inicializado
  */
-export function isFirebaseInitialized() {
+function isFirebaseInitialized() {
     return isInitialized && !!auth && !!db;
 }
 
 /**
  * Obtiene el usuario actual
  */
-export function getCurrentUser() {
+function getCurrentUser() {
     if (!auth) return null;
     return auth.currentUser;
 }
@@ -170,7 +166,7 @@ export function getCurrentUser() {
 /**
  * Escuchar cambios en autenticación
  */
-export function onAuthStateChanged(callback) {
+ function onAuthStateChanged(callback) {
     if (!auth) {
         if (!initializeFirebase()) {
             callback(null);
@@ -183,7 +179,7 @@ export function onAuthStateChanged(callback) {
 /**
  * Crear colecciones iniciales si no existen
  */
-export async function createInitialCollections() {
+async function createInitialCollections() {
     try {
         if (!db) return;
         
@@ -225,10 +221,10 @@ export async function createInitialCollections() {
 }
 
 // Exportaciones adicionales para compatibilidad
-export { db, auth, storage };
+ { db, auth, storage };
 
 // Funciones de utilidad para Firestore
-export const FirestoreUtils = {
+const FirestoreUtils = {
     /**
      * Crear documento con ID automático
      */
@@ -289,7 +285,7 @@ export const FirestoreUtils = {
 };
 
 // Manejo de errores Firebase
-export function handleFirebaseError(error) {
+function handleFirebaseError(error) {
     const errorMessages = {
         'permission-denied': 'Sin permisos para esta operación',
         'not-found': 'Documento no encontrado',
@@ -313,4 +309,7 @@ export function handleFirebaseError(error) {
         message: message,
         originalError: error
     };
+}
+window.initializeFirebase = function() {
+
 }
