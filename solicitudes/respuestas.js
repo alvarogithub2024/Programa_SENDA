@@ -1,5 +1,3 @@
-import { db } from '../configuracion/firebase.js';
-import { showNotification } from '../utilidades/notificaciones.js';
 
 // Variables globales para respuestas
 let currentSolicitud = null;
