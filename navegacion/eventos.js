@@ -1,4 +1,4 @@
-/**
+//**
  * NAVEGACION/EVENTOS.JS - VERSIÓN SIN IMPORTS
  * Configuración de eventos globales
  */
@@ -24,17 +24,14 @@ window.setupEventListeners = function() {
  */
 function setupHeaderEventListeners() {
     try {
+        // Botón de login profesional
         const loginProfessionalBtn = document.getElementById('login-professional');
-        const logoutBtn = document.getElementById('logout-professional');
-        const registerPatientBtn = document.getElementById('register-patient');
-        const reentryProgramBtn = document.getElementById('reentry-program');
-        const aboutProgramBtn = document.getElementById('about-program');
-
         if (loginProfessionalBtn) {
-            loginProfessionalBtn.addEventListener('click', () => {
+            loginProfessionalBtn.addEventListener('click', (e) => {
+                e.preventDefault();
                 console.log('🔧 Click en botón login detectado');
                 if (window.switchLoginTab) {
-                    window.switchLoginTab('login'); // Asegurar que esté en tab de login
+                    window.switchLoginTab('login');
                 }
                 if (window.showModal) {
                     window.showModal('login-modal');
@@ -45,16 +42,28 @@ function setupHeaderEventListeners() {
             console.warn('⚠️ Botón login-professional no encontrado');
         }
 
+        // Botón de logout
+        const logoutBtn = document.getElementById('logout-professional');
         if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => {
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
                 if (window.handleLogout) {
                     window.handleLogout();
                 }
             });
         }
 
-        if (registerPatientBtn) {
-            registerPatientBtn.addEventListener('click', () => {
+        // Botón de registro de paciente - múltiples IDs posibles
+        const registerPatientBtns = [
+            document.getElementById('register-patient'),
+            document.getElementById('registro-paciente'),
+            ...document.querySelectorAll('[data-modal="patient-modal"]')
+        ].filter(Boolean);
+
+        registerPatientBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('🔧 Click en botón registro paciente detectado');
                 if (window.resetForm) {
                     window.resetForm();
                 }
@@ -62,19 +71,38 @@ function setupHeaderEventListeners() {
                     window.showModal('patient-modal');
                 }
             });
-        }
+        });
 
-        if (reentryProgramBtn) {
-            reentryProgramBtn.addEventListener('click', () => {
+        // Botón de reingreso - múltiples IDs posibles
+        const reentryProgramBtns = [
+            document.getElementById('reentry-program'),
+            document.getElementById('reingreso-programa'),
+            ...document.querySelectorAll('[data-modal="reentry-modal"]')
+        ].filter(Boolean);
+
+        reentryProgramBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('🔧 Click en botón reingreso detectado');
                 if (window.showModal) {
                     window.showModal('reentry-modal');
                 }
             });
-        }
+        });
 
-        if (aboutProgramBtn) {
-            aboutProgramBtn.addEventListener('click', showAboutProgram);
-        }
+        // Botón de información del programa
+        const aboutProgramBtns = [
+            document.getElementById('about-program'),
+            document.getElementById('sobre-programa'),
+            ...document.querySelectorAll('[data-action="show-about"]')
+        ].filter(Boolean);
+
+        aboutProgramBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                showAboutProgram();
+            });
+        });
         
     } catch (error) {
         console.error('Error setting up header event listeners:', error);
