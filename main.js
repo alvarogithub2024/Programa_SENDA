@@ -379,28 +379,7 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 });
 
-// ... (todo tu main.js anterior) ...
-
 // ====== LOGOUT Y VISIBILIDAD DE BOTONES ======
-document.addEventListener("DOMContentLoaded", function() {
-  // BOTÓN LOGOUT PROFESIONAL
-  var btnLogout = document.getElementById('logout-professional');
-  if (btnLogout) {
-    btnLogout.addEventListener('click', function() {
-      firebase.auth().signOut().then(function() {
-        // Oculta zona profesional, muestra pública, muestra botón login
-        document.getElementById('professional-header').style.display = 'none';
-        document.getElementById('professional-content').style.display = 'none';
-        document.getElementById('public-content').style.display = '';
-        document.getElementById('login-professional').style.display = '';
-        window.showNotification && window.showNotification('Sesión cerrada.', 'success');
-      }).catch(function(error) {
-        window.showNotification && window.showNotification('Error al cerrar sesión: ' + error.message, 'error');
-      });
-    });
-  }
-
-// === VISIBILIDAD Y LOGOUT DE PROFESIONALES ===
 document.addEventListener("DOMContentLoaded", function() {
   var btnLogin = document.getElementById('login-professional');
   var btnLogout = document.getElementById('logout-professional');
