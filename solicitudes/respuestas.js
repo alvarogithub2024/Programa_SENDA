@@ -2,7 +2,10 @@ let currentSolicitud = null;
 let responseTemplates = [];
 let responseHistory = [];
 
-// Inicializar sistema de respuestas
+// Si ya tienes currentFilters en otro archivo (por ejemplo filtros.js), NO lo declares aquí.
+// Si este archivo debe ser independiente, puedes dejarlo, pero si lo compartes, elimina la siguiente declaración:
+// const currentFilters = { ... };
+
 function initResponses() {
     setupResponseInterface();
     loadResponseTemplates();
@@ -10,7 +13,7 @@ function initResponses() {
     console.log('📝 Sistema de respuestas inicializado');
 }
 
-// ----------------- FILTROS (si quieres aquí, pueden ir aquí) -----------------
+// ----------------- FILTROS (pueden ir en otro archivo) -----------------
 const ESTADOS = ['todos', 'agendado', 'pendiente', 'respondido'];
 const PRIORIDADES = ['todos', 'baja', 'media', 'alta'];
 const CESFAM = [
@@ -24,13 +27,6 @@ const CESFAM = [
   'CESFAM Alejandro del Río',
   'CESFAM Bernardo Leighton'
 ];
-
-  estado: 'todos',
-  prioridad: 'todos',
-  cesfam: 'todos',
-  fecha: 'todos',
-  busqueda: ''
-};
 
 function fillSelectOptions(id, options, labelMap={}) {
   const sel = document.getElementById(id);
