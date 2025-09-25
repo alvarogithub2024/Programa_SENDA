@@ -41,7 +41,9 @@ const CESFAM_OPTIONS = [
     'CESFAM Hospital Sotero del Río'
 ];
 
-/**
+function renderSolicitudesTable() {
+  // Usa filteredSolicitudesData para dibujar la tabla
+}
  * Inicializar el gestor de solicitudes
  */
 export function initSolicitudesManager() {
