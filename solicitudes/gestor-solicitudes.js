@@ -754,19 +754,6 @@ function showLoadingState(show) {
             tableContainer.style.opacity = show ? '0.5' : '1';
         }
 
-        // Depuración (puedes quitarlo si no lo necesitas)
-        console.log(`[showLoadingState] loading: ${show}`, {
-            loadingElement: !!loadingElement,
-            tableContainer: !!tableContainer
-        });
-
-    } catch (error) {
-        console.error('❌ Error controlando estado de carga:', error);
-        // Oculta el spinner por seguridad en caso de error
-        const loadingElement = document.getElementById('solicitudes-loading');
-        if (loadingElement) loadingElement.style.display = 'none';
-    }
-}
 /**
  * Crear solicitudes de ejemplo
  */
