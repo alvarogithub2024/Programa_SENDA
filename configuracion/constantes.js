@@ -3,7 +3,8 @@
  * Constantes y configuraciones del sistema
  */
 
-export const FIREBASE_CONFIG = {
+// Configuración de Firebase
+window.FIREBASE_CONFIG = {
     apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
     authDomain: "senda-6d5c9.firebaseapp.com",
     projectId: "senda-6d5c9",
@@ -13,7 +14,8 @@ export const FIREBASE_CONFIG = {
     measurementId: "G-82DCLW5R2W"
 };
 
-export const CESFAM_PUENTE_ALTO = [
+// Lista de CESFAM de Puente Alto
+window.CESFAM_PUENTE_ALTO = [
     "CESFAM Alejandro del Río",
     "CESFAM Karol Wojtyla", 
     "CESFAM Laurita Vicuña",
@@ -24,7 +26,8 @@ export const CESFAM_PUENTE_ALTO = [
     "CESFAM Cardenal Raúl Silva Henríquez"
 ];
 
-export const HORARIOS_CONFIG = {
+// Configuración de horarios
+window.HORARIOS_CONFIG = {
     semana: {
         horaInicio: 8,
         horaFin: 16,
@@ -41,7 +44,8 @@ export const HORARIOS_CONFIG = {
     }
 };
 
-export const APP_CONFIG = {
+// Configuración general de la app
+window.APP_CONFIG = {
     MAX_RETRY_ATTEMPTS: 3,
     RETRY_DELAY: 1000,
     PAGINATION_LIMIT: 100,
@@ -49,9 +53,33 @@ export const APP_CONFIG = {
     DEBUG_MODE: true
 };
 
-export const PROFESIONES = {
+// Profesiones
+window.PROFESIONES = {
     'asistente_social': 'Asistente Social',
     'medico': 'Médico',
     'psicologo': 'Psicólogo',
     'terapeuta': 'Terapeuta Ocupacional'
 };
+
+
+// Rutas de colecciones principales Firestore
+window.COLLECTIONS = {
+    PROFESIONALES: "profesionales",
+    PACIENTES: "pacientes",
+    SOLICITUDES_INGRESO: "solicitudes_ingreso",
+    REINGRESOS: "reingresos",
+    SOLICITUDES_INFO: "solicitudes_informacion",
+    CITAS: "citas",
+    HISTORIAL_PACIENTES: "historial_pacientes",
+    CENTROS: "centros",
+    CONFIGURACION: "configuracion"
+};
+
+// Estados de solicitudes
+window.ESTADOS_SOLICITUD = [
+    "pendiente",
+    "aceptada",
+    "rechazada",
+    "anulada",
+    "finalizada"
+];
