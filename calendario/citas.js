@@ -1,13 +1,9 @@
-import { getFirestore } from '../configuracion/firebase.js';
-import { showNotification } from '../utilidades/notificaciones.js';
-import { performQuickSearch } from '../pacientes/busqueda.js';
-import { getAvailableSlots } from './horarios.js';
 
 /**
  * Abre el modal de nueva cita ordenado
  * @param {Date|string} preselectedDate Fecha preseleccionada (opcional)
  */
-export function openNewAppointmentModal(preselectedDate = null) {
+function openNewAppointmentModal(preselectedDate = null) {
     let modal = document.getElementById('appointment-modal');
     if (modal) modal.remove();
 
@@ -192,11 +188,4 @@ if (typeof window !== 'undefined') {
     window.openNewAppointmentModal = openNewAppointmentModal;
 }
 
-/**
- * Inicializa la sección de próximas citas
- * (Exportada para evitar error de import en main.js)
- */
-export function initUpcomingAppointments() {
-    // TODO: Agrega lógica para cargar y mostrar próximas citas aquí
-    console.log("initUpcomingAppointments() fue llamada.");
-}
+
