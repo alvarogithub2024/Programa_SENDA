@@ -5,7 +5,7 @@
  */
 function validarRut(rut) {
     if (!rut) return false;
-    rut = rut.replace(/[.\-]/g, '').toUpperCase();
+    rut = rut.replace(/[^0-9kK]/g, '').toUpperCase(); // Limpiar: solo números y K
     if (rut.length < 8 || rut.length > 9) return false;
     let cuerpo = rut.slice(0, -1);
     let dv = rut.slice(-1);
@@ -19,7 +19,6 @@ function validarRut(rut) {
     dvEsperado = dvEsperado === 11 ? '0' : dvEsperado === 10 ? 'K' : dvEsperado.toString();
     return dv === dvEsperado;
 }
-
 /**
  * Valida un correo electrónico.
  */
