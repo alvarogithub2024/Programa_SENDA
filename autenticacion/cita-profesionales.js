@@ -1,4 +1,6 @@
-let miCesfam = null;
+// Usa variables únicas para evitar conflictos globales
+
+let miCesfamProfesional = null;
 let profesionalesCesfam = [];
 let profesionesCesfam = [];
 
@@ -10,10 +12,10 @@ function obtenerMiCesfamYProfesionales(callback) {
 
   db.collection('profesionales').doc(user.uid).get().then(doc => {
     if (!doc.exists) return;
-    miCesfam = doc.data().cesfam;
+    miCesfamProfesional = doc.data().cesfam;
 
     db.collection('profesionales')
-      .where('cesfam', '==', miCesfam)
+      .where('cesfam', '==', miCesfamProfesional)
       .where('activo', '==', true)
       .get()
       .then(snapshot => {
@@ -34,6 +36,7 @@ function obtenerMiCesfamYProfesionales(callback) {
 
 function llenarSelectProfesiones() {
   const selProf = document.getElementById('prof-cita-profession');
+  if (!selProf) return;
   selProf.innerHTML = '<option value="">Selecciona profesión...</option>';
   profesionesCesfam.forEach(prof => {
     const opt = document.createElement('option');
@@ -46,6 +49,7 @@ function llenarSelectProfesiones() {
 function llenarSelectProfesionales() {
   const selProfesion = document.getElementById('prof-cita-profession');
   const selProfesional = document.getElementById('prof-cita-profesional');
+  if (!selProfesion || !selProfesional) return;
   selProfesional.innerHTML = '<option value="">Selecciona profesional...</option>';
   const filtro = selProfesion.value;
   profesionalesCesfam
@@ -64,10 +68,9 @@ function llenarSelectProfesionales() {
 function autocompletarNombreProfesional() {
   const selProfesional = document.getElementById('prof-cita-profesional');
   const nombreInput = document.getElementById('prof-cita-profesional-nombre');
+  if (!selProfesional || !nombreInput) return;
   const selected = selProfesional.options[selProfesional.selectedIndex];
-  if (nombreInput) {
-    nombreInput.value = selected && selected.dataset.nombre ? selected.dataset.nombre : '';
-  }
+  nombreInput.value = selected && selected.dataset.nombre ? selected.dataset.nombre : '';
 }
 
 function capitalizarProfesion(str) {
@@ -81,19 +84,22 @@ function inicializarFlujoProfesionalesCita() {
     llenarSelectProfesiones();
     llenarSelectProfesionales();
     autocompletarNombreProfesional();
-  });
 
-  document.getElementById('prof-cita-profession').onchange = function() {
-    llenarSelectProfesionales();
-    autocompletarNombreProfesional();
-  };
-  document.getElementById('prof-cita-profesional').onchange = function() {
-    autocompletarNombreProfesional();
-  };
+    const selProf = document.getElementById('prof-cita-profession');
+    if (selProf) {
+      selProf.onchange = function() {
+        llenarSelectProfesionales();
+        autocompletarNombreProfesional();
+      };
+    }
+    const selPro = document.getElementById('prof-cita-profesional');
+    if (selPro) {
+      selPro.onchange = autocompletarNombreProfesional;
+    }
+  });
 }
 
 // Llama a esto AL ABRIR el modal de cita profesional
-// Ejemplo:
 function abrirModalCitaProfesional() {
   inicializarFlujoProfesionalesCita();
   showModal('modal-cita-profesional');
