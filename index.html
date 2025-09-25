@@ -6,7 +6,7 @@
     <title>SENDA Puente Alto - Sistema de Gestión</title>
     
     <!-- CSS Styles -->
-<link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
@@ -17,7 +17,7 @@
     
     <!-- EmailJS para envío de correos -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-<link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,">
+    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,">
 </head>
 <body>
     <!-- ================= HEADER PRINCIPAL ================= -->
@@ -130,26 +130,6 @@
         </div>
 
         <!-- ================= CONTENIDO PROFESIONAL ================= -->
-<!-- Agregar después del contenedor de profesionales -->
-<select id="professional-filter" style="display: none;">
-    <option value="">Todos los profesionales</option>
-</select>
-
-<select id="professional-select" style="display: none;">
-    <option value="">Seleccionar profesional</option>
-</select>
-
-<!-- Div para mostrar loading -->
-<div id="loading-overlay" class="loading-overlay hidden">
-    <div class="loading-spinner">
-        <div class="spinner"></div>
-        <p>Cargando...</p>
-    </div>
-</div>
-
-<!-- Contenedor para notificaciones -->
-<div id="notifications" class="notifications-container"></div>
-        
         <div id="professional-content" style="display: none;">
             <!-- Navegación por pestañas -->
             <nav class="tab-navigation">
@@ -170,228 +150,136 @@
                     Seguimiento
                 </button>
             </nav>
-<!-- ================= TAB AGENDA ================= -->
-<div class="tab-pane active" id="agenda-tab">
-    <div class="section-header">
-        <h2>Gestión de Agenda</h2>
-    </div>
 
-    <!-- Estadísticas de citas -->
-    <div class="appointments-stats">
-        <span>Hoy: <span id="today-count">0</span></span>
-        <span>Próximas: <span id="upcoming-count">0</span></span>
-        <span>Vencidas: <span id="overdue-count">0</span></span>
-        <span>Pendientes: <span id="pending-count">0</span></span>
-    </div>
-
-    <!-- Calendario -->
-    <div class="calendar-container">
-        <div class="calendar-header">
-            <h3 id="calendar-month-year">Cargando...</h3>
-            <div>
-                <button class="btn btn-outline btn-sm" id="prev-month">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-                <button class="btn btn-outline btn-sm" id="next-month">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-                <button class="btn btn-success btn-sm" id="nueva-cita-btn" onclick="openNewAppointmentModal()">
-                    <i class="fas fa-plus"></i>
-                    Nueva Cita
-                </button>
-            </div>
-        </div>
-        <div class="calendar-grid" id="calendar-grid">
-            <!-- El calendario se genera dinámicamente -->
-        </div>
-    </div>
-
-    <!-- Citas del día seleccionado -->
-    <div class="daily-appointments">
-        <h3>Citas del Día</h3>
-        <div class="appointments-list" id="appointments-list">
-            <div class="loading-message">
-                <i class="fas fa-spinner fa-spin"></i>
-                Cargando citas...
-            </div>
-        </div>
-    </div>
-</div>
-          
-<div class="appointments-stats">
-    <span>Hoy: <span id="today-count">0</span></span>
-    <span>Próximas: <span id="upcoming-count">0</span></span>
-    <span>Vencidas: <span id="overdue-count">0</span></span>
-    <span>Pendientes: <span id="pending-count">0</span></span>
-</div>
-            <!-- ================= TAB SOLICITUDES ================= -->
+            <!-- ================ TAB SOLICITUDES (LIMPIA, SIN LOADING) ================ -->
             <div class="tab-pane" id="solicitudes-tab">
                 <div class="section-header">
                     <h2>Solicitudes de Ingreso</h2>
+                    <div class="section-actions">
+                        <button id="refresh-solicitudes" class="btn btn-secondary">
+                            <i class="fas fa-sync"></i> Actualizar
+                        </button>
+                        <button id="export-solicitudes" class="btn btn-primary">
+                            <i class="fas fa-download"></i> Exportar
+                        </button>
+                    </div>
                 </div>
 
+                <!-- Filtros -->
                 <div class="filters-container">
-                    <div class="filter-tabs">
-                        <button id="filter-todas" class="filter-btn active">Todas</button>
-<button id="filter-pendientes" class="filter-btn">Pendientes</button>
-                    </div>
-                    
-                    <div class="filter-priority">
-                        <label>Prioridad:</label>
-                        <select id="priority-filter">
-                            <option value="">Todas</option>
-                            <option value="critica">Crítica</option>
-                            <option value="alta">Alta</option>
-                            <option value="media">Media</option>
-                            <option value="baja">Baja</option>
+                    <div class="filter-group">
+                        <label>Estado:</label>
+                        <select id="filtro-estado-solicitudes">
+                            <option value="todos">Todos los estados</option>
                         </select>
                     </div>
+                    <div class="filter-group">
+                        <label>Prioridad:</label>
+                        <select id="filtro-prioridad-solicitudes">
+                            <option value="todos">Todas las prioridades</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>CESFAM:</label>
+                        <select id="filtro-cesfam-solicitudes">
+                            <option value="todos">Todos los CESFAM</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Fecha:</label>
+                        <select id="filtro-fecha-solicitudes">
+                            <option value="todos">Todas las fechas</option>
+                            <option value="hoy">Hoy</option>
+                            <option value="semana">Esta semana</option>
+                            <option value="mes">Este mes</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Buscar:</label>
+                        <input type="text" id="buscar-solicitudes" placeholder="Nombre, RUT, email...">
+                    </div>
                 </div>
 
-                <div class="requests-container" id="requests-container">
-                    <div class="loading-message">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        Cargando solicitudes...
+                <!-- Estadísticas -->
+                <div id="solicitudes-stats" class="stats-container">
+                    <!-- Se generan dinámicamente -->
+                </div>
+                <!-- Contador -->
+                <div class="counter-info">
+                    Mostrando <span id="solicitudes-counter">0</span> de <span id="solicitudes-total-counter">0</span> solicitudes
+                </div>
+
+                <!-- Tabla de solicitudes -->
+                <div id="solicitudes-table-container">
+                    <table class="solicitudes-table">
+                        <thead>
+                            <tr>
+                                <th>Paciente</th>
+                                <th>Contacto</th>
+                                <th>CESFAM</th>
+                                <th>Estado</th>
+                                <th>Prioridad</th>
+                                <th>Fecha</th>
+                                <th>Sustancias</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="solicitudes-table-body">
+                            <!-- Se genera dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- ================ FIN TAB SOLICITUDES ================ -->
+
+            <!-- ================= TAB AGENDA ================= -->
+            <div class="tab-pane active" id="agenda-tab">
+                <div class="section-header">
+                    <h2>Gestión de Agenda</h2>
+                </div>
+
+                <!-- Estadísticas de citas -->
+                <div class="appointments-stats">
+                    <span>Hoy: <span id="today-count">0</span></span>
+                    <span>Próximas: <span id="upcoming-count">0</span></span>
+                    <span>Vencidas: <span id="overdue-count">0</span></span>
+                    <span>Pendientes: <span id="pending-count">0</span></span>
+                </div>
+
+                <!-- Calendario -->
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <h3 id="calendar-month-year">Cargando...</h3>
+                        <div>
+                            <button class="btn btn-outline btn-sm" id="prev-month">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button class="btn btn-outline btn-sm" id="next-month">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <button class="btn btn-success btn-sm" id="nueva-cita-btn" onclick="openNewAppointmentModal()">
+                                <i class="fas fa-plus"></i>
+                                Nueva Cita
+                            </button>
+                        </div>
+                    </div>
+                    <div class="calendar-grid" id="calendar-grid">
+                        <!-- El calendario se genera dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- Citas del día seleccionado -->
+                <div class="daily-appointments">
+                    <h3>Citas del Día</h3>
+                    <div class="appointments-list" id="appointments-list">
+                        <div class="loading-message">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Cargando citas...
+                        </div>
                     </div>
                 </div>
             </div>
-<!-- Agregar en tu archivo HTML principal, dentro del tab de solicitudes -->
-<div id="solicitudes-tab" class="tab-pane">
-    <div class="section-header">
-        <h2>Solicitudes de Ingreso</h2>
-        <div class="section-actions">
-            <button id="refresh-solicitudes" class="btn btn-secondary">
-                <i class="fas fa-sync"></i> Actualizar
-            </button>
-            <button id="export-solicitudes" class="btn btn-primary">
-                <i class="fas fa-download"></i> Exportar
-            </button>
-        </div>
-    </div>
-<tbody id="solicitudes-table-body">
-  <!-- Se llena dinámicamente -->
-</tbody>
-    <!-- Filtros -->
-    <div class="filters-container">
-        <div class="filter-group">
-            <label>Estado:</label>
-            <select id="filtro-estado-solicitudes">
-                <option value="todos">Todos los estados</option>
-            </select>
-        </div>
-        
-        <div class="filter-group">
-            <label>Prioridad:</label>
-            <select id="filtro-prioridad-solicitudes">
-                <option value="todos">Todas las prioridades</option>
-            </select>
-        </div>
-        
-        <div class="filter-group">
-            <label>CESFAM:</label>
-            <select id="filtro-cesfam-solicitudes">
-                <option value="todos">Todos los CESFAM</option>
-            </select>
-        </div>
-        
-        <div class="filter-group">
-            <label>Fecha:</label>
-            <select id="filtro-fecha-solicitudes">
-                <option value="todos">Todas las fechas</option>
-                <option value="hoy">Hoy</option>
-                <option value="semana">Esta semana</option>
-                <option value="mes">Este mes</option>
-            </select>
-        </div>
-        
-        <div class="filter-group">
-            <label>Buscar:</label>
-            <input type="text" id="buscar-solicitudes" placeholder="Nombre, RUT, email...">
-        </div>
-    </div>
 
-    <!-- Estadísticas -->
-    <div id="solicitudes-stats" class="stats-container">
-        <!-- Se generan dinámicamente -->
-    </div>
-
-    <!-- Contador -->
-    <div class="counter-info">
-        Mostrando <span id="solicitudes-counter">0</span> de <span id="solicitudes-total-counter">0</span> solicitudes
-    </div>
-
-
-    <!-- Tabla de solicitudes -->
-   <div id="solicitudes-table-container">...</div>
-        <table class="solicitudes-table">
-            <thead>
-                <tr>
-                    <th>Paciente</th>
-                    <th>Contacto</th>
-                    <th>CESFAM</th>
-                    <th>Estado</th>
-                    <th>Prioridad</th>
-                    <th>Fecha</th>
-                    <th>Sustancias</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="solicitudes-table-body">
-                <!-- Se genera dinámicamente -->
-            </tbody>
-        </table>
-    </div>
-</div>
-
-            <div id="solicitudes-tab" class="tab-pane">
-    <div class="section-header">
-        <h2>Solicitudes de Ingreso</h2>
-        <div class="section-actions">
-            <button id="refresh-solicitudes" class="btn btn-secondary">
-                <i class="fas fa-sync"></i> Actualizar
-            </button>
-        </div>
-    </div>
-
-    <!-- Filtros rápidos -->
-    <div class="quick-filters">
-        <button id="filter-todas" class="filter-btn active" onclick="filterSolicitudes('todos')">
-            Todas
-        </button>
-        <button id="filter-pendientes" class="filter-btn" onclick="filterSolicitudes('pendientes')">
-            Pendientes
-        </button>
-        <button id="filter-en-proceso" class="filter-btn" onclick="filterSolicitudes('en_proceso')">
-            En Proceso
-        </button>
-        <button id="filter-completadas" class="filter-btn" onclick="filterSolicitudes('completadas')">
-            Completadas
-        </button>
-        
-        <div class="filter-separator"></div>
-        
-        <div class="dropdown">
-            <button class="filter-btn dropdown-toggle">
-                Prioridad: Todas
-                <i class="fas fa-chevron-down"></i>
-            </button>
-            <div class="dropdown-content">
-                <button onclick="filterSolicitudes('alta_prioridad')">🔴 Alta Prioridad</button>
-                <button onclick="filterSolicitudes('media_prioridad')">🟡 Media Prioridad</button>
-                <button onclick="filterSolicitudes('baja_prioridad')">🟢 Baja Prioridad</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Aquí va el resto del HTML de la tabla -->
-    <div id="solicitudes-table-container">
-        <table class="solicitudes-table">
-            <tbody id="solicitudes-table-body">
-                <!-- Se llena dinámicamente -->
-            </tbody>
-        </table>
-    </div>
-</div>
             <!-- ================= TAB PACIENTES ================= -->
             <div class="tab-pane" id="pacientes-tab">
                 <div class="section-header">
@@ -451,7 +339,7 @@
             </div>
         </div>
     </main>
-
+    
     <!-- ================= MODAL LOGIN ================= -->
     <div class="modal-overlay" id="login-modal">
         <div class="modal">
