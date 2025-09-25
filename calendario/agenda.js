@@ -131,13 +131,16 @@ document.addEventListener("DOMContentLoaded", function() {
   cargarCitasPorDia(() => renderCalendar(currentMonth, currentYear));
 
   // Botón + Nueva Cita
-  if (nuevaCitaBtn) {
-    nuevaCitaBtn.onclick = function() {
+ nuevaCitaBtn.onclick = function() {
+  showModal('modal-nueva-cita');
+  setTimeout(function() { // Espera breve si el modal se inserta dinámicamente
+    const fechaInput = document.getElementById('cita-fecha');
+    if (fechaInput) {
       const chileDate = chileNow();
-      document.getElementById('cita-fecha').value = chileDate.toISOString().slice(0,10);
-      showModal('modal-nueva-cita');
-    };
-  }
+      fechaInput.value = chileDate.toISOString().slice(0,10);
+    }
+  }, 100);
+};
 
   // ====== PROFESIONALES PARA CITA ======
   function cargarProfesionales() {
