@@ -15,8 +15,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
-  <script src="solicitudes/gestor-solicitudes.js"></script>
-<script src="solicitudes/filtros.js"></script>
+  <script type="module" src="solicitudes/gestor-solicitudes.js"></script>
+<script type="module" src="solicitudes/filtros.js"></script>
 <!-- Si necesitas respuestas.js, luego -->
 <script src="solicitudes/respuestas.js"></script>
     
@@ -285,6 +285,15 @@
                 </div>
             </div>
 
+<!-- ================= TAB solicitud de ingreso  ================= -->
+<select id="filtro-estado-solicitudes"></select>
+<select id="filtro-prioridad-solicitudes"></select>
+<select id="filtro-cesfam-solicitudes"></select>
+<select id="filtro-fecha-solicitudes"></select>
+<input id="buscar-solicitudes">
+<button id="refresh-solicitudes"></button>
+<tbody id="solicitudes-table-body"></tbody>
+            
             <!-- ================= TAB PACIENTES ================= -->
             <div class="tab-pane" id="pacientes-tab">
                 <div class="section-header">
