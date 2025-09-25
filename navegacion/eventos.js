@@ -1,7 +1,4 @@
-//**
- * NAVEGACION/EVENTOS.JS - VERSIÓN SIN IMPORTS
- * Configuración de eventos globales
- */
+
 
 window.setupEventListeners = function() {
     try {
