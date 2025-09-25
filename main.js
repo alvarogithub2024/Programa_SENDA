@@ -71,6 +71,38 @@ document.addEventListener('DOMContentLoaded', async function() {
         showInitializationError(error);
         attemptBasicRecovery();
     }
+
+    // === INICIALIZA LISTENERS DE CITAS SOLO SI EXISTEN LOS ELEMENTOS ===
+    // Evita errores de null con listeners seguros
+    const citaProfession = document.getElementById('cita-profession');
+    if (citaProfession) {
+        citaProfession.onchange = function() {
+            const profession = this.value;
+            const selectProf = document.getElementById('cita-profesional');
+            if (!selectProf) return;
+            selectProf.innerHTML = '<option value="">Seleccionar profesional...</option>';
+            // SUPONIENDO que tienes una función que retorna los profesionales activos de esa profesión:
+            if (typeof cargarProfesionalesPorProfesion === "function") {
+                cargarProfesionalesPorProfesion(profession, function(lista) {
+                    lista.forEach(function(p) {
+                        const opt = document.createElement('option');
+                        opt.value = p.uid; // o p.id
+                        opt.textContent = `${p.nombre} ${p.apellidos}`;
+                        selectProf.appendChild(opt);
+                    });
+                });
+            }
+        };
+    }
+
+    const citaProfesional = document.getElementById('cita-profesional');
+    if (citaProfesional) {
+        citaProfesional.onchange = actualizarHoras;
+    }
+    const citaFecha = document.getElementById('cita-fecha');
+    if (citaFecha) {
+        citaFecha.onchange = actualizarHoras;
+    }
 });
 
 // ====== ESPERAR INICIALIZACIÓN DE FIREBASE ======
@@ -152,19 +184,19 @@ function setupGlobalFunctions() {
             var modal = document.getElementById(modalId);
             if (modal) modal.style.display = 'none';
         };
-        
+
         window.showModal = window.showModal || function(modalId) {
             var modal = document.getElementById(modalId);
             if (modal) modal.style.display = 'flex';
         };
-        
+
         window.switchLoginTab = function(tab) {
             try {
                 var loginTab = document.querySelector('.modal-tab[onclick*="login"]');
                 var registerTab = document.querySelector('.modal-tab[onclick*="register"]');
                 var loginForm = document.getElementById('login-form');
                 var registerForm = document.getElementById('register-form');
-                
+
                 if (tab === 'login') {
                     if (loginTab) loginTab.classList.add('active');
                     if (registerTab) registerTab.classList.remove('active');
@@ -180,7 +212,7 @@ function setupGlobalFunctions() {
                 console.error('Error switching login tab:', error);
             }
         };
-        
+
         window.SENDA_DEBUG = {
             getSystemInfo: function() {
                 return {
@@ -314,10 +346,10 @@ document.addEventListener("DOMContentLoaded", function() {
                     firebase.auth().signOut();
                     return;
                 }
-                
+
                 // Login exitoso
                 window.showNotification && window.showNotification("Bienvenido, " + profesional.nombre, "success");
-               window.closeModal && window.closeModal('login-modal');
+                window.closeModal && window.closeModal('login-modal');
             })
             .catch((error) => {
                 window.showNotification && window.showNotification("Error al iniciar sesión: " + error.message, "error");
@@ -375,35 +407,25 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 
-// Actualizar profesionales según profesión seleccionada
-document.getElementById('cita-profession').onchange = function() {
-  const profession = this.value;
-  const selectProf = document.getElementById('cita-profesional');
-  selectProf.innerHTML = '<option value="">Seleccionar profesional...</option>';
-  // SUPONIENDO que tienes una función que retorna los profesionales activos de esa profesión:
-  cargarProfesionalesPorProfesion(profession, function(lista) {
-    lista.forEach(function(p) {
-      const opt = document.createElement('option');
-      opt.value = p.uid; // o p.id
-      opt.textContent = `${p.nombre} ${p.apellidos}`;
-      selectProf.appendChild(opt);
-    });
-  });
-};
-
-// Actualizar horas disponibles según profesional y fecha
-document.getElementById('cita-profesional').onchange = actualizarHoras;
-document.getElementById('cita-fecha').onchange = actualizarHoras;
-
+// ====== FUNCIÓN SEGURA PARA ACTUALIZAR HORAS DISPONIBLES ======
 function actualizarHoras() {
-  var fecha = document.getElementById('cita-fecha').value;
-  var profesionalId = document.getElementById('cita-profesional').value;
-  if (!fecha || !profesionalId) {
-    mostrarHorariosDisponibles([]);
-    return;
-  }
-  cargarHorariosDisponibles(fecha, profesionalId, mostrarHorariosDisponibles);
+    var fechaInput = document.getElementById('cita-fecha');
+    var profesionalInput = document.getElementById('cita-profesional');
+    if (!fechaInput || !profesionalInput) {
+        if (window.mostrarHorariosDisponibles) window.mostrarHorariosDisponibles([]);
+        return;
+    }
+    var fecha = fechaInput.value;
+    var profesionalId = profesionalInput.value;
+    if (!fecha || !profesionalId) {
+        if (window.mostrarHorariosDisponibles) window.mostrarHorariosDisponibles([]);
+        return;
+    }
+    if (typeof cargarHorariosDisponibles === "function" && typeof window.mostrarHorariosDisponibles === "function") {
+        cargarHorariosDisponibles(fecha, profesionalId, window.mostrarHorariosDisponibles);
+    }
 }
+
 // ====== DIAGNÓSTICO DEL SISTEMA EN CONSOLA ======
 console.log('🔍 Información del Sistema:');
 console.log('   Navegador:', navigator.userAgent);
@@ -424,8 +446,8 @@ window.addEventListener('offline', function() {
 
 window.addEventListener('error', function(event) {
     console.error('❌ Error no capturado:', event.error);
-    if (event.error && event.error.message && 
-        (event.error.message.includes('Firebase') || 
+    if (event.error && event.error.message &&
+        (event.error.message.includes('Firebase') ||
          event.error.message.includes('network') ||
          event.error.message.includes('auth'))) {
         window.showNotification && window.showNotification('Error del sistema detectado. Si persiste, recarga la página.', 'error');
