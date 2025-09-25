@@ -1,12 +1,12 @@
 /**
- * UTILIDADES/NOTIFICACIONES.JS
+ * UTILIDADES/NOTIFICACIONES.JS - VERSIÓN SIN IMPORTS
  * Sistema de notificaciones para la aplicación
  */
 
 /**
  * Muestra una notificación al usuario
  */
-export function showNotification(message, type = 'info', duration = 4000) {
+window.showNotification = function(message, type = 'info', duration = 4000) {
     try {
         const container = document.getElementById('notifications') || createNotificationsContainer();
         
@@ -46,7 +46,7 @@ export function showNotification(message, type = 'info', duration = 4000) {
         // Fallback a alert si falla el sistema de notificaciones
         alert(`${type.toUpperCase()}: ${message}`);
     }
-}
+};
 
 /**
  * Obtiene el icono para el tipo de notificación
@@ -68,6 +68,13 @@ function createNotificationsContainer() {
     const container = document.createElement('div');
     container.id = 'notifications';
     container.className = 'notifications-container';
+    container.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        max-width: 400px;
+    `;
     document.body.appendChild(container);
     return container;
 }
@@ -75,9 +82,11 @@ function createNotificationsContainer() {
 /**
  * Limpia todas las notificaciones
  */
-export function clearAllNotifications() {
+window.clearAllNotifications = function() {
     const container = document.getElementById('notifications');
     if (container) {
         container.innerHTML = '';
     }
-}
+};
+
+console.log('📢 Sistema de notificaciones cargado - Funciones disponibles en window');
