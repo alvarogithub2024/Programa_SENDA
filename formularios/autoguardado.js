@@ -1,7 +1,5 @@
 // FORMULARIOS/AUTOGUARDADO.JS
 
-// Requiere: window.cacheGuardar, window.cacheObtener, window.cacheEliminar
-
 // Autoguarda el contenido de un formulario en cache local cada cierto tiempo
 function habilitarAutoguardadoFormulario(formId, cacheKey, intervaloMs) {
     var form = document.getElementById(formId);
@@ -9,7 +7,7 @@ function habilitarAutoguardadoFormulario(formId, cacheKey, intervaloMs) {
     intervaloMs = intervaloMs || 15000; // 15 segundos por defecto
 
     // Cargar campos desde cache si existe
-    var guardado = window.cacheObtener(cacheKey);
+    var guardado = window.cacheObtener ? window.cacheObtener(cacheKey) : null;
     if (guardado) {
         Object.keys(guardado).forEach(function(campo) {
             if (form[campo]) {
@@ -26,7 +24,7 @@ function habilitarAutoguardadoFormulario(formId, cacheKey, intervaloMs) {
                 datos[el.name] = el.value;
             }
         });
-        window.cacheGuardar(cacheKey, datos, 24 * 60 * 60 * 1000); // 1 día
+        if (window.cacheGuardar) window.cacheGuardar(cacheKey, datos, 24 * 60 * 60 * 1000); // 1 día
     }, intervaloMs);
 
     // Guardar también al salir de la página
@@ -37,18 +35,18 @@ function habilitarAutoguardadoFormulario(formId, cacheKey, intervaloMs) {
                 datos[el.name] = el.value;
             }
         });
-        window.cacheGuardar(cacheKey, datos, 24 * 60 * 60 * 1000);
+        if (window.cacheGuardar) window.cacheGuardar(cacheKey, datos, 24 * 60 * 60 * 1000);
     });
 
     // Permite limpiar el autoguardado (ej: al guardar exitosamente)
     form.addEventListener("reset", function() {
-        window.cacheEliminar(cacheKey);
+        if (window.cacheEliminar) window.cacheEliminar(cacheKey);
     });
 }
 
 // Limpia el autoguardado de un formulario
 function limpiarAutoguardadoFormulario(cacheKey) {
-    window.cacheEliminar(cacheKey);
+    if (window.cacheEliminar) window.cacheEliminar(cacheKey);
 }
 
 // Exportar globalmente
