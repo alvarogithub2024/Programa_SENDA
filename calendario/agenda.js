@@ -569,8 +569,13 @@ window.closeModal = function(modalId) {
 window.viewAppointment = function(appointmentId) {
     console.log('Ver cita:', appointmentId);
 };
-
+window.initScheduleManager = initScheduleManager;
+};
 window.editAppointment = function(appointmentId) {
     console.log('Editar cita:', appointmentId);
 };
-
+window.addEventListener('DOMContentLoaded', function() {
+    if (typeof initScheduleManager === 'function') {
+        initScheduleManager();
+    }
+});
