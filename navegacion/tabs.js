@@ -1,17 +1,8 @@
-/**
- * NAVEGACION/TABS.JS
- * Sistema de pestañas para la navegación del panel profesional
- */
-
-import { loadSolicitudesData } from '../solicitudes/gestor-solicitudes.js';
-import { loadPatients } from '../pacientes/gestor-pacientes.js';
-import { initCalendar, loadAppointments } from '../calendario/agenda.js';
-import { loadPatientTimeline } from '../seguimiento/timeline.js';
-import { showNotification } from '../utilidades/notificaciones.js';
+window.loadSolicitudForResponse = function(solicitudId) { ... }
 
 let currentUserData = null;
 
-export function setupTabs() {
+function setupTabs() {
     try {
         const tabBtns = document.querySelectorAll('.tab-btn');
         const tabPanes = document.querySelectorAll('.tab-pane');
@@ -44,7 +35,7 @@ export function setupTabs() {
     }
 }
 
-export function updateTabVisibility() {
+ function updateTabVisibility() {
     try {
         const tabBtns = document.querySelectorAll('.tab-btn');
         
@@ -147,7 +138,7 @@ async function loadPatientsData() {
     }
 }
 
-export function setCurrentUserData(userData) {
+function setCurrentUserData(userData) {
     currentUserData = userData;
     updateTabVisibility();
 }
