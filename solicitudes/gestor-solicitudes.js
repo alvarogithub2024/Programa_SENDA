@@ -1070,18 +1070,5 @@ document.addEventListener('click', (e) => {
 
 // Log de inicialización
 console.log(`
-╔════════════════════════════════════════════════╗
-║         GESTOR DE SOLICITUDES SENDA v2.0       ║
-║              Sistema Completamente             ║
-║                  Funcional                     ║
-╠════════════════════════════════════════════════╣
-║  ✅ Auto-actualización cada 30 segundos       ║
-║  ✅ Filtros avanzados por múltiples campos    ║
-║  ✅ Búsqueda en tiempo real                    ║
-║  ✅ Estadísticas dinámicas                     ║
-║  ✅ Exportación a Excel/CSV                    ║
-║  ✅ Gestión de estados y prioridades           ║
-║  ✅ Interfaz responsive                        ║
-║  ✅ Manejo de errores robusto                  ║
-╚════════════════════════════════════════════════╝
+
 `);
