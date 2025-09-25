@@ -1,6 +1,5 @@
 // calendario/agenda.js
 
-// ==== CALENDARIO LUNES A DOMINGO, MES ACTUAL ====
 document.addEventListener("DOMContentLoaded", function() {
   const calendarGrid = document.getElementById('calendar-grid');
   const calendarHeader = document.getElementById('calendar-month-year');
@@ -12,7 +11,9 @@ document.addEventListener("DOMContentLoaded", function() {
   let currentMonth = today.getMonth();
   let currentYear = today.getFullYear();
 
-  // Chile timezone
+  // ====== NUEVO: Variable global de citas agrupadas ======
+  let citasPorDia = {};
+
   function chileNow() {
     return new Date(new Date().toLocaleString("en-US", {timeZone: "America/Santiago"}));
   }
@@ -22,16 +23,26 @@ document.addEventListener("DOMContentLoaded", function() {
     return meses[month];
   }
 
+  // === NUEVO: Cargar todas las citas de Firebase agrupadas por fecha ===
+  function cargarCitasPorDia(callback) {
+    const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
+    db.collection("citas").get().then(function(snapshot) {
+      citasPorDia = {};
+      snapshot.forEach(function(doc) {
+        const cita = doc.data();
+        const fecha = cita.fecha; // formato "YYYY-MM-DD"
+        if (!citasPorDia[fecha]) citasPorDia[fecha] = [];
+        citasPorDia[fecha].push(cita);
+      });
+      if (typeof callback === "function") callback();
+    });
+  }
+
   function renderCalendar(month, year) {
     calendarGrid.innerHTML = "";
     calendarHeader.textContent = `${getMonthName(month)} ${year}`;
 
-    // Primer día del mes (Lunes es 1, Domingo es 0)
-    let primerDia = new Date(year, month, 1);
-    let ultimoDia = new Date(year, month + 1, 0);
-    let startDay = (primerDia.getDay() + 6) % 7; // Lunes=0, Domingo=6
-    let daysInMonth = ultimoDia.getDate();
-
+    // Cabecera de días
     let row = document.createElement('div');
     row.className = 'calendar-row calendar-row-header';
     ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].forEach(dia => {
@@ -41,6 +52,12 @@ document.addEventListener("DOMContentLoaded", function() {
       row.appendChild(cell);
     });
     calendarGrid.appendChild(row);
+
+    // Dibuja cada semana
+    let primerDia = new Date(year, month, 1);
+    let ultimoDia = new Date(year, month + 1, 0);
+    let startDay = (primerDia.getDay() + 6) % 7; // Lunes=0, Domingo=6
+    let daysInMonth = ultimoDia.getDate();
 
     let date = 1;
     for (let i = 0; i < 6; i++) {
@@ -54,8 +71,29 @@ document.addEventListener("DOMContentLoaded", function() {
         } else if (date > daysInMonth) {
           cell.innerHTML = "&nbsp;";
         } else {
-          cell.textContent = date;
-          cell.dataset.date = `${year}-${String(month+1).padStart(2,'0')}-${String(date).padStart(2,'0')}`;
+          // Día del mes
+          const dateKey = `${year}-${String(month+1).padStart(2,'0')}-${String(date).padStart(2,'0')}`;
+          // Número de día
+          const dayNumDiv = document.createElement('div');
+          dayNumDiv.className = 'calendar-day-number';
+          dayNumDiv.textContent = date;
+          cell.appendChild(dayNumDiv);
+
+          // Citas/eventos de ese día
+          const eventos = citasPorDia[dateKey] || [];
+          if (eventos.length) {
+            const eventsDiv = document.createElement('div');
+            eventsDiv.className = 'calendar-events';
+            eventos.forEach(evt => {
+              const evDiv = document.createElement('div');
+              evDiv.className = 'calendar-event';
+              evDiv.textContent = evt.paciente || evt.pacienteNombre || "Sin nombre";
+              eventsDiv.appendChild(evDiv);
+            });
+            cell.appendChild(eventsDiv);
+          }
+
+          cell.dataset.date = dateKey;
           if (date === chileNow().getDate() && month === chileNow().getMonth() && year === chileNow().getFullYear()) {
             cell.classList.add('calendar-today');
           }
@@ -79,7 +117,7 @@ document.addEventListener("DOMContentLoaded", function() {
       currentMonth = 11;
       currentYear--;
     }
-    renderCalendar(currentMonth, currentYear);
+    cargarCitasPorDia(() => renderCalendar(currentMonth, currentYear));
   };
   if (nextMonthBtn) nextMonthBtn.onclick = function() {
     currentMonth++;
@@ -87,10 +125,11 @@ document.addEventListener("DOMContentLoaded", function() {
       currentMonth = 0;
       currentYear++;
     }
-    renderCalendar(currentMonth, currentYear);
+    cargarCitasPorDia(() => renderCalendar(currentMonth, currentYear));
   };
 
-  renderCalendar(currentMonth, currentYear);
+  // Inicial: cargar citas y renderizar
+  cargarCitasPorDia(() => renderCalendar(currentMonth, currentYear));
 
   // Botón + Nueva Cita
   if (nuevaCitaBtn) {
@@ -146,7 +185,8 @@ document.addEventListener("DOMContentLoaded", function() {
     }).then(()=>{
       window.showNotification && window.showNotification("Cita agendada correctamente", "success");
       closeModal('modal-nueva-cita');
-      // Puedes aquí actualizar la agenda visual si lo deseas
+      // ACTUALIZAR: recargar citas y calendario
+      cargarCitasPorDia(() => renderCalendar(currentMonth, currentYear));
     }).catch(err=>{
       window.showNotification && window.showNotification("Error al agendar: "+err.message, "error");
     });
