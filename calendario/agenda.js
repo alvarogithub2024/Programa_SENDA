@@ -11,7 +11,6 @@ document.addEventListener("DOMContentLoaded", function() {
   let currentMonth = today.getMonth();
   let currentYear = today.getFullYear();
 
-  // ====== NUEVO: Variable global de citas agrupadas ======
   let citasPorDia = {};
 
   function chileNow() {
@@ -23,14 +22,14 @@ document.addEventListener("DOMContentLoaded", function() {
     return meses[month];
   }
 
-  // === NUEVO: Cargar todas las citas de Firebase agrupadas por fecha ===
+  // Cargar las citas agrupadas por fecha
   function cargarCitasPorDia(callback) {
     const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
     db.collection("citas").get().then(function(snapshot) {
       citasPorDia = {};
       snapshot.forEach(function(doc) {
         const cita = doc.data();
-        const fecha = cita.fecha; // formato "YYYY-MM-DD"
+        const fecha = cita.fecha;
         if (!citasPorDia[fecha]) citasPorDia[fecha] = [];
         citasPorDia[fecha].push(cita);
       });
