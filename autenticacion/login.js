@@ -35,11 +35,6 @@ document.addEventListener("DOMContentLoaded", function() {
           firebase.auth().signOut();
           return;
         }
-        window.showNotification && window.showNotification("Bienvenido/a, acceso correcto.", "success");
-        // Mostrar sección profesional y ocultar la pública
-        document.getElementById('professional-header').style.display = '';
-        document.getElementById('professional-content').style.display = '';
-        document.getElementById('public-content').style.display = 'none';
         // Coloca datos en el header
         document.getElementById('professional-name').textContent = profesional.nombre + ' ' + profesional.apellidos;
         document.getElementById('professional-profession').textContent = profesional.profession || '';
