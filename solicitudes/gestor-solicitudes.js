@@ -1,5 +1,7 @@
 /**
- * SOLICITUDES/GESTOR-SOLICITUDES.JS - VERSIÓN CORREGIDA SIN IMPORTS
+ * SOLICITUDES/GESTOR-SOLICITUDES.JS - VINCULADO CON FIREBASE
+ * Versión extendida para cargar, filtrar y actualizar solicitudes desde Firestore.
+ * Mantiene tu lógica de filtrado y UI.
  */
 
 // Variables globales
@@ -49,36 +51,24 @@ window.initSolicitudesManager = function() {
     try {
         console.log('📋 Inicializando gestor de solicitudes...');
         
-        // Verificar que estamos en la pestaña correcta
+        // Verificar pestaña activa
         const solicitudesTab = document.getElementById('solicitudes-tab');
         if (!solicitudesTab || !solicitudesTab.classList.contains('active')) {
             console.log('⏸️ Solicitudes no se inicializa - pestaña no activa');
             return;
         }
-        
-        // Crear datos de ejemplo si no hay datos
-        if (solicitudesData.length === 0) {
-            createSampleSolicitudes();
-        }
-        
-        // Aplicar filtros iniciales
-        applyCurrentFilters();
-        
-        // Configurar filtros
-        setupFilters();
-        
-        // Configurar eventos
-        setupEvents();
-        
-        // Configurar auto-actualización
-        setupAutoRefresh();
-        
-        // Renderizar tabla inicial
-        renderSolicitudesTable();
-        updateSolicitudesCounter();
-        updateSolicitudesStats();
-        
-        console.log('✅ Gestor de solicitudes inicializado');
+
+        // Cargar solicitudes desde Firebase
+        loadSolicitudesFromFirebase().then(() => {
+            applyCurrentFilters();
+            setupFilters();
+            setupEvents();
+            setupAutoRefresh();
+            renderSolicitudesTable();
+            updateSolicitudesCounter();
+            updateSolicitudesStats();
+            console.log('✅ Gestor de solicitudes inicializado');
+        });
         
     } catch (error) {
         console.error('❌ Error inicializando gestor de solicitudes:', error);
@@ -87,6 +77,44 @@ window.initSolicitudesManager = function() {
         }
     }
 };
+
+/**
+ * Carga todas las solicitudes desde Firestore
+ */
+function loadSolicitudesFromFirebase() {
+    return new Promise((resolve, reject) => {
+        try {
+            const db = window.getFirestore();
+            db.collection('solicitudes_ingreso')
+                .orderBy('fechaCreacion', 'desc')
+                .get()
+                .then(snapshot => {
+                    solicitudesData = [];
+                    snapshot.forEach(doc => {
+                        let data = doc.data();
+                        // Normalizar fechas para filtrado
+                        if (data.fechaCreacion && !(data.fechaCreacion instanceof Date)) {
+                            if (data.fechaCreacion.toDate) data.fechaCreacion = data.fechaCreacion.toDate();
+                            else data.fechaCreacion = new Date(data.fechaCreacion);
+                        }
+                        data.id = doc.id;
+                        solicitudesData.push(data);
+                    });
+                    resolve();
+                })
+                .catch(error => {
+                    console.error('Error cargando solicitudes Firebase:', error);
+                    if (window.showNotification) {
+                        window.showNotification('Error cargando solicitudes de ingreso', 'error');
+                    }
+                    resolve(); // No rechazar, para que la UI igual funcione con datos vacíos
+                });
+        } catch (error) {
+            console.error('Error accediendo a Firestore:', error);
+            resolve();
+        }
+    });
+}
 
 /**
  * Configurar filtros
@@ -178,9 +206,8 @@ function setupEvents() {
 function setupAutoRefresh() {
     if (isAutoRefreshEnabled && !autoRefreshInterval) {
         autoRefreshInterval = setInterval(() => {
-            console.log('🔄 Auto-actualizando solicitudes...');
-            // En un entorno real, aquí cargarías desde Firebase
-            // loadSolicitudesFromFirebase();
+            console.log('🔄 Auto-actualizando solicitudes desde Firebase...');
+            loadSolicitudesFromFirebase().then(applyCurrentFilters);
         }, 30000); // Cada 30 segundos
     }
 }
@@ -484,104 +511,6 @@ function applyCurrentFilters() {
 }
 
 /**
- * Crear solicitudes de ejemplo
- */
-function createSampleSolicitudes() {
-    console.log('📝 Creando datos de ejemplo...');
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const lastWeek = new Date(today);
-    lastWeek.setDate(lastWeek.getDate() - 7);
-    
-    solicitudesData = [
-        {
-            id: 'sample_001',
-            nombre: 'Juan Carlos',
-            apellidos: 'Pérez García',
-            rut: '12.345.678-9',
-            edad: 28,
-            email: 'juan.perez@email.com',
-            telefono: '9 1234 5678',
-            direccion: 'Los Aromos 123, Puente Alto',
-            cesfam: 'CESFAM Karol Wojtyla',
-            descripcion: 'Solicito ayuda para tratamiento de adicción al alcohol. He intentado dejarlo varias veces pero no he podido solo.',
-            prioridad: 'media',
-            urgencia: 'media',
-            motivacion: 7,
-            sustancias: ['alcohol'],
-            tiempoConsumo: '3_5_años',
-            tratamientoPrevio: 'no',
-            paraMi: 'si',
-            estado: 'pendiente',
-            tipoSolicitud: 'identificado',
-            origen: 'web_publica',
-            version: '2.0',
-            fechaCreacion: today,
-            fechaAgenda: null,
-            tiempoTranscurrido: 'Hace menos de 1 hora',
-            prioridadNumerica: 2
-        },
-        {
-            id: 'sample_002',
-            nombre: 'María Elena',
-            apellidos: 'González López',
-            rut: '98.765.432-1',
-            edad: 35,
-            email: 'maria.gonzalez@email.com',
-            telefono: '9 8765 4321',
-            direccion: 'Las Rosas 456, Puente Alto',
-            cesfam: 'CESFAM Vista Hermosa',
-            descripcion: 'Necesito ayuda urgente. Mi hijo está consumiendo drogas y la situación familiar se está volviendo insostenible.',
-            prioridad: 'alta',
-            urgencia: 'alta',
-            motivacion: 9,
-            sustancias: ['marihuana', 'cocaina'],
-            tiempoConsumo: '1_3_años',
-            tratamientoPrevio: 'si',
-            paraMi: 'no',
-            estado: 'pendiente',
-            tipoSolicitud: 'identificado',
-            origen: 'web_publica',
-            version: '2.0',
-            fechaCreacion: yesterday,
-            fechaAgenda: null,
-            tiempoTranscurrido: 'Hace 1 día',
-            prioridadNumerica: 3
-        },
-        {
-            id: 'sample_003',
-            nombre: 'Pedro',
-            apellidos: 'Martínez Silva',
-            rut: '15.678.432-5',
-            edad: 42,
-            email: 'pedro.martinez@email.com',
-            telefono: '9 5432 1098',
-            direccion: 'Los Pinos 789, Puente Alto',
-            cesfam: 'CESFAM Padre Manuel Villaseca',
-            descripcion: 'Llevo varios años luchando contra la adicción al alcohol y necesito apoyo profesional.',
-            prioridad: 'media',
-            urgencia: 'media',
-            motivacion: 8,
-            sustancias: ['alcohol'],
-            tiempoConsumo: 'mas_5_años',
-            tratamientoPrevio: 'si',
-            paraMi: 'si',
-            estado: 'en_proceso',
-            tipoSolicitud: 'identificado',
-            origen: 'web_publica',
-            version: '2.0',
-            fechaCreacion: lastWeek,
-            fechaAgenda: null,
-            tiempoTranscurrido: 'Hace 1 semana',
-            prioridadNumerica: 2
-        }
-    ];
-    
-    console.log(`✅ ${solicitudesData.length} solicitudes de ejemplo creadas`);
-}
-
-/**
  * Utilidades auxiliares
  */
 function fillSelectOptions(id, options, labelMap = {}) {
@@ -645,7 +574,7 @@ function exportSolicitudesToExcel() {
             'Estado': ESTADOS_SOLICITUDES[solicitud.estado]?.label || solicitud.estado,
             'Prioridad': PRIORIDADES_SOLICITUDES[solicitud.prioridad]?.label || solicitud.prioridad,
             'Sustancias': Array.isArray(solicitud.sustancias) ? solicitud.sustancias.join(', ') : 'No especificado',
-            'Fecha Creación': solicitud.fechaCreacion.toLocaleDateString('es-CL'),
+            'Fecha Creación': solicitud.fechaCreacion ? new Date(solicitud.fechaCreacion).toLocaleDateString('es-CL') : '',
             'Descripción': solicitud.descripcion || 'Sin descripción',
             'Motivación (1-10)': solicitud.motivacion || 'No especificado',
             'Tiempo de Consumo': solicitud.tiempoConsumo || 'No especificado',
@@ -798,4 +727,9 @@ document.addEventListener('click', (e) => {
     }
 });
 
-console.log('📋 Gestor de solicitudes cargado - Función principal disponible en window.initSolicitudesManager');
+// Permite recargar manualmente desde Firebase (opcional)
+window.reloadSolicitudesFromFirebase = function() {
+    loadSolicitudesFromFirebase().then(applyCurrentFilters);
+};
+
+console.log('📋 Gestor de solicitudes conectado a Firebase listo.');
