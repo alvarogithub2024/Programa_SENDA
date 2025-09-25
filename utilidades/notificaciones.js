@@ -1,11 +1,9 @@
 // UTILIDADES/NOTIFICACIONES.JS
 
-// Muestra una notificación flotante en la pantalla
 function showNotification(mensaje, tipo, duracion) {
-    tipo = tipo || 'info'; // info, success, warning, error
+    tipo = tipo || 'info';
     duracion = duracion || 3000;
 
-    // Crear contenedor si no existe
     var contenedor = document.getElementById('notificaciones-contenedor');
     if (!contenedor) {
         contenedor = document.createElement('div');
@@ -20,7 +18,6 @@ function showNotification(mensaje, tipo, duracion) {
         document.body.appendChild(contenedor);
     }
 
-    // Crear notificación
     var notificacion = document.createElement('div');
     notificacion.className = 'notificacion ' + tipo;
     notificacion.style.background = ({
@@ -64,5 +61,4 @@ function showNotification(mensaje, tipo, duracion) {
     }, duracion);
 }
 
-// Exportar globalmente
 window.showNotification = showNotification;
