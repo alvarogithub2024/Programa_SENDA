@@ -24,7 +24,8 @@ function setupEventListeners() {
             }
         });
     });
-
+    
+}
     // Acceso directo a tab de inicio al hacer click en logo
     var logo = document.getElementById("logo-senda");
     if (logo) {
