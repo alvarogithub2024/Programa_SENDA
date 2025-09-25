@@ -35,20 +35,5 @@ function setupEventListeners() {
         });
     }
 
-   document.getElementById('cita-fecha').addEventListener('change', actualizarHoras);
-document.getElementById('cita-profesional').addEventListener('change', actualizarHoras);
-
-function actualizarHoras() {
-  var fecha = document.getElementById('cita-fecha').value;
-  var profesionalId = document.getElementById('cita-profesional').value;
-  if (!fecha || !profesionalId) {
-    mostrarHorariosDisponibles([]);
-    return;
-  }
-  cargarHorariosDisponibles(fecha, profesionalId, mostrarHorariosDisponibles);
-}
-// cargarHorariosDisponibles y mostrarHorariosDisponibles deben estar implementadas como en mensajes anteriores
-}
-
 // Exportar globalmente
 window.setupEventListeners = setupEventListeners;
