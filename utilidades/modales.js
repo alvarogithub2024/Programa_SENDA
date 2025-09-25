@@ -1,3 +1,4 @@
+// ==== FUNCIONES GLOBALES PARA MODALES ====
 function showModal(id) {
   var modal = document.getElementById(id);
   if (modal) modal.style.display = "flex";
