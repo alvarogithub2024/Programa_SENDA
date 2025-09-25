@@ -1,4 +1,4 @@
-// solicitudes/filtros.js
+
 const ESTADOS=['todos','agendado','pendiente','respondido'];
 const PRIORIDADES=['todos','baja','media','alta'];
 const CESFAM=[
