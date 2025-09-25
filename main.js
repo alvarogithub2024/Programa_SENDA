@@ -1,4 +1,4 @@
-// MAIN.JS - SISTEMA SENDA PUENTE ALTO v2.0 - VERSIÓN CORREGIDA SIN IMPORTS
+// MAIN.JS - SISTEMA SENDA PUENTE ALTO v2.0 - VERSIÓN CORREGIDA PARA FIREBASE
 
 let initializationCompleted = false;
 let initializationTimer = null;
@@ -9,391 +9,334 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log(`📅 Fecha: ${new Date().toLocaleString('es-CL')}`);
     console.log('🔄 Iniciando sistema SENDA completo...\n');
     
-    // Timer de timeout más largo
     initializationTimer = setTimeout(() => {
         if (!initializationCompleted) {
             console.error('❌ TIMEOUT: La inicialización está tomando demasiado tiempo');
-            showInitializationError(new Error('Timeout de inicialización - 20 segundos'));
+            showInitializationError();
         }
-    }, 20000); // 20 segundos
+    }, 15000); // 15 segundos
 
     try {
-        // PASO 1: Verificar prerequisitos
-        console.log('🔧 Paso 1: Verificando prerequisitos...');
-        await verifyPrerequisites();
+        // Paso 1: Inicializar Firebase PRIMERO
+        console.log('🔧 Paso 1: Inicializando Firebase...');
+        const firebaseResult = window.initializeFirebase && window.initializeFirebase();
         
-        // PASO 2: Inicializar Firebase con reintentos
-        console.log('🔧 Paso 2: Inicializando Firebase...');
-        const firebaseReady = await initializeFirebaseWithRetry();
-        
-        if (!firebaseReady) {
-            throw new Error('Firebase no se pudo inicializar después de varios intentos');
+        if (!firebaseResult) {
+            throw new Error('Firebase no se pudo inicializar');
         }
         
+        // Verificar que Firebase se inicializó correctamente
+        await waitForFirebaseInitialization();
         console.log('✅ Firebase verificado y listo\n');
         
-        // PASO 3: Configurar autenticación
-        console.log('🔧 Paso 3: Configurando autenticación...');
-        await setupAuthenticationSafely();
-        
-        // PASO 4: Configurar navegación
-        console.log('🔧 Paso 4: Configurando navegación...');
-        setupNavigationSafely();
-        
-        // PASO 5: Configurar formularios
-        console.log('🔧 Paso 5: Configurando formularios...');
-        setupFormulariosSafely();
-        
-        // PASO 6: Configurar eventos globales
-        console.log('🔧 Paso 6: Configurando eventos globales...');
-        setupEventListenersSafely();
-        
-        // PASO 7: Inicializar módulos del sistema
-        console.log('🔧 Paso 7: Inicializando módulos del sistema...');
-        await initializeSystemModulesSafely();
-        
-        // PASO 8: Configurar funciones globales
+        // Paso 2: Configurar funciones básicas
+        console.log('🔧 Paso 2: Configurando funciones básicas...');
         setupGlobalFunctions();
+        console.log('✅ Funciones básicas configuradas\n');
         
-        console.log('\n🎉 ¡SISTEMA SENDA INICIALIZADO CORRECTAMENTE!');
-        console.log('=====================================');
-        
-        initializationCompleted = true;
-        clearTimeout(initializationTimer);
-        
-        // Mostrar notificación de éxito
-        setTimeout(() => {
-            showSuccessNotification();
-        }, 1000);
-        
-    } catch (error) {
-        clearTimeout(initializationTimer);
-        console.error('❌ ERROR CRÍTICO durante la inicialización:', error);
-        showInitializationError(error);
-        await attemptEmergencyRecovery();
-    }
-});
-
-/**
- * Verificar prerequisitos del sistema
- */
-async function verifyPrerequisites() {
-    const checks = [
-        {
-            name: 'Firebase SDK',
-            check: () => typeof firebase !== 'undefined',
-            error: 'Firebase SDK no está cargado. Verifica los scripts en index.html'
-        },
-        {
-            name: 'DOM Ready',
-            check: () => document.readyState === 'complete' || document.readyState === 'interactive',
-            error: 'DOM no está listo'
-        },
-        {
-            name: 'Local Storage',
-            check: () => typeof Storage !== 'undefined',
-            error: 'Local Storage no está disponible'
-        }
-    ];
-
-    for (const check of checks) {
-        if (!check.check()) {
-            throw new Error(`Prerequisito fallido: ${check.error}`);
-        }
-        console.log(`✅ ${check.name} - OK`);
-    }
-}
-
-/**
- * Inicializar Firebase con reintentos
- */
-async function initializeFirebaseWithRetry(maxRetries = 3) {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            console.log(`🔄 Intento ${attempt}/${maxRetries} de inicialización Firebase...`);
-            
-            // Verificar que la función existe en window
-            if (!window.initializeFirebase || typeof window.initializeFirebase !== 'function') {
-                throw new Error('window.initializeFirebase no está disponible');
-            }
-            
-            // Llamar a la función de inicialización
-            const result = await window.initializeFirebase();
-            
-            if (result) {
-                // Verificar que realmente esté inicializado
-                await new Promise(resolve => setTimeout(resolve, 1000)); // Esperar 1 segundo
-                
-                if (window.isFirebaseInitialized && window.isFirebaseInitialized()) {
-                    console.log(`✅ Firebase inicializado correctamente en intento ${attempt}`);
-                    return true;
-                }
-            }
-            
-            throw new Error('Firebase no pasó la verificación de estado');
-            
-        } catch (error) {
-            console.warn(`⚠️ Intento ${attempt} fallido:`, error.message);
-            
-            if (attempt === maxRetries) {
-                console.error('❌ Todos los intentos de Firebase fallaron');
-                // Mostrar diagnóstico
-                if (window.firebaseDiagnosis) {
-                    window.firebaseDiagnosis();
-                }
-                return false;
-            }
-            
-            // Esperar antes del siguiente intento
-            const delay = attempt * 2000; // 2s, 4s, 6s
-            console.log(`⏳ Esperando ${delay}ms antes del siguiente intento...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-        }
-    }
-    
-    return false;
-}
-
-/**
- * Configurar autenticación de forma segura
- */
-async function setupAuthenticationSafely() {
-    try {
-        if (window.setupAuth && typeof window.setupAuth === 'function') {
-            await window.setupAuth();
-            console.log('✅ Autenticación configurada');
-        } else {
-            console.warn('⚠️ setupAuth no disponible');
-        }
-    } catch (error) {
-        console.error('❌ Error configurando autenticación:', error);
-        throw error;
-    }
-}
-
-/**
- * Configurar navegación de forma segura
- */
-function setupNavigationSafely() {
-    try {
-        if (window.setupTabs && typeof window.setupTabs === 'function') {
-            window.setupTabs();
-            console.log('✅ Navegación configurada');
-        } else {
-            console.warn('⚠️ setupTabs no disponible');
-        }
-    } catch (error) {
-        console.warn('⚠️ Error configurando navegación:', error);
-        // No es crítico, continuar
-    }
-}
-
-/**
- * Configurar formularios de forma segura
- */
-function setupFormulariosSafely() {
-    try {
+        // Paso 3: Configurar formularios (CRÍTICO para solicitudes)
+        console.log('🔧 Paso 3: Configurando formularios...');
         if (window.setupFormularios && typeof window.setupFormularios === 'function') {
             window.setupFormularios();
-            console.log('✅ Formularios configurados');
         } else {
-            console.warn('⚠️ setupFormularios no disponible');
+            console.warn('⚠️ Botón reentry-program no encontrado');
         }
+        
+        // Configurar navegación del formulario de pasos
+        setupFormStepNavigation();
+        
+        console.log('✅ Eventos de formularios configurados');
+        
     } catch (error) {
-        console.warn('⚠️ Error configurando formularios:', error);
-        // No es crítico, continuar
+        console.error('❌ Error configurando eventos de formularios:', error);
     }
 }
 
 /**
- * Configurar eventos de forma segura
+ * Configurar navegación por pasos del formulario
  */
-function setupEventListenersSafely() {
+function setupFormStepNavigation() {
     try {
-        if (window.setupEventListeners && typeof window.setupEventListeners === 'function') {
-            window.setupEventListeners();
-            console.log('✅ Eventos configurados');
-        } else {
-            console.warn('⚠️ setupEventListeners no disponible');
+        // Configurar botones de navegación por pasos
+        const nextButtons = document.querySelectorAll('#next-step-1, #next-step-2, #next-step-3');
+        const prevButtons = document.querySelectorAll('#prev-step-2, #prev-step-3, #prev-step-4');
+        
+        nextButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('➡️ Avanzando al siguiente paso');
+                // La lógica de navegación se maneja en el formulario
+            });
+        });
+        
+        prevButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('⬅️ Retrocediendo al paso anterior');
+                // La lógica de navegación se maneja en el formulario
+            });
+        });
+        
+        // Configurar radio buttons para tipo de solicitud
+        const tipoSolicitudRadios = document.querySelectorAll('input[name="tipoSolicitud"]');
+        tipoSolicitudRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                console.log('📋 Tipo de solicitud cambiado:', e.target.value);
+                handleTipoSolicitudChange(e.target.value);
+            });
+        });
+        
+        // Configurar slider de motivación
+        const motivacionRange = document.getElementById('motivacion-range');
+        const motivacionValue = document.getElementById('motivacion-value');
+        
+        if (motivacionRange && motivacionValue) {
+            motivacionRange.addEventListener('input', (e) => {
+                motivacionValue.textContent = e.target.value;
+                updateMotivacionColor(e.target.value);
+            });
         }
+        
+        console.log('✅ Navegación de formulario configurada');
+        
     } catch (error) {
-        console.warn('⚠️ Error configurando eventos:', error);
-        // No es crítico, continuar
+        console.error('❌ Error configurando navegación de formulario:', error);
     }
 }
 
 /**
- * Inicializar módulos de forma segura
+ * Manejar cambio de tipo de solicitud
  */
-async function initializeSystemModulesSafely() {
+function handleTipoSolicitudChange(tipo) {
+    const infoEmailContainer = document.getElementById('info-email-container');
+    const basicInfoContainer = document.getElementById('basic-info-container');
+    const nextBtn = document.getElementById('next-step-1');
+    const submitBtn = document.getElementById('submit-step-1');
+    
+    if (tipo === 'informacion') {
+        // Solo información por email
+        if (infoEmailContainer) infoEmailContainer.style.display = 'block';
+        if (basicInfoContainer) basicInfoContainer.style.display = 'none';
+        if (nextBtn) nextBtn.style.display = 'none';
+        if (submitBtn) submitBtn.style.display = 'inline-flex';
+    } else {
+        // Solicitud completa
+        if (infoEmailContainer) infoEmailContainer.style.display = 'none';
+        if (basicInfoContainer) basicInfoContainer.style.display = 'block';
+        if (nextBtn) nextBtn.style.display = 'inline-flex';
+        if (submitBtn) submitBtn.style.display = 'none';
+    }
+}
+
+/**
+ * Actualizar color del slider de motivación
+ */
+function updateMotivacionColor(value) {
+    const motivacionValue = document.getElementById('motivacion-value');
+    if (!motivacionValue) return;
+    
+    const numValue = parseInt(value);
+    let color = '#10b981'; // verde por defecto
+    
+    if (numValue <= 3) {
+        color = '#ef4444'; // rojo
+    } else if (numValue <= 6) {
+        color = '#f59e0b'; // amarillo
+    } else {
+        color = '#10b981'; // verde
+    }
+    
+    motivacionValue.style.backgroundColor = color;
+}
+
+async function waitForFirebaseInitialization(maxRetries = 10) {
+    for (let i = 0; i < maxRetries; i++) {
+        if (window.isFirebaseInitialized && window.isFirebaseInitialized()) {
+            return true;
+        }
+        console.log(`⏳ Esperando Firebase... (${i + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    throw new Error('Firebase no se inicializó en el tiempo esperado');
+}
+
+async function initializeSystemModules() {
     const modules = [
-        { 
-            name: 'Calendario', 
-            init: () => {
-                if (window.initCalendar) window.initCalendar();
-                if (window.initUpcomingAppointments) window.initUpcomingAppointments();
-                if (window.initScheduleManager) window.initScheduleManager();
+        {
+            name: 'Calendario',
+            init: async () => {
+                try {
+                    window.initCalendar && window.initCalendar();
+                    window.initUpcomingAppointments && window.initUpcomingAppointments();
+                    window.initScheduleManager && window.initScheduleManager();
+                } catch (error) {
+                    console.warn('  ⚠️ Error en módulo calendario:', error);
+                    throw error;
+                }
             }
         },
-        { 
-            name: 'Pacientes', 
-            init: () => {
-                if (window.initPatientsManager) window.initPatientsManager();
-                if (window.initPatientSearch) window.initPatientSearch();
-                if (window.initPatientRecord) window.initPatientRecord();
+        {
+            name: 'Pacientes',
+            init: async () => {
+                try {
+                    window.initPatientsManager && window.initPatientsManager();
+                    window.initPatientSearch && window.initPatientSearch();
+                    window.initPatientRecord && window.initPatientRecord();
+                } catch (error) {
+                    console.warn('  ⚠️ Error en módulo pacientes:', error);
+                    throw error;
+                }
             }
         },
-        { 
-            name: 'Seguimiento', 
-            init: () => {
-                if (window.initTimeline) window.initTimeline();
-                if (window.initAttentions) window.initAttentions();
+        {
+            name: 'Seguimiento',
+            init: async () => {
+                try {
+                    window.initTimeline && window.initTimeline();
+                    window.initAttentions && window.initAttentions();
+                    window.initUpcomingAppointmentsFromSeguimiento && window.initUpcomingAppointmentsFromSeguimiento();
+                } catch (error) {
+                    console.warn('  ⚠️ Error en módulo seguimiento:', error);
+                    throw error;
+                }
             }
         },
-        { 
-            name: 'Solicitudes', 
-            init: () => {
-                if (window.initSolicitudesManager) window.initSolicitudesManager();
+        {
+            name: 'Solicitudes',
+            init: async () => {
+                try {
+                    window.initSolicitudesManager && window.initSolicitudesManager();
+                } catch (error) {
+                    console.warn('  ⚠️ Error en módulo solicitudes:', error);
+                    throw error;
+                }
             }
         }
     ];
 
-    let successCount = 0;
     for (const module of modules) {
         try {
-            if (module.init && typeof module.init === 'function') {
-                await module.init();
-                console.log(`✅ Módulo ${module.name} inicializado`);
-                successCount++;
-            } else {
-                console.warn(`⚠️ Módulo ${module.name} no disponible`);
-            }
+            await module.init();
+            console.log(`✅ Módulo ${module.name} inicializado correctamente\n`);
         } catch (error) {
-            console.warn(`⚠️ Error en módulo ${module.name}:`, error);
-            // Continuar con otros módulos
+            console.warn(`⚠️ Error inicializando módulo ${module.name}:`, error);
+            continue;
         }
     }
-    
-    console.log(`📊 Módulos inicializados: ${successCount}/${modules.length}`);
 }
 
-/**
- * Configurar funciones globales
- */
 function setupGlobalFunctions() {
     try {
-        // Funciones modales básicas
-        if (!window.closeModal) {
-            window.closeModal = function(modalId) {
-                const modal = document.getElementById(modalId);
-                if (modal) modal.style.display = 'none';
-            };
-        }
+        // Función para cerrar modales
+        window.closeModal = window.closeModal || function(modalId) {
+            console.log('🔧 Cerrando modal:', modalId);
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        };
         
-        if (!window.showModal) {
-            window.showModal = function(modalId) {
-                const modal = document.getElementById(modalId);
-                if (modal) modal.style.display = 'flex';
-            };
-        }
+        // Función para mostrar modales
+        window.showModal = window.showModal || function(modalId) {
+            console.log('🔧 Mostrando modal:', modalId);
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                
+                // Enfocar primer input
+                setTimeout(() => {
+                    const firstInput = modal.querySelector('input:not([type="hidden"]):not([disabled])');
+                    if (firstInput) {
+                        firstInput.focus();
+                    }
+                }, 150);
+            }
+        };
+        
+        // Función de cambio de tabs de login
+        window.switchLoginTab = function(tab) {
+            try {
+                const loginTab = document.querySelector('.modal-tab[onclick*="login"]');
+                const registerTab = document.querySelector('.modal-tab[onclick*="register"]');
+                const loginForm = document.getElementById('login-form');
+                const registerForm = document.getElementById('register-form');
+                
+                if (tab === 'login') {
+                    if (loginTab) loginTab.classList.add('active');
+                    if (registerTab) registerTab.classList.remove('active');
+                    if (loginForm) loginForm.classList.add('active');
+                    if (registerForm) registerForm.classList.remove('active');
+                } else if (tab === 'register') {
+                    if (registerTab) registerTab.classList.add('active');
+                    if (loginTab) loginTab.classList.remove('active');
+                    if (registerForm) registerForm.classList.add('active');
+                    if (loginForm) loginForm.classList.remove('active');
+                }
+            } catch (error) {
+                console.error('Error switching login tab:', error);
+            }
+        };
         
         // Sistema de notificaciones básico
-        if (!window.showNotification) {
-            window.showNotification = function(message, type = 'info', duration = 3000) {
-                console.log(`[${type.toUpperCase()}] ${message}`);
-                // Implementación básica en consola si no existe otra
+        window.showNotification = window.showNotification || function(message, type = 'info', duration = 3000) {
+            try {
+                console.log(`📢 [${type.toUpperCase()}] ${message}`);
                 
-                // Intentar usar el sistema de notificaciones si existe
-                try {
-                    const container = document.getElementById('notifications') || createNotificationsContainer();
-                    
-                    const notification = document.createElement('div');
-                    notification.className = `notification ${type}`;
-                    notification.innerHTML = `
-                        <i class="fas fa-${getNotificationIcon(type)}"></i> 
-                        <span>${message}</span>
-                        <button class="notification-close" onclick="this.parentElement.remove()">
-                            <i class="fas fa-times"></i>
-                        </button>
+                // Crear contenedor si no existe
+                let container = document.getElementById('notifications');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = 'notifications';
+                    container.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        z-index: 10000;
+                        max-width: 400px;
                     `;
-                    
-                    container.appendChild(notification);
-                    
-                    // Mostrar animación
-                    requestAnimationFrame(() => {
-                        notification.classList.add('show');
-                    });
-                    
-                    // Auto-remover
-                    setTimeout(() => {
-                        if (notification.parentElement) {
-                            notification.classList.remove('show');
-                            setTimeout(() => {
-                                if (notification.parentElement) {
-                                    notification.remove();
-                                }
-                            }, 300);
-                        }
-                    }, duration);
-                    
-                } catch (error) {
-                    console.error('Error en notificación:', error);
+                    document.body.appendChild(container);
                 }
-            };
-        }
-        
-        // Función auxiliar para crear contenedor de notificaciones
-        function createNotificationsContainer() {
-            const container = document.createElement('div');
-            container.id = 'notifications';
-            container.className = 'notifications-container';
-            container.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                z-index: 10000;
-                max-width: 400px;
-            `;
-            document.body.appendChild(container);
-            return container;
-        }
-        
-        // Función auxiliar para iconos de notificación
-        function getNotificationIcon(type) {
-            const icons = {
-                'success': 'check-circle',
-                'error': 'exclamation-triangle',
-                'warning': 'exclamation-triangle',
-                'info': 'info-circle'
-            };
-            return icons[type] || 'info-circle';
-        }
-        
-        // Función para cambiar entre tabs de login
-        if (!window.switchLoginTab) {
-            window.switchLoginTab = function(tab) {
-                try {
-                    const loginTab = document.querySelector('.modal-tab[onclick*="login"]');
-                    const registerTab = document.querySelector('.modal-tab[onclick*="register"]');
-                    const loginForm = document.getElementById('login-form');
-                    const registerForm = document.getElementById('register-form');
-                    
-                    if (tab === 'login') {
-                        if (loginTab) loginTab.classList.add('active');
-                        if (registerTab) registerTab.classList.remove('active');
-                        if (loginForm) loginForm.classList.add('active');
-                        if (registerForm) registerForm.classList.remove('active');
-                    } else if (tab === 'register') {
-                        if (registerTab) registerTab.classList.add('active');
-                        if (loginTab) loginTab.classList.remove('active');
-                        if (registerForm) registerForm.classList.add('active');
-                        if (loginForm) loginForm.classList.remove('active');
+                
+                // Crear notificación
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    background: ${getNotificationColor(type)};
+                    color: white;
+                    padding: 12px 16px;
+                    border-radius: 6px;
+                    margin-bottom: 8px;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    animation: slideInRight 0.3s ease;
+                `;
+                
+                notification.innerHTML = `
+                    <i class="fas fa-${getNotificationIcon(type)}"></i>
+                    <span style="flex: 1;">${message}</span>
+                    <button onclick="this.parentElement.remove()" 
+                            style="background: none; border: none; color: white; cursor: pointer; padding: 0; margin-left: 8px;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
+                container.appendChild(notification);
+                
+                // Auto-remover
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
                     }
-                } catch (error) {
-                    console.error('Error switching login tab:', error);
-                }
-            };
-        }
+                }, duration);
+                
+            } catch (error) {
+                console.error('Error mostrando notificación:', error);
+                alert(`${type.toUpperCase()}: ${message}`);
+            }
+        };
         
         // Debug del sistema
         window.SENDA_DEBUG = {
@@ -418,20 +361,26 @@ function setupGlobalFunctions() {
     }
 }
 
-/**
- * Mostrar notificación de éxito
- */
-function showSuccessNotification() {
-    if (window.showNotification) {
-        window.showNotification('Sistema SENDA cargado correctamente', 'success', 3000);
-    } else {
-        console.log('🎉 Sistema SENDA cargado correctamente');
-    }
+function getNotificationColor(type) {
+    const colors = {
+        'success': '#10b981',
+        'error': '#ef4444',
+        'warning': '#f59e0b',
+        'info': '#3b82f6'
+    };
+    return colors[type] || colors.info;
 }
 
-/**
- * Mostrar error de inicialización mejorado
- */
+function getNotificationIcon(type) {
+    const icons = {
+        'success': 'check-circle',
+        'error': 'exclamation-triangle',
+        'warning': 'exclamation-triangle',
+        'info': 'info-circle'
+    };
+    return icons[type] || 'info-circle';
+}
+
 function showInitializationError(error = null) {
     const errorMessage = error ? error.message : 'Error desconocido de inicialización';
     
@@ -483,11 +432,11 @@ function showInitializationError(error = null) {
                                 style="background: #ef4444; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;">
                             🔄 Recargar
                         </button>
-                        <button onclick="if(window.SENDA_DEBUG) window.SENDA_DEBUG.clearStorage(); window.location.reload()" 
+                        <button onclick="window.SENDA_DEBUG?.clearStorage(); window.location.reload()" 
                                 style="background: #6b7280; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;">
                             🗑️ Limpiar & Recargar
                         </button>
-                        <button onclick="if(window.firebaseDiagnosis) console.log(window.firebaseDiagnosis())" 
+                        <button onclick="if(window.SENDA_DEBUG) console.log(window.SENDA_DEBUG.getSystemInfo())" 
                                 style="background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;">
                             🔍 Diagnóstico
                         </button>
@@ -501,17 +450,14 @@ function showInitializationError(error = null) {
     }
 }
 
-/**
- * Recuperación de emergencia
- */
-async function attemptEmergencyRecovery() {
+function attemptBasicRecovery() {
     try {
         console.log('🚑 Intentando recuperación de emergencia...');
         
         // Configurar funciones mínimas
         setupGlobalFunctions();
         
-        // Intentar configurar eventos básicos
+        // Configurar eventos básicos para cerrar modales
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal-overlay')) {
                 e.target.style.display = 'none';
@@ -536,29 +482,98 @@ window.addEventListener('online', () => {
 window.addEventListener('offline', () => {
     console.log('🌐 Sin conexión');
     if (window.showNotification) {
-        window.showNotification('Sin conexión a Internet', 'warning', 5000);
+        window.showNotification('Sin conexión a Internet. Algunas funciones pueden no estar disponibles.', 'warning', 5000);
     }
-});
-
-window.addEventListener('error', (event) => {
-    if (event.error && event.error.message && 
-        (event.error.message.includes('Firebase') || 
-         event.error.message.includes('network') ||
-         event.error.message.includes('auth'))) {
-        if (window.showNotification) {
-            window.showNotification('Error del sistema detectado. Si persiste, recarga la página.', 'error');
-        }
-    }
-});
-
-window.addEventListener('unhandledrejection', (event) => {
-    event.preventDefault();
-    console.warn('Promise rejection capturada:', event.reason);
 });
 
 // Información del sistema
 console.log('🔍 Información del Sistema:');
 console.log(`   Navegador: ${navigator.userAgent}`);
+console.log(`   Idioma: ${navigator.language}`);
 console.log(`   Conexión: ${navigator.onLine ? 'Online' : 'Offline'}`);
 console.log(`   Local Storage: ${typeof Storage !== 'undefined' ? 'Disponible' : 'No disponible'}`);
-console.log('\n📝 Sistema SENDA listo para inicialización...\n');
+
+console.log('\n📝 Sistema SENDA listo para inicialización...\n');('⚠️ setupFormularios no disponible');
+        }
+        console.log('✅ Formularios configurados\n');
+        
+        // Paso 4: Configurar navegación
+        console.log('🔧 Paso 4: Configurando navegación...');
+        window.setupTabs && window.setupTabs();
+        console.log('✅ Navegación configurada\n');
+        
+        // Paso 5: Configurar eventos globales
+        console.log('🔧 Paso 5: Configurando eventos globales...');
+        window.setupEventListeners && window.setupEventListeners();
+        console.log('✅ Eventos configurados\n');
+        
+        // Paso 6: Configurar autenticación
+        console.log('🔧 Paso 6: Configurando autenticación...');
+        if (window.setupAuth && typeof window.setupAuth === 'function') {
+            await window.setupAuth();
+        } else {
+            console.warn('⚠️ setupAuth no disponible');
+        }
+        console.log('✅ Autenticación configurada\n');
+        
+        // Paso 7: Inicializar módulos del sistema
+        console.log('🔧 Paso 7: Inicializando módulos del sistema...');
+        await initializeSystemModules();
+        
+        // Paso 8: Configurar event listeners específicos para formularios
+        console.log('🔧 Paso 8: Configurando eventos de formularios...');
+        setupFormEventListeners();
+        
+        console.log('\n🎉 ¡SISTEMA SENDA INICIALIZADO CORRECTAMENTE!');
+        console.log('=====================================');
+        
+        initializationCompleted = true;
+        clearTimeout(initializationTimer);
+        
+        setTimeout(() => {
+            if (window.showNotification) {
+                window.showNotification('Sistema SENDA cargado correctamente', 'success', 3000);
+            }
+        }, 1000);
+        
+    } catch (error) {
+        clearTimeout(initializationTimer);
+        console.error('❌ ERROR CRÍTICO durante la inicialización:', error);
+        showInitializationError(error);
+        attemptBasicRecovery();
+    }
+});
+
+/**
+ * Configurar event listeners específicos para formularios
+ */
+function setupFormEventListeners() {
+    try {
+        console.log('🔧 Configurando eventos de formularios...');
+        
+        // Botón de solicitar ayuda
+        const registerPatientBtn = document.getElementById('register-patient');
+        if (registerPatientBtn) {
+            registerPatientBtn.addEventListener('click', () => {
+                console.log('📝 Abriendo formulario de solicitud');
+                if (window.showModal) {
+                    window.showModal('patient-modal');
+                }
+            });
+            console.log('✅ Botón "Solicitar Ayuda" configurado');
+        } else {
+            console.warn('⚠️ Botón register-patient no encontrado');
+        }
+        
+        // Botón de reingreso al programa
+        const reentryProgramBtn = document.getElementById('reentry-program');
+        if (reentryProgramBtn) {
+            reentryProgramBtn.addEventListener('click', () => {
+                console.log('🔄 Abriendo formulario de reingreso');
+                if (window.showModal) {
+                    window.showModal('reentry-modal');
+                }
+            });
+            console.log('✅ Botón "Reingreso al Programa" configurado');
+        } else {
+            console.warn
