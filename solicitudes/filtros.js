@@ -13,7 +13,6 @@ const CESFAM = [
   'CESFAM Bernardo Leighton'
 ];
 
-// Variable global de filtros
 const currentFilters = {
   estado: 'todos',
   prioridad: 'todos',
@@ -34,27 +33,14 @@ function fillSelectOptions(id, options, labelMap={}) {
   });
 }
 
-// Llenar selects al cargar la página
-document.addEventListener('DOMContentLoaded', () => {
-  fillSelectOptions('filtro-estado-solicitudes', ESTADOS, {
-    todos: 'Todos los estados',
-    agendado: 'Agendado/a',
-    pendiente: 'Pendiente',
-    respondido: 'Respondido'
-  });
-  fillSelectOptions('filtro-prioridad-solicitudes', PRIORIDADES, {
-    todos: 'Todas las prioridades',
-    baja: 'Baja',
-    media: 'Media',
-    alta: 'Alta'
-  });
-  fillSelectOptions('filtro-cesfam-solicitudes', CESFAM, {
-    todos: 'Todos los CESFAM'
-  });
-  applyCurrentFilters();
-});
+function isSameDay(date1, date2) {
+  return (
+    date1.getDate() === date2.getDate() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getFullYear() === date2.getFullYear()
+  );
+}
 
-// Función para filtrar y renderizar
 function applyCurrentFilters() {
   filteredSolicitudesData = solicitudesData.filter(solicitud => {
     // Estado
@@ -103,49 +89,55 @@ function applyCurrentFilters() {
   if (typeof updateSolicitudesCounter === "function") updateSolicitudesCounter();
 }
 
-function isSameDay(date1, date2) {
-  return (
-    date1.getDate() === date2.getDate() &&
-    date1.getMonth() === date2.getMonth() &&
-    date1.getFullYear() === date2.getFullYear()
-  );
-}
+document.addEventListener('DOMContentLoaded', () => {
+  fillSelectOptions('filtro-estado-solicitudes', ESTADOS, {
+    todos: 'Todos los estados',
+    agendado: 'Agendado/a',
+    pendiente: 'Pendiente',
+    respondido: 'Respondido'
+  });
+  fillSelectOptions('filtro-prioridad-solicitudes', PRIORIDADES, {
+    todos: 'Todas las prioridades',
+    baja: 'Baja',
+    media: 'Media',
+    alta: 'Alta'
+  });
+  fillSelectOptions('filtro-cesfam-solicitudes', CESFAM, {
+    todos: 'Todos los CESFAM'
+  });
+  applyCurrentFilters();
 
-// Listeners para los filtros
-document.getElementById('filtro-estado-solicitudes').addEventListener('change', function(e) {
-  currentFilters.estado = e.target.value;
-  applyCurrentFilters();
-});
-document.getElementById('filtro-prioridad-solicitudes').addEventListener('change', function(e) {
-  currentFilters.prioridad = e.target.value;
-  applyCurrentFilters();
-});
-document.getElementById('filtro-cesfam-solicitudes').addEventListener('change', function(e) {
-  currentFilters.cesfam = e.target.value;
-  applyCurrentFilters();
-});
-document.getElementById('filtro-fecha-solicitudes').addEventListener('change', function(e) {
-  currentFilters.fecha = e.target.value;
-  applyCurrentFilters();
-});
-document.getElementById('buscar-solicitudes').addEventListener('input', function(e) {
-  currentFilters.busqueda = e.target.value;
-  applyCurrentFilters();
-});
-
-// Botón actualizar limpia todos los filtros
-document.getElementById('refresh-solicitudes').addEventListener('click', function() {
-  currentFilters.estado = 'todos';
-  currentFilters.prioridad = 'todos';
-  currentFilters.cesfam = 'todos';
-  currentFilters.fecha = 'todos';
-  currentFilters.busqueda = '';
-
-  document.getElementById('filtro-estado-solicitudes').value = 'todos';
-  document.getElementById('filtro-prioridad-solicitudes').value = 'todos';
-  document.getElementById('filtro-cesfam-solicitudes').value = 'todos';
-  document.getElementById('filtro-fecha-solicitudes').value = 'todos';
-  document.getElementById('buscar-solicitudes').value = '';
-
-  applyCurrentFilters();
+  document.getElementById('filtro-estado-solicitudes').addEventListener('change', function(e) {
+    currentFilters.estado = e.target.value;
+    applyCurrentFilters();
+  });
+  document.getElementById('filtro-prioridad-solicitudes').addEventListener('change', function(e) {
+    currentFilters.prioridad = e.target.value;
+    applyCurrentFilters();
+  });
+  document.getElementById('filtro-cesfam-solicitudes').addEventListener('change', function(e) {
+    currentFilters.cesfam = e.target.value;
+    applyCurrentFilters();
+  });
+  document.getElementById('filtro-fecha-solicitudes').addEventListener('change', function(e) {
+    currentFilters.fecha = e.target.value;
+    applyCurrentFilters();
+  });
+  document.getElementById('buscar-solicitudes').addEventListener('input', function(e) {
+    currentFilters.busqueda = e.target.value;
+    applyCurrentFilters();
+  });
+  document.getElementById('refresh-solicitudes').addEventListener('click', function() {
+    currentFilters.estado = 'todos';
+    currentFilters.prioridad = 'todos';
+    currentFilters.cesfam = 'todos';
+    currentFilters.fecha = 'todos';
+    currentFilters.busqueda = '';
+    document.getElementById('filtro-estado-solicitudes').value = 'todos';
+    document.getElementById('filtro-prioridad-solicitudes').value = 'todos';
+    document.getElementById('filtro-cesfam-solicitudes').value = 'todos';
+    document.getElementById('filtro-fecha-solicitudes').value = 'todos';
+    document.getElementById('buscar-solicitudes').value = '';
+    applyCurrentFilters();
+  });
 });
