@@ -1,17 +1,10 @@
-/**
- * CALENDARIO/AGENDA.JS - VERSIÓN SIN IMPORTS
- * Sistema completo de calendario
- */
-
 // Variables globales para el calendario
 let currentDate = new Date();
 let selectedDate = null;
 let appointments = [];
 
-/**
- * Inicializar calendario - FUNCIÓN PRINCIPAL
- */
-window.initCalendar = function() {
+// Inicializar calendario
+function initCalendar() {
     try {
         console.log('📅 Inicializando calendario...');
         
@@ -31,11 +24,9 @@ window.initCalendar = function() {
     } catch (error) {
         console.error('❌ Error inicializando calendario:', error);
     }
-};
+}
 
-/**
- * Configurar elementos del calendario
- */
+// Configurar elementos del calendario
 function setupCalendarElements() {
     const calendarContainer = document.querySelector('.calendar-container');
     if (!calendarContainer) {
@@ -60,9 +51,7 @@ function setupCalendarElements() {
     }
 }
 
-/**
- * Renderizar calendario
- */
+// Renderizar calendario
 function renderCalendar() {
     try {
         const calendarGrid = document.getElementById('calendar-grid');
@@ -110,9 +99,7 @@ function renderCalendar() {
     }
 }
 
-/**
- * Crear headers de días de la semana
- */
+// Crear headers de días de la semana
 function createDayHeaders(grid) {
     const weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
     
@@ -124,9 +111,7 @@ function createDayHeaders(grid) {
     });
 }
 
-/**
- * Crear elemento de día
- */
+// Crear elemento de día
 function createDayElement(year, month, day) {
     const dayElement = document.createElement('div');
     dayElement.className = 'calendar-day';
@@ -164,9 +149,7 @@ function createDayElement(year, month, day) {
     return dayElement;
 }
 
-/**
- * Actualizar título del mes
- */
+// Actualizar título del mes
 function updateMonthTitle(year, month) {
     const monthTitle = document.getElementById('calendar-month-year');
     if (monthTitle) {
@@ -174,9 +157,7 @@ function updateMonthTitle(year, month) {
     }
 }
 
-/**
- * Seleccionar fecha
- */
+// Seleccionar fecha
 function selectDate(dayElement) {
     try {
         // Remover selección anterior
@@ -197,9 +178,7 @@ function selectDate(dayElement) {
     }
 }
 
-/**
- * Mostrar citas del día
- */
+// Mostrar citas del día
 function showDayAppointments(date) {
     try {
         const dayAppointments = appointments.filter(apt => apt.fecha === date);
@@ -237,9 +216,7 @@ function showDayAppointments(date) {
     }
 }
 
-/**
- * Crear elemento de cita
- */
+// Crear elemento de cita
 function createAppointmentElement(appointment) {
     const element = document.createElement('div');
     element.className = `appointment-item ${appointment.estado || 'programada'}`;
@@ -275,57 +252,48 @@ function createAppointmentElement(appointment) {
     return element;
 }
 
-/**
- * Cargar citas desde Firebase o crear datos de ejemplo
- */
-window.loadAppointments = async function() {
+// Cargar citas desde Firebase
+ async function loadAppointments() {
     try {
-        console.log('📋 Cargando citas...');
+        console.log('📋 Cargando citas desde Firebase...');
         
-        const db = window.getFirestore ? window.getFirestore() : null;
-        
-        if (db) {
-            // Cargar desde Firebase
-            const citasRef = db.collection('citas');
-            const snapshot = await citasRef.get();
-            
-            appointments = [];
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                appointments.push({
-                    id: doc.id,
-                    ...data
-                });
-            });
-        } else {
-            // Crear datos de ejemplo si no hay Firebase
-            appointments = createSampleAppointments();
+        const db = getFirestore();
+        if (!db) {
+            throw new Error('Base de datos no disponible');
         }
+        
+        const citasRef = db.collection('citas');
+        const snapshot = await citasRef.get();
+        
+        appointments = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            appointments.push({
+                id: doc.id,
+                ...data
+            });
+        });
 
         // Actualizar vista del calendario con indicadores
         updateCalendarIndicators();
         
         console.log(`✅ ${appointments.length} citas cargadas`);
         
-        if (appointments.length === 0 && window.showNotification) {
-            window.showNotification('No hay citas programadas', 'info');
+        if (appointments.length === 0) {
+            showNotification('No hay citas programadas', 'info');
         }
         
     } catch (error) {
         console.error('Error cargando citas:', error);
-        if (window.showNotification) {
-            window.showNotification('Error al cargar las citas', 'error');
-        }
+        showNotification('Error al cargar las citas', 'error');
         
         // Mostrar datos de ejemplo si falla
         appointments = createSampleAppointments();
         updateCalendarIndicators();
     }
-};
+}
 
-/**
- * Crear citas de ejemplo para testing
- */
+// Crear citas de ejemplo para testing
 function createSampleAppointments() {
     const today = new Date();
     const tomorrow = new Date(today);
@@ -353,9 +321,7 @@ function createSampleAppointments() {
     ];
 }
 
-/**
- * Actualizar indicadores en el calendario
- */
+// Actualizar indicadores en el calendario
 function updateCalendarIndicators() {
     try {
         // Limpiar indicadores anteriores
@@ -379,9 +345,7 @@ function updateCalendarIndicators() {
     }
 }
 
-/**
- * Configurar eventos del calendario
- */
+// Configurar eventos del calendario
 function setupCalendarEvents() {
     try {
         // Botón mes anterior
@@ -416,9 +380,7 @@ function setupCalendarEvents() {
     }
 }
 
-/**
- * Abrir modal para nueva cita
- */
+// Abrir modal para nueva cita
 window.openNewAppointmentModal = function(preselectedDate = null) {
     try {
         console.log('📅 Abriendo modal de nueva cita...');
@@ -439,15 +401,11 @@ window.openNewAppointmentModal = function(preselectedDate = null) {
         }
     } catch (error) {
         console.error('Error abriendo modal de cita:', error);
-        if (window.showNotification) {
-            window.showNotification('Error abriendo formulario de cita', 'error');
-        }
+        showNotification('Error abriendo formulario de cita', 'error');
     }
 };
 
-/**
- * Crear modal de cita dinámicamente
- */
+// Crear modal de cita dinámicamente
 function createAppointmentModal() {
     if (document.getElementById('appointment-modal')) return;
     
@@ -511,9 +469,7 @@ function createAppointmentModal() {
     }
 }
 
-/**
- * Generar opciones de hora
- */
+// Generar opciones de hora
 function generateTimeOptions() {
     const options = [];
     for (let hour = 8; hour < 18; hour++) {
@@ -525,9 +481,7 @@ function generateTimeOptions() {
     return options.join('');
 }
 
-/**
- * Manejar envío de formulario de cita
- */
+// Manejar envío de formulario de cita
 async function handleAppointmentSubmit(e) {
     e.preventDefault();
     
@@ -538,48 +492,29 @@ async function handleAppointmentSubmit(e) {
             hora: formData.get('hora'),
             paciente: formData.get('paciente'),
             tipo: formData.get('tipo') || 'consulta',
-            profesional: window.currentUserData?.nombre || 'Profesional SENDA',
+            profesional: getCurrentUser()?.displayName || 'Profesional SENDA',
             estado: 'programada',
-            fechaCreacion: new Date().toISOString()
+            fechaCreacion: firebase.firestore.FieldValue.serverTimestamp()
         };
         
         await saveAppointment(appointmentData);
         
     } catch (error) {
         console.error('Error guardando cita:', error);
-        if (window.showNotification) {
-            window.showNotification('Error al crear la cita', 'error');
-        }
+        showNotification('Error al crear la cita', 'error');
     }
 }
 
-/**
- * Guardar nueva cita
- */
-window.saveAppointment = async function(appointmentData) {
+// Guardar nueva cita
+async function saveAppointment(appointmentData) {
     try {
-        const db = window.getFirestore ? window.getFirestore() : null;
+        const db = getFirestore();
+        const citasRef = db.collection('citas');
         
-        if (db) {
-            // Guardar en Firebase
-            const citasRef = db.collection('citas');
-            await citasRef.add({
-                ...appointmentData,
-                fechaCreacion: window.getServerTimestamp ? window.getServerTimestamp() : new Date()
-            });
-        } else {
-            // Guardar localmente
-            appointmentData.id = 'local_' + Date.now();
-            appointments.push(appointmentData);
-            updateCalendarIndicators();
-        }
+        await citasRef.add(appointmentData);
         
-        if (window.showNotification) {
-            window.showNotification('Cita programada exitosamente', 'success');
-        }
-        
-        // Recargar citas
-        await window.loadAppointments();
+        showNotification('Cita programada exitosamente', 'success');
+        await loadAppointments(); // Recargar citas
         
         // Cerrar modal
         const modal = document.getElementById('appointment-modal');
@@ -589,15 +524,11 @@ window.saveAppointment = async function(appointmentData) {
         
     } catch (error) {
         console.error('Error guardando cita:', error);
-        if (window.showNotification) {
-            window.showNotification('Error al programar la cita', 'error');
-        }
+        showNotification('Error al programar la cita', 'error');
     }
-};
+}
 
-/**
- * Utilidades
- */
+// Utilidades
 function getMonthName(monthIndex) {
     const months = [
         'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -621,19 +552,25 @@ function formatDateForStorage(date) {
     return date.toISOString().split('T')[0];
 }
 
-// Funciones de gestión de citas (globales)
+function getCurrentUser() {
+    // Esta función debería importarse del sistema de autenticación
+    return { displayName: 'Profesional SENDA' };
+}
+
+// Función para cerrar modal (global)
+window.closeModal = function(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+    }
+};
+
+// Funciones de gestión de citas
 window.viewAppointment = function(appointmentId) {
     console.log('Ver cita:', appointmentId);
-    if (window.showNotification) {
-        window.showNotification('Función de vista de citas en desarrollo', 'info');
-    }
 };
 
 window.editAppointment = function(appointmentId) {
     console.log('Editar cita:', appointmentId);
-    if (window.showNotification) {
-        window.showNotification('Función de edición de citas en desarrollo', 'info');
-    }
 };
 
-console.log('📅 Sistema de calendario cargado - Función principal: window.initCalendar');
