@@ -1,22 +1,47 @@
 // CALENDARIO/HORARIOS.JS
 
+// CONFIGURACIÓN DE HORARIOS DE ATENCIÓN
+window.HORARIOS_CONFIG = {
+    semana: {
+        diasSemana: [1, 2, 3, 4, 5, 6], // Lunes (1) a Sábado (6)
+        horaInicio: 8,         // 08:00
+        minutoInicio: 0,
+        horaFin: 16,           // 16:30
+        minutoFin: 30,
+        intervaloMinutos: 30
+    },
+    finSemana: {
+        diasSemana: [0],       // Domingo (0)
+        horaInicio: 9,         // 09:00
+        minutoInicio: 0,
+        horaFin: 12,           // 12:30
+        minutoFin: 30,
+        intervaloMinutos: 30
+    }
+};
+
 // Requiere: window.getFirestore, window.showNotification, window.HORARIOS_CONFIG
 
 // Carga los horarios disponibles para un día y profesional
 function cargarHorariosDisponibles(fecha, profesionalId, callback) {
-    var db = window.getFirestore();
+    var db = window.getFirestore ? window.getFirestore() : firebase.firestore();
     var horarios = [];
     var dia = new Date(fecha).getDay(); // 0 = Domingo ... 6 = Sábado
 
     // Determinar configuración por día
     var cfg = window.HORARIOS_CONFIG && (
-        window.HORARIOS_CONFIG.semana.diasSemana.includes(dia)
+        (window.HORARIOS_CONFIG.semana.diasSemana.includes(dia))
             ? window.HORARIOS_CONFIG.semana
             : window.HORARIOS_CONFIG.finSemana
     );
 
+    if (!cfg) {
+        if (typeof callback === "function") callback([]);
+        return;
+    }
+
     // Generar slots de horario
-    var hora = cfg.horaInicio, minuto = 0;
+    var hora = cfg.horaInicio, minuto = cfg.minutoInicio;
     while (
         hora < cfg.horaFin ||
         (hora === cfg.horaFin && minuto <= cfg.minutoFin)
@@ -47,7 +72,7 @@ function cargarHorariosDisponibles(fecha, profesionalId, callback) {
             if (typeof callback === "function") callback(disponibles);
         })
         .catch(function(error) {
-            window.showNotification("Error cargando horarios: " + error.message, "error");
+            window.showNotification && window.showNotification("Error cargando horarios: " + error.message, "error");
             if (typeof callback === "function") callback([]);
         });
 }
