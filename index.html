@@ -170,47 +170,54 @@
                     Seguimiento
                 </button>
             </nav>
+<!-- ================= TAB AGENDA ================= -->
+<div class="tab-pane active" id="agenda-tab">
+    <div class="section-header">
+        <h2>Gestión de Agenda</h2>
+    </div>
 
-            <!-- ================= TAB AGENDA ================= -->
-            <div class="tab-pane active" id="agenda-tab">
-                <div class="section-header">
-                    <h2>Gestión de Agenda</h2>
-                </div>
-                
+    <!-- Estadísticas de citas -->
+    <div class="appointments-stats">
+        <span>Hoy: <span id="today-count">0</span></span>
+        <span>Próximas: <span id="upcoming-count">0</span></span>
+        <span>Vencidas: <span id="overdue-count">0</span></span>
+        <span>Pendientes: <span id="pending-count">0</span></span>
+    </div>
 
-                <!-- Calendario -->
-                <div class="calendar-container">
-                    <div class="calendar-header">
-                        <h3 id="calendar-month-year">Cargando...</h3>
-                        <div>
-                            <button class="btn btn-outline btn-sm" id="prev-month">
-                                <i class="fas fa-chevron-left"></i>
-                            </button>
-                            <button class="btn btn-outline btn-sm" id="next-month">
-                                <i class="fas fa-chevron-right"></i>
-                            </button>
-                            <button class="btn btn-success btn-sm" id="nueva-cita-btn" onclick="openNewAppointmentModal()">
-                            <i class="fas fa-plus"></i>
-                            Nueva Cita
-                            </button>
-                        </div>
-                    </div>
-                    <div class="calendar-grid" id="calendar-grid">
-                        <!-- El calendario se genera dinámicamente -->
-                    </div>
-                </div>
-
-                <!-- Citas del día seleccionado -->
-                <div class="daily-appointments">
-                    <h3>Citas del Día</h3>
-                    <div class="appointments-list" id="appointments-list">
-                        <div class="loading-message">
-                            <i class="fas fa-spinner fa-spin"></i>
-                            Cargando citas...
-                        </div>
-                    </div>
-                </div>
+    <!-- Calendario -->
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <h3 id="calendar-month-year">Cargando...</h3>
+            <div>
+                <button class="btn btn-outline btn-sm" id="prev-month">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="btn btn-outline btn-sm" id="next-month">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                <button class="btn btn-success btn-sm" id="nueva-cita-btn" onclick="openNewAppointmentModal()">
+                    <i class="fas fa-plus"></i>
+                    Nueva Cita
+                </button>
             </div>
+        </div>
+        <div class="calendar-grid" id="calendar-grid">
+            <!-- El calendario se genera dinámicamente -->
+        </div>
+    </div>
+
+    <!-- Citas del día seleccionado -->
+    <div class="daily-appointments">
+        <h3>Citas del Día</h3>
+        <div class="appointments-list" id="appointments-list">
+            <div class="loading-message">
+                <i class="fas fa-spinner fa-spin"></i>
+                Cargando citas...
+            </div>
+        </div>
+    </div>
+</div>
+          
 <div class="appointments-stats">
     <span>Hoy: <span id="today-count">0</span></span>
     <span>Próximas: <span id="upcoming-count">0</span></span>
@@ -840,7 +847,7 @@
             </form>
         </div>
     </div>
-
+<div id="appointments-list"></div>
     <!-- ================= MODAL REINGRESO ================= -->
     <div class="modal-overlay" id="reentry-modal">
         <div class="modal">
