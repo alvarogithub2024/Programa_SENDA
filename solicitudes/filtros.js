@@ -1,5 +1,6 @@
-import { db } from '../configuracion/firebase.js';
-import { showNotification } from '../utilidades/notificaciones.js';
+// import { db } from '../configuracion/firebase.js';
+// import { showNotification } from '../utilidades/notificaciones.js';
+
 // Opciones para tus filtros
 const ESTADOS = ['todos', 'agendado', 'pendiente', 'respondido'];
 const PRIORIDADES = ['todos', 'baja', 'media', 'alta'];
@@ -15,6 +16,15 @@ const CESFAM = [
   'CESFAM Bernardo Leighton'
 ];
 
+// Variable global de filtros
+const currentFilters = {
+  estado: 'todos',
+  prioridad: 'todos',
+  cesfam: 'todos',
+  fecha: 'todos',
+  busqueda: ''
+};
+
 function fillSelectOptions(id, options, labelMap={}) {
   const sel = document.getElementById(id);
   if (!sel) return;
@@ -27,27 +37,11 @@ function fillSelectOptions(id, options, labelMap={}) {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  fillSelectOptions('filtro-estado-solicitudes', ESTADOS, {
-    todos: 'Todos los estados',
-    agendado: 'Agendado/a',
-    pendiente: 'Pendiente',
-    respondido: 'Respondido'
-  });
-  fillSelectOptions('filtro-prioridad-solicitudes', PRIORIDADES, {
-    todos: 'Todas las prioridades',
-    baja: 'Baja',
-    media: 'Media',
-    alta: 'Alta'
-  });
-  fillSelectOptions('filtro-cesfam-solicitudes', CESFAMS, {
-    todos: 'Todos los CESFAM'
-  });
-
-// Tus datos deben estar en solicitudesData y deberías tener renderSolicitudesTable()
-let solicitudesData = []; // Llena esto con tus datos
+// Asegúrate de tener estos datos definidos antes en tu app:
+let solicitudesData = []; // Tu arreglo global de solicitudes
 let filteredSolicitudesData = [];
 
+// Función para filtrar y renderizar
 function applyCurrentFilters() {
   filteredSolicitudesData = solicitudesData.filter(solicitud => {
     // Estado
@@ -104,6 +98,26 @@ function isSameDay(date1, date2) {
   );
 }
 
+// Llenar selects al cargar la página
+document.addEventListener('DOMContentLoaded', () => {
+  fillSelectOptions('filtro-estado-solicitudes', ESTADOS, {
+    todos: 'Todos los estados',
+    agendado: 'Agendado/a',
+    pendiente: 'Pendiente',
+    respondido: 'Respondido'
+  });
+  fillSelectOptions('filtro-prioridad-solicitudes', PRIORIDADES, {
+    todos: 'Todas las prioridades',
+    baja: 'Baja',
+    media: 'Media',
+    alta: 'Alta'
+  });
+  fillSelectOptions('filtro-cesfam-solicitudes', CESFAM, {
+    todos: 'Todos los CESFAM'
+  });
+  applyCurrentFilters();
+});
+
 // Listeners para los filtros
 document.getElementById('filtro-estado-solicitudes').addEventListener('change', function(e) {
   currentFilters.estado = e.target.value;
@@ -140,25 +154,5 @@ document.getElementById('refresh-solicitudes').addEventListener('click', functio
   document.getElementById('filtro-fecha-solicitudes').value = 'todos';
   document.getElementById('buscar-solicitudes').value = '';
 
-  applyCurrentFilters();
-});
-
-// Puedes llamar a fillSelectOptions() y applyCurrentFilters() al cargar la página
-document.addEventListener('DOMContentLoaded', () => {
-  fillSelectOptions('filtro-estado-solicitudes', ESTADOS, {
-    todos: 'Todos los estados',
-    agendado: 'Agendado/a',
-    pendiente: 'Pendiente',
-    respondido: 'Respondido'
-  });
-  fillSelectOptions('filtro-prioridad-solicitudes', PRIORIDADES, {
-    todos: 'Todas las prioridades',
-    baja: 'Baja',
-    media: 'Media',
-    alta: 'Alta'
-  });
-  fillSelectOptions('filtro-cesfam-solicitudes', CESFAMS, {
-    todos: 'Todos los CESFAM'
-  });
   applyCurrentFilters();
 });
