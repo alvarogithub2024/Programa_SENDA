@@ -152,16 +152,19 @@ function setupGlobalFunctions() {
             var modal = document.getElementById(modalId);
             if (modal) modal.style.display = 'none';
         };
+        
         window.showModal = window.showModal || function(modalId) {
             var modal = document.getElementById(modalId);
             if (modal) modal.style.display = 'flex';
         };
+        
         window.switchLoginTab = function(tab) {
             try {
                 var loginTab = document.querySelector('.modal-tab[onclick*="login"]');
                 var registerTab = document.querySelector('.modal-tab[onclick*="register"]');
                 var loginForm = document.getElementById('login-form');
                 var registerForm = document.getElementById('register-form');
+                
                 if (tab === 'login') {
                     if (loginTab) loginTab.classList.add('active');
                     if (registerTab) registerTab.classList.remove('active');
@@ -177,6 +180,7 @@ function setupGlobalFunctions() {
                 console.error('Error switching login tab:', error);
             }
         };
+        
         window.SENDA_DEBUG = {
             getSystemInfo: function() {
                 return {
@@ -276,90 +280,100 @@ function attemptBasicRecovery() {
 
 // ====== LOGIN DE PROFESIONALES CON VERIFICACIÓN EN FIRESTORE ======
 document.addEventListener("DOMContentLoaded", function() {
-  const loginForm = document.getElementById('login-form');
-  if (!loginForm) return;
+    const loginForm = document.getElementById('login-form');
+    if (!loginForm) return;
 
-  loginForm.addEventListener('submit', function(e) {
-    e.preventDefault();
+    loginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
 
-    const email = document.getElementById('login-email').value.trim();
-    const password = document.getElementById('login-password').value;
+        const email = document.getElementById('login-email').value.trim();
+        const password = document.getElementById('login-password').value;
 
-    if (!email || !password) {
-      window.showNotification && window.showNotification("Completa email y contraseña", "warning");
-      return;
-    }
-
-    firebase.auth().signInWithEmailAndPassword(email, password)
-      .then((userCredential) => {
-        const uid = userCredential.user.uid;
-        const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
-
-        // Busca el profesional en la colección y verifica activo
-        return db.collection("profesionales").doc(uid).get();
-      })
-      .then((doc) => {
-        if (!doc.exists) {
-          window.showNotification && window.showNotification("No tienes permisos de acceso como profesional.", "error");
-          firebase.auth().signOut();
-          return;
+        if (!email || !password) {
+            window.showNotification && window.showNotification("Completa email y contraseña", "warning");
+            return;
         }
-        const profesional = doc.data();
-        if (!profesional.activo) {
-          window.showNotification && window.showNotification("Tu usuario está inactivo. Contacta al administrador.", "error");
-          firebase.auth().signOut();
-          return;
-        }
-// ====== REGISTRO DE PROFESIONALES EN FIREBASE ======
-document.addEventListener("DOMContentLoaded", function() {
-  const registerForm = document.getElementById('register-form');
-  if (!registerForm) return;
 
-  registerForm.addEventListener('submit', function(e) {
-    e.preventDefault();
+        firebase.auth().signInWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                const uid = userCredential.user.uid;
+                const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
 
-    // Tomar los valores del formulario
-    const nombre = document.getElementById('register-nombre').value.trim();
-    const apellidos = document.getElementById('register-apellidos').value.trim();
-    const email = document.getElementById('register-email').value.trim();
-    const password = document.getElementById('register-password').value;
-    const profession = document.getElementById('register-profession').value;
-    const cesfam = document.getElementById('register-cesfam').value;
-
-    // Validación básica
-    if (!nombre || !apellidos || !email || !password || !profession || !cesfam) {
-      window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
-      return;
-    }
-
-    // CREA el usuario en Firebase Auth
-    firebase.auth().createUserWithEmailAndPassword(email, password)
-      .then((userCredential) => {
-        const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
-        const profesional = {
-          activo: true,
-          nombre: nombre,
-          apellidos: apellidos,
-          cesfam: cesfam,
-          email: email,
-          profession: profession,
-          fechaCreacion: new Date().toISOString()
-        };
-        // Guarda en la colección profesionales (con el UID como doc ID)
-        return db.collection("profesionales").doc(userCredential.user.uid).set(profesional);
-      })
-      .then(() => {
-        window.showNotification && window.showNotification("Registro exitoso. Puedes iniciar sesión.", "success");
-        registerForm.reset();
-        // Opcional: cambia a la pestaña de login automáticamente
-        if (typeof switchLoginTab === 'function') switchLoginTab('login');
-      })
-      .catch((error) => {
-        window.showNotification && window.showNotification("Error al registrar: " + error.message, "error");
-      });
-  });
+                // Busca el profesional en la colección y verifica activo
+                return db.collection("profesionales").doc(uid).get();
+            })
+            .then((doc) => {
+                if (!doc.exists) {
+                    window.showNotification && window.showNotification("No tienes permisos de acceso como profesional.", "error");
+                    firebase.auth().signOut();
+                    return;
+                }
+                const profesional = doc.data();
+                if (!profesional.activo) {
+                    window.showNotification && window.showNotification("Tu usuario está inactivo. Contacta al administrador.", "error");
+                    firebase.auth().signOut();
+                    return;
+                }
+                
+                // Login exitoso
+                window.showNotification && window.showNotification("Bienvenido, " + profesional.nombre, "success");
+                window.closeModal && window.closeModal('auth-modal');
+            })
+            .catch((error) => {
+                window.showNotification && window.showNotification("Error al iniciar sesión: " + error.message, "error");
+            });
+    });
 });
 
+// ====== REGISTRO DE PROFESIONALES EN FIREBASE ======
+document.addEventListener("DOMContentLoaded", function() {
+    const registerForm = document.getElementById('register-form');
+    if (!registerForm) return;
+
+    registerForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Tomar los valores del formulario
+        const nombre = document.getElementById('register-nombre').value.trim();
+        const apellidos = document.getElementById('register-apellidos').value.trim();
+        const email = document.getElementById('register-email').value.trim();
+        const password = document.getElementById('register-password').value;
+        const profession = document.getElementById('register-profession').value;
+        const cesfam = document.getElementById('register-cesfam').value;
+
+        // Validación básica
+        if (!nombre || !apellidos || !email || !password || !profession || !cesfam) {
+            window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
+            return;
+        }
+
+        // CREA el usuario en Firebase Auth
+        firebase.auth().createUserWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
+                const profesional = {
+                    activo: true,
+                    nombre: nombre,
+                    apellidos: apellidos,
+                    cesfam: cesfam,
+                    email: email,
+                    profession: profession,
+                    fechaCreacion: new Date().toISOString()
+                };
+                // Guarda en la colección profesionales (con el UID como doc ID)
+                return db.collection("profesionales").doc(userCredential.user.uid).set(profesional);
+            })
+            .then(() => {
+                window.showNotification && window.showNotification("Registro exitoso. Puedes iniciar sesión.", "success");
+                registerForm.reset();
+                // Opcional: cambia a la pestaña de login automáticamente
+                if (typeof switchLoginTab === 'function') switchLoginTab('login');
+            })
+            .catch((error) => {
+                window.showNotification && window.showNotification("Error al registrar: " + error.message, "error");
+            });
+    });
+});
 
 // ====== DIAGNÓSTICO DEL SISTEMA EN CONSOLA ======
 console.log('🔍 Información del Sistema:');
@@ -373,10 +387,12 @@ window.addEventListener('online', function() {
     console.log('🌐 Conexión restaurada');
     window.showNotification && window.showNotification('Conexión a Internet restaurada', 'success');
 });
+
 window.addEventListener('offline', function() {
     console.log('📴 Conexión perdida');
     window.showNotification && window.showNotification('Sin conexión a Internet. Algunas funciones pueden no estar disponibles.', 'warning', 5000);
 });
+
 window.addEventListener('error', function(event) {
     console.error('❌ Error no capturado:', event.error);
     if (event.error && event.error.message && 
@@ -386,6 +402,7 @@ window.addEventListener('error', function(event) {
         window.showNotification && window.showNotification('Error del sistema detectado. Si persiste, recarga la página.', 'error');
     }
 });
+
 window.addEventListener('unhandledrejection', function(event) {
     console.error('❌ Promesa rechazada no capturada:', event.reason);
     event.preventDefault();
