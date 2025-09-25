@@ -1,22 +1,23 @@
 // autenticacion/sesion.js
 
 document.addEventListener("DOMContentLoaded", function() {
+  // Elementos claves de la UI
   var btnLogin = document.getElementById('login-professional');
   var btnLogout = document.getElementById('logout-professional');
   var profHeader = document.getElementById('professional-header');
   var profContent = document.getElementById('professional-content');
   var pubContent = document.getElementById('public-content');
 
-  // Escucha el estado de autenticación de Firebase
+  // Escucha el estado de autenticación de Firebase (SOLO UNA VEZ)
   firebase.auth().onAuthStateChanged(function(user) {
     if (user) {
-      // Usuario autenticado: mostrar zona profesional, ocultar pública
+      // Usuario autenticado: SIEMPRE mostrar zona profesional y ocultar la pública
       if (btnLogin) btnLogin.style.display = 'none';
       if (profHeader) profHeader.style.display = '';
       if (profContent) profContent.style.display = '';
       if (pubContent) pubContent.style.display = 'none';
 
-      // Cargar datos del profesional para el header siempre, incluso tras refresco
+      // Cargar datos del profesional para el header
       const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
       db.collection('profesionales').doc(user.uid).get().then(doc => {
         if (doc.exists) {
@@ -26,9 +27,8 @@ document.addEventListener("DOMContentLoaded", function() {
           document.getElementById('professional-cesfam').textContent = profesional.cesfam || '';
         }
       });
-
     } else {
-      // Usuario NO autenticado: mostrar solo la zona pública
+      // Usuario NO autenticado: mostrar sólo la zona pública
       if (btnLogin) btnLogin.style.display = '';
       if (profHeader) profHeader.style.display = 'none';
       if (profContent) profContent.style.display = 'none';
