@@ -1,4 +1,3 @@
-
 let miCesfam = null;
 let profesionalesCesfam = [];
 let profesionesCesfam = [];
@@ -66,7 +65,9 @@ function autocompletarNombreProfesional() {
   const selProfesional = document.getElementById('prof-cita-profesional');
   const nombreInput = document.getElementById('prof-cita-profesional-nombre');
   const selected = selProfesional.options[selProfesional.selectedIndex];
-  if (nombreInput) nombreInput.value = selected && selected.dataset.nombre ? selected.dataset.nombre : '';
+  if (nombreInput) {
+    nombreInput.value = selected && selected.dataset.nombre ? selected.dataset.nombre : '';
+  }
 }
 
 function capitalizarProfesion(str) {
