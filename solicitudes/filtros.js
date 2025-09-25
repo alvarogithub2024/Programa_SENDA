@@ -476,3 +476,37 @@ document.addEventListener('solicitudesLoaded', (event) => {
     updateFilterStats(total, filtered);
 });
 
+const currentFilters = {
+  estado: 'todos',
+  prioridad: 'todos',
+  cesfam: 'todos',
+  fecha: 'todos',
+  busqueda: ''
+};
+
+document.getElementById('filtro-estado-solicitudes').addEventListener('change', function(e) {
+  currentFilters.estado = e.target.value;
+  applyCurrentFilters();
+});
+document.getElementById('filtro-prioridad-solicitudes').addEventListener('change', function(e) {
+  currentFilters.prioridad = e.target.value;
+  applyCurrentFilters();
+});
+document.getElementById('filtro-cesfam-solicitudes').addEventListener('change', function(e) {
+  currentFilters.cesfam = e.target.value;
+  applyCurrentFilters();
+});
+document.getElementById('filtro-fecha-solicitudes').addEventListener('change', function(e) {
+  currentFilters.fecha = e.target.value;
+  applyCurrentFilters();
+});
+document.getElementById('buscar-solicitudes').addEventListener('input', function(e) {
+  currentFilters.busqueda = e.target.value.toLowerCase();
+  applyCurrentFilters();
+});
+
+// Aplica los filtros a tu arreglo de solicitudes y vuelve a renderizar la tabla
+function applyCurrentFilters() {
+  // Aquí filtra tu arreglo solicitudesData usando currentFilters
+  // Y después llama a la función que renderiza la tabla
+}
