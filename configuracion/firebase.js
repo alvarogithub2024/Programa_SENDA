@@ -276,7 +276,7 @@ var FirestoreUtils = {
         return snapshot.docs.map(function(doc) { return Object.assign({ id: doc.id }, doc.data()); });
     }
 };
-
+initializeFirebase();
 // Exponer globalmente helpers y utilidades
 window.initializeFirebase = initializeFirebase;
 window.configurePersistence = configurePersistence;
