@@ -311,5 +311,8 @@ function handleFirebaseError(error) {
     };
 }
 window.initializeFirebase = function() {
-
+}
+window.initializeFirebase = function() {
+}
+window.isFirebaseInitialized = function() {
 }
