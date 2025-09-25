@@ -379,6 +379,43 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 });
 
+// ... (todo tu main.js anterior) ...
+
+// ====== LOGOUT Y VISIBILIDAD DE BOTONES ======
+document.addEventListener("DOMContentLoaded", function() {
+  // BOTÓN LOGOUT PROFESIONAL
+  var btnLogout = document.getElementById('logout-professional');
+  if (btnLogout) {
+    btnLogout.addEventListener('click', function() {
+      firebase.auth().signOut().then(function() {
+        // Oculta zona profesional, muestra pública, muestra botón login
+        document.getElementById('professional-header').style.display = 'none';
+        document.getElementById('professional-content').style.display = 'none';
+        document.getElementById('public-content').style.display = '';
+        document.getElementById('login-professional').style.display = '';
+        window.showNotification && window.showNotification('Sesión cerrada.', 'success');
+      }).catch(function(error) {
+        window.showNotification && window.showNotification('Error al cerrar sesión: ' + error.message, 'error');
+      });
+    });
+  }
+
+  // ESCUCHA ESTADO DE SESIÓN Y OCULTA/MUESTRA BOTÓN ACCESO PROFESIONALES
+  firebase.auth().onAuthStateChanged(function(user) {
+    var btnLogin = document.getElementById('login-professional');
+    if (!btnLogin) return;
+    if (user) {
+      btnLogin.style.display = 'none';
+    } else {
+      btnLogin.style.display = '';
+      // Además, asegúrate de que la zona profesional esté oculta si refrescan logueados
+      document.getElementById('professional-header').style.display = 'none';
+      document.getElementById('professional-content').style.display = 'none';
+      document.getElementById('public-content').style.display = '';
+    }
+  });
+});
+
 // ====== DIAGNÓSTICO DEL SISTEMA EN CONSOLA ======
 console.log('🔍 Información del Sistema:');
 console.log('   Navegador:', navigator.userAgent);
