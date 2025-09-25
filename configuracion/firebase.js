@@ -309,10 +309,22 @@ function handleFirebaseError(error) {
         message: message,
         originalError: error
     };
-}
 window.initializeFirebase = function() {
-}
-window.initializeFirebase = function() {
-}
-window.isFirebaseInitialized = function() {
-}
+    if (!window.firebase || !window.firebase.apps) {
+        console.error("Firebase SDK no está cargado.");
+        return false;
+    }
+    if (!firebase.apps.length) {
+        firebase.initializeApp({
+            apiKey: "...",
+            authDomain: "...",
+            projectId: "...",
+            // ...tus otras claves aquí...
+        });
+        console.log("Firebase inicializado correctamente");
+        return true;
+    } else {
+        console.log("Firebase ya estaba inicializado");
+        return true;
+    }
+};
