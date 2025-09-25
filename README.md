@@ -9,8 +9,8 @@ Este sistema está enfocado exclusivamente en los 8 CESFAM de Puente Alto, centr
 - CESFAM Padre Manuel Villaseca
 - CESFAM San Gerónimo
 - CESFAM Vista Hermosa
-- CESFAM Dr. Bernardo Leighton
-- CESFAM Dr. Alejandro del Río (Filial)
+- CESFAM Bernardo Leighton
+- CESFAM Dr. Alejandro del Río
 
 ## Objetivo
 
