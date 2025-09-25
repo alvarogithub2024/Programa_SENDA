@@ -3155,3 +3155,165 @@ body {
     border-width: 3px;
   }
 }
+/* Fondo oscuro para modal */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(30, 41, 59, 0.50);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: background 0.2s;
+}
+.modal-overlay[style*="display: flex"] {
+  display: flex !important; /* For JS display:flex */
+}
+
+/* Contenedor principal de la modal */
+.modal {
+  background: #fff;
+  border-radius: 14px;
+  max-width: 480px;
+  width: 98%;
+  margin: auto;
+  box-shadow: 0 8px 32px rgba(30,41,59,0.22);
+  padding: 2.5em 2em 2em 2em;
+  position: relative;
+  animation: modal-in 0.22s cubic-bezier(.48,1.52,.56,1.03);
+}
+@keyframes modal-in {
+  0% { opacity:0; transform: scale(0.95);}
+  100% { opacity:1; transform: scale(1);}
+}
+.large-modal {
+  max-width: 700px;
+}
+
+/* Botón de cerrar */
+.modal-close {
+  position: absolute;
+  top: 1.2em;
+  right: 1.2em;
+  background: none;
+  border: none;
+  font-size: 1.5em;
+  color: #64748b;
+  cursor: pointer;
+  transition: color 0.18s;
+  z-index: 10;
+}
+.modal-close:hover { color: #ef4444; }
+
+/* Encabezado */
+.modal h2 {
+  margin: 0 0 1.5rem 0;
+  color: #2563eb;
+  font-size: 1.5em;
+  font-weight: 700;
+  text-align: left;
+}
+
+/* Formulario de la modal */
+#appointment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.3em;
+}
+.form-row {
+  display: flex;
+  gap: 1.2em;
+  flex-wrap: wrap;
+}
+.form-group {
+  flex: 1 1 180px;
+  display: flex;
+  flex-direction: column;
+  gap: .3em;
+}
+.form-group label {
+  color: #334155;
+  font-weight: 500;
+  margin-bottom: 0.2em;
+}
+.form-group input[type="text"],
+.form-group input[type="date"],
+.form-group select {
+  padding: 0.7em 1em;
+  border-radius: 5px;
+  border: 1.5px solid #cbd5e1;
+  background: #f8fafc;
+  font-size: 1em;
+  transition: border 0.16s;
+}
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #2563eb;
+  background: #fff;
+}
+
+/* Autocompletado de paciente */
+.autocomplete-list {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #e0e7ef;
+  border-radius: 6px;
+  width: 100%;
+  max-height: 180px;
+  overflow-y: auto;
+  z-index: 20;
+  box-shadow: 0 4px 16px rgba(30,41,59,0.10);
+  margin-top: 2px;
+}
+.autocomplete-item {
+  padding: 0.6em 1em;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.14s;
+}
+.autocomplete-item:last-child { border-bottom: none; }
+.autocomplete-item:hover {
+  background: #f1f5f9;
+}
+
+/* Acciones de la modal */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1em;
+  margin-top: 1em;
+}
+.btn {
+  padding: 0.6em 1.5em;
+  border-radius: 7px;
+  border: none;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.16s, color 0.16s;
+  background: #2563eb;
+  color: #fff;
+}
+.btn.btn-secondary {
+  background: #64748b;
+  color: #fff;
+}
+.btn.btn-secondary:hover { background: #334155; }
+.btn.btn-primary {
+  background: #2563eb;
+  color: #fff;
+}
+.btn.btn-primary:hover { background: #1d4ed8; }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .modal { padding: 1.1em 0.6em 1.4em 0.6em; }
+  .form-row { flex-direction: column; gap: 0.8em; }
+  .form-group { min-width: 0; }
+}
+
+/* Extra: mensajes de error */
+input:invalid {
+  border-color: #f87171;
+}
