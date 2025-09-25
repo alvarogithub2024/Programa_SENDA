@@ -31,18 +31,7 @@ document.addEventListener("DOMContentLoaded", function() {
           if (window.setCurrentUserData) window.setCurrentUserData(null);
         }
       });
-    } else {
-      // Usuario NO autenticado: mostrar sólo la zona pública
-      if (btnLogin) btnLogin.style.display = '';
-      if (btnLogout) btnLogout.style.display = 'none';
-      if (profHeader) profHeader.style.display = 'none';
-      if (profContent) profContent.style.display = 'none';
-      if (pubContent) pubContent.style.display = '';
-      // Limpiar usuario de tabs
-      if (window.setCurrentUserData) window.setCurrentUserData(null);
-    }
-  });
-
+   
   // Botón cerrar sesión
   if (btnLogout) {
     btnLogout.addEventListener('click', function() {
