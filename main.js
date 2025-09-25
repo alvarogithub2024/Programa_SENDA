@@ -436,5 +436,3 @@ if (performance.navigation && performance.navigation.type === performance.naviga
 }
 
 console.log('\n📝 Sistema SENDA listo para inicialización...\n');
-
-console.log('\n📝 Sistema SENDA listo para inicialización...\n');
