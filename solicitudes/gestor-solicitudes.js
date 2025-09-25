@@ -745,22 +745,28 @@ function showLoadingState(show) {
     try {
         const loadingElement = document.getElementById('solicitudes-loading');
         const tableContainer = document.getElementById('solicitudes-table-container');
-        
-        if (loadingElement && tableContainer) {
-            if (show) {
-                loadingElement.style.display = 'flex';
-                tableContainer.style.opacity = '0.5';
-            } else {
-                loadingElement.style.display = 'none';
-                tableContainer.style.opacity = '1';
-            }
+
+        // Permite que la función funcione aunque uno de los elementos no exista
+        if (loadingElement) {
+            loadingElement.style.display = show ? 'flex' : 'none';
         }
-        
+        if (tableContainer) {
+            tableContainer.style.opacity = show ? '0.5' : '1';
+        }
+
+        // Depuración (puedes quitarlo si no lo necesitas)
+        console.log(`[showLoadingState] loading: ${show}`, {
+            loadingElement: !!loadingElement,
+            tableContainer: !!tableContainer
+        });
+
     } catch (error) {
         console.error('❌ Error controlando estado de carga:', error);
+        // Oculta el spinner por seguridad en caso de error
+        const loadingElement = document.getElementById('solicitudes-loading');
+        if (loadingElement) loadingElement.style.display = 'none';
     }
 }
-
 /**
  * Crear solicitudes de ejemplo
  */
