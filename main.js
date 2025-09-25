@@ -366,19 +366,7 @@ function attemptBasicRecovery() {
  * Mensaje de bienvenida y información del sistema
  */
 console.log(`
-╔════════════════════════════════════════╗
-║        SISTEMA SENDA PUENTE ALTO       ║
-║              Versión 2.0               ║
-╠════════════════════════════════════════╣
-║  👥 Gestión de Pacientes               ║
-║  📅 Sistema de Citas                   ║
-║  📊 Seguimiento de Tratamientos        ║
-║  🏥 8 CESFAM de Puente Alto           ║
-╠════════════════════════════════════════╣
-║  Desarrollado por: CamiMoralesM        ║
-║  GitHub: github.com/CamiMoralesM       ║
-║  Fecha: ${new Date().toLocaleDateString('es-CL').padEnd(26)}║
-╚════════════════════════════════════════╝
+
 `);
 
 // Información del navegador para debugging
