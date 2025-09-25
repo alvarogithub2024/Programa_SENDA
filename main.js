@@ -1,29 +1,25 @@
-// MAIN.JS - SISTEMA SENDA PUENTE ALTO v2.0 - VERSIÓN CORREGIDA
-// Todos los "import" han sido eliminados. Asegúrate de incluir los scripts necesarios en el HTML ANTES de este archivo.
+// MAIN.JS - SISTEMA SENDA PUENTE ALTO v2.0 - VERSIÓN SIN IMPORTS
 
-// Variables globales para control de inicialización
 let initializationCompleted = false;
 let initializationTimer = null;
 
-// Inicializar la aplicación
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('\n🚀 SISTEMA SENDA PUENTE ALTO v2.0');
     console.log('=====================================');
     console.log(`📅 Fecha: ${new Date().toLocaleString('es-CL')}`);
     console.log('🔄 Iniciando sistema SENDA completo...\n');
     
-    // Timeout de seguridad mejorado
     initializationTimer = setTimeout(() => {
         if (!initializationCompleted) {
             console.error('❌ TIMEOUT: La inicialización está tomando demasiado tiempo');
             showInitializationError();
         }
-    }, 15000); // 15 segundos para dar más margen
+    }, 15000); // 15 segundos
 
     try {
         // Paso 1: Inicializar Firebase PRIMERO
         console.log('🔧 Paso 1: Inicializando Firebase...');
-        const firebaseInitialized = window.initializeFirebase();
+        const firebaseInitialized = window.initializeFirebase && window.initializeFirebase();
         
         if (!firebaseInitialized) {
             throw new Error('Firebase no se pudo inicializar');
@@ -35,22 +31,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Paso 2: Configurar autenticación
         console.log('🔧 Paso 2: Configurando autenticación...');
-        window.setupAuth();
+        window.setupAuth && window.setupAuth();
         console.log('✅ Autenticación configurada\n');
         
         // Paso 3: Configurar navegación
         console.log('🔧 Paso 3: Configurando navegación...');
-        window.setupTabs();
+        window.setupTabs && window.setupTabs();
         console.log('✅ Navegación configurada\n');
         
         // Paso 4: Configurar formularios
         console.log('🔧 Paso 4: Configurando formularios...');
-        window.setupFormularios();
+        window.setupFormularios && window.setupFormularios();
         console.log('✅ Formularios configurados\n');
         
         // Paso 5: Configurar eventos globales
         console.log('🔧 Paso 5: Configurando eventos globales...');
-        window.setupEventListeners();
+        window.setupEventListeners && window.setupEventListeners();
         console.log('✅ Eventos configurados\n');
         
         // Paso 6: Inicializar módulos del sistema
@@ -66,26 +62,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         initializationCompleted = true;
         clearTimeout(initializationTimer);
         
-        // Mostrar notificación de éxito
         setTimeout(() => {
-            window.showNotification('Sistema SENDA cargado correctamente', 'success', 3000);
+            window.showNotification && window.showNotification('Sistema SENDA cargado correctamente', 'success', 3000);
         }, 1000);
         
     } catch (error) {
         clearTimeout(initializationTimer);
         console.error('❌ ERROR CRÍTICO durante la inicialización:', error);
-        
-        // Mostrar error detallado al usuario
         showInitializationError(error);
-        
-        // Intentar recuperación básica
         attemptBasicRecovery();
     }
 });
 
-/**
- * Espera a que Firebase se inicialice completamente
- */
 async function waitForFirebaseInitialization(maxRetries = 10) {
     for (let i = 0; i < maxRetries; i++) {
         if (window.isFirebaseInitialized && window.isFirebaseInitialized()) {
@@ -97,26 +85,15 @@ async function waitForFirebaseInitialization(maxRetries = 10) {
     throw new Error('Firebase no se inicializó en el tiempo esperado');
 }
 
-/**
- * Inicializa todos los módulos del sistema
- */
 async function initializeSystemModules() {
     const modules = [
         {
             name: 'Calendario',
             init: async () => {
                 try {
-                    console.log('  📅 Inicializando calendario...');
-                    window.initCalendar();
-                    console.log('  ✅ Calendario inicializado');
-                    
-                    console.log('  📋 Inicializando citas próximas...');
-                    window.initUpcomingAppointments();
-                    console.log('  ✅ Citas próximas inicializadas');
-                    
-                    console.log('  ⏰ Inicializando gestión de horarios...');
-                    window.initScheduleManager();
-                    console.log('  ✅ Horarios inicializados');
+                    window.initCalendar && window.initCalendar();
+                    window.initUpcomingAppointments && window.initUpcomingAppointments();
+                    window.initScheduleManager && window.initScheduleManager();
                 } catch (error) {
                     console.warn('  ⚠️ Error en módulo calendario:', error);
                     throw error;
@@ -127,17 +104,9 @@ async function initializeSystemModules() {
             name: 'Pacientes',
             init: async () => {
                 try {
-                    console.log('  👥 Inicializando gestor de pacientes...');
-                    window.initPatientsManager();
-                    console.log('  ✅ Gestor de pacientes inicializado');
-                    
-                    console.log('  🔍 Inicializando búsqueda de pacientes...');
-                    window.initPatientSearch();
-                    console.log('  ✅ Búsqueda de pacientes inicializada');
-                    
-                    console.log('  📋 Inicializando fichas de pacientes...');
-                    window.initPatientRecord();
-                    console.log('  ✅ Fichas de pacientes inicializadas');
+                    window.initPatientsManager && window.initPatientsManager();
+                    window.initPatientSearch && window.initPatientSearch();
+                    window.initPatientRecord && window.initPatientRecord();
                 } catch (error) {
                     console.warn('  ⚠️ Error en módulo pacientes:', error);
                     throw error;
@@ -148,33 +117,20 @@ async function initializeSystemModules() {
             name: 'Seguimiento',
             init: async () => {
                 try {
-                    console.log('  📊 Inicializando timeline...');
-                    window.initTimeline();
-                    console.log('  ✅ Timeline inicializado');
-                    
-                    console.log('  🩺 Inicializando registro de atenciones...');
-                    window.initAttentions();
-                    console.log('  ✅ Atenciones inicializadas');
-                    
-                    console.log('  📅 Inicializando citas próximas (seguimiento)...');
-                    if (typeof window.initUpcomingAppointmentsFromSeguimiento === 'function') {
-                        window.initUpcomingAppointmentsFromSeguimiento();
-                        console.log('  ✅ Citas próximas (seguimiento) inicializadas');
-                    }
+                    window.initTimeline && window.initTimeline();
+                    window.initAttentions && window.initAttentions();
+                    window.initUpcomingAppointmentsFromSeguimiento && window.initUpcomingAppointmentsFromSeguimiento();
                 } catch (error) {
                     console.warn('  ⚠️ Error en módulo seguimiento:', error);
                     throw error;
                 }
             }
         },
-        // --- MÓDULO SOLICITUDES ---
         {
             name: 'Solicitudes',
             init: async () => {
                 try {
-                    console.log('  📨 Inicializando gestor de solicitudes...');
-                    window.initSolicitudesManager();
-                    console.log('  ✅ Gestor de solicitudes inicializado');
+                    window.initSolicitudesManager && window.initSolicitudesManager();
                 } catch (error) {
                     console.warn('  ⚠️ Error en módulo solicitudes:', error);
                     throw error;
@@ -183,10 +139,8 @@ async function initializeSystemModules() {
         }
     ];
 
-    // Inicializar módulos secuencialmente
     for (const module of modules) {
         try {
-            console.log(`🔧 Inicializando módulo: ${module.name}`);
             await module.init();
             console.log(`✅ Módulo ${module.name} inicializado correctamente\n`);
         } catch (error) {
@@ -196,11 +150,7 @@ async function initializeSystemModules() {
     }
 }
 
-/**
- * Configura las funciones globales necesarias
- */
 function setupGlobalFunctions() {
-    console.log('🔧 Configurando funciones globales...');
     try {
         window.closeModal = window.closeModal || function(modalId) {
             const modal = document.getElementById(modalId);
@@ -239,7 +189,6 @@ function setupGlobalFunctions() {
                 timestamp: new Date().toISOString()
             }),
             reinitialize: () => {
-                console.log('🔄 Reinicializando sistema...');
                 window.location.reload();
             },
             clearStorage: () => {
@@ -254,9 +203,6 @@ function setupGlobalFunctions() {
     }
 }
 
-/**
- * Muestra error de inicialización al usuario
- */
 function showInitializationError(error = null) {
     const errorMessage = error ? error.message : 'Timeout de inicialización';
     let errorModal = document.getElementById('initialization-error-modal');
@@ -308,11 +254,7 @@ function showInitializationError(error = null) {
     }
 }
 
-/**
- * Intenta una recuperación básica del sistema
- */
 function attemptBasicRecovery() {
-    console.log('🔄 Intentando recuperación básica...');
     try {
         window.closeModal = (modalId) => {
             const modal = document.getElementById(modalId);
@@ -341,30 +283,22 @@ console.log(`   Conexión: ${navigator.onLine ? 'Online' : 'Offline'}`);
 console.log(`   Local Storage: ${typeof Storage !== 'undefined' ? 'Disponible' : 'No disponible'}`);
 console.log(`   Service Worker: ${'serviceWorker' in navigator ? 'Disponible' : 'No disponible'}`);
 
-// Event listener para cambios de conectividad
 window.addEventListener('online', () => {
-    console.log('🌐 Conexión restaurada');
-    window.showNotification('Conexión a Internet restaurada', 'success');
+    window.showNotification && window.showNotification('Conexión a Internet restaurada', 'success');
 });
 window.addEventListener('offline', () => {
-    console.log('📴 Conexión perdida');
-    window.showNotification('Sin conexión a Internet. Algunas funciones pueden no estar disponibles.', 'warning', 5000);
+    window.showNotification && window.showNotification('Sin conexión a Internet. Algunas funciones pueden no estar disponibles.', 'warning', 5000);
 });
 window.addEventListener('error', (event) => {
-    console.error('❌ Error no capturado:', event.error);
     if (event.error && event.error.message && 
         (event.error.message.includes('Firebase') || 
          event.error.message.includes('network') ||
          event.error.message.includes('auth'))) {
-        window.showNotification('Error del sistema detectado. Si persiste, recarga la página.', 'error');
+        window.showNotification && window.showNotification('Error del sistema detectado. Si persiste, recarga la página.', 'error');
     }
 });
 window.addEventListener('unhandledrejection', (event) => {
-    console.error('❌ Promesa rechazada no capturada:', event.reason);
     event.preventDefault();
-    if (event.reason && typeof event.reason === 'object' && event.reason.code) {
-        console.warn(`Código de error: ${event.reason.code}`);
-    }
 });
 if (performance.navigation.type === performance.navigation.TYPE_RELOAD) {
     console.log('🔄 Página recargada por el usuario');
