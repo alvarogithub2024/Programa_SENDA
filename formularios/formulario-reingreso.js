@@ -7,72 +7,100 @@ function setupFormularioReingreso() {
     form.addEventListener("submit", function(e) {
         e.preventDefault();
 
-        // Limpia y recoge datos
+        // Obtener valores
         const nombre = form.querySelector("#reentry-name").value.trim();
         const rut = form.querySelector("#reentry-rut").value.trim().replace(/[^0-9kK]/g, '').toUpperCase();
         const telefono = limpiarTelefonoChileno(form.querySelector("#reentry-phone").value.trim());
         const cesfam = form.querySelector("#reentry-cesfam").value;
         const motivo = form.querySelector("#reentry-reason").value.trim();
+        const observaciones = ""; // Si tienes campo observaciones, reemplaza aquí
+        const origen = "web";
+        const prioridad = "media"; // Puedes cambiar a lógica según urgencia del motivo, etc.
+        const profesionalAsignado = null;
+        const tipo = "reingreso";
+        const version = 1;
 
-        // Valida
-        if (!nombre) return window.showNotification("Nombre completo obligatorio", "warning");
-        if (!window.validarRut || !window.validarRut(rut)) return window.showNotification("RUT inválido", "warning");
-        if (!window.validarTelefono || !window.validarTelefono(telefono)) return window.showNotification("Teléfono inválido", "warning");
+        // Validaciones mínimas
+        if (!nombre) return window.showNotification("El nombre es obligatorio", "warning");
+        if (!rut || !window.validarRut || !window.validarRut(rut)) return window.showNotification("RUT inválido", "warning");
+        if (!telefono || !window.validarTelefono || !window.validarTelefono(telefono)) return window.showNotification("Teléfono inválido", "warning");
         if (!cesfam) return window.showNotification("Selecciona un CESFAM", "warning");
-        if (!motivo) return window.showNotification("Motivo de reingreso obligatorio", "warning");
+        if (!motivo) return window.showNotification("El motivo es obligatorio", "warning");
 
-        // Prepara datos
-        const datos = {
-            tipo: "reingreso",
-            nombre: nombre,
-            rut: rut,
-            telefono: telefono,
-            cesfam: cesfam,
-            motivo: motivo,
-            fecha: new Date().toISOString()
+        // Construir objeto a guardar
+        const data = {
+            nombre,
+            rut,
+            telefono,
+            cesfam,
+            motivo,
+            observaciones,
+            origen,
+            prioridad,
+            profesionalAsignado,
+            tipo,
+            version,
+            estado: "pendiente",
+            fechaCreacion: new Date().toISOString(),
+            fechaRespuesta: null,
+            fechaUltimaActualizacion: new Date().toISOString()
         };
 
-        guardarReingresoFirebase(datos, form);
+        guardarReingresoEnFirebase(data);
     });
-
-    // Botón cancelar (opcional)
-    const btnCancelar = form.querySelector('button[type="button"].btn.btn-outline');
-    if (btnCancelar) {
-        btnCancelar.onclick = function() {
-            form.reset();
-            document.getElementById("reentry-modal").style.display = "none";
-        };
-    }
 }
 
-// Guarda en colección reingresos
-function guardarReingresoFirebase(datos, form) {
+// Guarda en la colección "reingresos"
+function guardarReingresoEnFirebase(data) {
     const db = window.getFirestore ? window.getFirestore() : null;
     if (!db) {
         window.showNotification && window.showNotification("No se pudo acceder a la base de datos", "error");
         return;
     }
-    db.collection("reingresos").add(datos)
+    db.collection("reingresos").add(data)
         .then(function() {
-            window.showNotification && window.showNotification("Reingreso enviado correctamente", "success");
-            form.reset();
+            window.showNotification && window.showNotification("Solicitud de reingreso enviada correctamente", "success");
+            document.getElementById("reentry-form").reset();
             document.getElementById("reentry-modal").style.display = "none";
         })
         .catch(function(error) {
-            window.showNotification && window.showNotification("Error guardando reingreso: " + error.message, "error");
+            window.showNotification && window.showNotification("Error guardando reingreso: "+error.message, "error");
         });
 }
 
-// Utilidad para limpiar el teléfono chileno (igual que en paciente)
+// Validación RUT (ya deberías tenerla)
+function validarRut(rut) {
+    if (!rut) return false;
+    rut = rut.replace(/[^0-9kK]/g, '').toUpperCase();
+    if (rut.length < 8 || rut.length > 9) return false;
+    let cuerpo = rut.slice(0, -1);
+    let dv = rut.slice(-1);
+    let suma = 0;
+    let multiplo = 2;
+    for (let i = cuerpo.length - 1; i >= 0; i--) {
+        suma += parseInt(cuerpo[i]) * multiplo;
+        multiplo = multiplo === 7 ? 2 : multiplo + 1;
+    }
+    let dvEsperado = 11 - (suma % 11);
+    dvEsperado = dvEsperado === 11 ? '0' : dvEsperado === 10 ? 'K' : dvEsperado.toString();
+    return dv === dvEsperado;
+}
+window.validarRut = window.validarRut || validarRut;
+
+// Validación y limpieza teléfono chileno
 function limpiarTelefonoChileno(tel) {
     tel = tel.replace(/\D/g, '');
     if (tel.startsWith("56")) tel = tel.slice(2);
     if (tel.length === 11 && tel.startsWith("569")) tel = tel.slice(2);
     return tel;
 }
+function validarTelefonoChileno(telefono) {
+    telefono = limpiarTelefonoChileno(telefono);
+    return telefono.length === 9 && telefono[0] === "9";
+}
+window.validarTelefono = window.validarTelefono || validarTelefonoChileno;
 
-// Exporta globalmente
 window.setupFormularioReingreso = setupFormularioReingreso;
-window.guardarReingresoFirebase = guardarReingresoFirebase;
+window.guardarReingresoEnFirebase = guardarReingresoEnFirebase;
 
 document.addEventListener("DOMContentLoaded", setupFormularioReingreso);
