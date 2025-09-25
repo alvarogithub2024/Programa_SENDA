@@ -92,28 +92,31 @@ function cargarProfesionalesParaCita() {
     });
 }
 
-function actualizarSelectHoras() {
-  const fecha = document.getElementById('cita-fecha').value;
-  const profesionalId = document.getElementById('cita-profesional').value;
-  const selectHora = document.getElementById('cita-hora');
-  selectHora.innerHTML = '<option value="">Selecciona hora...</option>';
-  if (!fecha || !profesionalId) return;
-  // Llama a tu función existente que calcula horarios y descarta ocupados
-  cargarHorariosDisponibles(fecha, profesionalId, function(horariosDisponibles) {
-    horariosDisponibles.forEach(h => {
-      const opt = document.createElement('option');
-      opt.value = h;
-      opt.textContent = h;
-      selectHora.appendChild(opt);
+function actualizarHorasPaciente() {
+    const fecha = document.getElementById('pac-cita-fecha').value;
+    const profesionalId = document.getElementById('pac-cita-profesional').value;
+    const selectHora = document.getElementById('pac-cita-hora');
+    selectHora.innerHTML = '<option value="">Selecciona hora...</option>';
+    if (!fecha || !profesionalId) return;
+    cargarHorariosDisponibles(fecha, profesionalId, function(horariosDisponibles) {
+        if (!horariosDisponibles.length) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = 'Sin horarios disponibles';
+            selectHora.appendChild(opt);
+        } else {
+            horariosDisponibles.forEach(h => {
+                const opt = document.createElement('option');
+                opt.value = h;
+                opt.textContent = h;
+                selectHora.appendChild(opt);
+            });
+        }
     });
-    if (horariosDisponibles.length === 0) {
-      const opt = document.createElement('option');
-      opt.value = '';
-      opt.textContent = 'Sin horarios disponibles';
-      selectHora.appendChild(opt);
-    }
-  });
 }
+
+document.getElementById('pac-cita-fecha').addEventListener('change', actualizarHorasPaciente);
+document.getElementById('pac-cita-profesional').addEventListener('change', actualizarHorasPaciente);
 // Exportar globalmente
 window.cargarHorariosDisponibles = cargarHorariosDisponibles;
 window.mostrarHorariosDisponibles = mostrarHorariosDisponibles;
