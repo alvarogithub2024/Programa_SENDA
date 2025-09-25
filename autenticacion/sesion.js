@@ -1,3 +1,4 @@
+setCurrentUserData(datosUsuario);
 
 let currentUser = null;
 let currentUserData = null;
