@@ -8,11 +8,9 @@ import { getAvailableSlots } from './horarios.js';
  * @param {Date|string} preselectedDate Fecha preseleccionada (opcional)
  */
 export function openNewAppointmentModal(preselectedDate = null) {
-    // Elimina modal existente si está
     let modal = document.getElementById('appointment-modal');
     if (modal) modal.remove();
 
-    // Modal HTML ordenado
     modal = document.createElement('div');
     modal.id = 'appointment-modal';
     modal.className = 'modal-overlay';
@@ -23,7 +21,6 @@ export function openNewAppointmentModal(preselectedDate = null) {
             </button>
             <h2>Nueva Cita</h2>
             <form id="appointment-form" autocomplete="off">
-                <!-- PACIENTE -->
                 <div class="form-row">
                     <div class="form-group">
                         <label>RUT Paciente *</label>
@@ -35,7 +32,6 @@ export function openNewAppointmentModal(preselectedDate = null) {
                         <input type="text" id="appointment-patient-name" readonly>
                     </div>
                 </div>
-                <!-- PROFESIONAL -->
                 <div class="form-row">
                     <div class="form-group">
                         <label>Profesional *</label>
@@ -46,7 +42,6 @@ export function openNewAppointmentModal(preselectedDate = null) {
                         <input type="text" id="appointment-profession" readonly>
                     </div>
                 </div>
-                <!-- FECHA Y HORA -->
                 <div class="form-row">
                     <div class="form-group">
                         <label>Fecha *</label>
@@ -59,7 +54,6 @@ export function openNewAppointmentModal(preselectedDate = null) {
                         </select>
                     </div>
                 </div>
-                <!-- ACCIONES -->
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('appointment-modal')">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Guardar Cita</button>
@@ -70,7 +64,7 @@ export function openNewAppointmentModal(preselectedDate = null) {
     document.body.appendChild(modal);
     modal.style.display = 'flex';
 
-    // Lógica de búsqueda de paciente
+    // --- Paciente autocompletar ---
     const rutInput = modal.querySelector('#appointment-patient-rut');
     const nameInput = modal.querySelector('#appointment-patient-name');
     const autocompleteDiv = modal.querySelector('#appointment-patient-autocomplete');
@@ -85,7 +79,6 @@ export function openNewAppointmentModal(preselectedDate = null) {
         autocompleteDiv.innerHTML = results.map(
             p => `<div class="autocomplete-item" data-id="${p.id}" data-name="${p.nombre} ${p.apellido}">${p.rut} - ${p.nombre} ${p.apellido}</div>`
         ).join('');
-        // Click en sugerencia
         autocompleteDiv.querySelectorAll('.autocomplete-item').forEach(item => {
             item.addEventListener('click', () => {
                 rutInput.value = item.textContent.split(' - ')[0];
@@ -96,7 +89,7 @@ export function openNewAppointmentModal(preselectedDate = null) {
         });
     });
 
-    // Lógica de carga de profesionales
+    // --- Profesionales ---
     const profSelect = modal.querySelector('#appointment-professional');
     const profNameInput = modal.querySelector('#appointment-profession');
     loadProfessionalsForModal().then(list => {
@@ -105,16 +98,15 @@ export function openNewAppointmentModal(preselectedDate = null) {
     });
     profSelect.addEventListener('change', function() {
         const selectedOption = profSelect.options[profSelect.selectedIndex];
-        profNameInput.value = selectedOption.dataset.profession || '';
+        profNameInput.value = selectedOption?.dataset.profession || '';
         updateAvailableSlots();
     });
 
-    // Fecha: preseleccionada o actual
+    // --- Fecha y horarios disponibles ---
     const dateInput = modal.querySelector('#appointment-date');
     dateInput.value = preselectedDate ? formatDateForInput(preselectedDate) : formatDateForInput(new Date());
     dateInput.addEventListener('change', updateAvailableSlots);
 
-    // Horarios disponibles
     const timeSelect = modal.querySelector('#appointment-time');
     async function updateAvailableSlots() {
         const profId = profSelect.value;
@@ -131,15 +123,14 @@ export function openNewAppointmentModal(preselectedDate = null) {
         timeSelect.innerHTML = slots.map(h => `<option value="${h}">${h}</option>`).join('');
     }
 
-    // Guardar cita
+    // --- Guardar cita ---
     modal.querySelector('#appointment-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        // Validar y obtener datos
         const patientId = rutInput.dataset.patientId;
         const patientRut = rutInput.value.trim();
         const patientName = nameInput.value.trim();
         const profId = profSelect.value;
-        const profName = profSelect.options[profSelect.selectedIndex]?.textContent;
+        const profName = profSelect.options[profSelect.selectedIndex]?.textContent || "";
         const profProfession = profNameInput.value;
         const date = dateInput.value;
         const time = timeSelect.value;
@@ -149,7 +140,6 @@ export function openNewAppointmentModal(preselectedDate = null) {
             return;
         }
 
-        // Guardar en Firebase
         try {
             const db = getFirestore();
             await db.collection('citas').add({
@@ -162,7 +152,7 @@ export function openNewAppointmentModal(preselectedDate = null) {
                 fecha: date,
                 hora: time,
                 estado: 'programada',
-                fechaCreacion: firebase.firestore.FieldValue.serverTimestamp()
+                fechaCreacion: window.firebase ? firebase.firestore.FieldValue.serverTimestamp() : new Date()
             });
             showNotification('Cita creada correctamente', 'success');
             closeModal('appointment-modal');
@@ -173,10 +163,7 @@ export function openNewAppointmentModal(preselectedDate = null) {
     });
 }
 
-/**
- * Carga todos los profesionales para el select del modal
- * @returns {Promise<Array>} Lista de profesionales
- */
+// --- Helpers ---
 async function loadProfessionalsForModal() {
     const db = getFirestore();
     const snapshot = await db.collection('profesionales').where('activo', '==', true).get();
@@ -200,11 +187,7 @@ function formatDateForInput(date) {
     return `${y}-${m}-${day}`;
 }
 
-// Exporta la función global para ser usada desde el calendario o el botón
+// Hacer visible la función globalmente si se usa inline en HTML
 if (typeof window !== 'undefined') {
     window.openNewAppointmentModal = openNewAppointmentModal;
-}
-// En ./calendario/citas.js
-export function initUpcomingAppointments() {
-    // tu código aquí
 }
