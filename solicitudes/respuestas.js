@@ -25,7 +25,6 @@ const CESFAM = [
   'CESFAM Bernardo Leighton'
 ];
 
-const currentFilters = {
   estado: 'todos',
   prioridad: 'todos',
   cesfam: 'todos',
