@@ -522,14 +522,6 @@ Buscar
 <p>Desarrollado para el bienestar de nuestra comunidad</p>
 <a href="https://www.senda.gob.cl" target="_blank" class="footer-link"><i class="fas fa-external-link-alt"></i> Sitio oficial SENDA</a>
 </div>
-Copilot said: ¡Ahora sí, tu archivo está **casi** perfecto!
-¡Ahora sí, tu archivo está casi perfecto!
-Solo te falta agregar el modal "Sobre el Programa" y el JavaScript para abrirlo.
-
-Aquí te muestro exactamente cómo debe quedar integrado, listo para copiar y pegar:
-(Inserta ambos bloques antes del </body> al final del archivo)
-
-HTML
 <!-- ========== MODAL SOBRE EL PROGRAMA ========== -->
 <div class="modal-overlay" id="about-modal" style="display:none;">
   <div class="modal large-modal">
@@ -560,40 +552,9 @@ HTML
     </div>
   </div>
 </div>
-<!-- =========
-  <!-- MODAL SOBRE EL PROGRAMA - Agrega este bloque antes de </body> -->
-<div class="modal-overlay" id="about-modal" style="display:none;">
-  <div class="modal large-modal">
-    <button class="modal-close" onclick="closeModal('about-modal')">
-      <i class="fas fa-times"></i>
-    </button>
-    <h2>Sobre el Programa</h2>
-    <div class="modal-description">
-      <p>
-        El <strong>Programa SENDA Puente Alto</strong> es un esfuerzo conjunto con los 8 CESFAM de la comuna,
-        enfocado en la prevención y tratamiento del consumo problemático de alcohol y otras drogas.<br><br>
-        <strong>¿Qué hacemos?</strong>
-        <ul>
-          <li>Atención y derivación de personas que requieran apoyo en consumo de sustancias.</li>
-          <li>Orientación familiar y psicoeducación.</li>
-          <li>Gestión de casos y acompañamiento continuo.</li>
-          <li>Trabajo conjunto con equipos de salud y comunidad.</li>
-        </ul>
-        <strong>¿A quiénes atendemos?</strong>
-        <ul>
-          <li>Niños, niñas y adolescentes</li>
-          <li>Personas adultas</li>
-          <li>Familias y cuidadores</li>
-        </ul>
-        <strong>Confidencialidad y calidad:</strong> Todo el proceso es confidencial, voluntario y realizado por profesionales capacitados.<br><br>
-        <strong>Más info:</strong> <a href="https://www.senda.gob.cl" target="_blank">www.senda.gob.cl</a>
-      </p>
-    </div>
-  </div>
-</div>
-</footer>
+<!-- ========== FIN MODAL SOBRE EL PROGRAMA ========== -->
 
-  <script>
+<script>
 document.addEventListener("DOMContentLoaded", function() {
   var btnSobre = document.getElementById("about-program");
   if (btnSobre) {
@@ -606,6 +567,9 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
 });
+</script>
+
+</footer>
 </script>
 <script>
 function switchLoginTab(tab){
