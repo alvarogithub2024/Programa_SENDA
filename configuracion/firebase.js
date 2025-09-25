@@ -1,5 +1,3 @@
-
-
 let auth, db, storage, isInitialized = false;
 
 /**
@@ -134,7 +132,7 @@ function getServerTimestamp() {
 /**
  * Función de retry para operaciones de Firebase
  */
- async function retryFirestoreOperation(operation, maxRetries = 3) {
+async function retryFirestoreOperation(operation, maxRetries = 3) {
     for (let i = 0; i < maxRetries; i++) {
         try {
             return await operation();
@@ -166,7 +164,7 @@ function getCurrentUser() {
 /**
  * Escuchar cambios en autenticación
  */
- function onAuthStateChanged(callback) {
+function onAuthStateChanged(callback) {
     if (!auth) {
         if (!initializeFirebase()) {
             callback(null);
@@ -220,8 +218,8 @@ async function createInitialCollections() {
     }
 }
 
-// Exportaciones adicionales para compatibilidad
- { db, auth, storage };
+// Exportaciones adicionales para compatibilidad - SINTAXIS CORREGIDA
+const exportedServices = { db, auth, storage };
 
 // Funciones de utilidad para Firestore
 const FirestoreUtils = {
@@ -309,6 +307,9 @@ function handleFirebaseError(error) {
         message: message,
         originalError: error
     };
+}
+
+// Función inicialización para window
 window.initializeFirebase = function() {
     if (!window.firebase || !window.firebase.apps) {
         console.error("Firebase SDK no está cargado.");
