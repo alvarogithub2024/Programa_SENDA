@@ -590,9 +590,12 @@ Buscar
         <input type="date" id="cita-fecha" required>
       </div>
       <div class="form-group">
-        <label>Hora *</label>
-        <input type="time" id="cita-hora" required>
-      </div>
+  <label>Hora *</label>
+  <select id="cita-hora" required>
+    <option value="">Selecciona hora...</option>
+    <!-- Se llenará por JS -->
+  </select>
+</div>
       <div class="form-actions">
         <button type="button" class="btn btn-outline" onclick="closeModal('modal-nueva-cita')">Cancelar</button>
         <button type="submit" class="btn btn-success">Agendar</button>
