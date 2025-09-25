@@ -1,5 +1,3 @@
-window.loadSolicitudForResponse = function(solicitudId) { ... }
-
 let currentUserData = null;
 
 function setupTabs() {
@@ -142,3 +140,4 @@ function setCurrentUserData(userData) {
     currentUserData = userData;
     updateTabVisibility();
 }
+window.loadSolicitudForResponse = function(solicitudId) { ... }
