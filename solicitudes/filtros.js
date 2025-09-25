@@ -150,4 +150,4 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('buscar-solicitudes').value = '';
     applyCurrentFilters();
   });
-}
+});
