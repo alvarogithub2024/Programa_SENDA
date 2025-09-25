@@ -34,8 +34,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('\n🚀 SISTEMA SENDA PUENTE ALTO v2.0');
     console.log('=====================================');
     console.log(`📅 Fecha: ${new Date().toLocaleString('es-CL')}`);
-    console.log(`👤 Desarrollado por: CamiMoralesM`);
-    console.log(`🌐 GitHub: https://github.com/CamiMoralesM`);
     console.log('🔄 Iniciando sistema SENDA completo...\n');
     
     // Timeout de seguridad mejorado
