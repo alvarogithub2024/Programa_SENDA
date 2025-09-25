@@ -1,48 +1,56 @@
-// UTILIDADES/MODALES.JS
+// utilidades/modales.js
 
-// Abre un modal por ID
-function showModal(modalId) {
-    var modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden'; // Bloquear scroll fondo
-    }
+/**
+ * Muestra un modal por ID (display:flex)
+ */
+function showModal(id) {
+    var modal = document.getElementById(id);
+    if (modal) modal.style.display = "flex";
 }
 
-// Cierra un modal por ID
-function closeModal(modalId) {
-    var modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = 'none';
-        document.body.style.overflow = ''; // Restaurar scroll
-    }
+/**
+ * Cierra un modal por ID (display:none)
+ */
+function closeModal(id) {
+    var modal = document.getElementById(id);
+    if (modal) modal.style.display = "none";
 }
-
-// Cierra todos los modales con clase .modal-overlay
-function closeAllModals() {
-    var modales = document.querySelectorAll('.modal-overlay');
-    modales.forEach(function(modal) {
-        modal.style.display = 'none';
-    });
-    document.body.style.overflow = '';
-}
-
-// Permitir cerrar modal haciendo click en overlay (fondo)
-document.addEventListener('click', function(e) {
-    if (e.target.classList && e.target.classList.contains('modal-overlay')) {
-        e.target.style.display = 'none';
-        document.body.style.overflow = '';
-    }
-});
-
-// Permitir cerrar modal con tecla ESC
-document.addEventListener('keydown', function(e) {
-    if (e.key === "Escape") {
-        closeAllModals();
-    }
-});
 
 // Exportar globalmente
 window.showModal = showModal;
 window.closeModal = closeModal;
-window.closeAllModals = closeAllModals;
+
+// Cerrar modal al hacer click en el fondo (modal-overlay)
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) {
+                overlay.style.display = "none";
+            }
+        });
+    });
+
+    // Botón "Acceso Profesionales"
+    var btnLogin = document.getElementById("login-professional");
+    if (btnLogin) {
+        btnLogin.addEventListener("click", function() {
+            showModal('login-modal');
+        });
+    }
+
+    // Botón "Solicitar Ayuda"
+    var btnPaciente = document.getElementById("register-patient");
+    if (btnPaciente) {
+        btnPaciente.addEventListener("click", function() {
+            showModal('patient-modal');
+        });
+    }
+
+    // Botón "Reingreso"
+    var btnReingreso = document.getElementById("reentry-program");
+    if (btnReingreso) {
+        btnReingreso.addEventListener("click", function() {
+            showModal('reentry-modal');
+        });
+    }
+});
