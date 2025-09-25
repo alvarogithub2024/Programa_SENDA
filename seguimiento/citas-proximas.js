@@ -251,7 +251,8 @@ window.showAppointmentsView = function(view) {
     document.querySelectorAll('.toggle-btn').forEach(btn => {
         btn.classList.remove('active');
     });
-    document.querySelector(`[data-view="${view}"]`).classList.add('active');
+const viewBtn = document.querySelector(`[data-view="${view}"]`);
+if (viewBtn) viewBtn.classList.add('active');
     
     // Mostrar citas correspondientes
     let appointmentsToShow = [];
