@@ -1,27 +1,39 @@
-// ==== CITAS DE PACIENTES ====
+// ==== CITAS DE PACIENTES (solo del CESFAM del usuario logueado) ====
 
 let profesionalesAtencion = [];
 let profesionesAtencion = [];
+let miCesfam = null;
 
-function cargarProfesionalesAtencion(callback) {
+function cargarProfesionalesAtencionPorCesfam(callback) {
+  const user = firebase.auth().currentUser;
+  if (!user) return;
   const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
-  db.collection('profesionales').where('activo', '==', true).get().then(snapshot => {
-    profesionalesAtencion = [];
-    profesionesAtencion = [];
-    snapshot.forEach(doc => {
-      const p = doc.data();
-      p.uid = doc.id;
-      profesionalesAtencion.push(p);
-      if (p.profession && !profesionesAtencion.includes(p.profession)) {
-        profesionesAtencion.push(p.profession);
-      }
+
+  // 1. Obtener el CESFAM del usuario logueado
+  db.collection('profesionales').doc(user.uid).get().then(doc => {
+    if (!doc.exists) return;
+    miCesfam = doc.data().cesfam;
+
+    // 2. Buscar profesionales activos SOLO de ese CESFAM
+    db.collection('profesionales').where('activo', '==', true).where('cesfam', '==', miCesfam).get().then(snapshot => {
+      profesionalesAtencion = [];
+      profesionesAtencion = [];
+      snapshot.forEach(doc => {
+        const p = doc.data();
+        p.uid = doc.id;
+        profesionalesAtencion.push(p);
+        if (p.profession && !profesionesAtencion.includes(p.profession)) {
+          profesionesAtencion.push(p.profession);
+        }
+      });
+      if (typeof callback === 'function') callback();
     });
-    if (typeof callback === 'function') callback();
   });
 }
 
 function llenarSelectProfesionesPaciente() {
   const selProf = document.getElementById('pac-cita-profession');
+  if (!selProf) return;
   selProf.innerHTML = '<option value="">Selecciona profesión...</option>';
   profesionesAtencion.forEach(prof => {
     const opt = document.createElement('option');
@@ -34,6 +46,7 @@ function llenarSelectProfesionesPaciente() {
 function llenarSelectProfesionalesPaciente() {
   const selProfesion = document.getElementById('pac-cita-profession');
   const selProfesional = document.getElementById('pac-cita-profesional');
+  if (!selProfesion || !selProfesional) return;
   selProfesional.innerHTML = '<option value="">Selecciona profesional...</option>';
   const filtro = selProfesion.value;
   profesionalesAtencion
@@ -52,8 +65,9 @@ function llenarSelectProfesionalesPaciente() {
 function autocompletarNombreProfesionalPaciente() {
   const selProfesional = document.getElementById('pac-cita-profesional');
   const nombreInput = document.getElementById('pac-cita-profesional-nombre');
+  if (!selProfesional || !nombreInput) return;
   const selected = selProfesional.options[selProfesional.selectedIndex];
-  if (nombreInput) nombreInput.value = selected && selected.dataset.nombre ? selected.dataset.nombre : '';
+  nombreInput.value = selected && selected.dataset.nombre ? selected.dataset.nombre : '';
 }
 
 function capitalizarProfesion(str) {
@@ -62,24 +76,26 @@ function capitalizarProfesion(str) {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
 
-function inicializarFlujoPacienteCita() {
-  cargarProfesionalesAtencion(function() {
+// Inicializa el flujo SOLO cuando abras el modal de paciente
+function abrirModalCitaPaciente() {
+  cargarProfesionalesAtencionPorCesfam(function() {
     llenarSelectProfesionesPaciente();
     llenarSelectProfesionalesPaciente();
     autocompletarNombreProfesionalPaciente();
+
+    // Listeners seguros
+    const selProf = document.getElementById('pac-cita-profession');
+    if (selProf) {
+      selProf.onchange = function() {
+        llenarSelectProfesionalesPaciente();
+        autocompletarNombreProfesionalPaciente();
+      };
+    }
+    const selPro = document.getElementById('pac-cita-profesional');
+    if (selPro) {
+      selPro.onchange = autocompletarNombreProfesionalPaciente;
+    }
+    showModal('modal-nueva-cita-paciente');
   });
-
-  document.getElementById('pac-cita-profession').onchange = function() {
-    llenarSelectProfesionalesPaciente();
-    autocompletarNombreProfesionalPaciente();
-  };
-  document.getElementById('pac-cita-profesional').onchange = function() {
-    autocompletarNombreProfesionalPaciente();
-  };
 }
-
-// Llama a esto AL ABRIR el modal de cita de paciente
-function abrirModalCitaPaciente() {
-  inicializarFlujoPacienteCita();
-  showModal('modal-cita-paciente');
-}
+window.abrirModalCitaPaciente = abrirModalCitaPaciente;
