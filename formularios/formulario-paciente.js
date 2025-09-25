@@ -55,11 +55,12 @@ function setupFormularioPaciente() {
         const nombre = form.querySelector("#patient-name").value.trim();
         const apellidos = form.querySelector("#patient-lastname").value.trim();
         let rut = form.querySelector("#patient-rut").value.trim();
-        rut = rut.replace(/[^0-9kK]/g, '').toUpperCase(); // LIMPIAR ANTES DE VALIDAR
-        const tel = form.querySelector("#patient-phone").value.trim();
+        rut = rut.replace(/[^0-9kK]/g, '').toUpperCase();
+        let tel = form.querySelector("#patient-phone").value.trim();
+        tel = limpiarTelefonoChileno(tel);
         if (!nombre || !apellidos) return window.showNotification("Nombre y apellidos requeridos", "warning");
         if (!window.validarRut || !window.validarRut(rut)) return window.showNotification("RUT inválido", "warning");
-        if (!window.validarTelefono || !window.validarTelefono(tel)) return window.showNotification("Teléfono inválido","warning");
+        if (!validarTelefonoChileno(tel)) return window.showNotification("Teléfono inválido","warning");
         mostrarPaso(2);
     };
     form.querySelector("#next-step-3").onclick = function() {
@@ -109,6 +110,8 @@ function setupFormularioPaciente() {
         e.preventDefault();
         const tipo = form.querySelector('input[name="tipoSolicitud"]:checked');
         if (!tipo || tipo.value !== "identificado") return;
+        let rut = form.querySelector("#patient-rut").value.trim().replace(/[^0-9kK]/g, '').toUpperCase();
+        let telefono = limpiarTelefonoChileno(form.querySelector("#patient-phone").value.trim());
         const datos = {
             tipo: "identificado",
             edad: form.querySelector("#patient-age").value,
@@ -116,8 +119,8 @@ function setupFormularioPaciente() {
             paraMi: form.querySelector('input[name="paraMi"]:checked')?.value || "",
             nombre: form.querySelector("#patient-name").value.trim(),
             apellidos: form.querySelector("#patient-lastname").value.trim(),
-            rut: form.querySelector("#patient-rut").value.trim().replace(/[^0-9kK]/g, '').toUpperCase(), // LIMPIAR ANTES DE GUARDAR
-            telefono: form.querySelector("#patient-phone").value.trim(),
+            rut: rut,
+            telefono: telefono,
             email: form.querySelector("#patient-email").value.trim(),
             direccion: form.querySelector("#patient-address").value.trim(),
             sustancias: Array.from(form.querySelectorAll('input[name="sustancias"]:checked')).map(x=>x.value),
@@ -131,6 +134,8 @@ function setupFormularioPaciente() {
         if (!datos.nombre || !datos.apellidos || !datos.rut || !datos.telefono) {
             return window.showNotification("Completa todos los campos obligatorios", "warning");
         }
+        if (!window.validarRut || !window.validarRut(datos.rut)) return window.showNotification("RUT inválido", "warning");
+        if (!validarTelefonoChileno(datos.telefono)) return window.showNotification("Teléfono inválido", "warning");
         guardarSolicitudAyuda(datos);
     };
 
@@ -178,10 +183,10 @@ function guardarSolicitudInformacion(datos) {
         });
 }
 
-// Validación RUT robusta (puedes ponerla en validaciones.js si no existe ya)
+// Validación RUT robusta (ya está arriba)
 function validarRut(rut) {
     if (!rut) return false;
-    rut = rut.replace(/[^0-9kK]/g, '').toUpperCase(); // Limpiar: solo números y K
+    rut = rut.replace(/[^0-9kK]/g, '').toUpperCase();
     if (rut.length < 8 || rut.length > 9) return false;
     let cuerpo = rut.slice(0, -1);
     let dv = rut.slice(-1);
@@ -196,6 +201,20 @@ function validarRut(rut) {
     return dv === dvEsperado;
 }
 window.validarRut = window.validarRut || validarRut;
+
+// Validación de teléfono chileno robusta (9 dígitos, empieza con 9)
+function limpiarTelefonoChileno(tel) {
+    tel = tel.replace(/\D/g, '');
+    if (tel.startsWith("56")) tel = tel.slice(2);
+    if (tel.length === 11 && tel.startsWith("569")) tel = tel.slice(2); // Quita 56 si quedó
+    if (tel.length === 10 && tel.startsWith("9")) tel = tel; // 9XXXXXXXXX
+    return tel;
+}
+function validarTelefonoChileno(telefono) {
+    telefono = limpiarTelefonoChileno(telefono);
+    return telefono.length === 9 && telefono[0] === "9";
+}
+window.validarTelefono = validarTelefonoChileno;
 
 window.setupFormularioPaciente = setupFormularioPaciente;
 window.guardarSolicitudAyuda = guardarSolicitudAyuda;
