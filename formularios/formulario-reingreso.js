@@ -1,18 +1,4 @@
-/**
- * FORMULARIOS/FORMULARIO-REINGRESO.JS
- * Sistema completo de formulario de reingreso - VERSIÓN CORREGIDA
- */
-
-import { getFirestore, getServerTimestamp, retryFirestoreOperation } from '../configuracion/firebase.js';
-import { showNotification } from '../utilidades/notificaciones.js';
-import { closeModal, toggleSubmitButton } from '../utilidades/modales.js';
-import { formatRUT, formatPhoneNumber } from '../utilidades/formato.js';
-import { validateRUT, isValidEmail } from '../utilidades/validaciones.js';
-
-/**
- * Configura el formulario de reingreso
- */
-export function setupReentryForm() {
+(function setupReentryForm() {
     try {
         console.log('🔧 Configurando formulario de reingreso...');
         
@@ -396,7 +382,7 @@ function clearAllValidationErrors() {
 /**
  * Muestra información sobre el proceso de reingreso
  */
-export function showReentryInfo() {
+function showReentryInfo() {
     const infoContent = `
         <div class="reentry-info">
             <h3>¿Qué es el reingreso?</h3>
@@ -439,7 +425,7 @@ export function showReentryInfo() {
 /**
  * Resetea el formulario de reingreso
  */
-export function resetReentryForm() {
+function resetReentryForm() {
     try {
         const form = document.getElementById('reentry-form');
         if (form) {
@@ -455,7 +441,7 @@ export function resetReentryForm() {
 /**
  * Pre-llena el formulario con datos conocidos (si aplica)
  */
-export function prefillReentryForm(userData) {
+ function prefillReentryForm(userData) {
     try {
         if (!userData) return;
         
@@ -483,7 +469,7 @@ export function prefillReentryForm(userData) {
 /**
  * Valida y formatea datos en tiempo real
  */
-export function setupRealtimeFormatting() {
+function setupRealtimeFormatting() {
     try {
         const rutField = document.getElementById('reentry-rut');
         const phoneField = document.getElementById('reentry-phone');
@@ -504,3 +490,8 @@ export function setupRealtimeFormatting() {
         console.error('Error configurando formateo en tiempo real:', error);
     }
 }
+    window.setupReentryForm = setupReentryForm;
+    window.resetReentryForm = resetReentryForm;
+    window.prefillReentryForm = prefillReentryForm;
+    window.showReentryInfo = showReentryInfo;
+    window.setupRealtimeFormatting = setupRealtimeFormatting;
