@@ -1,4 +1,14 @@
-// Opciones para tus filtros
+let currentSolicitud = null;
+let responseTemplates = [];
+let responseHistory = [];
+
+function initResponses() {
+    setupResponseInterface();
+    loadResponseTemplates();
+    setupResponseEvents();
+    console.log('📝 Sistema de respuestas inicializado');
+
+  
 const ESTADOS = ['todos', 'agendado', 'pendiente', 'respondido'];
 const PRIORIDADES = ['todos', 'baja', 'media', 'alta'];
 const CESFAM = [
