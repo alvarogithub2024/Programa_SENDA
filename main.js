@@ -209,4 +209,158 @@ function showInitializationError(error) {
         errorModal.className = 'modal-overlay';
         errorModal.style.display = 'flex';
         errorModal.style.zIndex = '99999';
+        errorModal.innerHTML = `
+            <div class="modal" style="max-width: 500px;">
+                <div style="text-align: center; padding: 24px;">
+                    <div style="color: #ef4444; font-size: 3rem; margin-bottom: 16px;">
+                        ⚠️
+                    </div>
+                    <h2 style="color: #ef4444; margin-bottom: 16px;">
+                        Error de Inicialización
+                    </h2>
+                    <p style="margin-bottom: 24px; color: #6b7280;">
+                        ${errorMessage}
+                    </p>
+                    <div style="margin-bottom: 24px; padding: 16px; background: #fee2e2; border-radius: 8px;">
+                        <h4 style="margin-bottom: 8px;">Posibles soluciones:</h4>
+                        <ul style="text-align: left; color: #7f1d1d;">
+                            <li>Verifica tu conexión a Internet</li>
+                            <li>Recarga la página (F5)</li>
+                            <li>Limpia el caché del navegador</li>
+                            <li>Contacta al administrador si persiste</li>
+                        </ul>
+                    </div>
+                    <div style="display: flex; gap: 12px; justify-content: center;">
+                        <button onclick="window.location.reload()" 
+                                style="background: #ef4444; color: white; border: none; 
+                                       padding: 12px 24px; border-radius: 6px; cursor: pointer;">
+                            🔄 Recargar Página
+                        </button>
+                        <button onclick="window.SENDA_DEBUG?.clearStorage(); window.location.reload()" 
+                                style="background: #6b7280; color: white; border: none; 
+                                       padding: 12px 24px; border-radius: 6px; cursor: pointer;">
+                            🗑️ Limpiar y Recargar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(errorModal);
+    } else {
+        errorModal.style.display = 'flex';
+    }
+}
 
+// ====== INTENTO DE RECUPERACIÓN BÁSICA ======
+function attemptBasicRecovery() {
+    try {
+        window.closeModal = function(modalId) {
+            var modal = document.getElementById(modalId);
+            if (modal) modal.style.display = 'none';
+        };
+
+        window.showModal = function(modalId) {
+            var modal = document.getElementById(modalId);
+            if (modal) modal.style.display = 'flex';
+        };
+
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal-overlay')) {
+                e.target.style.display = 'none';
+            }
+        });
+    } catch (recoveryError) {
+        console.error('❌ Error en recuperación básica:', recoveryError);
+    }
+}
+
+// ====== REGISTRO DE PROFESIONALES EN FIREBASE ======
+document.addEventListener("DOMContentLoaded", function() {
+  const registerForm = document.getElementById('register-form');
+  if (!registerForm) return;
+
+  registerForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    // Tomar los valores del formulario
+    const nombre = document.getElementById('register-nombre').value.trim();
+    const apellidos = document.getElementById('register-apellidos').value.trim();
+    const email = document.getElementById('register-email').value.trim();
+    const password = document.getElementById('register-password').value;
+    const profession = document.getElementById('register-profession').value;
+    const cesfam = document.getElementById('register-cesfam').value;
+
+    // Validación básica
+    if (!nombre || !apellidos || !email || !password || !profession || !cesfam) {
+      window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
+      return;
+    }
+
+    // CREA el usuario en Firebase Auth
+    firebase.auth().createUserWithEmailAndPassword(email, password)
+      .then((userCredential) => {
+        const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
+        const profesional = {
+          activo: true,
+          nombre: nombre,
+          apellidos: apellidos,
+          cesfam: cesfam,
+          email: email,
+          profession: profession,
+          fechaCreacion: new Date().toISOString()
+        };
+        // Guarda en la colección profesionales (con el UID como doc ID)
+        return db.collection("profesionales").doc(userCredential.user.uid).set(profesional);
+      })
+      .then(() => {
+        window.showNotification && window.showNotification("Registro exitoso. Puedes iniciar sesión.", "success");
+        registerForm.reset();
+        // Opcional: cambia a la pestaña de login automáticamente
+        if (typeof switchLoginTab === 'function') switchLoginTab('login');
+      })
+      .catch((error) => {
+        window.showNotification && window.showNotification("Error al registrar: " + error.message, "error");
+      });
+  });
+});
+
+// ====== DIAGNÓSTICO DEL SISTEMA EN CONSOLA ======
+console.log('🔍 Información del Sistema:');
+console.log('   Navegador:', navigator.userAgent);
+console.log('   Idioma:', navigator.language);
+console.log('   Conexión:', navigator.onLine ? 'Online' : 'Offline');
+console.log('   Local Storage:', typeof Storage !== 'undefined' ? 'Disponible' : 'No disponible');
+console.log('   Service Worker:', 'serviceWorker' in navigator ? 'Disponible' : 'No disponible');
+
+window.addEventListener('online', function() {
+    console.log('🌐 Conexión restaurada');
+    window.showNotification && window.showNotification('Conexión a Internet restaurada', 'success');
+});
+window.addEventListener('offline', function() {
+    console.log('📴 Conexión perdida');
+    window.showNotification && window.showNotification('Sin conexión a Internet. Algunas funciones pueden no estar disponibles.', 'warning', 5000);
+});
+window.addEventListener('error', function(event) {
+    console.error('❌ Error no capturado:', event.error);
+    if (event.error && event.error.message && 
+        (event.error.message.includes('Firebase') || 
+         event.error.message.includes('network') ||
+         event.error.message.includes('auth'))) {
+        window.showNotification && window.showNotification('Error del sistema detectado. Si persiste, recarga la página.', 'error');
+    }
+});
+window.addEventListener('unhandledrejection', function(event) {
+    console.error('❌ Promesa rechazada no capturada:', event.reason);
+    event.preventDefault();
+    if (event.reason && typeof event.reason === 'object' && event.reason.code) {
+        console.warn('Código de error: ' + event.reason.code);
+    }
+});
+
+if (performance.navigation && performance.navigation.type === performance.navigation.TYPE_RELOAD) {
+    console.log('🔄 Página recargada por el usuario');
+} else {
+    console.log('🆕 Primera carga de la página');
+}
+
+console.log('\n📝 Sistema SENDA listo para inicialización...\n');
