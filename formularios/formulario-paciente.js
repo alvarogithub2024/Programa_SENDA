@@ -1,5 +1,3 @@
-// FORMULARIOS/FORMULARIO-PACIENTE.JS
-
 function setupFormularioPaciente() {
     const form = document.getElementById("patient-form");
     if (!form) return;
@@ -26,7 +24,6 @@ function setupFormularioPaciente() {
         form.querySelector("#next-step-1").style.display = "none";
         form.querySelector("#info-email-container").style.display = "";
         form.querySelector("#basic-info-container").style.display = "none";
-        // Mostrar botón enviar solo-info
         form.querySelector("#enviar-solo-info").style.display = "";
     }
 
@@ -35,19 +32,15 @@ function setupFormularioPaciente() {
         form.querySelector("#next-step-1").style.display = "";
         form.querySelector("#info-email-container").style.display = "none";
         form.querySelector("#basic-info-container").style.display = "";
-        // Ocultar botón enviar solo-info
         form.querySelector("#enviar-solo-info").style.display = "none";
     }
 
-    // Inicialización: mostrar identificado por defecto
     mostrarIdentificado();
 
-    // Navegación pasos
     form.querySelector("#next-step-1").onclick = function() {
         const tipo = form.querySelector('input[name="tipoSolicitud"]:checked');
         if (!tipo) return window.showNotification("Selecciona tipo de solicitud","warning");
         if (tipo.value === "informacion") {
-            // No hacer nada, solo mostrar el paso único (botón Enviar se encarga del submit)
             return;
         }
         const edad = form.querySelector("#patient-age").value;
@@ -101,7 +94,7 @@ function setupFormularioPaciente() {
             if (!window.validarEmail || !window.validarEmail(email)) {
                 return window.showNotification("Ingresa un correo válido para recibir información", "warning");
             }
-            guardarSolicitudAyuda({
+            guardarSolicitudInformacion({
                 tipo: "solo_informacion",
                 email: email,
                 fecha: new Date().toISOString()
@@ -166,7 +159,25 @@ function guardarSolicitudAyuda(datos) {
         });
 }
 
+function guardarSolicitudInformacion(datos) {
+    const db = window.getFirestore ? window.getFirestore() : null;
+    if (!db) {
+        window.showNotification && window.showNotification("No se pudo acceder a la base de datos","error");
+        return;
+    }
+    db.collection("solicitudes_informacion").add(datos)
+        .then(function() {
+            window.showNotification && window.showNotification("Solicitud de información enviada correctamente","success");
+            document.getElementById("patient-form").reset();
+            document.getElementById("patient-modal").style.display = "none";
+        })
+        .catch(function(error) {
+            window.showNotification && window.showNotification("Error guardando solicitud de información: "+error.message,"error");
+        });
+}
+
 window.setupFormularioPaciente = setupFormularioPaciente;
 window.guardarSolicitudAyuda = guardarSolicitudAyuda;
+window.guardarSolicitudInformacion = guardarSolicitudInformacion;
 
 document.addEventListener("DOMContentLoaded", setupFormularioPaciente);
