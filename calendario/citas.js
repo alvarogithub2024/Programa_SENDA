@@ -77,8 +77,64 @@ function verDetalleCita(citaId) {
         });
 }
 
+// NUEVO: Cargar horarios disponibles para una fecha y profesional
+function cargarHorariosDisponibles(fecha, profesionalId, callback) {
+    var db = window.getFirestore();
+    // Define los slots posibles (ajusta según tu horario real)
+    var horarios = [];
+    for (var h = 8; h <= 16; h++) {
+        horarios.push(h.toString().padStart(2, '0') + ":00");
+        horarios.push(h.toString().padStart(2, '0') + ":30");
+    }
+    // Busca los horarios ocupados en Firebase
+    db.collection("citas")
+        .where("fecha", "==", fecha)
+        .where("profesionalId", "==", profesionalId)
+        .get()
+        .then(function(snapshot) {
+            var ocupados = [];
+            snapshot.forEach(function(doc) {
+                var data = doc.data();
+                if (data.hora) ocupados.push(data.hora);
+            });
+            var disponibles = horarios.filter(function(h) {
+                return ocupados.indexOf(h) === -1;
+            });
+            if (typeof callback === "function") callback(disponibles);
+        })
+        .catch(function(error) {
+            window.showNotification("Error cargando horarios: " + error.message, "error");
+            if (typeof callback === "function") callback([]);
+        });
+}
+
+// NUEVO: Mostrar horarios disponibles en el select
+function mostrarHorariosDisponibles(horarios) {
+    var select = document.getElementById('cita-hora');
+    select.innerHTML = "";
+    if (!horarios.length) {
+        var opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = "Sin horarios disponibles";
+        select.appendChild(opt);
+        return;
+    }
+    var optDefault = document.createElement("option");
+    optDefault.value = "";
+    optDefault.textContent = "Selecciona hora...";
+    select.appendChild(optDefault);
+    horarios.forEach(function(horario) {
+        var opt = document.createElement("option");
+        opt.value = horario;
+        opt.textContent = horario;
+        select.appendChild(opt);
+    });
+}
+
 // Exportar globalmente
 window.agendarCita = agendarCita;
 window.modificarCita = modificarCita;
 window.eliminarCita = eliminarCita;
 window.verDetalleCita = verDetalleCita;
+window.cargarHorariosDisponibles = cargarHorariosDisponibles;
+window.mostrarHorariosDisponibles = mostrarHorariosDisponibles;
