@@ -1068,6 +1068,11 @@ document.addEventListener('click', (e) => {
     }
 });
 
+
+export function initGestorSolicitudes() {
+    loadSolicitudesIngreso();
+    // ...otros códigos...
+}
 // Log de inicialización
 console.log(`
 
