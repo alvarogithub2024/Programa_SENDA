@@ -1,34 +1,29 @@
-// utilidades/modales.js
-
-/**
- * Muestra un modal por ID (display:flex)
- */
 function showModal(id) {
-    var modal = document.getElementById(id);
-    if (modal) modal.style.display = "flex";
+  var modal = document.getElementById(id);
+  if (modal) modal.style.display = "flex";
 }
-
-/**
- * Cierra un modal por ID (display:none)
- */
-function closeModal(id) {
-    var modal = document.getElementById(id);
-    if (modal) modal.style.display = "none";
-}
-
-// Exportar globalmente
 window.showModal = showModal;
+
+function closeModal(id) {
+  var modal = document.getElementById(id);
+  if (modal) modal.style.display = "none";
+}
 window.closeModal = closeModal;
 
-// Cerrar modal al hacer click en el fondo (modal-overlay)
+// Abrir modal de login
 document.addEventListener("DOMContentLoaded", function() {
-    document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
-        overlay.addEventListener('click', function(e) {
-            if (e.target === overlay) {
-                overlay.style.display = "none";
-            }
-        });
+  var btnLogin = document.getElementById("login-professional");
+  if (btnLogin) {
+    btnLogin.addEventListener("click", function() {
+      if (typeof showModal === "function") {
+        showModal('login-modal');
+      } else {
+        var modal = document.getElementById('login-modal');
+        if (modal) modal.style.display = "flex";
+      }
     });
+  }
+});
 
     // Botón "Acceso Profesionales"
  var btnLogin = document.getElementById('login-modal').style.display
