@@ -558,52 +558,54 @@ Buscar
 </div>
 <!-- ========== FIN MODAL SOBRE EL PROGRAMA ========== -->
 <!-- ========== MODAL NUEVA CITA ========== -->
-<div class="modal-overlay" id="modal-nueva-cita" style="display:none;">
-  <div class="modal large-modal">
+<<div class="modal-overlay" id="modal-nueva-cita" style="display:none;">
+  <div class="modal">
     <button class="modal-close" onclick="closeModal('modal-nueva-cita')">
       <i class="fas fa-times"></i>
     </button>
     <h2>Nueva Cita</h2>
     <form id="form-nueva-cita">
       <div class="form-group">
-        <label>Nombre del paciente *</label>
-        <input type="text" id="cita-paciente-nombre" required>
+        <label for="cita-paciente-nombre">Nombre del paciente *</label>
+        <input type="text" id="cita-paciente-nombre" class="form-input" required>
       </div>
       <div class="form-group">
-        <label>RUT del paciente *</label>
-        <input type="text" id="cita-paciente-rut" required>
-      </div>
-<div class="form-group">
-  <label>Profesión *</label>
-  <select id="cita-profession" required>
-    <option value="">Selecciona profesión...</option>
-  </select>
-</div>
-<div class="form-group">
-  <label>Profesional *</label>
-  <select id="cita-profesional" required>
-    <option value="">Selecciona profesional...</option>
-  </select>
-</div>
-       <div class="form-group">
-        <label>Fecha *</label>
-        <input type="date" id="cita-fecha" required>
+        <label for="cita-paciente-rut">RUT del paciente *</label>
+        <input type="text" id="cita-paciente-rut" class="form-input" required>
       </div>
       <div class="form-group">
-  <label>Hora *</label>
-  <select id="cita-hora" required>
-    <option value="">Selecciona hora...</option>
-    <!-- Se llenará por JS -->
-  </select>
-</div>
-      <div class="form-actions">
+        <label for="cita-profession">Profesión *</label>
+        <select id="cita-profession" class="form-select" required>
+          <option value="">Seleccionar profesión...</option>
+          <option value="asistente_social">Asistente Social</option>
+          <option value="medico">Médico</option>
+          <option value="psicologo">Psicólogo</option>
+          <option value="terapeuta">Terapeuta Ocupacional</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="cita-profesional">Profesional *</label>
+        <select id="cita-profesional" class="form-select" required>
+          <option value="">Seleccionar profesional...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="cita-fecha">Fecha *</label>
+        <input type="date" id="cita-fecha" class="form-input" required>
+      </div>
+      <div class="form-group">
+        <label for="cita-hora">Hora *</label>
+        <select id="cita-hora" class="form-select" required>
+          <option value="">Selecciona hora...</option>
+        </select>
+      </div>
+      <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 12px;">
         <button type="button" class="btn btn-outline" onclick="closeModal('modal-nueva-cita')">Cancelar</button>
         <button type="submit" class="btn btn-success">Agendar</button>
       </div>
     </form>
   </div>
 </div>
-
   
 <script>
 document.addEventListener("DOMContentLoaded", function() {
