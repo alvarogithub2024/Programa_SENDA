@@ -375,6 +375,18 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 
+document.getElementById('cita-profesional').onchange = actualizarHoras;
+document.getElementById('cita-fecha').onchange = actualizarHoras;
+
+function actualizarHoras() {
+    var fecha = document.getElementById('cita-fecha').value;
+    var profesionalId = document.getElementById('cita-profesional').value;
+    if (!fecha || !profesionalId) {
+        mostrarHorariosDisponibles([]);
+        return;
+    }
+    cargarHorariosDisponibles(fecha, profesionalId, mostrarHorariosDisponibles);
+}
 // ====== DIAGNÓSTICO DEL SISTEMA EN CONSOLA ======
 console.log('🔍 Información del Sistema:');
 console.log('   Navegador:', navigator.userAgent);
