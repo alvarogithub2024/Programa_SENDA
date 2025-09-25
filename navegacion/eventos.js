@@ -1,4 +1,9 @@
-function setupEventListeners() {
+/**
+ * NAVEGACION/EVENTOS.JS - VERSIÓN SIN IMPORTS
+ * Configuración de eventos globales
+ */
+
+window.setupEventListeners = function() {
     try {
         console.log('🔧 Configurando event listeners globales...');
         
@@ -12,7 +17,7 @@ function setupEventListeners() {
     } catch (error) {
         console.error('❌ Error configurando event listeners:', error);
     }
-}
+};
 
 /**
  * Configura los event listeners del header
@@ -28,8 +33,12 @@ function setupHeaderEventListeners() {
         if (loginProfessionalBtn) {
             loginProfessionalBtn.addEventListener('click', () => {
                 console.log('🔧 Click en botón login detectado');
-                switchLoginTab('login'); // Asegurar que esté en tab de login
-                showModal('login-modal');
+                if (window.switchLoginTab) {
+                    window.switchLoginTab('login'); // Asegurar que esté en tab de login
+                }
+                if (window.showModal) {
+                    window.showModal('login-modal');
+                }
             });
             console.log('✅ Event listener agregado al botón login');
         } else {
@@ -37,19 +46,29 @@ function setupHeaderEventListeners() {
         }
 
         if (logoutBtn) {
-            logoutBtn.addEventListener('click', handleLogout);
+            logoutBtn.addEventListener('click', () => {
+                if (window.handleLogout) {
+                    window.handleLogout();
+                }
+            });
         }
 
         if (registerPatientBtn) {
             registerPatientBtn.addEventListener('click', () => {
-                resetForm();
-                showModal('patient-modal');
+                if (window.resetForm) {
+                    window.resetForm();
+                }
+                if (window.showModal) {
+                    window.showModal('patient-modal');
+                }
             });
         }
 
         if (reentryProgramBtn) {
             reentryProgramBtn.addEventListener('click', () => {
-                showModal('reentry-modal');
+                if (window.showModal) {
+                    window.showModal('reentry-modal');
+                }
             });
         }
 
@@ -71,8 +90,8 @@ function setupModalEventListeners() {
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal-overlay')) {
                 const modalId = e.target.id;
-                if (modalId) {
-                    closeModal(modalId);
+                if (modalId && window.closeModal) {
+                    window.closeModal(modalId);
                 }
             }
         });
@@ -81,8 +100,8 @@ function setupModalEventListeners() {
         document.querySelectorAll('.modal-close').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const modal = e.target.closest('.modal-overlay');
-                if (modal && modal.id) {
-                    closeModal(modal.id);
+                if (modal && modal.id && window.closeModal) {
+                    window.closeModal(modal.id);
                 }
             });
         });
@@ -110,6 +129,457 @@ function setupFormEventListeners() {
 }
 
 /**
+ * Configura el login form
+ */
+function setupLoginForm() {
+    try {
+        const loginForm = document.getElementById('login-form');
+        if (loginForm) {
+            loginForm.addEventListener('submit', handleLoginSubmit);
+            setupLoginValidation();
+            console.log('✅ Formulario de login configurado');
+        } else {
+            console.warn('⚠️ Formulario de login no encontrado');
+        }
+    } catch (error) {
+        console.error('Error configurando login form:', error);
+    }
+}
+
+/**
+ * Maneja el envío del formulario de login
+ */
+async function handleLoginSubmit(e) {
+    e.preventDefault();
+    
+    try {
+        console.log('🔑 Iniciando proceso de login...');
+        
+        const email = document.getElementById('login-email')?.value?.trim();
+        const password = document.getElementById('login-password')?.value?.trim();
+        
+        // Validaciones básicas
+        if (!email || !password) {
+            if (window.showNotification) {
+                window.showNotification('Completa todos los campos', 'warning');
+            }
+            return;
+        }
+        
+        if (!email.endsWith('@senda.cl')) {
+            if (window.showNotification) {
+                window.showNotification('Solo se permiten emails @senda.cl', 'warning');
+            }
+            return;
+        }
+        
+        if (password.length < 6) {
+            if (window.showNotification) {
+                window.showNotification('La contraseña debe tener al menos 6 caracteres', 'warning');
+            }
+            return;
+        }
+        
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        toggleSubmitButton(submitBtn, true);
+        
+        console.log('🔐 Autenticando usuario:', email);
+        
+        // Intentar login con Firebase Auth
+        const auth = window.getAuth();
+        if (!auth) {
+            throw new Error('Sistema de autenticación no disponible');
+        }
+        
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        
+        console.log('✅ Login exitoso para:', userCredential.user.uid);
+        
+        // Limpiar formulario
+        e.target.reset();
+        
+        // Cerrar modal
+        if (window.closeModal) {
+            window.closeModal('login-modal');
+        }
+        
+        if (window.showNotification) {
+            window.showNotification('¡Bienvenido al sistema SENDA!', 'success');
+        }
+        
+        // La actualización de la UI se maneja automáticamente por onAuthStateChanged
+        
+    } catch (error) {
+        console.error('❌ Error en login:', error);
+        
+        const errorMessage = getLoginErrorMessage(error.code);
+        if (window.showNotification) {
+            window.showNotification(errorMessage, 'error');
+        }
+        
+        // Enfocar campo apropiado según el error
+        if (error.code === 'auth/user-not-found') {
+            document.getElementById('login-email')?.focus();
+        } else if (error.code === 'auth/wrong-password') {
+            document.getElementById('login-password')?.focus();
+        }
+        
+    } finally {
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        if (submitBtn) toggleSubmitButton(submitBtn, false);
+    }
+}
+
+/**
+ * Configura validación de login
+ */
+function setupLoginValidation() {
+    const emailInput = document.getElementById('login-email');
+    const passwordInput = document.getElementById('login-password');
+    
+    if (emailInput) {
+        emailInput.addEventListener('input', (e) => {
+            validateEmailField(e.target);
+        });
+    }
+    
+    if (passwordInput) {
+        passwordInput.addEventListener('input', (e) => {
+            validatePasswordField(e.target);
+        });
+    }
+}
+
+/**
+ * Valida campo de email
+ */
+function validateEmailField(input) {
+    const email = input.value.trim();
+    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    
+    if (email && !isValidEmail) {
+        input.classList.add('error');
+        showFieldError(input, 'Email inválido');
+    } else if (email && !email.endsWith('@senda.cl')) {
+        input.classList.add('error');
+        showFieldError(input, 'Debe ser un email @senda.cl');
+    } else {
+        input.classList.remove('error');
+        clearFieldError(input);
+    }
+}
+
+/**
+ * Valida campo de contraseña
+ */
+function validatePasswordField(input) {
+    const password = input.value;
+    
+    if (password && password.length < 6) {
+        input.classList.add('error');
+        showFieldError(input, 'Mínimo 6 caracteres');
+    } else {
+        input.classList.remove('error');
+        clearFieldError(input);
+    }
+}
+
+/**
+ * Muestra error en campo
+ */
+function showFieldError(input, message) {
+    let errorElement = input.parentElement.querySelector('.field-error');
+    if (!errorElement) {
+        errorElement = document.createElement('div');
+        errorElement.className = 'field-error';
+        input.parentElement.appendChild(errorElement);
+    }
+    errorElement.textContent = message;
+}
+
+/**
+ * Limpia error del campo
+ */
+function clearFieldError(input) {
+    const errorElement = input.parentElement.querySelector('.field-error');
+    if (errorElement) {
+        errorElement.remove();
+    }
+}
+
+/**
+ * Configura el register form
+ */
+function setupRegisterForm() {
+    try {
+        const registerForm = document.getElementById('register-form');
+        if (registerForm) {
+            registerForm.addEventListener('submit', handleRegisterSubmit);
+            setupRegisterValidation();
+            console.log('✅ Formulario de registro configurado');
+        } else {
+            console.warn('⚠️ Formulario de registro no encontrado');
+        }
+    } catch (error) {
+        console.error('Error configurando register form:', error);
+    }
+}
+
+/**
+ * Maneja el envío del formulario de registro
+ */
+async function handleRegisterSubmit(e) {
+    e.preventDefault();
+    
+    console.log('🔧 Iniciando proceso de registro...');
+    
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    
+    try {
+        // Extraer datos del formulario
+        const formData = extractFormData();
+        
+        // Validar datos
+        if (!validateFormData(formData)) {
+            return;
+        }
+        
+        // Mostrar loading
+        toggleSubmitButton(submitBtn, true);
+        if (window.showNotification) {
+            window.showNotification('Registrando usuario...', 'info');
+        }
+        
+        console.log('👤 Creando usuario en Firebase Auth...');
+        
+        // Crear usuario en Firebase Auth
+        const auth = window.getAuth();
+        if (!auth) {
+            throw new Error('Sistema de autenticación no disponible');
+        }
+        
+        const userCredential = await auth.createUserWithEmailAndPassword(formData.email, formData.password);
+        const user = userCredential.user;
+        
+        console.log('✅ Usuario creado en Auth:', user.uid);
+        
+        // Actualizar perfil del usuario
+        await user.updateProfile({
+            displayName: `${formData.nombre} ${formData.apellidos}`
+        });
+        
+        // Guardar datos del profesional en Firestore
+        await saveProfessionalData(user.uid, formData);
+        
+        console.log('✅ Usuario registrado exitosamente');
+        
+        // Éxito
+        if (window.showNotification) {
+            window.showNotification('Registro exitoso. Bienvenido al sistema SENDA', 'success');
+        }
+        
+        // Limpiar formulario y cerrar modal
+        e.target.reset();
+        if (window.closeModal) {
+            window.closeModal('login-modal');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error en registro:', error);
+        
+        const errorMessage = getRegisterErrorMessage(error.code || error.message);
+        if (window.showNotification) {
+            window.showNotification(errorMessage, 'error');
+        }
+        
+    } finally {
+        toggleSubmitButton(submitBtn, false);
+    }
+}
+
+/**
+ * Extrae datos del formulario de registro
+ */
+function extractFormData() {
+    return {
+        nombre: document.getElementById('register-nombre')?.value?.trim() || '',
+        apellidos: document.getElementById('register-apellidos')?.value?.trim() || '',
+        email: document.getElementById('register-email')?.value?.trim() || '',
+        password: document.getElementById('register-password')?.value || '',
+        profession: document.getElementById('register-profession')?.value || '',
+        cesfam: document.getElementById('register-cesfam')?.value || ''
+    };
+}
+
+/**
+ * Valida los datos del formulario
+ */
+function validateFormData(formData) {
+    console.log('🔍 Validando datos del formulario...', { ...formData, password: '***' });
+    
+    // Campos requeridos
+    const requiredFields = [
+        { field: 'nombre', name: 'Nombre' },
+        { field: 'apellidos', name: 'Apellidos' },
+        { field: 'email', name: 'Email' },
+        { field: 'password', name: 'Contraseña' },
+        { field: 'profession', name: 'Profesión' },
+        { field: 'cesfam', name: 'CESFAM' }
+    ];
+    
+    for (const { field, name } of requiredFields) {
+        if (!formData[field]) {
+            if (window.showNotification) {
+                window.showNotification(`El campo ${name} es obligatorio`, 'warning');
+            }
+            focusField(`register-${field === 'profession' ? 'profession' : field === 'cesfam' ? 'cesfam' : field}`);
+            return false;
+        }
+    }
+    
+    // Validar email
+    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
+    if (!isValidEmail) {
+        if (window.showNotification) {
+            window.showNotification('Email inválido', 'warning');
+        }
+        focusField('register-email');
+        return false;
+    }
+    
+    if (!formData.email.endsWith('@senda.cl')) {
+        if (window.showNotification) {
+            window.showNotification('Solo se permiten emails @senda.cl', 'warning');
+        }
+        focusField('register-email');
+        return false;
+    }
+    
+    // Validar contraseña
+    if (formData.password.length < 6) {
+        if (window.showNotification) {
+            window.showNotification('La contraseña debe tener al menos 6 caracteres', 'warning');
+        }
+        focusField('register-password');
+        return false;
+    }
+    
+    return true;
+}
+
+/**
+ * Guarda datos del profesional en Firestore
+ */
+async function saveProfessionalData(userId, formData) {
+    console.log('💾 Guardando datos del profesional en Firestore...');
+    
+    const db = window.getFirestore();
+    if (!db) {
+        throw new Error('Base de datos no disponible');
+    }
+    
+    const professionalData = {
+        uid: userId,
+        nombre: formData.nombre,
+        apellidos: formData.apellidos,
+        email: formData.email,
+        profession: formData.profession,
+        especialidad: getProfessionName(formData.profession),
+        cesfam: formData.cesfam,
+        activo: true,
+        fechaCreacion: window.getServerTimestamp(),
+        fechaUltimaActividad: window.getServerTimestamp(),
+        permisos: {
+            solicitudes: formData.profession === 'asistente_social',
+            agenda: true,
+            pacientes: true,
+            seguimiento: true
+        },
+        configuracion: {
+            notificaciones: true,
+            alertasCriticas: formData.profession === 'asistente_social',
+            horariosDisponibles: []
+        }
+    };
+    
+    try {
+        if (window.retryFirestoreOperation) {
+            await window.retryFirestoreOperation(async () => {
+                await db.collection('profesionales').doc(userId).set(professionalData);
+            });
+        } else {
+            await db.collection('profesionales').doc(userId).set(professionalData);
+        }
+        
+        console.log('✅ Profesional guardado en Firestore');
+        
+    } catch (error) {
+        console.error('❌ Error guardando profesional:', error);
+        throw error;
+    }
+}
+
+/**
+ * Obtiene el nombre completo de la profesión
+ */
+function getProfessionName(professionCode) {
+    const professions = {
+        'asistente_social': 'Asistente Social',
+        'medico': 'Médico',
+        'psicologo': 'Psicólogo',
+        'terapeuta': 'Terapeuta Ocupacional'
+    };
+    
+    return professions[professionCode] || professionCode;
+}
+
+/**
+ * Enfoca un campo específico
+ */
+function focusField(fieldId) {
+    const field = document.getElementById(fieldId);
+    if (field) {
+        field.focus();
+        field.classList.add('error');
+    }
+}
+
+/**
+ * Configura validación de registro
+ */
+function setupRegisterValidation() {
+    // Implementación básica de validación
+}
+
+/**
+ * Configura el reentry form
+ */
+function setupReentryForm() {
+    try {
+        const reentryForm = document.getElementById('reentry-form');
+        if (reentryForm) {
+            reentryForm.addEventListener('submit', handleReentrySubmit);
+            console.log('✅ Formulario de reingreso configurado');
+        } else {
+            console.warn('⚠️ Formulario de reingreso no encontrado');
+        }
+    } catch (error) {
+        console.error('Error configurando reentry form:', error);
+    }
+}
+
+/**
+ * Maneja el envío del formulario de reingreso
+ */
+async function handleReentrySubmit(e) {
+    e.preventDefault();
+    
+    if (window.showNotification) {
+        window.showNotification('Función de reingreso en desarrollo', 'info');
+    }
+}
+
+/**
  * Configura el cambio entre tabs de login
  */
 function setupLoginTabSwitching() {
@@ -118,42 +588,23 @@ function setupLoginTabSwitching() {
         const registerTab = document.querySelector('.modal-tab[onclick*="register"]');
         
         if (loginTab) {
-            loginTab.addEventListener('click', () => switchLoginTab('login'));
+            loginTab.addEventListener('click', () => {
+                if (window.switchLoginTab) {
+                    window.switchLoginTab('login');
+                }
+            });
         }
         
         if (registerTab) {
-            registerTab.addEventListener('click', () => switchLoginTab('register'));
+            registerTab.addEventListener('click', () => {
+                if (window.switchLoginTab) {
+                    window.switchLoginTab('register');
+                }
+            });
         }
         
     } catch (error) {
         console.error('Error setting up login tab switching:', error);
-    }
-}
-
-/**
- * Cambia entre tabs de login/registro
- * @param {string} tab - Tab a mostrar ('login' o 'register')
- */
-function switchLoginTab(tab) {
-    try {
-        const loginTab = document.querySelector('.modal-tab[onclick*="login"]');
-        const registerTab = document.querySelector('.modal-tab[onclick*="register"]');
-        const loginForm = document.getElementById('login-form');
-        const registerForm = document.getElementById('register-form');
-
-        if (tab === 'login') {
-            if (loginTab) loginTab.classList.add('active');
-            if (registerTab) registerTab.classList.remove('active');
-            if (loginForm) loginForm.classList.add('active');
-            if (registerForm) registerForm.classList.remove('active');
-        } else if (tab === 'register') {
-            if (registerTab) registerTab.classList.add('active');
-            if (loginTab) loginTab.classList.remove('active');
-            if (registerForm) registerForm.classList.add('active');
-            if (loginForm) loginForm.classList.remove('active');
-        }
-    } catch (error) {
-        console.error('Error switching login tab:', error);
     }
 }
 
@@ -166,8 +617,8 @@ function setupKeyboardEventListeners() {
             // ESC para cerrar modales
             if (e.key === 'Escape') {
                 const openModal = document.querySelector('.modal-overlay[style*="flex"]');
-                if (openModal && openModal.id) {
-                    closeModal(openModal.id);
+                if (openModal && openModal.id && window.closeModal) {
+                    window.closeModal(openModal.id);
                 }
             }
             
@@ -176,7 +627,9 @@ function setupKeyboardEventListeners() {
                 const publicContent = document.getElementById('public-content');
                 if (publicContent && publicContent.style.display !== 'none') {
                     e.preventDefault();
-                    showModal('login-modal');
+                    if (window.showModal) {
+                        window.showModal('login-modal');
+                    }
                 }
             }
         });
@@ -215,30 +668,36 @@ function setupGlobalClickHandlers() {
 
 /**
  * Maneja acciones basadas en data-action
- * @param {string} action - Acción a ejecutar
- * @param {HTMLElement} element - Elemento que disparó la acción
  */
 function handleDataAction(action, element) {
     try {
         switch (action) {
             case 'close-modal':
                 const modal = element.closest('.modal-overlay');
-                if (modal && modal.id) {
-                    closeModal(modal.id);
+                if (modal && modal.id && window.closeModal) {
+                    window.closeModal(modal.id);
                 }
                 break;
                 
             case 'show-login':
-                showModal('login-modal');
+                if (window.showModal) {
+                    window.showModal('login-modal');
+                }
                 break;
                 
             case 'show-register':
-                switchLoginTab('register');
-                showModal('login-modal');
+                if (window.switchLoginTab) {
+                    window.switchLoginTab('register');
+                }
+                if (window.showModal) {
+                    window.showModal('login-modal');
+                }
                 break;
                 
             case 'logout':
-                handleLogout();
+                if (window.handleLogout) {
+                    window.handleLogout();
+                }
                 break;
                 
             default:
@@ -256,7 +715,9 @@ function showAboutProgram() {
     try {
         const aboutModal = createAboutProgramModal();
         document.body.insertAdjacentHTML('beforeend', aboutModal);
-        showModal('about-modal');
+        if (window.showModal) {
+            window.showModal('about-modal');
+        }
     } catch (error) {
         console.error('Error showing about program:', error);
     }
@@ -264,7 +725,6 @@ function showAboutProgram() {
 
 /**
  * Crea el modal de información del programa
- * @returns {string} HTML del modal
  */
 function createAboutProgramModal() {
     return `
@@ -322,5 +782,65 @@ function createAboutProgramModal() {
     `;
 }
 
+/**
+ * Alterna el estado de un botón de envío
+ */
+function toggleSubmitButton(button, isLoading) {
+    if (!button) return;
+    
+    try {
+        if (isLoading) {
+            button.disabled = true;
+            button.classList.add('loading');
+            const originalText = button.innerHTML;
+            button.setAttribute('data-original-text', originalText);
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+        } else {
+            button.disabled = false;
+            button.classList.remove('loading');
+            const originalText = button.getAttribute('data-original-text');
+            if (originalText) {
+                button.innerHTML = originalText;
+                button.removeAttribute('data-original-text');
+            }
+        }
+    } catch (error) {
+        console.error('Error toggling submit button:', error);
+    }
+}
 
-window.switchLoginTab = switchLoginTab;
+/**
+ * Obtiene mensaje de error de login apropiado
+ */
+function getLoginErrorMessage(errorCode) {
+    const errorMessages = {
+        'auth/user-not-found': 'No existe una cuenta con este email',
+        'auth/wrong-password': 'Contraseña incorrecta',
+        'auth/invalid-email': 'Email inválido',
+        'auth/user-disabled': 'Esta cuenta ha sido deshabilitada',
+        'auth/too-many-requests': 'Demasiados intentos fallidos. Intenta más tarde',
+        'auth/network-request-failed': 'Error de conexión. Verifica tu internet',
+        'auth/invalid-credential': 'Credenciales inválidas'
+    };
+    
+    return errorMessages[errorCode] || 'Error al iniciar sesión. Intenta nuevamente.';
+}
+
+/**
+ * Obtiene mensaje de error apropiado para registro
+ */
+function getRegisterErrorMessage(errorCode) {
+    const errorMessages = {
+        'auth/email-already-in-use': 'Este email ya está registrado',
+        'auth/invalid-email': 'Email inválido',
+        'auth/operation-not-allowed': 'Registro no permitido',
+        'auth/weak-password': 'Contraseña muy débil',
+        'permission-denied': 'Sin permisos para crear el perfil profesional',
+        'auth/network-request-failed': 'Error de conexión. Verifica tu internet.',
+        'auth/too-many-requests': 'Demasiados intentos. Intenta más tarde.'
+    };
+    
+    return `Error al registrarse: ${errorMessages[errorCode] || 'Error desconocido'}`;
+}
+
+console.log('⚡ Sistema de eventos cargado - Funciones disponibles en window');
