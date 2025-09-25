@@ -146,3 +146,5 @@ window.loadSolicitudForResponse = function(solicitudId) {
 
   console.log("loadSolicitudForResponse llamada con", solicitudId);
 };
+
+window.setCurrentUserData = setCurrentUserData;
