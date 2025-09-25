@@ -1,7 +1,4 @@
-import { getFirestore } from '../configuracion/firebase.js';
-import { showNotification } from '../utilidades/notificaciones.js';
 
-// Variables globales
 let solicitudesData = [];
 let filteredSolicitudesData = [];
 let currentFilters = {
