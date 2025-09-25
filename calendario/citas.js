@@ -186,6 +186,8 @@ function formatDateForInput(date) {
 // Hacer visible la función globalmente si se usa inline en HTML
 if (typeof window !== 'undefined') {
     window.openNewAppointmentModal = openNewAppointmentModal;
+    window.loadProfessionalsForModal = loadProfessionalsForModal;
+    window.getProfessionDisplay = getProfessionDisplay;
+    window.formatDateForInput = formatDateForInput;
 }
-
 
