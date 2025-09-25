@@ -347,7 +347,16 @@ Buscar
 <label class="radio-option"><input type="radio" name="tipoSolicitud" value="informacion" required><span class="radio-custom"></span><div><strong>Solo información</strong><p>Recibir información general sobre los programas disponibles</p></div></label>
 </div>
 <div id="info-email-container" style="display: none;">
-<div class="form-group"><label class="form-label">Email para enviar información *</label><input type="email" class="form-input" id="info-email" placeholder="tu@email.com"></div>
+  <div class="form-group">
+    <label class="form-label">Email para enviar información *</label>
+    <input type="email" class="form-input" id="info-email" placeholder="tu@email.com">
+  </div>
+  <!-- Botón Enviar SOLO para "Solo información" -->
+  <div style="text-align:right;">
+    <button type="button" class="btn btn-success" id="enviar-solo-info">
+      <i class="fas fa-paper-plane"></i> Enviar Solicitud
+    </button>
+  </div>
 </div>
 <div id="basic-info-container">
 <div class="form-row">
