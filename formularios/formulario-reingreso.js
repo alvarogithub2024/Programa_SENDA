@@ -1,4 +1,4 @@
-(function setupReentryForm() {
+function setupReentryForm() {
     try {
         console.log('🔧 Configurando formulario de reingreso...');
         
