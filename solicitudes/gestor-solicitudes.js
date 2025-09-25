@@ -1,4 +1,3 @@
-
 import { getFirestore } from '../configuracion/firebase.js';
 import { showNotification } from '../utilidades/notificaciones.js';
 
@@ -57,7 +56,6 @@ export function initSolicitudesManager() {
         loadSolicitudesData();
         
         console.log('✅ Gestor de solicitudes inicializado correctamente');
-        
     } catch (error) {
         console.error('❌ Error inicializando gestor de solicitudes:', error);
         showNotification('Error inicializando el gestor de solicitudes', 'error');
@@ -70,39 +68,31 @@ export function initSolicitudesManager() {
 export function enableAutoRefresh() {
     try {
         isAutoRefreshEnabled = true;
-        
-        // Limpiar intervalo anterior si existe
         if (autoRefreshInterval) {
             clearInterval(autoRefreshInterval);
         }
-        
-        // Auto-actualizar cada 30 segundos cuando la pestaña está activa
         autoRefreshInterval = setInterval(() => {
             if (isAutoRefreshEnabled && 
                 document.querySelector('.tab-pane.active')?.id === 'solicitudes-tab' &&
                 !document.hidden) {
-                
                 console.log('🔄 Auto-actualizando solicitudes...');
                 loadSolicitudesData(true); // true = silencioso
             }
         }, 30000);
-        
-        // Pausar auto-refresh cuando la página no está visible
+
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 console.log('⏸️ Auto-refresh pausado (pestaña no visible)');
             } else {
                 console.log('▶️ Auto-refresh reanudado');
-                // Actualizar inmediatamente al volver a la pestaña
                 if (isAutoRefreshEnabled && 
                     document.querySelector('.tab-pane.active')?.id === 'solicitudes-tab') {
                     loadSolicitudesData(true);
                 }
             }
         });
-        
+
         console.log('✅ Auto-refresh habilitado (cada 30 segundos)');
-        
     } catch (error) {
         console.error('❌ Error habilitando auto-refresh:', error);
     }
@@ -139,22 +129,16 @@ export async function refreshSolicitudes() {
  */
 export async function loadSolicitudesData(silencioso = false) {
     try {
-        if (!silencioso) {
-            showLoadingState(true);
-        }
-        
         const db = getFirestore();
         if (!db) {
             throw new Error('Base de datos no disponible');
         }
         
         console.log('📡 Cargando solicitudes desde Firebase...');
-        
-        // Cargar solicitudes de ingreso
         const solicitudesRef = db.collection('solicitudes_ingreso');
         const snapshot = await solicitudesRef
             .orderBy('fechaCreacion', 'desc')
-            .limit(200) // Aumentado para mejor cobertura
+            .limit(200)
             .get();
         
         const previousCount = solicitudesData.length;
@@ -162,8 +146,6 @@ export async function loadSolicitudesData(silencioso = false) {
         
         snapshot.forEach(doc => {
             const data = doc.data();
-            
-            // Procesar timestamp de Firebase
             let fechaCreacion;
             if (data.fechaCreacion) {
                 if (data.fechaCreacion.toDate) {
@@ -176,8 +158,6 @@ export async function loadSolicitudesData(silencioso = false) {
             } else {
                 fechaCreacion = new Date();
             }
-            
-            // Procesar fecha de agenda si existe
             let fechaAgenda = null;
             if (data.fechaAgenda) {
                 if (data.fechaAgenda.toDate) {
@@ -188,8 +168,6 @@ export async function loadSolicitudesData(silencioso = false) {
                     fechaAgenda = new Date(data.fechaAgenda);
                 }
             }
-            
-            // Procesar sustancias si es string
             let sustancias = data.sustancias || [];
             if (typeof sustancias === 'string') {
                 try {
@@ -198,14 +176,12 @@ export async function loadSolicitudesData(silencioso = false) {
                     sustancias = [sustancias];
                 }
             }
-            
             solicitudesData.push({
                 id: doc.id,
                 ...data,
                 fechaCreacion: fechaCreacion,
                 fechaAgenda: fechaAgenda,
                 sustancias: sustancias,
-                // Agregar campos derivados para mejor UX
                 tiempoTranscurrido: calculateTimeElapsed(fechaCreacion),
                 prioridadNumerica: getPriorityOrder(data.prioridad || 'media'),
                 estadoConfig: ESTADOS_SOLICITUDES[data.estado] || ESTADOS_SOLICITUDES['pendiente'],
@@ -214,14 +190,11 @@ export async function loadSolicitudesData(silencioso = false) {
         });
 
         console.log(`📋 ${solicitudesData.length} solicitudes de ingreso cargadas`);
-        
-        // Detectar nuevas solicitudes
         if (!silencioso && solicitudesData.length > previousCount) {
             const nuevasSolicitudes = solicitudesData.length - previousCount;
             showNotification(`${nuevasSolicitudes} nueva(s) solicitud(es) detectada(s)`, 'info', 3000);
         }
 
-        // Aplicar filtros y actualizar vista
         applyCurrentFilters();
         updateSolicitudesCounter();
         renderSolicitudesTable();
@@ -237,20 +210,13 @@ export async function loadSolicitudesData(silencioso = false) {
 
     } catch (error) {
         console.error('❌ Error cargando solicitudes:', error);
-        
         if (!silencioso) {
-            // Mostrar datos de ejemplo en caso de error
             createSampleSolicitudes();
             applyCurrentFilters();
             renderSolicitudesTable();
             updateSolicitudesCounter();
             updateSolicitudesStats();
-            
             showNotification('Error conectando con la base de datos. Mostrando datos de ejemplo.', 'warning');
-        }
-    } finally {
-        if (!silencioso) {
-            showLoadingState(false);
         }
     }
 }
@@ -261,8 +227,6 @@ export async function loadSolicitudesData(silencioso = false) {
 function setupSolicitudesFilters() {
     try {
         console.log('🔧 Configurando filtros de solicitudes...');
-        
-        // Filtro por estado
         const estadoFilter = document.getElementById('filtro-estado-solicitudes');
         if (estadoFilter) {
             estadoFilter.innerHTML = '<option value="todos">Todos los estados</option>';
@@ -272,14 +236,11 @@ function setupSolicitudesFilters() {
                 option.textContent = `${config.icon} ${config.label}`;
                 estadoFilter.appendChild(option);
             });
-            
             estadoFilter.addEventListener('change', (e) => {
                 currentFilters.estado = e.target.value;
                 applyCurrentFilters();
             });
         }
-        
-        // Filtro por prioridad
         const prioridadFilter = document.getElementById('filtro-prioridad-solicitudes');
         if (prioridadFilter) {
             prioridadFilter.innerHTML = '<option value="todos">Todas las prioridades</option>';
@@ -289,14 +250,11 @@ function setupSolicitudesFilters() {
                 option.textContent = `${config.icon} ${config.label}`;
                 prioridadFilter.appendChild(option);
             });
-            
             prioridadFilter.addEventListener('change', (e) => {
                 currentFilters.prioridad = e.target.value;
                 applyCurrentFilters();
             });
         }
-        
-        // Filtro por CESFAM
         const cesfahFilter = document.getElementById('filtro-cesfam-solicitudes');
         if (cesfahFilter) {
             cesfahFilter.innerHTML = '<option value="todos">Todos los CESFAM</option>';
@@ -306,14 +264,11 @@ function setupSolicitudesFilters() {
                 option.textContent = cesfam;
                 cesfahFilter.appendChild(option);
             });
-            
             cesfahFilter.addEventListener('change', (e) => {
                 currentFilters.cesfam = e.target.value;
                 applyCurrentFilters();
             });
         }
-        
-        // Filtro por fecha
         const fechaFilter = document.getElementById('filtro-fecha-solicitudes');
         if (fechaFilter) {
             fechaFilter.addEventListener('change', (e) => {
@@ -321,8 +276,6 @@ function setupSolicitudesFilters() {
                 applyCurrentFilters();
             });
         }
-        
-        // Búsqueda en tiempo real
         const searchInput = document.getElementById('buscar-solicitudes');
         if (searchInput) {
             let searchTimeout;
@@ -334,9 +287,7 @@ function setupSolicitudesFilters() {
                 }, 300); // Debounce de 300ms
             });
         }
-        
         console.log('✅ Filtros configurados correctamente');
-        
     } catch (error) {
         console.error('❌ Error configurando filtros:', error);
     }
@@ -347,13 +298,11 @@ function setupSolicitudesFilters() {
  */
 function setupSolicitudesEvents() {
     try {
-        // Botón de actualización manual
         const refreshBtn = document.getElementById('refresh-solicitudes');
         if (refreshBtn) {
             refreshBtn.addEventListener('click', async () => {
                 refreshBtn.disabled = true;
                 refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Actualizando...';
-                
                 try {
                     await refreshSolicitudes();
                 } finally {
@@ -362,16 +311,12 @@ function setupSolicitudesEvents() {
                 }
             });
         }
-        
-        // Botón de exportación
         const exportBtn = document.getElementById('export-solicitudes');
         if (exportBtn) {
             exportBtn.addEventListener('click', () => {
                 exportSolicitudesToExcel();
             });
         }
-        
-        // Auto-cargar al cambiar a la pestaña de solicitudes
         document.addEventListener('tabChanged', (e) => {
             if (e.detail && e.detail.tabName === 'solicitudes') {
                 setTimeout(() => {
@@ -379,28 +324,21 @@ function setupSolicitudesEvents() {
                 }, 500);
             }
         });
-        
-        // Escuchar eventos de nuevas solicitudes
         document.addEventListener('solicitudCreated', (event) => {
             console.log('✅ Nueva solicitud detectada:', event.detail.solicitudId);
-            
             setTimeout(() => {
                 loadSolicitudesData();
                 showNotification('Nueva solicitud agregada a la lista', 'info', 3000);
             }, 1500);
         });
-        
-        // Escuchar cambios de visibilidad para optimizar rendimiento
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden && 
                 document.querySelector('.tab-pane.active')?.id === 'solicitudes-tab') {
-                // Actualizar al volver a la pestaña
                 setTimeout(() => {
                     loadSolicitudesData(true);
                 }, 1000);
             }
         });
-        
     } catch (error) {
         console.error('❌ Error configurando eventos:', error);
     }
@@ -412,26 +350,18 @@ function setupSolicitudesEvents() {
 function applyCurrentFilters() {
     try {
         filteredSolicitudesData = solicitudesData.filter(solicitud => {
-            // Filtro por estado
             if (currentFilters.estado !== 'todos' && solicitud.estado !== currentFilters.estado) {
                 return false;
             }
-            
-            // Filtro por prioridad
             if (currentFilters.prioridad !== 'todos' && solicitud.prioridad !== currentFilters.prioridad) {
                 return false;
             }
-            
-            // Filtro por CESFAM
             if (currentFilters.cesfam !== 'todos' && solicitud.cesfam !== currentFilters.cesfam) {
                 return false;
             }
-            
-            // Filtro por fecha
             if (currentFilters.fecha !== 'todos') {
                 const today = new Date();
                 const solicitudDate = solicitud.fechaCreacion;
-                
                 switch (currentFilters.fecha) {
                     case 'hoy':
                         if (!isSameDay(solicitudDate, today)) return false;
@@ -446,8 +376,6 @@ function applyCurrentFilters() {
                         break;
                 }
             }
-            
-            // Filtro por búsqueda
             if (currentFilters.busqueda) {
                 const searchTerms = currentFilters.busqueda.split(' ');
                 const searchableText = `
@@ -459,26 +387,18 @@ function applyCurrentFilters() {
                     ${solicitud.cesfam || ''}
                     ${solicitud.descripcion || ''}
                 `.toLowerCase();
-                
                 return searchTerms.every(term => searchableText.includes(term));
             }
-            
             return true;
         });
-        
-        // Ordenar por prioridad y fecha
         filteredSolicitudesData.sort((a, b) => {
-            // Primero por prioridad (alta = 3, media = 2, baja = 1)
             if (a.prioridadNumerica !== b.prioridadNumerica) {
                 return b.prioridadNumerica - a.prioridadNumerica;
             }
-            // Luego por fecha (más recientes primero)
             return b.fechaCreacion.getTime() - a.fechaCreacion.getTime();
         });
-        
         renderSolicitudesTable();
         updateSolicitudesCounter();
-        
     } catch (error) {
         console.error('❌ Error aplicando filtros:', error);
     }
@@ -494,7 +414,6 @@ function renderSolicitudesTable() {
             console.warn('⚠️ Elemento solicitudes-table-body no encontrado');
             return;
         }
-        
         if (filteredSolicitudesData.length === 0) {
             tableBody.innerHTML = `
                 <tr>
@@ -516,11 +435,9 @@ function renderSolicitudesTable() {
             `;
             return;
         }
-        
         const rows = filteredSolicitudesData.map(solicitud => {
             const estadoConfig = solicitud.estadoConfig;
             const prioridadConfig = solicitud.prioridadConfig;
-            
             return `
                 <tr class="solicitud-row" data-solicitud-id="${solicitud.id}">
                     <td>
@@ -612,11 +529,8 @@ function renderSolicitudesTable() {
                 </tr>
             `;
         }).join('');
-        
         tableBody.innerHTML = rows;
-        
         console.log(`✅ Tabla renderizada con ${filteredSolicitudesData.length} solicitudes`);
-        
     } catch (error) {
         console.error('❌ Error renderizando tabla:', error);
         const tableBody = document.getElementById('solicitudes-table-body');
@@ -643,16 +557,12 @@ function updateSolicitudesCounter() {
     try {
         const counter = document.getElementById('solicitudes-counter');
         const totalCounter = document.getElementById('solicitudes-total-counter');
-        
         if (counter) {
             counter.textContent = filteredSolicitudesData.length;
         }
-        
         if (totalCounter) {
             totalCounter.textContent = solicitudesData.length;
         }
-        
-        // Actualizar título del tab
         const tabButton = document.querySelector('[data-tab="solicitudes"]');
         if (tabButton) {
             const badge = tabButton.querySelector('.tab-badge');
@@ -660,7 +570,6 @@ function updateSolicitudesCounter() {
                 badge.textContent = filteredSolicitudesData.length;
             }
         }
-        
     } catch (error) {
         console.error('❌ Error actualizando contador:', error);
     }
@@ -672,8 +581,6 @@ function updateSolicitudesCounter() {
 function updateSolicitudesStats() {
     try {
         const stats = calculateSolicitudesStats();
-        
-        // Actualizar elementos de estadísticas en el DOM
         const statsContainer = document.getElementById('solicitudes-stats');
         if (statsContainer) {
             statsContainer.innerHTML = `
@@ -715,7 +622,6 @@ function updateSolicitudesStats() {
                 </div>
             `;
         }
-        
     } catch (error) {
         console.error('❌ Error actualizando estadísticas:', error);
     }
@@ -726,7 +632,6 @@ function updateSolicitudesStats() {
  */
 function calculateSolicitudesStats() {
     const today = new Date();
-    
     return {
         total: solicitudesData.length,
         pendientes: solicitudesData.filter(s => s.estado === 'pendiente').length,
@@ -739,33 +644,15 @@ function calculateSolicitudesStats() {
 }
 
 /**
- * Mostrar/ocultar estado de carga
- */
-function showLoadingState(show) {
-    try {
-        const loadingElement = document.getElementById('solicitudes-loading');
-        const tableContainer = document.getElementById('solicitudes-table-container');
-
-        // Permite que la función funcione aunque uno de los elementos no exista
-        if (loadingElement) {
-            loadingElement.style.display = show ? 'flex' : 'none';
-        }
-        if (tableContainer) {
-            tableContainer.style.opacity = show ? '0.5' : '1';
-        }
-
-/**
  * Crear solicitudes de ejemplo
  */
 function createSampleSolicitudes() {
     console.log('📝 Creando datos de ejemplo...');
-    
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
     const lastWeek = new Date(today);
     lastWeek.setDate(lastWeek.getDate() - 7);
-    
     solicitudesData = [
         {
             id: 'sample_001',
@@ -855,7 +742,6 @@ function createSampleSolicitudes() {
             prioridadConfig: PRIORIDADES_SOLICITUDES['media']
         }
     ];
-    
     console.log(`✅ ${solicitudesData.length} solicitudes de ejemplo creadas`);
 }
 
@@ -865,8 +751,6 @@ function createSampleSolicitudes() {
 function exportSolicitudesToExcel() {
     try {
         console.log('📊 Exportando solicitudes a Excel...');
-        
-        // Preparar datos para exportación
         const dataToExport = filteredSolicitudesData.map(solicitud => ({
             'Nombre Completo': `${solicitud.nombre} ${solicitud.apellidos}`,
             'RUT': solicitud.rut,
@@ -883,16 +767,11 @@ function exportSolicitudesToExcel() {
             'Tiempo de Consumo': solicitud.tiempoConsumo || 'No especificado',
             'Tratamiento Previo': solicitud.tratamientoPrevio === 'si' ? 'Sí' : 'No'
         }));
-        
-        // Crear nombre del archivo
         const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
         const filename = `solicitudes_senda_${timestamp}.xlsx`;
-        
-        // Simular descarga (en una implementación real usarías una librería como xlsx)
         const csvContent = convertToCSV(dataToExport);
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
-        
         if (link.download !== undefined) {
             const url = URL.createObjectURL(blob);
             link.setAttribute('href', url);
@@ -902,9 +781,7 @@ function exportSolicitudesToExcel() {
             link.click();
             document.body.removeChild(link);
         }
-        
         showNotification(`Solicitudes exportadas: ${filename}`, 'success');
-        
     } catch (error) {
         console.error('❌ Error exportando solicitudes:', error);
         showNotification('Error al exportar solicitudes', 'error');
@@ -914,14 +791,12 @@ function exportSolicitudesToExcel() {
 /**
  * Utilidades auxiliares
  */
-
 function calculateTimeElapsed(date) {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / (1000 * 60));
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
-    
     if (days > 0) {
         return `Hace ${days} día${days > 1 ? 's' : ''}`;
     } else if (hours > 0) {
@@ -932,47 +807,38 @@ function calculateTimeElapsed(date) {
         return 'Hace menos de 1 minuto';
     }
 }
-
 function getPriorityOrder(priority) {
     const order = { 'alta': 3, 'media': 2, 'baja': 1 };
     return order[priority] || 2;
 }
-
 function isSameDay(date1, date2) {
     return date1.getDate() === date2.getDate() &&
            date1.getMonth() === date2.getMonth() &&
            date1.getFullYear() === date2.getFullYear();
 }
-
 function convertToCSV(data) {
     if (data.length === 0) return '';
-    
     const headers = Object.keys(data[0]);
     const csvHeaders = headers.join(',');
     const csvRows = data.map(row => 
         headers.map(header => {
             const value = row[header];
-            // Escapar comillas y envolver en comillas si contiene comas
             if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
                 return `"${value.replace(/"/g, '""')}"`;
             }
             return value;
         }).join(',')
     );
-    
     return [csvHeaders, ...csvRows].join('\n');
 }
 
 /**
  * Funciones globales para acciones de solicitudes
  */
-
-// Estas funciones son llamadas desde el HTML, por lo que deben ser globales
 window.verDetalleSolicitud = function(solicitudId) {
     try {
         const solicitud = solicitudesData.find(s => s.id === solicitudId);
         if (solicitud) {
-            // Implementar modal de detalles
             console.log('Ver detalles de solicitud:', solicitud);
             showNotification('Función de detalles en desarrollo', 'info');
         }
@@ -980,7 +846,6 @@ window.verDetalleSolicitud = function(solicitudId) {
         console.error('Error viendo detalles:', error);
     }
 };
-
 window.editarSolicitud = function(solicitudId) {
     try {
         const solicitud = solicitudesData.find(s => s.id === solicitudId);
@@ -992,7 +857,6 @@ window.editarSolicitud = function(solicitudId) {
         console.error('Error editando solicitud:', error);
     }
 };
-
 window.cambiarEstadoSolicitud = function(solicitudId, nuevoEstado) {
     try {
         console.log(`Cambiar estado de ${solicitudId} a ${nuevoEstado}`);
@@ -1001,7 +865,6 @@ window.cambiarEstadoSolicitud = function(solicitudId, nuevoEstado) {
         console.error('Error cambiando estado:', error);
     }
 };
-
 window.agendarCitaSolicitud = function(solicitudId) {
     try {
         console.log('Agendar cita para solicitud:', solicitudId);
@@ -1010,19 +873,16 @@ window.agendarCitaSolicitud = function(solicitudId) {
         console.error('Error agendando cita:', error);
     }
 };
-
 window.exportarSolicitud = function(solicitudId) {
     try {
         const solicitud = solicitudesData.find(s => s.id === solicitudId);
         if (solicitud) {
-            // Exportar solicitud individual
             exportSolicitudesToExcel();
         }
     } catch (error) {
         console.error('Error exportando solicitud:', error);
     }
 };
-
 window.eliminarSolicitud = function(solicitudId) {
     try {
         if (confirm('¿Estás seguro de que quieres eliminar esta solicitud?')) {
@@ -1033,26 +893,21 @@ window.eliminarSolicitud = function(solicitudId) {
         console.error('Error eliminando solicitud:', error);
     }
 };
-
 window.toggleAccionesSolicitud = function(solicitudId) {
     try {
         const dropdown = document.getElementById(`acciones-${solicitudId}`);
         if (dropdown) {
-            // Cerrar otros dropdowns
             document.querySelectorAll('.dropdown-menu').forEach(menu => {
                 if (menu.id !== `acciones-${solicitudId}`) {
                     menu.classList.remove('show');
                 }
             });
-            
             dropdown.classList.toggle('show');
         }
     } catch (error) {
         console.error('Error toggle acciones:', error);
     }
 };
-
-// Cerrar dropdowns al hacer clic fuera
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.dropdown-acciones')) {
         document.querySelectorAll('.dropdown-menu').forEach(menu => {
@@ -1061,12 +916,10 @@ document.addEventListener('click', (e) => {
     }
 });
 
-
+/**
+ * Inicializador alternativo (opcional)
+ */
 export function initGestorSolicitudes() {
-    loadSolicitudesIngreso();
+    loadSolicitudesData();
     // ...otros códigos...
 }
-// Log de inicialización
-console.log(`
-
-`);
