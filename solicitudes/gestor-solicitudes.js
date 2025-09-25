@@ -923,3 +923,40 @@ export function initGestorSolicitudes() {
     loadSolicitudesData();
     // ...otros códigos...
 }
+// Ver detalles
+function verDetalleSolicitud(solicitudId) {
+  // Aquí abres un modal o navegas a detalle
+  alert('Ver detalles de la solicitud: ' + solicitudId);
+}
+
+// Editar
+function editarSolicitud(solicitudId) {
+  // Aquí abres un modal de edición o navegas a edición
+  alert('Editar solicitud: ' + solicitudId);
+}
+
+// Mostrar/ocultar menú de acciones
+function toggleAccionesSolicitud(solicitudId) {
+  document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
+  const menu = document.getElementById(`acciones-${solicitudId}`);
+  if(menu) menu.classList.toggle('show');
+}
+
+// Marcar en proceso
+function cambiarEstadoSolicitud(solicitudId, nuevoEstado) {
+  alert(`Solicitud ${solicitudId} marcada como ${nuevoEstado}`);
+  // Aquí deberías implementar la lógica real para actualizar estado
+}
+
+// Agendar cita
+function agendarCitaSolicitud(solicitudId) {
+  alert('Agendar cita para solicitud: ' + solicitudId);
+  // Aquí deberías abrir un modal o formulario real
+}
+
+// Cerrar dropdowns al hacer clic fuera
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.dropdown-acciones')) {
+    document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
+  }
+});
