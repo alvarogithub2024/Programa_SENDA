@@ -1,5 +1,3 @@
-// FORMULARIOS/FORMULARIO-PACIENTE.JS
-
 function setupFormularioPaciente() {
     const form = document.getElementById("patient-form");
     if (!form) return;
@@ -77,7 +75,6 @@ function setupFormularioPaciente() {
         if (btn) btn.onclick = ()=>mostrarPaso(idx);
     });
 
-    // Mostrar campo correo y botón enviar "solo info"
     const tipoSolicitudRadios = form.querySelectorAll('input[name="tipoSolicitud"]');
     tipoSolicitudRadios.forEach(radio=>{
         radio.addEventListener("change",function(){
@@ -89,7 +86,7 @@ function setupFormularioPaciente() {
         });
     });
 
-    // BOTÓN ENVIAR para solo información (guarda SOLO en solicitudes_informacion)
+    // BOTÓN ENVIAR para solo información (guarda SOLO en solicitudes_informacion, con estado pendiente)
     const btnSoloInfo = form.querySelector("#enviar-solo-info");
     if (btnSoloInfo) {
         btnSoloInfo.onclick = function(e) {
@@ -172,6 +169,7 @@ function guardarSolicitudInformacion(datos) {
         window.showNotification && window.showNotification("No se pudo acceder a la base de datos","error");
         return;
     }
+    datos.estado = "pendiente";
     db.collection("solicitudes_informacion").add(datos)
         .then(function() {
             window.showNotification && window.showNotification("Solicitud de información enviada correctamente","success");
