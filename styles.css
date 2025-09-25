@@ -3321,229 +3321,285 @@ input:invalid {
 #loading-overlay {
   display: none !important;
 }
-/* ========== CONTENEDORES Y FILTROS ========== */
-.section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-}
 
-.section-header h2 {
-    font-size: 2.3rem;
-    font-weight: 700;
-    color: #3366ff;
-    margin: 0;
-}
 
-.section-actions {
-    display: flex;
-    gap: 1rem;
-}
 
-.filters-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.5rem 2rem;
-    align-items: center;
-    background: #fff;
-    padding: 1.25rem 1.5rem;
-    border-radius: 12px;
-    margin-bottom: 2rem;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-    font-size: 1rem;
-}
-
-.filter-group {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.filters-container input[type="text"], .filters-container select {
-    padding: 0.4rem 0.8rem;
-    border: 1px solid #d2d6dc;
-    border-radius: 6px;
-    font-size: 1rem;
-    outline: none;
-    min-width: 170px;
-}
-
-.filters-container label {
-    font-weight: 500;
-    color: #333;
-}
-
-.counter-info {
-    margin: 1.5rem 0 0.5rem 0;
-    font-size: 1.1rem;
-    color: #2c3e50;
-}
-
-/* ========== ESTADÍSTICAS ========== */
-.stats-container {
-    display: flex;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-}
-
-.stat-card {
-    background: #f7fafc;
-    border-radius: 10px;
-    padding: 1rem 1.5rem;
-    min-width: 160px;
-    display: flex;
-    align-items: center;
-    box-shadow: 0 1px 3px rgba(44,62,80,0.04);
-    gap: 1rem;
-}
-
-.stat-icon {
-    font-size: 2rem;
-    margin-right: 12px;
-    display: flex;
-    align-items: center;
-}
-
-.stat-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.stat-number {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #3366ff;
-    line-height: 1;
-}
-
-.stat-label {
-    font-size: 1rem;
-    color: #333;
-    font-weight: 500;
-}
-
-/* ========== TABLA DE SOLICITUDES ========== */
+/* ========== CONTENEDOR PRINCIPAL DE TABLA ========== */
 #solicitudes-table-container {
     background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
     margin-top: 1.2rem;
-    padding: 1.5rem 1rem;
+    padding: 1.8rem 1.2rem 1.2rem 1.2rem;
     overflow-x: auto;
 }
 
 .solicitudes-table {
     width: 100%;
-    border-collapse: collapse;
-    font-size: 1.07rem;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 1.08rem;
 }
 
 .solicitudes-table thead th {
     background: #e8f0fe;
-    color: #3366ff;
+    color: #2666df;
     font-weight: 700;
-    padding: 0.8rem 0.5rem;
-    border-bottom: 2px solid #dbeafe;
+    padding: 0.9rem 0.7rem;
     text-align: left;
+    border-bottom: 2px solid #dbeafe;
+    font-size: 1.06rem;
+    letter-spacing: 0.01em;
 }
 
 .solicitudes-table tbody tr {
-    border-bottom: 1px solid #f1f5f9;
-    transition: background 0.15s;
+    border-bottom: 1px solid #f0f1f4;
+    transition: background 0.16s;
 }
 
 .solicitudes-table tbody tr:hover {
-    background: #f3f4f6;
+    background: #f6f8fa;
 }
 
 .solicitudes-table td {
-    padding: 0.7rem 0.5rem;
+    padding: 0.85rem 0.7rem;
     vertical-align: top;
 }
 
-/* ========== BADGES Y EMOJIS ========== */
+/* ========== INFO DE PACIENTE & CONTACTO ========== */
+.paciente-info .paciente-nombre {
+    font-weight: 600;
+    font-size: 1.04em;
+    margin-bottom: 0.1em;
+}
+.paciente-info .paciente-detalles {
+    color: #444;
+    font-size: 0.98em;
+    line-height: 1.3em;
+}
+
+.contacto-info i {
+    color: #3366ff;
+    margin-right: 0.25em;
+}
+.contacto-info {
+    line-height: 1.5em;
+    font-size: 0.98em;
+}
+.contacto-info div {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+}
+
+/* ========== BADGES Y EMOJIS DE ESTADO/PRIORIDAD ========== */
 .estado-badge, .prioridad-badge {
     display: inline-flex;
     align-items: center;
     font-weight: 600;
-    font-size: 1rem;
-    padding: 0.25rem 0.7rem;
-    border-radius: 4px;
-    gap: 0.5em;
-    border: 1px solid transparent;
+    font-size: 1em;
+    padding: 0.25rem 0.85rem;
+    border-radius: 7px;
+    gap: 0.45em;
+    border: 1.5px solid transparent;
     background: #f1f5f9;
+    margin-bottom: 0.2em;
 }
 
 .estado-badge {
-    border-color: #c7d2fe;
+    border-color: #bae6fd;
+    color: #0ea5e9;
+    background: #e0f2fe;
+}
+.estado-badge[data-estado="pendiente"] {
+    background: #fef9c3;
+    color: #eab308;
+    border-color: #fde68a;
+}
+.estado-badge[data-estado="agendada"] {
+    background: #d1fae5;
+    color: #10b981;
+    border-color: #6ee7b7;
+}
+.estado-badge[data-estado="en_proceso"] {
+    background: #dbeafe;
     color: #3b82f6;
-    background: #e0e7ff;
+    border-color: #93c5fd;
 }
-
-.prioridad-badge {
-    border-color: #fca5a5;
-    color: #ef4444;
+.estado-badge[data-estado="completada"] {
+    background: #bbf7d0;
+    color: #22c55e;
+    border-color: #86efac;
+}
+.estado-badge[data-estado="rechazada"], .estado-badge[data-estado="cancelada"] {
     background: #fee2e2;
+    color: #ef4444;
+    border-color: #fca5a5;
 }
 
+.prioridad-badge[data-prioridad="alta"] {
+    background: #fee2e2;
+    color: #ef4444;
+    border-color: #fca5a5;
+}
+.prioridad-badge[data-prioridad="media"] {
+    background: #fef9c3;
+    color: #eab308;
+    border-color: #fde68a;
+}
+.prioridad-badge[data-prioridad="baja"] {
+    background: #d1fae5;
+    color: #10b981;
+    border-color: #6ee7b7;
+}
+
+/* ========== TAGS DE SUSTANCIAS ========== */
 .sustancia-tag {
     display: inline-block;
-    padding: 0.15em 0.7em;
-    margin-right: 0.3em;
-    background: #f3f4f6;
+    padding: 0.13em 0.85em;
+    margin: 0.1em 0.2em 0.1em 0;
+    background: #eef2ff;
     color: #6366f1;
     border-radius: 12px;
-    font-size: 0.95em;
+    font-size: 0.98em;
     font-weight: 500;
+    border: 1.2px solid #c7d2fe;
 }
 
-/* ========== BOTONES ========== */
-.btn, .btn-primary, .btn-secondary {
-    font-weight: 600;
-    border-radius: 6px;
+/* ========== BOTONES DE ACCIONES ========== */
+.acciones-solicitud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35em 0.15em;
+}
+
+.btn-accion {
+    background: #f2f4f8;
     border: none;
-    padding: 0.45em 1.1em;
-    font-size: 1.04rem;
+    color: #4b5563;
+    border-radius: 50%;
+    width: 2.2em;
+    height: 2.2em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.22em;
+    margin: 0 0.08em;
+    box-shadow: 0 1px 2.5px #0001;
     cursor: pointer;
-    margin-right: 0.3em;
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.17s, color 0.15s, box-shadow 0.2s;
+    position: relative;
 }
-
-.btn-primary {
+.btn-accion:hover, .btn-accion:focus {
     background: #3366ff;
     color: #fff;
+    box-shadow: 0 2px 6px #3366ff33;
 }
 
-.btn-primary:hover, .btn-primary:focus {
-    background: #254eda;
-}
-
-.btn-secondary {
-    background: #6c757d;
+.btn-accion[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: -2.1em;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
     color: #fff;
+    font-size: 0.95em;
+    padding: 0.18em 0.8em;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0.96;
+    z-index: 8;
+    box-shadow: 0 2px 8px #0002;
+    transition: opacity 0.18s;
 }
 
-.btn-secondary:hover, .btn-secondary:focus {
-    background: #49505a;
+/* Acciones desplegables (dropdowns) si las usas */
+.dropdown-acciones {
+    position: relative;
+}
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 120%;
+    min-width: 160px;
+    background: #fff;
+    box-shadow: 0 3px 12px #0002;
+    border-radius: 7px;
+    padding: 0.5em 0;
+    z-index: 20;
+}
+.dropdown-menu.show {
+    display: block;
+}
+.dropdown-menu button {
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-size: 1em;
+    padding: 0.5em 1em;
+    color: #374151;
+    transition: background 0.14s, color 0.14s;
+    cursor: pointer;
+}
+.dropdown-menu button:hover, .dropdown-menu button.accion-peligro:hover {
+    background: #e0e7ff;
+    color: #1e40af;
+}
+.dropdown-menu button.accion-peligro {
+    color: #dc2626;
+}
+.dropdown-menu hr {
+    margin: 0.2em 0;
+    border: 0;
+    border-top: 1px solid #f3f4f6;
 }
 
-/* ========== RESPONSIVE ========== */
-@media (max-width: 800px) {
-    .filters-container,
-    .stats-container {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    .section-header {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    #solicitudes-table-container {
-        padding: 0.6rem 0.3rem;
-    }
+/* ========== TABLA RESPONSIVA ========== */
+@media (max-width: 900px) {
     .solicitudes-table thead {
-        font-size: 0.94rem;
+        display: none;
     }
+    .solicitudes-table, .solicitudes-table tbody, .solicitudes-table tr, .solicitudes-table td {
+        display: block;
+        width: 100%;
+    }
+    .solicitudes-table tr {
+        margin-bottom: 1.2em;
+        box-shadow: 0 1px 4px #0002;
+        background: #fff;
+        border-radius: 10px;
+        padding: 0.7em 0.5em;
+    }
+    .solicitudes-table td {
+        border: none;
+        padding: 0.6em 0.7em;
+        font-size: 1.03em;
+        position: relative;
+    }
+    .solicitudes-table td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #888;
+        display: block;
+        margin-bottom: 0.18em;
+        font-size: 0.98em;
+    }
+}
+
+/* ===== PEQUEÑOS AJUSTES ===== */
+.solicitudes-table td:last-child {
+    min-width: 140px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #e5e7eb;
+    border-radius: 10px;
+}
+::-webkit-scrollbar {
+    background: #f3f4f6;
+    height: 9px;
 }
