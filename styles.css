@@ -3317,3 +3317,7 @@ body {
 input:invalid {
   border-color: #f87171;
 }
+#solicitudes-loading,
+#loading-overlay {
+  display: none !important;
+}
