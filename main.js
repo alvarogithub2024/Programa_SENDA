@@ -375,17 +375,34 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 
+// Actualizar profesionales según profesión seleccionada
+document.getElementById('cita-profession').onchange = function() {
+  const profession = this.value;
+  const selectProf = document.getElementById('cita-profesional');
+  selectProf.innerHTML = '<option value="">Seleccionar profesional...</option>';
+  // SUPONIENDO que tienes una función que retorna los profesionales activos de esa profesión:
+  cargarProfesionalesPorProfesion(profession, function(lista) {
+    lista.forEach(function(p) {
+      const opt = document.createElement('option');
+      opt.value = p.uid; // o p.id
+      opt.textContent = `${p.nombre} ${p.apellidos}`;
+      selectProf.appendChild(opt);
+    });
+  });
+};
+
+// Actualizar horas disponibles según profesional y fecha
 document.getElementById('cita-profesional').onchange = actualizarHoras;
 document.getElementById('cita-fecha').onchange = actualizarHoras;
 
 function actualizarHoras() {
-    var fecha = document.getElementById('cita-fecha').value;
-    var profesionalId = document.getElementById('cita-profesional').value;
-    if (!fecha || !profesionalId) {
-        mostrarHorariosDisponibles([]);
-        return;
-    }
-    cargarHorariosDisponibles(fecha, profesionalId, mostrarHorariosDisponibles);
+  var fecha = document.getElementById('cita-fecha').value;
+  var profesionalId = document.getElementById('cita-profesional').value;
+  if (!fecha || !profesionalId) {
+    mostrarHorariosDisponibles([]);
+    return;
+  }
+  cargarHorariosDisponibles(fecha, profesionalId, mostrarHorariosDisponibles);
 }
 // ====== DIAGNÓSTICO DEL SISTEMA EN CONSOLA ======
 console.log('🔍 Información del Sistema:');
