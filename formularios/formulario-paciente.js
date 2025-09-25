@@ -1,6 +1,5 @@
 // FORMULARIOS/FORMULARIO-PACIENTE.JS
 
-// ---- Multi-step del formulario ----
 function setupFormularioPaciente() {
     const form = document.getElementById("patient-form");
     if (!form) return;
@@ -16,7 +15,43 @@ function setupFormularioPaciente() {
         document.getElementById("form-progress").style.width = ((idx+1)/steps.length*100)+"%";
         currentStep = idx;
     }
-    mostrarPaso(0);
+
+    function mostrarSoloInfo() {
+        steps.forEach((step, i) => {
+            step.classList.toggle("active", i === 0); // Solo el primer paso activo
+        });
+        document.getElementById("progress-text").textContent = `Paso 1 de 1`;
+        document.getElementById("form-progress").style.width = "100%";
+        currentStep = 0;
+        // Ocultar navegación innecesaria
+        form.querySelector("#next-step-1").style.display = "none";
+        if (form.querySelector("#submit-step-1")) form.querySelector("#submit-step-1").style.display = "none";
+        // Ocultar botones prev/next en otros pasos
+        [2,3,4].forEach(idx=>{
+            if (form.querySelector(`#prev-step-${idx}`)) form.querySelector(`#prev-step-${idx}`).style.display="none";
+            if (form.querySelector(`#next-step-${idx}`)) form.querySelector(`#next-step-${idx}`).style.display="none";
+        });
+        // Mostrar solo el campo de correo
+        form.querySelector("#info-email-container").style.display = "";
+        form.querySelector("#basic-info-container").style.display = "none";
+    }
+
+    function mostrarIdentificado() {
+        mostrarPaso(0);
+        // Restaurar navegación
+        form.querySelector("#next-step-1").style.display = "";
+        // Mostrar navegación de todos los pasos
+        [2,3,4].forEach(idx=>{
+            if (form.querySelector(`#prev-step-${idx}`)) form.querySelector(`#prev-step-${idx}`).style.display="";
+            if (form.querySelector(`#next-step-${idx}`)) form.querySelector(`#next-step-${idx}`).style.display="";
+        });
+        // Mostrar campos normales
+        form.querySelector("#info-email-container").style.display = "none";
+        form.querySelector("#basic-info-container").style.display = "";
+    }
+
+    // Inicialización: mostrar identificado por defecto
+    mostrarIdentificado();
 
     // Navegación
     form.querySelector("#next-step-1").onclick = function() {
@@ -30,6 +65,13 @@ function setupFormularioPaciente() {
             if (!window.validarEmail || !window.validarEmail(email)) {
                 return window.showNotification("Ingresa un correo válido para recibir información", "warning");
             }
+            // Al ser solo info, submit inmediato
+            guardarSolicitudAyuda({
+                tipo: "solo_informacion",
+                email: email,
+                fecha: new Date().toISOString()
+            });
+            return;
         } else {
             if (!edad || isNaN(edad) || edad < 12) return window.showNotification("Edad mínima 12 años","warning");
             if (!cesfam) return window.showNotification("Selecciona un CESFAM","warning");
@@ -40,8 +82,10 @@ function setupFormularioPaciente() {
         // Validar segundo paso
         const nombre = form.querySelector("#patient-name").value.trim();
         const apellidos = form.querySelector("#patient-lastname").value.trim();
-        const rut = form.querySelector("#patient-rut").value.trim();
+        let rut = form.querySelector("#patient-rut").value.trim();
         const tel = form.querySelector("#patient-phone").value.trim();
+        // LIMPIA RUT antes de validar
+        rut = rut.replace(/[.\-]/g, '').toUpperCase();
         if (!nombre || !apellidos) return window.showNotification("Nombre y apellidos requeridos", "warning");
         if (!window.validarRut || !window.validarRut(rut)) return window.showNotification("RUT inválido", "warning");
         if (!window.validarTelefono || !window.validarTelefono(tel)) return window.showNotification("Teléfono inválido","warning");
@@ -68,42 +112,20 @@ function setupFormularioPaciente() {
     const tipoSolicitudRadios = form.querySelectorAll('input[name="tipoSolicitud"]');
     tipoSolicitudRadios.forEach(radio=>{
         radio.addEventListener("change",function(){
-            const infoContainer = form.querySelector("#info-email-container");
-            const basicInfo = form.querySelector("#basic-info-container");
             if (radio.value === "informacion" && radio.checked) {
-                infoContainer.style.display = "";
-                basicInfo.style.display = "none";
+                mostrarSoloInfo();
             } else if (radio.value === "identificado" && radio.checked) {
-                infoContainer.style.display = "none";
-                basicInfo.style.display = "";
+                mostrarIdentificado();
             }
         });
     });
 
-    // Submit final
+    // Submit final (solo identificado)
     form.onsubmit = function(e) {
         e.preventDefault();
-
-        // Recolectar datos según tipo de solicitud
+        // Solo permitir submit si estamos en el último paso y tipo identificado
         const tipo = form.querySelector('input[name="tipoSolicitud"]:checked');
-        if (!tipo) return window.showNotification("Selecciona un tipo de solicitud","warning");
-
-        // Solo información
-        if (tipo.value === "informacion") {
-            const email = form.querySelector("#info-email").value.trim();
-            if (!window.validarEmail || !window.validarEmail(email)) {
-                return window.showNotification("Ingresa un correo válido para recibir información", "warning");
-            }
-            // Guardar en Firebase
-            guardarSolicitudAyuda({
-                tipo: "solo_informacion",
-                email: email,
-                fecha: new Date().toISOString()
-            });
-            return;
-        }
-
-        // Solicitud identificada
+        if (!tipo || tipo.value !== "identificado") return;
         const datos = {
             tipo: "identificado",
             edad: form.querySelector("#patient-age").value,
@@ -111,7 +133,7 @@ function setupFormularioPaciente() {
             paraMi: form.querySelector('input[name="paraMi"]:checked')?.value || "",
             nombre: form.querySelector("#patient-name").value.trim(),
             apellidos: form.querySelector("#patient-lastname").value.trim(),
-            rut: form.querySelector("#patient-rut").value.trim(),
+            rut: form.querySelector("#patient-rut").value.trim().replace(/[.\-]/g, '').toUpperCase(),
             telefono: form.querySelector("#patient-phone").value.trim(),
             email: form.querySelector("#patient-email").value.trim(),
             direccion: form.querySelector("#patient-address").value.trim(),
@@ -162,5 +184,4 @@ function guardarSolicitudAyuda(datos) {
 window.setupFormularioPaciente = setupFormularioPaciente;
 window.guardarSolicitudAyuda = guardarSolicitudAyuda;
 
-// Inicializar al cargar
 document.addEventListener("DOMContentLoaded", setupFormularioPaciente);
