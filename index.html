@@ -553,7 +553,47 @@ Buscar
   </div>
 </div>
 <!-- ========== FIN MODAL SOBRE EL PROGRAMA ========== -->
+<!-- ========== MODAL NUEVA CITA ========== -->
+<div class="modal-overlay" id="modal-nueva-cita" style="display:none;">
+  <div class="modal large-modal">
+    <button class="modal-close" onclick="closeModal('modal-nueva-cita')">
+      <i class="fas fa-times"></i>
+    </button>
+    <h2>Nueva Cita</h2>
+    <form id="form-nueva-cita">
+      <div class="form-group">
+        <label>Nombre del paciente *</label>
+        <input type="text" id="cita-paciente-nombre" required>
+      </div>
+      <div class="form-group">
+        <label>RUT del paciente *</label>
+        <input type="text" id="cita-paciente-rut" required>
+      </div>
+      <div class="form-group">
+        <label>Profesional *</label>
+        <select id="cita-profesional" required></select>
+      </div>
+      <div class="form-group">
+        <label>Nombre del profesional</label>
+        <input type="text" id="cita-profesional-nombre" disabled>
+      </div>
+      <div class="form-group">
+        <label>Fecha *</label>
+        <input type="date" id="cita-fecha" required>
+      </div>
+      <div class="form-group">
+        <label>Hora *</label>
+        <input type="time" id="cita-hora" required>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('modal-nueva-cita')">Cancelar</button>
+        <button type="submit" class="btn btn-success">Agendar</button>
+      </div>
+    </form>
+  </div>
+</div>
 
+  
 <script>
 document.addEventListener("DOMContentLoaded", function() {
   var btnSobre = document.getElementById("about-program");
