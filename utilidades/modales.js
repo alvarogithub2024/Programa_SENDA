@@ -31,12 +31,12 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     // Botón "Acceso Profesionales"
-    var btnLogin = document.getElementById("login-professional");
-    if (btnLogin) {
-        btnLogin.addEventListener("click", function() {
-            showModal('login-modal');
-        });
-    }
+ var btnLogin = document.getElementById("login-professional");
+if (btnLogin) {
+    btnLogin.addEventListener("click", function() {
+        showModal('login-modal');
+    });
+}
 
     // Botón "Solicitar Ayuda"
     var btnPaciente = document.getElementById("register-patient");
