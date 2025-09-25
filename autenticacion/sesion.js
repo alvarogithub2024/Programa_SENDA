@@ -24,9 +24,11 @@ document.addEventListener("DOMContentLoaded", function() {
           document.getElementById('professional-profession').textContent = profesional.profession || '';
           document.getElementById('professional-cesfam').textContent = profesional.cesfam || '';
 
-          // *** ESTA LÍNEA ES CLAVE: ***
           // Permite que el sistema de tabs conozca al usuario y active las pestañas
           if (window.setCurrentUserData) window.setCurrentUserData(profesional);
+        } else {
+          // Si no existe el profesional en la colección, limpia tabs
+          if (window.setCurrentUserData) window.setCurrentUserData(null);
         }
       });
     } else {
@@ -36,7 +38,7 @@ document.addEventListener("DOMContentLoaded", function() {
       if (profHeader) profHeader.style.display = 'none';
       if (profContent) profContent.style.display = 'none';
       if (pubContent) pubContent.style.display = '';
-      // Opcional: limpiar el usuario en tabs
+      // Limpiar usuario de tabs
       if (window.setCurrentUserData) window.setCurrentUserData(null);
     }
   });
