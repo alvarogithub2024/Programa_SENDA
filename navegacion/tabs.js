@@ -141,3 +141,5 @@ function setCurrentUserData(userData) {
     updateTabVisibility();
 }
 window.loadSolicitudForResponse = function(solicitudId) {
+    
+};
