@@ -41,8 +41,7 @@ const CESFAM_OPTIONS = [
 function renderSolicitudesTable() {
   // Usa filteredSolicitudesData para dibujar la tabla
 }
- * Inicializar el gestor de solicitudes
- */
+
 export function initSolicitudesManager() {
     try {
         console.log('🔧 Inicializando gestor de solicitudes...');
