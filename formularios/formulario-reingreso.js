@@ -1,78 +1,78 @@
 // FORMULARIOS/FORMULARIO-REINGRESO.JS
 
-// Requiere: window.showNotification, window.getFirestore, window.getServerTimestamp
-
-// Valida todos los campos del formulario de reingreso
-function validarFormularioReingreso(form) {
-    var rut = form.rut.value.trim();
-    var motivo = form.motivo.value.trim();
-    var fechaReingreso = form.fechaReingreso.value;
-
-    if (!window.validarRUT(rut)) {
-        window.showNotification("RUT inválido", "warning");
-        return false;
-    }
-    if (!motivo) {
-        window.showNotification("Motivo de reingreso obligatorio", "warning");
-        return false;
-    }
-    if (!window.validarFecha(fechaReingreso)) {
-        window.showNotification("Fecha de reingreso inválida", "warning");
-        return false;
-    }
-    return true;
-}
-
-// Limpia todos los campos del formulario de reingreso
-function limpiarFormularioReingreso(form) {
-    form.reset();
-    if (form.rut) form.rut.focus();
-}
-
-// Guarda el reingreso en Firestore
-function guardarReingreso(form) {
-    if (!validarFormularioReingreso(form)) return;
-
-    var db = window.getFirestore();
-    var datos = {
-        rut: form.rut.value.trim(),
-        motivo: form.motivo.value.trim(),
-        fechaReingreso: form.fechaReingreso.value,
-        observaciones: form.observaciones.value.trim() || "",
-        fechaRegistro: window.getServerTimestamp ? window.getServerTimestamp() : new Date().toISOString()
-    };
-
-    db.collection('reingresos').add(datos)
-        .then(function() {
-            window.showNotification("Reingreso guardado correctamente", "success");
-            limpiarFormularioReingreso(form);
-        })
-        .catch(function(error) {
-            window.showNotification("Error al guardar reingreso: " + error.message, "error");
-        });
-}
-
-// Asigna eventos al formulario (llamar una vez en la carga)
 function setupFormularioReingreso() {
-    var form = document.getElementById("formulario-reingreso");
+    const form = document.getElementById("reentry-form");
     if (!form) return;
 
     form.addEventListener("submit", function(e) {
         e.preventDefault();
-        guardarReingreso(form);
+
+        // Limpia y recoge datos
+        const nombre = form.querySelector("#reentry-name").value.trim();
+        const rut = form.querySelector("#reentry-rut").value.trim().replace(/[^0-9kK]/g, '').toUpperCase();
+        const telefono = limpiarTelefonoChileno(form.querySelector("#reentry-phone").value.trim());
+        const cesfam = form.querySelector("#reentry-cesfam").value;
+        const motivo = form.querySelector("#reentry-reason").value.trim();
+
+        // Valida
+        if (!nombre) return window.showNotification("Nombre completo obligatorio", "warning");
+        if (!window.validarRut || !window.validarRut(rut)) return window.showNotification("RUT inválido", "warning");
+        if (!window.validarTelefono || !window.validarTelefono(telefono)) return window.showNotification("Teléfono inválido", "warning");
+        if (!cesfam) return window.showNotification("Selecciona un CESFAM", "warning");
+        if (!motivo) return window.showNotification("Motivo de reingreso obligatorio", "warning");
+
+        // Prepara datos
+        const datos = {
+            tipo: "reingreso",
+            nombre: nombre,
+            rut: rut,
+            telefono: telefono,
+            cesfam: cesfam,
+            motivo: motivo,
+            fecha: new Date().toISOString()
+        };
+
+        guardarReingresoFirebase(datos, form);
     });
 
-    var limpiarBtn = document.getElementById("btn-limpiar-reingreso");
-    if (limpiarBtn) {
-        limpiarBtn.addEventListener("click", function(e) {
-            e.preventDefault();
-            limpiarFormularioReingreso(form);
-        });
+    // Botón cancelar (opcional)
+    const btnCancelar = form.querySelector('button[type="button"].btn.btn-outline');
+    if (btnCancelar) {
+        btnCancelar.onclick = function() {
+            form.reset();
+            document.getElementById("reentry-modal").style.display = "none";
+        };
     }
 }
 
-// Exportar globalmente
-window.validarFormularioReingreso = validarFormularioReingreso;
-window.limpiarFormularioReingreso = limpiarFormularioReingreso;
-window.guardarReingreso = guardarReingreso;
+// Guarda en colección reingresos
+function guardarReingresoFirebase(datos, form) {
+    const db = window.getFirestore ? window.getFirestore() : null;
+    if (!db) {
+        window.showNotification && window.showNotification("No se pudo acceder a la base de datos", "error");
+        return;
+    }
+    db.collection("reingresos").add(datos)
+        .then(function() {
+            window.showNotification && window.showNotification("Reingreso enviado correctamente", "success");
+            form.reset();
+            document.getElementById("reentry-modal").style.display = "none";
+        })
+        .catch(function(error) {
+            window.showNotification && window.showNotification("Error guardando reingreso: " + error.message, "error");
+        });
+}
+
+// Utilidad para limpiar el teléfono chileno (igual que en paciente)
+function limpiarTelefonoChileno(tel) {
+    tel = tel.replace(/\D/g, '');
+    if (tel.startsWith("56")) tel = tel.slice(2);
+    if (tel.length === 11 && tel.startsWith("569")) tel = tel.slice(2);
+    return tel;
+}
+
+// Exporta globalmente
 window.setupFormularioReingreso = setupFormularioReingreso;
+window.guardarReingresoFirebase = guardarReingresoFirebase;
+
+document.addEventListener("DOMContentLoaded", setupFormularioReingreso);
