@@ -554,6 +554,21 @@ Buscar
   </div>
 </div>
 </footer>
+
+  <script>
+document.addEventListener("DOMContentLoaded", function() {
+  var btnSobre = document.getElementById("about-program");
+  if (btnSobre) {
+    btnSobre.addEventListener("click", function() {
+      if(typeof showModal==='function'){
+        showModal('about-modal');
+      } else {
+        document.getElementById('about-modal').style.display = 'flex';
+      }
+    });
+  }
+});
+</script>
 <script>
 function switchLoginTab(tab){
 const loginTab=document.querySelector('.modal-tab[onclick*="login"]');
