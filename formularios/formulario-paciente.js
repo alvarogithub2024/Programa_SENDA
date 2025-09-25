@@ -89,7 +89,7 @@ function setupFormularioPaciente() {
         });
     });
 
-    // BOTÓN ENVIAR para solo información
+    // BOTÓN ENVIAR para solo información (guarda SOLO en solicitudes_informacion)
     const btnSoloInfo = form.querySelector("#enviar-solo-info");
     if (btnSoloInfo) {
         btnSoloInfo.onclick = function(e) {
@@ -206,8 +206,7 @@ window.validarRut = window.validarRut || validarRut;
 function limpiarTelefonoChileno(tel) {
     tel = tel.replace(/\D/g, '');
     if (tel.startsWith("56")) tel = tel.slice(2);
-    if (tel.length === 11 && tel.startsWith("569")) tel = tel.slice(2); // Quita 56 si quedó
-    if (tel.length === 10 && tel.startsWith("9")) tel = tel; // 9XXXXXXXXX
+    if (tel.length === 11 && tel.startsWith("569")) tel = tel.slice(2);
     return tel;
 }
 function validarTelefonoChileno(telefono) {
