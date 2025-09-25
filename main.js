@@ -400,20 +400,40 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
 
-  // ESCUCHA ESTADO DE SESIÓN Y OCULTA/MUESTRA BOTÓN ACCESO PROFESIONALES
+// === VISIBILIDAD Y LOGOUT DE PROFESIONALES ===
+document.addEventListener("DOMContentLoaded", function() {
+  var btnLogin = document.getElementById('login-professional');
+  var btnLogout = document.getElementById('logout-professional');
+
+  // Escucha el estado de autenticación de Firebase
   firebase.auth().onAuthStateChanged(function(user) {
-    var btnLogin = document.getElementById('login-professional');
-    if (!btnLogin) return;
     if (user) {
-      btnLogin.style.display = 'none';
+      // Usuario autenticado: ocultar botón login
+      if (btnLogin) btnLogin.style.display = 'none';
     } else {
-      btnLogin.style.display = '';
-      // Además, asegúrate de que la zona profesional esté oculta si refrescan logueados
-      document.getElementById('professional-header').style.display = 'none';
-      document.getElementById('professional-content').style.display = 'none';
-      document.getElementById('public-content').style.display = '';
+      // Usuario no autenticado: mostrar botón login
+      if (btnLogin) btnLogin.style.display = '';
+      // Ocultar áreas profesionales por si acaso
+      var profHeader = document.getElementById('professional-header');
+      var profContent = document.getElementById('professional-content');
+      var pubContent = document.getElementById('public-content');
+      if (profHeader) profHeader.style.display = 'none';
+      if (profContent) profContent.style.display = 'none';
+      if (pubContent) pubContent.style.display = '';
     }
   });
+
+  // Botón cerrar sesión
+  if (btnLogout) {
+    btnLogout.addEventListener('click', function() {
+      firebase.auth().signOut().then(function() {
+        // El listener onAuthStateChanged se encarga de mostrar el login y ocultar profesional
+        window.showNotification && window.showNotification('Sesión cerrada.', 'success');
+      }).catch(function(error) {
+        window.showNotification && window.showNotification('Error al cerrar sesión: ' + error.message, 'error');
+      });
+    });
+  }
 });
 
 // ====== DIAGNÓSTICO DEL SISTEMA EN CONSOLA ======
