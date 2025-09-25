@@ -80,12 +80,21 @@ function verDetalleCita(citaId) {
 // NUEVO: Cargar horarios disponibles para una fecha y profesional
 function cargarHorariosDisponibles(fecha, profesionalId, callback) {
     var db = window.getFirestore();
-    // Define los slots posibles (ajusta según tu horario real)
+    // Slots de 30 minutos de 08:00 a 16:30
     var horarios = [];
     for (var h = 8; h <= 16; h++) {
         horarios.push(h.toString().padStart(2, '0') + ":00");
         horarios.push(h.toString().padStart(2, '0') + ":30");
     }
+    // Si la fecha es anterior a hoy, no permitir horarios
+    var hoy = new Date();
+    var fechaCita = new Date(fecha + "T00:00:00");
+    hoy.setHours(0,0,0,0);
+    if (isNaN(fechaCita.getTime()) || fechaCita < hoy) {
+        if (typeof callback === "function") callback([]);
+        return;
+    }
+
     // Busca los horarios ocupados en Firebase
     db.collection("citas")
         .where("fecha", "==", fecha)
@@ -108,10 +117,14 @@ function cargarHorariosDisponibles(fecha, profesionalId, callback) {
         });
 }
 
-// NUEVO: Mostrar horarios disponibles en el select
+// Mostrar horarios disponibles en el select de hora
 function mostrarHorariosDisponibles(horarios) {
     var select = document.getElementById('cita-hora');
     select.innerHTML = "";
+    var optDefault = document.createElement("option");
+    optDefault.value = "";
+    optDefault.textContent = "Selecciona hora...";
+    select.appendChild(optDefault);
     if (!horarios.length) {
         var opt = document.createElement("option");
         opt.value = "";
@@ -119,16 +132,35 @@ function mostrarHorariosDisponibles(horarios) {
         select.appendChild(opt);
         return;
     }
-    var optDefault = document.createElement("option");
-    optDefault.value = "";
-    optDefault.textContent = "Selecciona hora...";
-    select.appendChild(optDefault);
     horarios.forEach(function(horario) {
         var opt = document.createElement("option");
         opt.value = horario;
         opt.textContent = horario;
         select.appendChild(opt);
     });
+}
+
+// INTEGRACIÓN DINÁMICA CON EL FORMULARIO DE CITA
+function setupCitaNuevaListeners() {
+    var selectFecha = document.getElementById('cita-fecha');
+    var selectProfesional = document.getElementById('cita-profesional');
+    if (!selectFecha || !selectProfesional) return;
+
+    selectFecha.addEventListener('change', actualizarHorasDisponibles);
+    selectProfesional.addEventListener('change', actualizarHorasDisponibles);
+
+    // Inicialización: limpia horas si no hay selección válida
+    actualizarHorasDisponibles();
+}
+
+function actualizarHorasDisponibles() {
+    var fecha = document.getElementById('cita-fecha').value;
+    var profesionalId = document.getElementById('cita-profesional').value;
+    if (!fecha || !profesionalId) {
+        mostrarHorariosDisponibles([]);
+        return;
+    }
+    cargarHorariosDisponibles(fecha, profesionalId, mostrarHorariosDisponibles);
 }
 
 // Exportar globalmente
@@ -138,3 +170,4 @@ window.eliminarCita = eliminarCita;
 window.verDetalleCita = verDetalleCita;
 window.cargarHorariosDisponibles = cargarHorariosDisponibles;
 window.mostrarHorariosDisponibles = mostrarHorariosDisponibles;
+window.setupCitaNuevaListeners = setupCitaNuevaListeners;
