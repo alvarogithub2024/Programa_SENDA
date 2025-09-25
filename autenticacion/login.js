@@ -36,6 +36,7 @@ document.addEventListener("DOMContentLoaded", function() {
         window.showNotification && window.showNotification("Bienvenido/a, acceso correcto.", "success");
         // SOLO cerrar el modal. NO manipules visibilidad aquí.
         window.closeModal && window.closeModal('login-modal');
+        // El resto de la visibilidad la maneja el onAuthStateChanged.
       })
       .catch((error) => {
         window.showNotification && window.showNotification("Error al iniciar sesión: " + error.message, "error");
