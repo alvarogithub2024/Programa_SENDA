@@ -274,7 +274,10 @@ function attemptBasicRecovery() {
         console.error('❌ Error en recuperación básica:', recoveryError);
     }
 }
-
+console.log('Valor de firebaseInitialized:', firebaseInitialized);
+if (!firebaseInitialized) {
+    throw new Error('Firebase no se pudo inicializar');
+}
 // Información del navegador para debugging
 console.log('🔍 Información del Sistema:');
 console.log(`   Navegador: ${navigator.userAgent}`);
