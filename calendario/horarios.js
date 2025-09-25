@@ -115,8 +115,6 @@ function actualizarHorasPaciente() {
     });
 }
 
-document.getElementById('pac-cita-fecha').addEventListener('change', actualizarHorasPaciente);
-document.getElementById('pac-cita-profesional').addEventListener('change', actualizarHorasPaciente);
 // Exportar globalmente
 window.cargarHorariosDisponibles = cargarHorariosDisponibles;
 window.mostrarHorariosDisponibles = mostrarHorariosDisponibles;
