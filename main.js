@@ -317,7 +317,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 
                 // Login exitoso
                 window.showNotification && window.showNotification("Bienvenido, " + profesional.nombre, "success");
-                window.closeModal && window.closeModal('auth-modal');
+               window.closeModal && window.closeModal('login-modal');
             })
             .catch((error) => {
                 window.showNotification && window.showNotification("Error al iniciar sesión: " + error.message, "error");
