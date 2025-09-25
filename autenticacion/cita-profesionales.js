@@ -1,4 +1,3 @@
-// ==== CITAS ENTRE PROFESIONALES ====
 
 let miCesfam = null;
 let profesionalesCesfam = [];
