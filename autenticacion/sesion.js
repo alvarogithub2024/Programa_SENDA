@@ -6,7 +6,6 @@ document.addEventListener("DOMContentLoaded", function() {
   var profContent = document.getElementById('professional-content');
   var pubContent = document.getElementById('public-content');
 
-  // Escucha el estado de autenticación de Firebase
   firebase.auth().onAuthStateChanged(function(user) {
     if (user) {
       // Mostrar zona profesional, ocultar pública
@@ -16,7 +15,7 @@ document.addEventListener("DOMContentLoaded", function() {
       if (profContent) profContent.style.display = '';
       if (pubContent) pubContent.style.display = 'none';
 
-      // Cargar datos del profesional para el header y para tabs
+      // Cargar datos del profesional para el header y tabs
       const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
       db.collection('profesionales').doc(user.uid).get().then(doc => {
         if (doc.exists) {
@@ -25,17 +24,20 @@ document.addEventListener("DOMContentLoaded", function() {
           document.getElementById('professional-profession').textContent = profesional.profession || '';
           document.getElementById('professional-cesfam').textContent = profesional.cesfam || '';
 
-          // Si tu sistema de tabs requiere los datos del usuario para activar pestañas
+          // *** ESTA LÍNEA ES CLAVE: ***
+          // Permite que el sistema de tabs conozca al usuario y active las pestañas
           if (window.setCurrentUserData) window.setCurrentUserData(profesional);
         }
       });
     } else {
-      // Mostrar zona pública, ocultar profesional
+      // Usuario NO autenticado: mostrar sólo la zona pública
       if (btnLogin) btnLogin.style.display = '';
       if (btnLogout) btnLogout.style.display = 'none';
       if (profHeader) profHeader.style.display = 'none';
       if (profContent) profContent.style.display = 'none';
       if (pubContent) pubContent.style.display = '';
+      // Opcional: limpiar el usuario en tabs
+      if (window.setCurrentUserData) window.setCurrentUserData(null);
     }
   });
 
