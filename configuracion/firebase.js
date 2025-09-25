@@ -1,422 +1,663 @@
-// MAIN.JS - VERSIÓN MEJORADA CON MANEJO DE FIREBASE
+/**
+ * CONFIGURACION/FIREBASE.JS - VERSIÓN CORREGIDA SIN IMPORTS
+ * Configuración de Firebase con funciones globales
+ */
 
-let initializationCompleted = false;
-let initializationTimer = null;
+// Configuración de Firebase
+const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
+    authDomain: "senda-6d5c9.firebaseapp.com",
+    projectId: "senda-6d5c9",
+    storageBucket: "senda-6d5c9.firebasestorage.app",
+    messagingSenderId: "1090028669785",
+    appId: "1:1090028669785:web:d4e1c1b9945fc2fddc1a48",
+    measurementId: "G-82DCLW5R2W"
+};
 
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('\n🚀 SISTEMA SENDA PUENTE ALTO v2.0');
-    console.log('=====================================');
-    console.log(`📅 Fecha: ${new Date().toLocaleString('es-CL')}`);
-    console.log('🔄 Iniciando sistema SENDA completo...\n');
-    
-    // Timer de timeout más largo
-    initializationTimer = setTimeout(() => {
-        if (!initializationCompleted) {
-            console.error('❌ TIMEOUT: La inicialización está tomando demasiado tiempo');
-            showInitializationError(new Error('Timeout de inicialización - 20 segundos'));
-        }
-    }, 20000); // 20 segundos
+// Variables globales de Firebase
+let firebaseApp = null;
+let auth = null;
+let db = null;
+let isInitialized = false;
 
+/**
+ * Inicializa Firebase
+ */
+window.initializeFirebase = async function() {
     try {
-        // PASO 1: Verificar prerequisitos
-        console.log('🔧 Paso 1: Verificando prerequisitos...');
-        await verifyPrerequisites();
+        console.log('🔥 Inicializando Firebase...');
         
-        // PASO 2: Inicializar Firebase con reintentos
-        console.log('🔧 Paso 2: Inicializando Firebase...');
-        const firebaseReady = await initializeFirebaseWithRetry();
-        
-        if (!firebaseReady) {
-            throw new Error('Firebase no se pudo inicializar después de varios intentos');
+        // Verificar que Firebase SDK esté cargado
+        if (typeof firebase === 'undefined') {
+            throw new Error('Firebase SDK no está cargado');
         }
         
-        console.log('✅ Firebase verificado y listo\n');
+        // Verificar si ya está inicializado
+        if (firebase.apps.length > 0) {
+            console.log('✅ Firebase ya estaba inicializado');
+            firebaseApp = firebase.apps[0];
+        } else {
+            // Inicializar Firebase
+            firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+            console.log('🔥 Firebase inicializado correctamente');
+        }
         
-        // PASO 3: Configurar autenticación
-        console.log('🔧 Paso 3: Configurando autenticación...');
-        await setupAuthenticationSafely();
+        // Inicializar servicios
+        auth = firebase.auth();
+        db = firebase.firestore();
         
-        // PASO 4: Configurar navegación
-        console.log('🔧 Paso 4: Configurando navegación...');
-        setupNavigationSafely();
+        // Configurar Firestore
+        if (db) {
+            // Configuración de Firestore para desarrollo
+            console.log('📊 Firestore inicializado');
+        }
         
-        // PASO 5: Configurar formularios
-        console.log('🔧 Paso 5: Configurando formularios...');
-        setupFormulariosSafely();
+        isInitialized = true;
+        console.log('✅ Firebase completamente inicializado');
         
-        // PASO 6: Configurar eventos globales
-        console.log('🔧 Paso 6: Configurando eventos globales...');
-        setupEventListenersSafely();
-        
-        // PASO 7: Inicializar módulos del sistema
-        console.log('🔧 Paso 7: Inicializando módulos del sistema...');
-        await initializeSystemModulesSafely();
-        
-        // PASO 8: Configurar funciones globales
-        setupGlobalFunctions();
-        
-        console.log('\n🎉 ¡SISTEMA SENDA INICIALIZADO CORRECTAMENTE!');
-        console.log('=====================================');
-        
-        initializationCompleted = true;
-        clearTimeout(initializationTimer);
-        
-        // Mostrar notificación de éxito
-        setTimeout(() => {
-            showSuccessNotification();
-        }, 1000);
+        return true;
         
     } catch (error) {
-        clearTimeout(initializationTimer);
-        console.error('❌ ERROR CRÍTICO durante la inicialización:', error);
-        showInitializationError(error);
-        await attemptEmergencyRecovery();
+        console.error('❌ Error inicializando Firebase:', error);
+        isInitialized = false;
+        return false;
     }
-});
+};
 
 /**
- * Verificar prerequisitos del sistema
+ * Verifica si Firebase está inicializado
  */
-async function verifyPrerequisites() {
-    const checks = [
-        {
-            name: 'Firebase SDK',
-            check: () => typeof firebase !== 'undefined',
-            error: 'Firebase SDK no está cargado. Verifica los scripts en index.html'
-        },
-        {
-            name: 'DOM Ready',
-            check: () => document.readyState === 'complete' || document.readyState === 'interactive',
-            error: 'DOM no está listo'
-        },
-        {
-            name: 'Local Storage',
-            check: () => typeof Storage !== 'undefined',
-            error: 'Local Storage no está disponible'
-        }
-    ];
-
-    for (const check of checks) {
-        if (!check.check()) {
-            throw new Error(`Prerequisito fallido: ${check.error}`);
-        }
-        console.log(`✅ ${check.name} - OK`);
-    }
-}
+window.isFirebaseInitialized = function() {
+    return isInitialized && firebaseApp !== null;
+};
 
 /**
- * Inicializar Firebase con reintentos
+ * Obtiene la instancia de Auth
  */
-async function initializeFirebaseWithRetry(maxRetries = 3) {
+window.getAuth = function() {
+    if (!isInitialized || !auth) {
+        console.error('❌ Firebase Auth no inicializado');
+        return null;
+    }
+    return auth;
+};
+
+/**
+ * Obtiene la instancia de Firestore
+ */
+window.getFirestore = function() {
+    if (!isInitialized || !db) {
+        console.error('❌ Firestore no inicializado');
+        return null;
+    }
+    return db;
+};
+
+/**
+ * Obtiene timestamp del servidor
+ */
+window.getServerTimestamp = function() {
+    if (!isInitialized || !firebase.firestore) {
+        console.error('❌ Firebase no inicializado para timestamp');
+        return new Date();
+    }
+    return firebase.firestore.FieldValue.serverTimestamp();
+};
+
+/**
+ * Operación con reintentos para Firestore
+ */
+window.retryFirestoreOperation = async function(operation, maxRetries = 3) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-            console.log(`🔄 Intento ${attempt}/${maxRetries} de inicialización Firebase...`);
-            
-            // Llamar a la función de inicialización
-            const result = await window.initializeFirebase();
-            
-            if (result) {
-                // Verificar que realmente esté inicializado
-                await new Promise(resolve => setTimeout(resolve, 1000)); // Esperar 1 segundo
-                
-                if (window.isFirebaseInitialized && window.isFirebaseInitialized()) {
-                    console.log(`✅ Firebase inicializado correctamente en intento ${attempt}`);
-                    return true;
-                }
-            }
-            
-            throw new Error('Firebase no pasó la verificación de estado');
-            
+            return await operation();
         } catch (error) {
-            console.warn(`⚠️ Intento ${attempt} fallido:`, error.message);
+            console.warn(`⚠️ Intento ${attempt}/${maxRetries} fallido:`, error.message);
             
             if (attempt === maxRetries) {
-                console.error('❌ Todos los intentos de Firebase fallaron');
-                // Mostrar diagnóstico
-                if (window.firebaseDiagnosis) {
-                    window.firebaseDiagnosis();
-                }
-                return false;
+                throw error;
             }
             
             // Esperar antes del siguiente intento
-            const delay = attempt * 2000; // 2s, 4s, 6s
-            console.log(`⏳ Esperando ${delay}ms antes del siguiente intento...`);
+            const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
             await new Promise(resolve => setTimeout(resolve, delay));
         }
     }
-    
-    return false;
-}
+};
 
 /**
- * Configurar autenticación de forma segura
+ * Diagnóstico de Firebase
  */
-async function setupAuthenticationSafely() {
+window.firebaseDiagnosis = function() {
+    const diagnosis = {
+        sdkLoaded: typeof firebase !== 'undefined',
+        appsCount: typeof firebase !== 'undefined' ? firebase.apps.length : 0,
+        hasAuth: !!auth,
+        hasDB: !!db,
+        isInitialized: isInitialized,
+        overallStatus: isInitialized && !!auth && !!db
+    };
+    
+    console.log('🔍 Diagnóstico Firebase:', diagnosis);
+    return diagnosis;
+};
+
+/**
+ * Configurar observador de estado de autenticación
+ */
+window.setupAuth = function() {
     try {
-        if (window.setupAuth && typeof window.setupAuth === 'function') {
-            await window.setupAuth();
-            console.log('✅ Autenticación configurada');
-        } else {
-            console.warn('⚠️ setupAuth no disponible');
+        console.log('🔧 Configurando sistema de autenticación...');
+        
+        const authInstance = window.getAuth();
+        if (!authInstance) {
+            throw new Error('Firebase Auth no inicializado');
         }
+        
+        // Variables globales de autenticación
+        window.currentUser = null;
+        window.currentUserData = null;
+        window.authInitialized = false;
+        
+        // Configurar observer de estado de autenticación
+        authInstance.onAuthStateChanged(window.onAuthStateChanged);
+        
+        // Configurar listeners de sesión
+        window.setupSessionListeners();
+        
+        window.authInitialized = true;
+        console.log('✅ Sistema de autenticación configurado');
+        
     } catch (error) {
         console.error('❌ Error configurando autenticación:', error);
-        throw error;
-    }
-}
-
-/**
- * Configurar navegación de forma segura
- */
-function setupNavigationSafely() {
-    try {
-        if (window.setupTabs && typeof window.setupTabs === 'function') {
-            window.setupTabs();
-            console.log('✅ Navegación configurada');
-        } else {
-            console.warn('⚠️ setupTabs no disponible');
+        if (window.showNotification) {
+            window.showNotification('Error en configuración de autenticación', 'error');
         }
-    } catch (error) {
-        console.warn('⚠️ Error configurando navegación:', error);
-        // No es crítico, continuar
     }
-}
+};
 
 /**
- * Configurar formularios de forma segura
+ * Maneja los cambios en el estado de autenticación
  */
-function setupFormulariosSafely() {
+window.onAuthStateChanged = async function(user) {
     try {
-        if (window.setupFormularios && typeof window.setupFormularios === 'function') {
-            window.setupFormularios();
-            console.log('✅ Formularios configurados');
-        } else {
-            console.warn('⚠️ setupFormularios no disponible');
+        console.log('🔄 Estado de autenticación cambió:', user ? user.email : 'No autenticado');
+        
+        // Mostrar indicador de carga
+        if (window.showAuthLoading) {
+            window.showAuthLoading(true);
         }
+        
+        if (user) {
+            window.currentUser = user;
+            await window.handleUserAuthenticated(user);
+        } else {
+            await window.handleUserLoggedOut();
+        }
+        
     } catch (error) {
-        console.warn('⚠️ Error configurando formularios:', error);
-        // No es crítico, continuar
+        console.error('❌ Error en cambio de estado de autenticación:', error);
+        if (window.showNotification) {
+            window.showNotification('Error en autenticación: ' + error.message, 'error');
+        }
+        
+        // En caso de error, mostrar contenido público
+        await window.handleUserLoggedOut();
+    } finally {
+        if (window.showAuthLoading) {
+            window.showAuthLoading(false);
+        }
     }
-}
+};
 
 /**
- * Configurar eventos de forma segura
+ * Maneja cuando el usuario está autenticado
  */
-function setupEventListenersSafely() {
+window.handleUserAuthenticated = async function(user) {
     try {
-        if (window.setupEventListeners && typeof window.setupEventListeners === 'function') {
-            window.setupEventListeners();
-            console.log('✅ Eventos configurados');
-        } else {
-            console.warn('⚠️ setupEventListeners no disponible');
+        console.log('👤 Usuario autenticado, cargando datos...');
+        
+        // Verificar email verificado (opcional)
+        if (!user.emailVerified && user.email && user.email.includes('@senda.cl')) {
+            console.warn('⚠️ Email no verificado para:', user.email);
         }
+        
+        // Cargar datos del profesional
+        const userData = await window.loadProfessionalData(user.uid);
+        
+        if (!userData) {
+            throw new Error('No se encontraron datos del profesional');
+        }
+        
+        window.currentUserData = userData;
+        
+        // Mostrar contenido profesional
+        window.showProfessionalContent();
+        
+        // Actualizar información en la UI
+        window.updateProfessionalInfo();
+        
+        // Configurar tabs según permisos
+        if (window.setCurrentUserData) {
+            window.setCurrentUserData(userData);
+        }
+        
+        console.log('✅ Usuario autenticado correctamente:', userData.nombre);
+        
     } catch (error) {
-        console.warn('⚠️ Error configurando eventos:', error);
-        // No es crítico, continuar
+        console.error('❌ Error manejando usuario autenticado:', error);
+        
+        let errorMessage = 'Error cargando datos del usuario';
+        if (error.message.includes('No se encontraron datos')) {
+            errorMessage = 'Perfil de profesional no encontrado. Contacta al administrador.';
+        } else if (error.code === 'permission-denied') {
+            errorMessage = 'Sin permisos para acceder a los datos';
+        }
+        
+        if (window.showNotification) {
+            window.showNotification(errorMessage, 'error');
+        }
+        
+        // Cerrar sesión en caso de error crítico
+        await window.handleLogout();
     }
-}
+};
 
 /**
- * Inicializar módulos de forma segura
+ * Maneja cuando el usuario no está autenticado
  */
-async function initializeSystemModulesSafely() {
-    const modules = [
-        { name: 'Calendario', init: () => window.initCalendar && window.initCalendar() },
-        { name: 'Pacientes', init: () => window.initPatientsManager && window.initPatientsManager() },
-        { name: 'Seguimiento', init: () => window.initTimeline && window.initTimeline() },
-        { name: 'Solicitudes', init: () => window.initSolicitudesManager && window.initSolicitudesManager() }
-    ];
+window.handleUserLoggedOut = async function() {
+    try {
+        console.log('🚪 Usuario no autenticado');
+        
+        // Limpiar datos de usuario
+        window.currentUser = null;
+        window.currentUserData = null;
+        
+        // Limpiar cache
+        if (window.clearUserCache) {
+            window.clearUserCache();
+        }
+        
+        // Mostrar contenido público
+        window.showPublicContent();
+        
+        console.log('✅ Sesión limpiada correctamente');
+        
+    } catch (error) {
+        console.error('❌ Error manejando logout:', error);
+    }
+};
 
-    let successCount = 0;
-    for (const module of modules) {
-        try {
-            if (module.init && typeof module.init === 'function') {
-                await module.init();
-                console.log(`✅ Módulo ${module.name} inicializado`);
-                successCount++;
-            } else {
-                console.warn(`⚠️ Módulo ${module.name} no disponible`);
+/**
+ * Carga los datos del profesional desde Firestore
+ */
+window.loadProfessionalData = async function(userId) {
+    try {
+        // Verificar cache primero
+        const cacheKey = `professional_${userId}`;
+        if (window.getCachedData) {
+            const cachedData = window.getCachedData(cacheKey);
+            if (cachedData) {
+                console.log('📦 Datos cargados desde cache');
+                return cachedData;
             }
-        } catch (error) {
-            console.warn(`⚠️ Error en módulo ${module.name}:`, error);
-            // Continuar con otros módulos
         }
-    }
-    
-    console.log(`📊 Módulos inicializados: ${successCount}/${modules.length}`);
-}
-
-/**
- * Configurar funciones globales
- */
-function setupGlobalFunctions() {
-    try {
-        // Funciones modales básicas
-        window.closeModal = window.closeModal || function(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) modal.style.display = 'none';
-        };
         
-        window.showModal = window.showModal || function(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) modal.style.display = 'flex';
-        };
-        
-        // Sistema de notificaciones básico
-        window.showNotification = window.showNotification || function(message, type = 'info', duration = 3000) {
-            console.log(`[${type.toUpperCase()}] ${message}`);
-            // Implementación básica en consola
-        };
-        
-        // Debug del sistema
-        window.SENDA_DEBUG = {
-            getSystemInfo: () => ({
-                version: '2.0',
-                initialized: initializationCompleted,
-                firebase: window.isFirebaseInitialized ? window.isFirebaseInitialized() : false,
-                timestamp: new Date().toISOString()
-            }),
-            reinitialize: () => window.location.reload(),
-            clearStorage: () => {
-                localStorage.clear();
-                sessionStorage.clear();
-                console.log('🗑️ Storage limpiado');
-            },
-            firebaseDiagnosis: () => window.firebaseDiagnosis ? window.firebaseDiagnosis() : 'No disponible'
-        };
-        
-        console.log('✅ Funciones globales configuradas');
-    } catch (error) {
-        console.error('❌ Error configurando funciones globales:', error);
-    }
-}
-
-/**
- * Mostrar notificación de éxito
- */
-function showSuccessNotification() {
-    if (window.showNotification) {
-        window.showNotification('Sistema SENDA cargado correctamente', 'success', 3000);
-    } else {
-        console.log('🎉 Sistema SENDA cargado correctamente');
-    }
-}
-
-/**
- * Mostrar error de inicialización mejorado
- */
-function showInitializationError(error = null) {
-    const errorMessage = error ? error.message : 'Error desconocido de inicialización';
-    
-    // Agregar diagnóstico Firebase si está disponible
-    let firebaseDiag = '';
-    if (window.firebaseDiagnosis) {
-        try {
-            const diag = window.firebaseDiagnosis();
-            firebaseDiag = `
-                <div style="margin-top: 16px; padding: 12px; background: #f3f4f6; border-radius: 4px; text-align: left; font-size: 12px;">
-                    <strong>Diagnóstico Firebase:</strong><br>
-                    SDK cargado: ${diag.sdkLoaded ? '✅' : '❌'}<br>
-                    Apps: ${diag.appsCount}<br>
-                    Auth: ${diag.hasAuth ? '✅' : '❌'}<br>
-                    DB: ${diag.hasDB ? '✅' : '❌'}<br>
-                    Estado: ${diag.overallStatus ? '✅' : '❌'}
-                </div>
-            `;
-        } catch (e) {
-            firebaseDiag = '<div style="margin-top: 16px; color: #6b7280;">Diagnóstico no disponible</div>';
-        }
-    }
-    
-    let errorModal = document.getElementById('initialization-error-modal');
-    if (!errorModal) {
-        errorModal = document.createElement('div');
-        errorModal.id = 'initialization-error-modal';
-        errorModal.className = 'modal-overlay';
-        errorModal.style.cssText = 'display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 99999; align-items: center; justify-content: center;';
-        errorModal.innerHTML = `
-            <div style="background: white; border-radius: 8px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
-                <div style="text-align: center; padding: 24px;">
-                    <div style="color: #ef4444; font-size: 3rem; margin-bottom: 16px;">⚠️</div>
-                    <h2 style="color: #ef4444; margin-bottom: 16px;">Error de Inicialización</h2>
-                    <p style="margin-bottom: 16px; color: #6b7280;">${errorMessage}</p>
-                    ${firebaseDiag}
-                    <div style="margin: 24px 0; padding: 16px; background: #fee2e2; border-radius: 8px;">
-                        <h4 style="margin-bottom: 8px;">Soluciones recomendadas:</h4>
-                        <ol style="text-align: left; color: #7f1d1d; padding-left: 20px;">
-                            <li>Verificar conexión a Internet</li>
-                            <li>Recargar la página (F5)</li>
-                            <li>Limpiar caché del navegador</li>
-                            <li>Verificar configuración de Firebase</li>
-                            <li>Contactar al administrador</li>
-                        </ol>
-                    </div>
-                    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                        <button onclick="window.location.reload()" 
-                                style="background: #ef4444; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;">
-                            🔄 Recargar
-                        </button>
-                        <button onclick="window.SENDA_DEBUG?.clearStorage(); window.location.reload()" 
-                                style="background: #6b7280; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;">
-                            🗑️ Limpiar & Recargar
-                        </button>
-                        <button onclick="if(window.FIREBASE_DEBUG) console.log(window.FIREBASE_DEBUG.getDiagnosis())" 
-                                style="background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;">
-                            🔍 Diagnóstico
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(errorModal);
-    } else {
-        errorModal.style.display = 'flex';
-    }
-}
-
-/**
- * Recuperación de emergencia
- */
-async function attemptEmergencyRecovery() {
-    try {
-        console.log('🚑 Intentando recuperación de emergencia...');
-        
-        // Configurar funciones mínimas
-        setupGlobalFunctions();
-        
-        // Intentar configurar eventos básicos
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal-overlay')) {
-                e.target.style.display = 'none';
+        // Cargar desde Firestore con reintentos
+        const userData = await window.retryFirestoreOperation(async () => {
+            const db = window.getFirestore();
+            if (!db) {
+                throw new Error('Base de datos no disponible');
             }
+            
+            const userDoc = await db.collection('profesionales').doc(userId).get();
+            
+            if (!userDoc.exists) {
+                throw new Error(`Profesional no encontrado: ${userId}`);
+            }
+            
+            return {
+                uid: userId,
+                ...userDoc.data()
+            };
         });
         
-        console.log('✅ Recuperación de emergencia completada');
+        // Guardar en cache
+        if (window.setCachedData) {
+            window.setCachedData(cacheKey, userData);
+        }
         
-    } catch (recoveryError) {
-        console.error('❌ Error en recuperación de emergencia:', recoveryError);
+        console.log('📊 Datos del profesional cargados:', userData.nombre);
+        return userData;
+        
+    } catch (error) {
+        console.error('❌ Error cargando datos del profesional:', error);
+        throw error;
     }
-}
+};
 
-// Event listeners de conectividad
-window.addEventListener('online', () => {
-    console.log('🌐 Conexión restaurada');
-    if (window.showNotification) {
-        window.showNotification('Conexión a Internet restaurada', 'success');
+/**
+ * Muestra el contenido público
+ */
+window.showPublicContent = function() {
+    try {
+        const elements = {
+            publicContent: document.getElementById('public-content'),
+            professionalContent: document.getElementById('professional-content'),
+            professionalHeader: document.getElementById('professional-header'),
+            loginBtn: document.getElementById('login-professional'),
+            logoutBtn: document.getElementById('logout-professional')
+        };
+
+        // Mostrar elementos públicos
+        if (elements.publicContent) {
+            elements.publicContent.style.display = 'block';
+        }
+        
+        if (elements.loginBtn) {
+            elements.loginBtn.style.display = 'flex';
+        }
+
+        // Ocultar elementos profesionales
+        if (elements.professionalContent) {
+            elements.professionalContent.style.display = 'none';
+        }
+        
+        if (elements.professionalHeader) {
+            elements.professionalHeader.style.display = 'none';
+        }
+        
+        if (elements.logoutBtn) {
+            elements.logoutBtn.style.display = 'none';
+        }
+        
+        console.log('🏠 Contenido público mostrado');
+        
+    } catch (error) {
+        console.error('❌ Error mostrando contenido público:', error);
     }
-});
+};
 
-window.addEventListener('offline', () => {
-    console.log('🌐 Sin conexión');
-    if (window.showNotification) {
-        window.showNotification('Sin conexión a Internet', 'warning', 5000);
+/**
+ * Muestra el contenido profesional
+ */
+window.showProfessionalContent = function() {
+    try {
+        const elements = {
+            publicContent: document.getElementById('public-content'),
+            professionalContent: document.getElementById('professional-content'),
+            professionalHeader: document.getElementById('professional-header'),
+            loginBtn: document.getElementById('login-professional'),
+            logoutBtn: document.getElementById('logout-professional')
+        };
+
+        // Ocultar elementos públicos
+        if (elements.publicContent) {
+            elements.publicContent.style.display = 'none';
+        }
+        
+        if (elements.loginBtn) {
+            elements.loginBtn.style.display = 'none';
+        }
+
+        // Mostrar elementos profesionales
+        if (elements.professionalContent) {
+            elements.professionalContent.style.display = 'block';
+        }
+        
+        if (elements.professionalHeader) {
+            elements.professionalHeader.style.display = 'block';
+        }
+        
+        if (elements.logoutBtn) {
+            elements.logoutBtn.style.display = 'flex';
+        }
+        
+        console.log('👨‍⚕️ Contenido profesional mostrado');
+        
+    } catch (error) {
+        console.error('❌ Error mostrando contenido profesional:', error);
     }
-});
+};
 
-// Información del sistema
-console.log('🔍 Información del Sistema:');
-console.log(`   Navegador: ${navigator.userAgent}`);
-console.log(`   Conexión: ${navigator.onLine ? 'Online' : 'Offline'}`);
-console.log(`   Local Storage: ${typeof Storage !== 'undefined' ? 'Disponible' : 'No disponible'}`);
-console.log('\n📝 Sistema SENDA listo para inicialización...\n');
+/**
+ * Actualiza la información del profesional en la interfaz
+ */
+window.updateProfessionalInfo = function() {
+    try {
+        if (!window.currentUserData) {
+            console.warn('⚠️ No hay datos de usuario para mostrar');
+            return;
+        }
+
+        const elements = {
+            name: document.getElementById('professional-name'),
+            profession: document.getElementById('professional-profession'),
+            cesfam: document.getElementById('professional-cesfam'),
+            avatar: document.querySelector('.professional-avatar')
+        };
+
+        // Actualizar nombre
+        if (elements.name) {
+            elements.name.textContent = `${window.currentUserData.nombre || ''} ${window.currentUserData.apellidos || ''}`.trim();
+        }
+        
+        // Actualizar profesión
+        if (elements.profession) {
+            elements.profession.textContent = window.getProfessionDisplayName(window.currentUserData.profession);
+        }
+        
+        // Actualizar CESFAM
+        if (elements.cesfam) {
+            elements.cesfam.textContent = window.currentUserData.cesfam || 'CESFAM no asignado';
+        }
+        
+        // Actualizar avatar con iniciales
+        if (elements.avatar && window.currentUserData.nombre && window.currentUserData.apellidos) {
+            const initials = `${window.currentUserData.nombre.charAt(0)}${window.currentUserData.apellidos.charAt(0)}`.toUpperCase();
+            elements.avatar.textContent = initials;
+        }
+        
+        console.log('✅ Información del profesional actualizada');
+        
+    } catch (error) {
+        console.error('❌ Error actualizando información del profesional:', error);
+    }
+};
+
+/**
+ * Obtiene el nombre de display de la profesión
+ */
+window.getProfessionDisplayName = function(profession) {
+    const professionNames = {
+        'asistente_social': 'Asistente Social',
+        'medico': 'Médico',
+        'psicologo': 'Psicólogo',
+        'terapeuta': 'Terapeuta Ocupacional',
+        'enfermero': 'Enfermero/a',
+        'nutricionista': 'Nutricionista'
+    };
+    
+    return professionNames[profession] || profession || 'Profesional de la Salud';
+};
+
+/**
+ * Configurar listeners para eventos de sesión
+ */
+window.setupSessionListeners = function() {
+    try {
+        // Listener para botón de logout
+        const logoutBtn = document.getElementById('logout-professional');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', window.handleLogout);
+        }
+        
+        // Detectar cuando la pestaña se oculta/muestra para refrescar sesión
+        document.addEventListener('visibilitychange', window.handleVisibilityChange);
+        
+        // Detectar foco de ventana para validar sesión
+        window.addEventListener('focus', window.handleWindowFocus);
+        
+        console.log('✅ Session listeners configurados');
+        
+    } catch (error) {
+        console.error('❌ Error configurando session listeners:', error);
+    }
+};
+
+/**
+ * Maneja el cambio de visibilidad de la pestaña
+ */
+window.handleVisibilityChange = function() {
+    try {
+        if (!document.hidden && window.currentUser) {
+            // Validar que la sesión sigue activa
+            window.validateCurrentSession();
+        }
+    } catch (error) {
+        console.error('Error en handleVisibilityChange:', error);
+    }
+};
+
+/**
+ * Maneja cuando la ventana recibe el foco
+ */
+window.handleWindowFocus = function() {
+    try {
+        if (window.currentUser) {
+            window.validateCurrentSession();
+        }
+    } catch (error) {
+        console.error('Error en handleWindowFocus:', error);
+    }
+};
+
+/**
+ * Valida la sesión actual
+ */
+window.validateCurrentSession = async function() {
+    try {
+        if (!window.currentUser) return;
+        
+        const auth = window.getAuth();
+        if (!auth) return;
+        
+        const user = auth.currentUser;
+        
+        if (!user) {
+            console.warn('⚠️ Usuario ya no autenticado, limpiando sesión');
+            await window.handleUserLoggedOut();
+            return;
+        }
+        
+        // Verificar token (opcional)
+        try {
+            await user.getIdToken(true); // Forzar refresh del token
+        } catch (tokenError) {
+            console.warn('⚠️ Error validando token:', tokenError);
+            if (tokenError.code === 'auth/user-token-expired') {
+                if (window.showNotification) {
+                    window.showNotification('Sesión expirada, por favor inicia sesión nuevamente', 'warning');
+                }
+                await window.handleLogout();
+                return;
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Error validando sesión:', error);
+    }
+};
+
+/**
+ * Cierra la sesión del usuario
+ */
+window.handleLogout = async function() {
+    try {
+        console.log('🚪 Iniciando cierre de sesión...');
+        
+        if (window.showAuthLoading) {
+            window.showAuthLoading(true, 'Cerrando sesión...');
+        }
+        
+        const auth = window.getAuth();
+        if (auth) {
+            await auth.signOut();
+        }
+        
+        // Limpiar datos locales
+        window.currentUser = null;
+        window.currentUserData = null;
+        
+        // Limpiar cache
+        if (window.clearUserCache) {
+            window.clearUserCache();
+        }
+        
+        // Limpiar localStorage
+        localStorage.clear();
+        
+        // Mostrar contenido público
+        window.showPublicContent();
+        
+        if (window.showNotification) {
+            window.showNotification('Sesión cerrada correctamente', 'success');
+        }
+        
+        console.log('✅ Sesión cerrada exitosamente');
+        
+    } catch (error) {
+        console.error('❌ Error cerrando sesión:', error);
+        if (window.showNotification) {
+            window.showNotification('Error al cerrar sesión: ' + error.message, 'error');
+        }
+        
+        // Forzar limpieza aunque haya error
+        window.currentUser = null;
+        window.currentUserData = null;
+        if (window.clearUserCache) {
+            window.clearUserCache();
+        }
+        window.showPublicContent();
+        
+    } finally {
+        if (window.showAuthLoading) {
+            window.showAuthLoading(false);
+        }
+    }
+};
+
+/**
+ * Muestra/oculta el loading de autenticación
+ */
+window.showAuthLoading = function(show, message = 'Autenticando...') {
+    try {
+        let loadingElement = document.getElementById('auth-loading');
+        
+        if (show) {
+            if (!loadingElement) {
+                loadingElement = document.createElement('div');
+                loadingElement.id = 'auth-loading';
+                loadingElement.className = 'auth-loading-overlay';
+                loadingElement.innerHTML = `
+                    <div class="auth-loading-content">
+                        <div class="spinner"></div>
+                        <p>${message}</p>
+                    </div>
+                `;
+                document.body.appendChild(loadingElement);
+            }
+            loadingElement.style.display = 'flex';
+        } else {
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error mostrando loading de auth:', error);
+    }
+};
+
+console.log('🔥 Firebase configuración cargada - Funciones disponibles en window');
