@@ -140,4 +140,4 @@ function setCurrentUserData(userData) {
     currentUserData = userData;
     updateTabVisibility();
 }
-window.loadSolicitudForResponse = function(solicitudId) { ... }
+window.loadSolicitudForResponse = function(solicitudId) {
