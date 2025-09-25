@@ -793,7 +793,19 @@
             </form>
         </div>
     </div>
-
+<td>
+  <div class="acciones-solicitud">
+    <button class="btn-accion btn-ver" title="Ver detalles" onclick="verDetalleSolicitud('ID_SOLICITUD')"><i class="fas fa-eye"></i></button>
+    <button class="btn-accion btn-editar" title="Editar" onclick="editarSolicitud('ID_SOLICITUD')"><i class="fas fa-edit"></i></button>
+    <div class="dropdown-acciones">
+      <button class="btn-accion btn-mas" onclick="toggleAccionesSolicitud('ID_SOLICITUD')" title="Más acciones"><i class="fas fa-ellipsis-v"></i></button>
+      <div class="dropdown-menu" id="acciones-ID_SOLICITUD">
+        <button onclick="cambiarEstadoSolicitud('ID_SOLICITUD', 'en_proceso')"><i class="fas fa-clock"></i> Marcar en proceso</button>
+        <button onclick="agendarCitaSolicitud('ID_SOLICITUD')"><i class="fas fa-calendar-plus"></i> Agendar cita</button>
+      </div>
+    </div>
+  </div>
+</td>
     <!-- ================= FOOTER ================= -->
     <footer class="footer">
         <div class="footer-content">
