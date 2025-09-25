@@ -5,7 +5,7 @@ let responseTemplates = [];
 let responseHistory = [];
 
 // Inicializar sistema de respuestas
-export function initResponses() {
+ function initResponses() {
     setupResponseInterface();
     loadResponseTemplates();
     setupResponseEvents();
