@@ -6,14 +6,23 @@ document.addEventListener("DOMContentLoaded", function() {
   var profContent = document.getElementById('professional-content');
   var pubContent = document.getElementById('public-content');
 
+  
   firebase.auth().onAuthStateChanged(function(user) {
-    if (user) {
-      // Mostrar zona profesional, ocultar pública
-      if (btnLogin) btnLogin.style.display = 'none';
-      if (btnLogout) btnLogout.style.display = '';
-      if (profHeader) profHeader.style.display = '';
-      if (profContent) profContent.style.display = '';
-      if (pubContent) pubContent.style.display = 'none';
+  if (user) {
+    const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
+    db.collection('profesionales').doc(user.uid).get().then(doc => {
+      if (doc.exists) {
+        const profesional = doc.data();
+        // Esta línea es CLAVE
+        if (window.setCurrentUserData) window.setCurrentUserData(profesional);
+      } else {
+        if (window.setCurrentUserData) window.setCurrentUserData(null);
+      }
+    });
+  } else {
+    if (window.setCurrentUserData) window.setCurrentUserData(null);
+  }
+});
 
       // Cargar datos del profesional para el header y tabs
       const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
