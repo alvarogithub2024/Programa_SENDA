@@ -22,7 +22,7 @@ import { initAttentions } from './seguimiento/atenciones.js';
 import { initUpcomingAppointments as initUpcomingAppointmentsFromSeguimiento } from './seguimiento/citas-proximas.js';
 
 // Solicitudes
-import { initGestorSolicitudes } from './solicitudes/gestor-solicitudes.js';
+import initGestorSolicitudes from './solicitudes/gestor-solicitudes.js';
 
 // Utilidades
 import { closeModal, showModal } from './utilidades/modales.js';
