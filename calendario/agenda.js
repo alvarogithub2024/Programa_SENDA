@@ -557,25 +557,24 @@ function getCurrentUser() {
     return { displayName: 'Profesional SENDA' };
 }
 
-// Función para cerrar modal (global)
+window.openNewAppointmentModal = openNewAppointmentModal;
 window.closeModal = function(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
         modal.style.display = 'none';
     }
 };
-
-// Funciones de gestión de citas
 window.viewAppointment = function(appointmentId) {
     console.log('Ver cita:', appointmentId);
-};
-window.initScheduleManager = initScheduleManager;
 };
 window.editAppointment = function(appointmentId) {
     console.log('Editar cita:', appointmentId);
 };
+window.initCalendar = initCalendar;
+
+// Inicializar calendario al cargar el DOM
 window.addEventListener('DOMContentLoaded', function() {
-    if (typeof initScheduleManager === 'function') {
-        initScheduleManager();
+    if (typeof initCalendar === 'function') {
+        initCalendar();
     }
 });
