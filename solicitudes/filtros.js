@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('buscar-solicitudes').addEventListener('input', function(e) {
     currentFilters.busqueda = e.target.value;
     applyCurrentFilters();
-  });
+{
   document.getElementById('refresh-solicitudes').addEventListener('click', function() {
     currentFilters.estado = 'todos';
     currentFilters.prioridad = 'todos';
