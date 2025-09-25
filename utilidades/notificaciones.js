@@ -1,92 +1,68 @@
-/**
- * UTILIDADES/NOTIFICACIONES.JS - VERSIÓN SIN IMPORTS
- * Sistema de notificaciones para la aplicación
- */
+// UTILIDADES/NOTIFICACIONES.JS
 
-/**
- * Muestra una notificación al usuario
- */
-window.showNotification = function(message, type = 'info', duration = 4000) {
-    try {
-        const container = document.getElementById('notifications') || createNotificationsContainer();
-        
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.innerHTML = `
-            <i class="fas fa-${getNotificationIcon(type)}"></i> 
-            <span>${message}</span>
-            <button class="notification-close" onclick="this.parentElement.remove()">
-                <i class="fas fa-times"></i>
-            </button>
-        `;
-        
-        container.appendChild(notification);
-        
-        // Mostrar animación
-        requestAnimationFrame(() => {
-            notification.classList.add('show');
-        });
-        
-        // Auto-remover después del tiempo especificado
-        setTimeout(() => {
-            if (notification.parentElement) {
-                notification.classList.remove('show');
-                setTimeout(() => {
-                    if (notification.parentElement) {
-                        notification.remove();
-                    }
-                }, 300);
+// Muestra una notificación flotante en la pantalla
+function showNotification(mensaje, tipo, duracion) {
+    tipo = tipo || 'info'; // info, success, warning, error
+    duracion = duracion || 3000;
+
+    // Crear contenedor si no existe
+    var contenedor = document.getElementById('notificaciones-contenedor');
+    if (!contenedor) {
+        contenedor = document.createElement('div');
+        contenedor.id = 'notificaciones-contenedor';
+        contenedor.style.position = 'fixed';
+        contenedor.style.top = '20px';
+        contenedor.style.right = '20px';
+        contenedor.style.zIndex = '99999';
+        contenedor.style.display = 'flex';
+        contenedor.style.flexDirection = 'column';
+        contenedor.style.gap = '12px';
+        document.body.appendChild(contenedor);
+    }
+
+    // Crear notificación
+    var notificacion = document.createElement('div');
+    notificacion.className = 'notificacion ' + tipo;
+    notificacion.style.background = ({
+        info: '#2563eb',
+        success: '#16a34a',
+        warning: '#f59e42',
+        error: '#ef4444'
+    })[tipo] || '#2563eb';
+    notificacion.style.color = 'white';
+    notificacion.style.padding = '16px 24px';
+    notificacion.style.borderRadius = '6px';
+    notificacion.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+    notificacion.style.fontSize = '1rem';
+    notificacion.style.display = 'flex';
+    notificacion.style.alignItems = 'center';
+    notificacion.style.gap = '12px';
+    notificacion.style.opacity = '0.98';
+    notificacion.style.cursor = 'pointer';
+    notificacion.innerHTML = `
+        <span style="font-size:1.3em;">
+            ${
+                tipo === 'success' ? '✅' :
+                tipo === 'warning' ? '⚠️' :
+                tipo === 'error' ? '❌' :
+                'ℹ️'
             }
-        }, duration);
-        
-        console.log(`📢 Notification [${type.toUpperCase()}]: ${message}`);
-        
-    } catch (error) {
-        console.error('Error showing notification:', error);
-        // Fallback a alert si falla el sistema de notificaciones
-        alert(`${type.toUpperCase()}: ${message}`);
-    }
-};
-
-/**
- * Obtiene el icono para el tipo de notificación
- */
-function getNotificationIcon(type) {
-    const icons = {
-        'success': 'check-circle',
-        'error': 'exclamation-triangle',
-        'warning': 'exclamation-triangle',
-        'info': 'info-circle'
-    };
-    return icons[type] || 'info-circle';
-}
-
-/**
- * Crea el contenedor de notificaciones si no existe
- */
-function createNotificationsContainer() {
-    const container = document.createElement('div');
-    container.id = 'notifications';
-    container.className = 'notifications-container';
-    container.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 10000;
-        max-width: 400px;
+        </span>
+        <span>${mensaje}</span>
     `;
-    document.body.appendChild(container);
-    return container;
+
+    notificacion.onclick = function() {
+        contenedor.removeChild(notificacion);
+    };
+
+    contenedor.appendChild(notificacion);
+
+    setTimeout(function() {
+        if (contenedor.contains(notificacion)) {
+            contenedor.removeChild(notificacion);
+        }
+    }, duracion);
 }
 
-/**
- * Limpia todas las notificaciones
- */
-window.clearAllNotifications = function() {
-    const container = document.getElementById('notifications');
-    if (container) {
-        container.innerHTML = '';
-    }
-};
-
-console.log('📢 Sistema de notificaciones cargado - Funciones disponibles en window');
+// Exportar globalmente
+window.showNotification = showNotification;
