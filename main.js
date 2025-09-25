@@ -20,6 +20,8 @@ import { initPatientRecord } from './pacientes/fichas.js';
 import { initTimeline } from './seguimiento/timeline.js';
 import { initAttentions } from './seguimiento/atenciones.js';
 import { initUpcomingAppointments as initUpcomingAppointmentsFromSeguimiento } from './seguimiento/citas-proximas.js';
+
+// Solicitudes
 import { initGestorSolicitudes } from './solicitudes/gestor-solicitudes.js';
 
 // Utilidades
@@ -116,11 +118,9 @@ async function waitForFirebaseInitialization(maxRetries = 10) {
         if (isFirebaseInitialized()) {
             return true;
         }
-        
         console.log(`⏳ Esperando Firebase... (${i + 1}/${maxRetries})`);
         await new Promise(resolve => setTimeout(resolve, 500));
     }
-    
     throw new Error('Firebase no se inicializó en el tiempo esperado');
 }
 
@@ -193,6 +193,20 @@ async function initializeSystemModules() {
                     throw error;
                 }
             }
+        },
+        // --- MÓDULO SOLICITUDES ---
+        {
+            name: 'Solicitudes',
+            init: async () => {
+                try {
+                    console.log('  📨 Inicializando gestor de solicitudes...');
+                    initGestorSolicitudes();
+                    console.log('  ✅ Gestor de solicitudes inicializado');
+                } catch (error) {
+                    console.warn('  ⚠️ Error en módulo solicitudes:', error);
+                    throw error;
+                }
+            }
         }
     ];
 
@@ -204,7 +218,6 @@ async function initializeSystemModules() {
             console.log(`✅ Módulo ${module.name} inicializado correctamente\n`);
         } catch (error) {
             console.warn(`⚠️ Error inicializando módulo ${module.name}:`, error);
-            // Continuar con otros módulos aunque uno falle
             continue;
         }
     }
@@ -215,20 +228,15 @@ async function initializeSystemModules() {
  */
 function setupGlobalFunctions() {
     console.log('🔧 Configurando funciones globales...');
-    
     try {
-        // Exportar funciones de modales globalmente
         window.closeModal = closeModal;
         window.showModal = showModal;
-        
-        // Función para cambiar entre tabs de login/registro
         window.switchLoginTab = function(tab) {
             try {
                 const loginTab = document.querySelector('.modal-tab[onclick*="login"]');
                 const registerTab = document.querySelector('.modal-tab[onclick*="register"]');
                 const loginForm = document.getElementById('login-form');
                 const registerForm = document.getElementById('register-form');
-
                 if (tab === 'login') {
                     if (loginTab) loginTab.classList.add('active');
                     if (registerTab) registerTab.classList.remove('active');
@@ -244,8 +252,6 @@ function setupGlobalFunctions() {
                 console.error('Error switching login tab:', error);
             }
         };
-
-        // Función de utilidad para debugging
         window.SENDA_DEBUG = {
             getSystemInfo: () => ({
                 version: '2.0',
@@ -263,9 +269,7 @@ function setupGlobalFunctions() {
                 console.log('🗑️ Storage limpiado');
             }
         };
-
         console.log('✅ Funciones globales configuradas');
-        
     } catch (error) {
         console.error('❌ Error configurando funciones globales:', error);
     }
@@ -276,8 +280,6 @@ function setupGlobalFunctions() {
  */
 function showInitializationError(error = null) {
     const errorMessage = error ? error.message : 'Timeout de inicialización';
-    
-    // Crear modal de error si no existe
     let errorModal = document.getElementById('initialization-error-modal');
     if (!errorModal) {
         errorModal = document.createElement('div');
@@ -285,7 +287,6 @@ function showInitializationError(error = null) {
         errorModal.className = 'modal-overlay';
         errorModal.style.display = 'flex';
         errorModal.style.zIndex = '99999';
-        
         errorModal.innerHTML = `
             <div class="modal" style="max-width: 500px;">
                 <div style="text-align: center; padding: 24px;">
@@ -322,7 +323,6 @@ function showInitializationError(error = null) {
                 </div>
             </div>
         `;
-        
         document.body.appendChild(errorModal);
     } else {
         errorModal.style.display = 'flex';
@@ -334,39 +334,25 @@ function showInitializationError(error = null) {
  */
 function attemptBasicRecovery() {
     console.log('🔄 Intentando recuperación básica...');
-    
     try {
-        // Configurar funciones mínimas
         window.closeModal = (modalId) => {
             const modal = document.getElementById(modalId);
             if (modal) modal.style.display = 'none';
         };
-        
         window.showModal = (modalId) => {
             const modal = document.getElementById(modalId);
             if (modal) modal.style.display = 'flex';
         };
-        
-        // Configurar eventos básicos
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal-overlay')) {
                 e.target.style.display = 'none';
             }
         });
-        
         console.log('✅ Recuperación básica completada');
-        
     } catch (recoveryError) {
         console.error('❌ Error en recuperación básica:', recoveryError);
     }
 }
-
-/**
- * Mensaje de bienvenida y información del sistema
- */
-console.log(`
-
-`);
 
 // Información del navegador para debugging
 console.log('🔍 Información del Sistema:');
@@ -381,17 +367,12 @@ window.addEventListener('online', () => {
     console.log('🌐 Conexión restaurada');
     showNotification('Conexión a Internet restaurada', 'success');
 });
-
 window.addEventListener('offline', () => {
     console.log('📴 Conexión perdida');
     showNotification('Sin conexión a Internet. Algunas funciones pueden no estar disponibles.', 'warning', 5000);
 });
-
-// Event listener para errores no capturados
 window.addEventListener('error', (event) => {
     console.error('❌ Error no capturado:', event.error);
-    
-    // Solo mostrar errores críticos al usuario
     if (event.error && event.error.message && 
         (event.error.message.includes('Firebase') || 
          event.error.message.includes('network') ||
@@ -399,40 +380,16 @@ window.addEventListener('error', (event) => {
         showNotification('Error del sistema detectado. Si persiste, recarga la página.', 'error');
     }
 });
-
-// Event listener para promesas rechazadas no capturadas
 window.addEventListener('unhandledrejection', (event) => {
     console.error('❌ Promesa rechazada no capturada:', event.reason);
-    
-    // Prevenir que se muestre en la consola del navegador
     event.preventDefault();
-    
-    // Solo log interno, no molestar al usuario
     if (event.reason && typeof event.reason === 'object' && event.reason.code) {
         console.warn(`Código de error: ${event.reason.code}`);
     }
 });
-
-// Detectar si es la primera carga o una recarga
 if (performance.navigation.type === performance.navigation.TYPE_RELOAD) {
     console.log('🔄 Página recargada por el usuario');
 } else {
     console.log('🆕 Primera carga de la página');
 }
-
-{
-    name: 'Solicitudes',
-    init: async () => {
-        try {
-            console.log('  📨 Inicializando gestor de solicitudes...');
-            initGestorSolicitudes();
-            console.log('  ✅ Gestor de solicitudes inicializado');
-        } catch (error) {
-            console.warn('  ⚠️ Error en módulo solicitudes:', error);
-            throw error;
-        }
-    }
-}
-
-// Log final
 console.log('\n📝 Sistema SENDA listo para inicialización...\n');
