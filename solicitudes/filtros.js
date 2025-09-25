@@ -3,7 +3,7 @@ import { showNotification } from '../utilidades/notificaciones.js';
 // Opciones para tus filtros
 const ESTADOS = ['todos', 'agendado', 'pendiente', 'respondido'];
 const PRIORIDADES = ['todos', 'baja', 'media', 'alta'];
-const CESFAMS = [
+const CESFAM = [
   'todos',
   'CESFAM Karol Wojtyla',
   'CESFAM Padre Manuel Villaseca',
@@ -15,7 +15,6 @@ const CESFAMS = [
   'CESFAM Bernardo Leighton'
 ];
 
-// Llenar selects si quieres hacerlo dinámico (opcional)
 function fillSelectOptions(id, options, labelMap={}) {
   const sel = document.getElementById(id);
   if (!sel) return;
@@ -28,31 +27,22 @@ function fillSelectOptions(id, options, labelMap={}) {
   });
 }
 
-// Puedes llamar a esto en tu inicialización:
-fillSelectOptions('filtro-estado-solicitudes', ESTADOS, {
-  todos: 'Todos los estados',
-  agendado: 'Agendado/a',
-  pendiente: 'Pendiente',
-  respondido: 'Respondido'
-});
-fillSelectOptions('filtro-prioridad-solicitudes', PRIORIDADES, {
-  todos: 'Todas las prioridades',
-  baja: 'Baja',
-  media: 'Media',
-  alta: 'Alta'
-});
-fillSelectOptions('filtro-cesfam-solicitudes', CESFAMS, {
-  todos: 'Todos los CESFAM'
-});
-
-// Filtros globales
-const currentFilters = {
-  estado: 'todos',
-  prioridad: 'todos',
-  cesfam: 'todos',
-  fecha: 'todos',
-  busqueda: ''
-};
+document.addEventListener('DOMContentLoaded', () => {
+  fillSelectOptions('filtro-estado-solicitudes', ESTADOS, {
+    todos: 'Todos los estados',
+    agendado: 'Agendado/a',
+    pendiente: 'Pendiente',
+    respondido: 'Respondido'
+  });
+  fillSelectOptions('filtro-prioridad-solicitudes', PRIORIDADES, {
+    todos: 'Todas las prioridades',
+    baja: 'Baja',
+    media: 'Media',
+    alta: 'Alta'
+  });
+  fillSelectOptions('filtro-cesfam-solicitudes', CESFAMS, {
+    todos: 'Todos los CESFAM'
+  });
 
 // Tus datos deben estar en solicitudesData y deberías tener renderSolicitudesTable()
 let solicitudesData = []; // Llena esto con tus datos
