@@ -1,3 +1,7 @@
+/**
+ * SOLICITUDES/GESTOR-SOLICITUDES.JS - VERSIÓN CORREGIDA SIN IMPORTS
+ */
+
 // Variables globales
 let solicitudesData = [];
 let filteredSolicitudesData = [];
@@ -31,12 +35,155 @@ const CESFAM_OPTIONS = [
     'CESFAM Karol Wojtyla',
     'CESFAM Padre Manuel Villaseca',
     'CESFAM Vista Hermosa',
-    'CESFAM Santa Teresa de Los Andes',
-    'CESFAM El Volcán',
-    'CESFAM Recreo',
+    'CESFAM San Gerónimo',
+    'CESFAM Cardenal Raul Silva Henriquez',
+    'CESFAM Laurita Vicuña',
     'CESFAM Alejandro del Río',
-    'CESFAM Hospital Sotero del Río'
+    'CESFAM Bernardo Leighton'
 ];
+
+/**
+ * FUNCIÓN PRINCIPAL - Inicializar gestor de solicitudes
+ */
+window.initSolicitudesManager = function() {
+    try {
+        console.log('📋 Inicializando gestor de solicitudes...');
+        
+        // Verificar que estamos en la pestaña correcta
+        const solicitudesTab = document.getElementById('solicitudes-tab');
+        if (!solicitudesTab || !solicitudesTab.classList.contains('active')) {
+            console.log('⏸️ Solicitudes no se inicializa - pestaña no activa');
+            return;
+        }
+        
+        // Crear datos de ejemplo si no hay datos
+        if (solicitudesData.length === 0) {
+            createSampleSolicitudes();
+        }
+        
+        // Aplicar filtros iniciales
+        applyCurrentFilters();
+        
+        // Configurar filtros
+        setupFilters();
+        
+        // Configurar eventos
+        setupEvents();
+        
+        // Configurar auto-actualización
+        setupAutoRefresh();
+        
+        // Renderizar tabla inicial
+        renderSolicitudesTable();
+        updateSolicitudesCounter();
+        updateSolicitudesStats();
+        
+        console.log('✅ Gestor de solicitudes inicializado');
+        
+    } catch (error) {
+        console.error('❌ Error inicializando gestor de solicitudes:', error);
+        if (window.showNotification) {
+            window.showNotification('Error inicializando solicitudes', 'error');
+        }
+    }
+};
+
+/**
+ * Configurar filtros
+ */
+function setupFilters() {
+    try {
+        // Llenar opciones de filtros
+        fillSelectOptions('filtro-estado-solicitudes', ['todos', 'pendiente', 'en_proceso', 'agendada', 'completada'], {
+            todos: 'Todos los estados',
+            pendiente: 'Pendiente',
+            en_proceso: 'En proceso',
+            agendada: 'Agendada',
+            completada: 'Completada'
+        });
+        
+        fillSelectOptions('filtro-prioridad-solicitudes', ['todos', 'alta', 'media', 'baja'], {
+            todos: 'Todas las prioridades',
+            alta: 'Alta',
+            media: 'Media',
+            baja: 'Baja'
+        });
+        
+        fillSelectOptions('filtro-cesfam-solicitudes', ['todos', ...CESFAM_OPTIONS], {
+            todos: 'Todos los CESFAM'
+        });
+        
+        // Event listeners para filtros
+        const filters = [
+            { id: 'filtro-estado-solicitudes', prop: 'estado' },
+            { id: 'filtro-prioridad-solicitudes', prop: 'prioridad' },
+            { id: 'filtro-cesfam-solicitudes', prop: 'cesfam' },
+            { id: 'filtro-fecha-solicitudes', prop: 'fecha' }
+        ];
+        
+        filters.forEach(filter => {
+            const element = document.getElementById(filter.id);
+            if (element) {
+                element.addEventListener('change', function(e) {
+                    currentFilters[filter.prop] = e.target.value;
+                    applyCurrentFilters();
+                });
+            }
+        });
+        
+        // Filtro de búsqueda
+        const searchInput = document.getElementById('buscar-solicitudes');
+        if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                currentFilters.busqueda = e.target.value;
+                applyCurrentFilters();
+            });
+        }
+        
+    } catch (error) {
+        console.error('Error configurando filtros:', error);
+    }
+}
+
+/**
+ * Configurar eventos
+ */
+function setupEvents() {
+    try {
+        // Botón de refresh
+        const refreshBtn = document.getElementById('refresh-solicitudes');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function() {
+                resetFilters();
+                if (window.showNotification) {
+                    window.showNotification('Filtros limpiados', 'info');
+                }
+            });
+        }
+        
+        // Botón de exportar
+        const exportBtn = document.getElementById('export-solicitudes');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', exportSolicitudesToExcel);
+        }
+        
+    } catch (error) {
+        console.error('Error configurando eventos:', error);
+    }
+}
+
+/**
+ * Configurar auto-actualización
+ */
+function setupAutoRefresh() {
+    if (isAutoRefreshEnabled && !autoRefreshInterval) {
+        autoRefreshInterval = setInterval(() => {
+            console.log('🔄 Auto-actualizando solicitudes...');
+            // En un entorno real, aquí cargarías desde Firebase
+            // loadSolicitudesFromFirebase();
+        }, 30000); // Cada 30 segundos
+    }
+}
 
 function renderSolicitudesTable() {
     try {
@@ -45,6 +192,7 @@ function renderSolicitudesTable() {
             console.warn('⚠️ Elemento solicitudes-table-body no encontrado');
             return;
         }
+        
         if (filteredSolicitudesData.length === 0) {
             tableBody.innerHTML = `
                 <tr>
@@ -66,9 +214,11 @@ function renderSolicitudesTable() {
             `;
             return;
         }
+        
         const rows = filteredSolicitudesData.map(solicitud => {
-            const estadoConfig = solicitud.estadoConfig;
-            const prioridadConfig = solicitud.prioridadConfig;
+            const estadoConfig = ESTADOS_SOLICITUDES[solicitud.estado] || ESTADOS_SOLICITUDES['pendiente'];
+            const prioridadConfig = PRIORIDADES_SOLICITUDES[solicitud.prioridad] || PRIORIDADES_SOLICITUDES['media'];
+            
             return `
                 <tr class="solicitud-row" data-solicitud-id="${solicitud.id}">
                     <td>
@@ -160,8 +310,10 @@ function renderSolicitudesTable() {
                 </tr>
             `;
         }).join('');
+        
         tableBody.innerHTML = rows;
         console.log(`✅ Tabla renderizada con ${filteredSolicitudesData.length} solicitudes`);
+        
     } catch (error) {
         console.error('❌ Error renderizando tabla:', error);
         const tableBody = document.getElementById('solicitudes-table-body');
@@ -185,12 +337,14 @@ function updateSolicitudesCounter() {
     try {
         const counter = document.getElementById('solicitudes-counter');
         const totalCounter = document.getElementById('solicitudes-total-counter');
+        
         if (counter) {
             counter.textContent = filteredSolicitudesData.length;
         }
         if (totalCounter) {
             totalCounter.textContent = solicitudesData.length;
         }
+        
         const tabButton = document.querySelector('[data-tab="solicitudes"]');
         if (tabButton) {
             const badge = tabButton.querySelector('.tab-badge');
@@ -272,6 +426,64 @@ function calculateSolicitudesStats() {
 }
 
 /**
+ * Aplicar filtros actuales
+ */
+function applyCurrentFilters() {
+    filteredSolicitudesData = solicitudesData.filter(solicitud => {
+        // Filtro por Estado
+        if (currentFilters.estado !== 'todos' && (solicitud.estado || '').toLowerCase() !== currentFilters.estado) {
+            return false;
+        }
+        
+        // Filtro por Prioridad
+        if (currentFilters.prioridad !== 'todos' && (solicitud.prioridad || '').toLowerCase() !== currentFilters.prioridad) {
+            return false;
+        }
+        
+        // Filtro por CESFAM
+        if (currentFilters.cesfam !== 'todos' && (solicitud.cesfam || '') !== currentFilters.cesfam) {
+            return false;
+        }
+        
+        // Filtro por Fecha
+        if (currentFilters.fecha !== 'todos') {
+            const today = new Date();
+            const solicitudDate = solicitud.fechaCreacion ? new Date(solicitud.fechaCreacion) : null;
+            if (!solicitudDate) return false;
+            
+            switch (currentFilters.fecha) {
+                case 'hoy':
+                    if (!isSameDay(solicitudDate, today)) return false;
+                    break;
+                case 'semana':
+                case 'esta_semana':
+                    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    if (solicitudDate < weekAgo) return false;
+                    break;
+                case 'mes':
+                case 'este_mes':
+                    const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+                    if (solicitudDate < monthAgo) return false;
+                    break;
+            }
+        }
+        
+        // Filtro por Búsqueda (solo RUT)
+        if (currentFilters.busqueda) {
+            const rut = (solicitud.rut || '').replace(/\./g, '').toLowerCase();
+            const q = currentFilters.busqueda.replace(/\./g, '').toLowerCase();
+            if (!rut.includes(q)) return false;
+        }
+        
+        return true;
+    });
+    
+    renderSolicitudesTable();
+    updateSolicitudesCounter();
+    updateSolicitudesStats();
+}
+
+/**
  * Crear solicitudes de ejemplo
  */
 function createSampleSolicitudes() {
@@ -281,6 +493,7 @@ function createSampleSolicitudes() {
     yesterday.setDate(yesterday.getDate() - 1);
     const lastWeek = new Date(today);
     lastWeek.setDate(lastWeek.getDate() - 7);
+    
     solicitudesData = [
         {
             id: 'sample_001',
@@ -307,9 +520,7 @@ function createSampleSolicitudes() {
             fechaCreacion: today,
             fechaAgenda: null,
             tiempoTranscurrido: 'Hace menos de 1 hora',
-            prioridadNumerica: 2,
-            estadoConfig: ESTADOS_SOLICITUDES['pendiente'],
-            prioridadConfig: PRIORIDADES_SOLICITUDES['media']
+            prioridadNumerica: 2
         },
         {
             id: 'sample_002',
@@ -336,9 +547,7 @@ function createSampleSolicitudes() {
             fechaCreacion: yesterday,
             fechaAgenda: null,
             tiempoTranscurrido: 'Hace 1 día',
-            prioridadNumerica: 3,
-            estadoConfig: ESTADOS_SOLICITUDES['pendiente'],
-            prioridadConfig: PRIORIDADES_SOLICITUDES['alta']
+            prioridadNumerica: 3
         },
         {
             id: 'sample_003',
@@ -365,12 +574,59 @@ function createSampleSolicitudes() {
             fechaCreacion: lastWeek,
             fechaAgenda: null,
             tiempoTranscurrido: 'Hace 1 semana',
-            prioridadNumerica: 2,
-            estadoConfig: ESTADOS_SOLICITUDES['en_proceso'],
-            prioridadConfig: PRIORIDADES_SOLICITUDES['media']
+            prioridadNumerica: 2
         }
     ];
+    
     console.log(`✅ ${solicitudesData.length} solicitudes de ejemplo creadas`);
+}
+
+/**
+ * Utilidades auxiliares
+ */
+function fillSelectOptions(id, options, labelMap = {}) {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = '';
+    options.forEach(opt => {
+        const o = document.createElement('option');
+        o.value = opt;
+        o.textContent = labelMap[opt] || (opt === 'todos' ? 'Todos' : opt.charAt(0).toUpperCase() + opt.slice(1));
+        sel.appendChild(o);
+    });
+}
+
+function isSameDay(date1, date2) {
+    return date1.getDate() === date2.getDate() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getFullYear() === date2.getFullYear();
+}
+
+function resetFilters() {
+    currentFilters = {
+        estado: 'todos',
+        prioridad: 'todos',
+        cesfam: 'todos',
+        fecha: 'todos',
+        busqueda: ''
+    };
+    
+    // Resetear valores en la interfaz
+    const elements = {
+        estado: document.getElementById('filtro-estado-solicitudes'),
+        prioridad: document.getElementById('filtro-prioridad-solicitudes'),
+        cesfam: document.getElementById('filtro-cesfam-solicitudes'),
+        fecha: document.getElementById('filtro-fecha-solicitudes'),
+        busqueda: document.getElementById('buscar-solicitudes')
+    };
+    
+    Object.entries(elements).forEach(([key, element]) => {
+        if (element) {
+            element.value = key === 'busqueda' ? '' : 'todos';
+        }
+    });
+    
+    applyCurrentFilters();
 }
 
 /**
@@ -386,8 +642,8 @@ function exportSolicitudesToExcel() {
             'Teléfono': solicitud.telefono,
             'Email': solicitud.email,
             'CESFAM': solicitud.cesfam,
-            'Estado': solicitud.estadoConfig.label,
-            'Prioridad': solicitud.prioridadConfig.label,
+            'Estado': ESTADOS_SOLICITUDES[solicitud.estado]?.label || solicitud.estado,
+            'Prioridad': PRIORIDADES_SOLICITUDES[solicitud.prioridad]?.label || solicitud.prioridad,
             'Sustancias': Array.isArray(solicitud.sustancias) ? solicitud.sustancias.join(', ') : 'No especificado',
             'Fecha Creación': solicitud.fechaCreacion.toLocaleDateString('es-CL'),
             'Descripción': solicitud.descripcion || 'Sin descripción',
@@ -395,55 +651,34 @@ function exportSolicitudesToExcel() {
             'Tiempo de Consumo': solicitud.tiempoConsumo || 'No especificado',
             'Tratamiento Previo': solicitud.tratamientoPrevio === 'si' ? 'Sí' : 'No'
         }));
+        
         const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-        const filename = `solicitudes_senda_${timestamp}.xlsx`;
+        const filename = `solicitudes_senda_${timestamp}.csv`;
         const csvContent = convertToCSV(dataToExport);
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
+        
         if (link.download !== undefined) {
             const url = URL.createObjectURL(blob);
             link.setAttribute('href', url);
-            link.setAttribute('download', filename.replace('.xlsx', '.csv'));
+            link.setAttribute('download', filename);
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         }
-        showNotification(`Solicitudes exportadas: ${filename}`, 'success');
+        
+        if (window.showNotification) {
+            window.showNotification(`Solicitudes exportadas: ${filename}`, 'success');
+        }
     } catch (error) {
         console.error('❌ Error exportando solicitudes:', error);
-        showNotification('Error al exportar solicitudes', 'error');
+        if (window.showNotification) {
+            window.showNotification('Error al exportar solicitudes', 'error');
+        }
     }
 }
 
-/**
- * Utilidades auxiliares
- */
-function calculateTimeElapsed(date) {
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-    if (days > 0) {
-        return `Hace ${days} día${days > 1 ? 's' : ''}`;
-    } else if (hours > 0) {
-        return `Hace ${hours} hora${hours > 1 ? 's' : ''}`;
-    } else if (minutes > 0) {
-        return `Hace ${minutes} minuto${minutes > 1 ? 's' : ''}`;
-    } else {
-        return 'Hace menos de 1 minuto';
-    }
-}
-function getPriorityOrder(priority) {
-    const order = { 'alta': 3, 'media': 2, 'baja': 1 };
-    return order[priority] || 2;
-}
-function isSameDay(date1, date2) {
-    return date1.getDate() === date2.getDate() &&
-           date1.getMonth() === date2.getMonth() &&
-           date1.getFullYear() === date2.getFullYear();
-}
 function convertToCSV(data) {
     if (data.length === 0) return '';
     const headers = Object.keys(data[0]);
@@ -468,39 +703,51 @@ window.verDetalleSolicitud = function(solicitudId) {
         const solicitud = solicitudesData.find(s => s.id === solicitudId);
         if (solicitud) {
             console.log('Ver detalles de solicitud:', solicitud);
-            showNotification('Función de detalles en desarrollo', 'info');
+            if (window.showNotification) {
+                window.showNotification('Función de detalles en desarrollo', 'info');
+            }
         }
     } catch (error) {
         console.error('Error viendo detalles:', error);
     }
 };
+
 window.editarSolicitud = function(solicitudId) {
     try {
         const solicitud = solicitudesData.find(s => s.id === solicitudId);
         if (solicitud) {
             console.log('Editar solicitud:', solicitud);
-            showNotification('Función de edición en desarrollo', 'info');
+            if (window.showNotification) {
+                window.showNotification('Función de edición en desarrollo', 'info');
+            }
         }
     } catch (error) {
         console.error('Error editando solicitud:', error);
     }
 };
+
 window.cambiarEstadoSolicitud = function(solicitudId, nuevoEstado) {
     try {
         console.log(`Cambiar estado de ${solicitudId} a ${nuevoEstado}`);
-        showNotification('Función de cambio de estado en desarrollo', 'info');
+        if (window.showNotification) {
+            window.showNotification('Función de cambio de estado en desarrollo', 'info');
+        }
     } catch (error) {
         console.error('Error cambiando estado:', error);
     }
 };
+
 window.agendarCitaSolicitud = function(solicitudId) {
     try {
         console.log('Agendar cita para solicitud:', solicitudId);
-        showNotification('Función de agendamiento en desarrollo', 'info');
+        if (window.showNotification) {
+            window.showNotification('Función de agendamiento en desarrollo', 'info');
+        }
     } catch (error) {
         console.error('Error agendando cita:', error);
     }
 };
+
 window.exportarSolicitud = function(solicitudId) {
     try {
         const solicitud = solicitudesData.find(s => s.id === solicitudId);
@@ -511,20 +758,25 @@ window.exportarSolicitud = function(solicitudId) {
         console.error('Error exportando solicitud:', error);
     }
 };
+
 window.eliminarSolicitud = function(solicitudId) {
     try {
         if (confirm('¿Estás seguro de que quieres eliminar esta solicitud?')) {
             console.log('Eliminar solicitud:', solicitudId);
-            showNotification('Función de eliminación en desarrollo', 'warning');
+            if (window.showNotification) {
+                window.showNotification('Función de eliminación en desarrollo', 'warning');
+            }
         }
     } catch (error) {
         console.error('Error eliminando solicitud:', error);
     }
 };
+
 window.toggleAccionesSolicitud = function(solicitudId) {
     try {
         const dropdown = document.getElementById(`acciones-${solicitudId}`);
         if (dropdown) {
+            // Cerrar otros dropdowns
             document.querySelectorAll('.dropdown-menu').forEach(menu => {
                 if (menu.id !== `acciones-${solicitudId}`) {
                     menu.classList.remove('show');
@@ -536,6 +788,8 @@ window.toggleAccionesSolicitud = function(solicitudId) {
         console.error('Error toggle acciones:', error);
     }
 };
+
+// Cerrar dropdowns al hacer clic fuera
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.dropdown-acciones')) {
         document.querySelectorAll('.dropdown-menu').forEach(menu => {
@@ -543,3 +797,5 @@ document.addEventListener('click', (e) => {
         });
     }
 });
+
+console.log('📋 Gestor de solicitudes cargado - Función principal disponible en window.initSolicitudesManager');
