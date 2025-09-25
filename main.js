@@ -39,6 +39,89 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (window.setupFormularios && typeof window.setupFormularios === 'function') {
             window.setupFormularios();
         } else {
+            console.warn('⚠️ setupFormularios no disponible');
+        }
+        console.log('✅ Formularios configurados\n');
+        
+        // Paso 4: Configurar navegación
+        console.log('🔧 Paso 4: Configurando navegación...');
+        window.setupTabs && window.setupTabs();
+        console.log('✅ Navegación configurada\n');
+        
+        // Paso 5: Configurar eventos globales
+        console.log('🔧 Paso 5: Configurando eventos globales...');
+        window.setupEventListeners && window.setupEventListeners();
+        console.log('✅ Eventos configurados\n');
+        
+        // Paso 6: Configurar autenticación
+        console.log('🔧 Paso 6: Configurando autenticación...');
+        if (window.setupAuth && typeof window.setupAuth === 'function') {
+            await window.setupAuth();
+        } else {
+            console.warn('⚠️ setupAuth no disponible');
+        }
+        console.log('✅ Autenticación configurada\n');
+        
+        // Paso 7: Inicializar módulos del sistema
+        console.log('🔧 Paso 7: Inicializando módulos del sistema...');
+        await initializeSystemModules();
+        
+        // Paso 8: Configurar event listeners específicos para formularios
+        console.log('🔧 Paso 8: Configurando eventos de formularios...');
+        setupFormEventListeners();
+        
+        console.log('\n🎉 ¡SISTEMA SENDA INICIALIZADO CORRECTAMENTE!');
+        console.log('=====================================');
+        
+        initializationCompleted = true;
+        clearTimeout(initializationTimer);
+        
+        setTimeout(() => {
+            if (window.showNotification) {
+                window.showNotification('Sistema SENDA cargado correctamente', 'success', 3000);
+            }
+        }, 1000);
+        
+    } catch (error) {
+        clearTimeout(initializationTimer);
+        console.error('❌ ERROR CRÍTICO durante la inicialización:', error);
+        showInitializationError(error);
+        attemptBasicRecovery();
+    }
+});
+
+/**
+ * Configurar event listeners específicos para formularios
+ */
+function setupFormEventListeners() {
+    try {
+        console.log('🔧 Configurando eventos de formularios...');
+        
+        // Botón de solicitar ayuda
+        const registerPatientBtn = document.getElementById('register-patient');
+        if (registerPatientBtn) {
+            registerPatientBtn.addEventListener('click', () => {
+                console.log('📝 Abriendo formulario de solicitud');
+                if (window.showModal) {
+                    window.showModal('patient-modal');
+                }
+            });
+            console.log('✅ Botón "Solicitar Ayuda" configurado');
+        } else {
+            console.warn('⚠️ Botón register-patient no encontrado');
+        }
+        
+        // Botón de reingreso al programa
+        const reentryProgramBtn = document.getElementById('reentry-program');
+        if (reentryProgramBtn) {
+            reentryProgramBtn.addEventListener('click', () => {
+                console.log('🔄 Abriendo formulario de reingreso');
+                if (window.showModal) {
+                    window.showModal('reentry-modal');
+                }
+            });
+            console.log('✅ Botón "Reingreso al Programa" configurado');
+        } else {
             console.warn('⚠️ Botón reentry-program no encontrado');
         }
         
@@ -50,6 +133,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         console.error('❌ Error configurando eventos de formularios:', error);
     }
+}
+
 /**
  * Configurar navegación por pasos del formulario
  */
@@ -147,6 +232,9 @@ function updateMotivacionColor(value) {
     motivacionValue.style.backgroundColor = color;
 }
 
+/**
+ * Esperar a que Firebase se inicialice
+ */
 async function waitForFirebaseInitialization(maxRetries = 10) {
     for (let i = 0; i < maxRetries; i++) {
         if (window.isFirebaseInitialized && window.isFirebaseInitialized()) {
@@ -158,6 +246,9 @@ async function waitForFirebaseInitialization(maxRetries = 10) {
     throw new Error('Firebase no se inicializó en el tiempo esperado');
 }
 
+/**
+ * Inicializar módulos del sistema
+ */
 async function initializeSystemModules() {
     const modules = [
         {
@@ -215,7 +306,7 @@ async function initializeSystemModules() {
     for (const module of modules) {
         try {
             await module.init();
-            console.log(`✅ Módulo ${module.name} inicializado correctamente\n`);
+            console.log(`✅ Módulo ${module.name} inicializado correctamente`);
         } catch (error) {
             console.warn(`⚠️ Error inicializando módulo ${module.name}:`, error);
             continue;
@@ -223,6 +314,9 @@ async function initializeSystemModules() {
     }
 }
 
+/**
+ * Configurar funciones globales
+ */
 function setupGlobalFunctions() {
     try {
         // Función para cerrar modales
@@ -359,6 +453,9 @@ function setupGlobalFunctions() {
     }
 }
 
+/**
+ * Obtener color para notificaciones
+ */
 function getNotificationColor(type) {
     const colors = {
         'success': '#10b981',
@@ -369,6 +466,9 @@ function getNotificationColor(type) {
     return colors[type] || colors.info;
 }
 
+/**
+ * Obtener icono para notificaciones
+ */
 function getNotificationIcon(type) {
     const icons = {
         'success': 'check-circle',
@@ -379,6 +479,9 @@ function getNotificationIcon(type) {
     return icons[type] || 'info-circle';
 }
 
+/**
+ * Mostrar error de inicialización
+ */
 function showInitializationError(error = null) {
     const errorMessage = error ? error.message : 'Error desconocido de inicialización';
     
@@ -448,6 +551,9 @@ function showInitializationError(error = null) {
     }
 }
 
+/**
+ * Intentar recuperación básica
+ */
 function attemptBasicRecovery() {
     try {
         console.log('🚑 Intentando recuperación de emergencia...');
@@ -491,87 +597,4 @@ console.log(`   Idioma: ${navigator.language}`);
 console.log(`   Conexión: ${navigator.onLine ? 'Online' : 'Offline'}`);
 console.log(`   Local Storage: ${typeof Storage !== 'undefined' ? 'Disponible' : 'No disponible'}`);
 
-console.log('\n📝 Sistema SENDA listo para inicialización...\n');('⚠️ setupFormularios no disponible');
-        }
-        console.log('✅ Formularios configurados\n');
-        
-        // Paso 4: Configurar navegación
-        console.log('🔧 Paso 4: Configurando navegación...');
-        window.setupTabs && window.setupTabs();
-        console.log('✅ Navegación configurada\n');
-        
-        // Paso 5: Configurar eventos globales
-        console.log('🔧 Paso 5: Configurando eventos globales...');
-        window.setupEventListeners && window.setupEventListeners();
-        console.log('✅ Eventos configurados\n');
-        
-        // Paso 6: Configurar autenticación
-        console.log('🔧 Paso 6: Configurando autenticación...');
-        if (window.setupAuth && typeof window.setupAuth === 'function') {
-            await window.setupAuth();
-        } else {
-            console.warn('⚠️ setupAuth no disponible');
-        }
-        console.log('✅ Autenticación configurada\n');
-        
-        // Paso 7: Inicializar módulos del sistema
-        console.log('🔧 Paso 7: Inicializando módulos del sistema...');
-        await initializeSystemModules();
-        
-        // Paso 8: Configurar event listeners específicos para formularios
-        console.log('🔧 Paso 8: Configurando eventos de formularios...');
-        setupFormEventListeners();
-        
-        console.log('\n🎉 ¡SISTEMA SENDA INICIALIZADO CORRECTAMENTE!');
-        console.log('=====================================');
-        
-        initializationCompleted = true;
-        clearTimeout(initializationTimer);
-        
-        setTimeout(() => {
-            if (window.showNotification) {
-                window.showNotification('Sistema SENDA cargado correctamente', 'success', 3000);
-            }
-        }, 1000);
-        
-    } catch (error) {
-        clearTimeout(initializationTimer);
-        console.error('❌ ERROR CRÍTICO durante la inicialización:', error);
-        showInitializationError(error);
-        attemptBasicRecovery();
-    }
-});
-
-/**
- * Configurar event listeners específicos para formularios
- */
-function setupFormEventListeners() {
-    try {
-        console.log('🔧 Configurando eventos de formularios...');
-        
-        // Botón de solicitar ayuda
-        const registerPatientBtn = document.getElementById('register-patient');
-        if (registerPatientBtn) {
-            registerPatientBtn.addEventListener('click', () => {
-                console.log('📝 Abriendo formulario de solicitud');
-                if (window.showModal) {
-                    window.showModal('patient-modal');
-                }
-            });
-            console.log('✅ Botón "Solicitar Ayuda" configurado');
-        } else {
-            console.warn('⚠️ Botón register-patient no encontrado');
-        }
-        
-        // Botón de reingreso al programa
-        const reentryProgramBtn = document.getElementById('reentry-program');
-        if (reentryProgramBtn) {
-            reentryProgramBtn.addEventListener('click', () => {
-                console.log('🔄 Abriendo formulario de reingreso');
-                if (window.showModal) {
-                    window.showModal('reentry-modal');
-                }
-            });
-            console.log('✅ Botón "Reingreso al Programa" configurado');
-        } else {
-            console.warn
+console.log('\n📝 Sistema SENDA listo para inicialización...\n');
