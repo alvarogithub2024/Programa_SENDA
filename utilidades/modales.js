@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     // Botón "Acceso Profesionales"
- var btnLogin = document.getElementById("login-professional");
+ var btnLogin = document.getElementById('login-modal').style.display
 if (btnLogin) {
     btnLogin.addEventListener("click", function() {
         showModal('login-modal');
