@@ -1,87 +1,72 @@
-// MAIN.JS - SISTEMA SENDA PUENTE ALTO v2.0 - VERSIÓN CORREGIDA PARA FIREBASE
+// MAIN.JS - SISTEMA SENDA PUENTE ALTO v2.0 - SIN IMPORT/EXPORT
 
-let initializationCompleted = false;
-let initializationTimer = null;
+// Variables globales para control de inicialización
+var initializationCompleted = false;
+var initializationTimer = null;
 
-document.addEventListener('DOMContentLoaded', async () => {
+// Inicializar la aplicación
+document.addEventListener('DOMContentLoaded', async function() {
     console.log('\n🚀 SISTEMA SENDA PUENTE ALTO v2.0');
     console.log('=====================================');
-    console.log(`📅 Fecha: ${new Date().toLocaleString('es-CL')}`);
+    console.log('📅 Fecha:', new Date().toLocaleString('es-CL'));
     console.log('🔄 Iniciando sistema SENDA completo...\n');
-    
-    initializationTimer = setTimeout(() => {
+
+    initializationTimer = setTimeout(function() {
         if (!initializationCompleted) {
             console.error('❌ TIMEOUT: La inicialización está tomando demasiado tiempo');
             showInitializationError();
         }
-    }, 15000); // 15 segundos
+    }, 15000);
 
     try {
         // Paso 1: Inicializar Firebase PRIMERO
         console.log('🔧 Paso 1: Inicializando Firebase...');
-        const firebaseResult = window.initializeFirebase && window.initializeFirebase();
-        
-        if (!firebaseResult) {
+        var firebaseInitialized = window.initializeFirebase();
+
+        if (!firebaseInitialized) {
             throw new Error('Firebase no se pudo inicializar');
         }
-        
-        // Verificar que Firebase se inicializó correctamente
+
         await waitForFirebaseInitialization();
         console.log('✅ Firebase verificado y listo\n');
-        
-        // Paso 2: Configurar funciones básicas
-        console.log('🔧 Paso 2: Configurando funciones básicas...');
-        setupGlobalFunctions();
-        console.log('✅ Funciones básicas configuradas\n');
-        
-        // Paso 3: Configurar formularios (CRÍTICO para solicitudes)
-        console.log('🔧 Paso 3: Configurando formularios...');
-        if (window.setupFormularios && typeof window.setupFormularios === 'function') {
-            window.setupFormularios();
-        } else {
-            console.warn('⚠️ setupFormularios no disponible');
-        }
-        console.log('✅ Formularios configurados\n');
-        
-        // Paso 4: Configurar navegación
-        console.log('🔧 Paso 4: Configurando navegación...');
-        window.setupTabs && window.setupTabs();
+
+        // Paso 2: Configurar autenticación
+        console.log('🔧 Paso 2: Configurando autenticación...');
+        window.setupAuth();
+        console.log('✅ Autenticación configurada\n');
+
+        // Paso 3: Configurar navegación
+        console.log('🔧 Paso 3: Configurando navegación...');
+        window.setupTabs();
         console.log('✅ Navegación configurada\n');
-        
+
+        // Paso 4: Configurar formularios
+        console.log('🔧 Paso 4: Configurando formularios...');
+        window.setupFormularios();
+        console.log('✅ Formularios configurados\n');
+
         // Paso 5: Configurar eventos globales
         console.log('🔧 Paso 5: Configurando eventos globales...');
-        window.setupEventListeners && window.setupEventListeners();
+        window.setupEventListeners();
         console.log('✅ Eventos configurados\n');
-        
-        // Paso 6: Configurar autenticación
-        console.log('🔧 Paso 6: Configurando autenticación...');
-        if (window.setupAuth && typeof window.setupAuth === 'function') {
-            await window.setupAuth();
-        } else {
-            console.warn('⚠️ setupAuth no disponible');
-        }
-        console.log('✅ Autenticación configurada\n');
-        
-        // Paso 7: Inicializar módulos del sistema
-        console.log('🔧 Paso 7: Inicializando módulos del sistema...');
+
+        // Paso 6: Inicializar módulos del sistema
+        console.log('🔧 Paso 6: Inicializando módulos del sistema...');
         await initializeSystemModules();
-        
-        // Paso 8: Configurar event listeners específicos para formularios
-        console.log('🔧 Paso 8: Configurando eventos de formularios...');
-        setupFormEventListeners();
-        
+
+        // Paso 7: Configurar funciones globales
+        setupGlobalFunctions();
+
         console.log('\n🎉 ¡SISTEMA SENDA INICIALIZADO CORRECTAMENTE!');
         console.log('=====================================');
-        
+
         initializationCompleted = true;
         clearTimeout(initializationTimer);
-        
-        setTimeout(() => {
-            if (window.showNotification) {
-                window.showNotification('Sistema SENDA cargado correctamente', 'success', 3000);
-            }
+
+        setTimeout(function() {
+            window.showNotification('Sistema SENDA cargado correctamente', 'success', 3000);
         }, 1000);
-        
+
     } catch (error) {
         clearTimeout(initializationTimer);
         console.error('❌ ERROR CRÍTICO durante la inicialización:', error);
@@ -90,174 +75,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-/**
- * Configurar event listeners específicos para formularios
- */
-function setupFormEventListeners() {
-    try {
-        console.log('🔧 Configurando eventos de formularios...');
-        
-        // Botón de solicitar ayuda
-        const registerPatientBtn = document.getElementById('register-patient');
-        if (registerPatientBtn) {
-            registerPatientBtn.addEventListener('click', () => {
-                console.log('📝 Abriendo formulario de solicitud');
-                if (window.showModal) {
-                    window.showModal('patient-modal');
-                }
-            });
-            console.log('✅ Botón "Solicitar Ayuda" configurado');
-        } else {
-            console.warn('⚠️ Botón register-patient no encontrado');
-        }
-        
-        // Botón de reingreso al programa
-        const reentryProgramBtn = document.getElementById('reentry-program');
-        if (reentryProgramBtn) {
-            reentryProgramBtn.addEventListener('click', () => {
-                console.log('🔄 Abriendo formulario de reingreso');
-                if (window.showModal) {
-                    window.showModal('reentry-modal');
-                }
-            });
-            console.log('✅ Botón "Reingreso al Programa" configurado');
-        } else {
-            console.warn('⚠️ Botón reentry-program no encontrado');
-        }
-        
-        // Configurar navegación del formulario de pasos
-        setupFormStepNavigation();
-        
-        console.log('✅ Eventos de formularios configurados');
-        
-    } catch (error) {
-        console.error('❌ Error configurando eventos de formularios:', error);
-    }
-}
-
-/**
- * Configurar navegación por pasos del formulario
- */
-function setupFormStepNavigation() {
-    try {
-        // Configurar botones de navegación por pasos
-        const nextButtons = document.querySelectorAll('#next-step-1, #next-step-2, #next-step-3');
-        const prevButtons = document.querySelectorAll('#prev-step-2, #prev-step-3, #prev-step-4');
-        
-        nextButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                console.log('➡️ Avanzando al siguiente paso');
-                // La lógica de navegación se maneja en el formulario
-            });
-        });
-        
-        prevButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                console.log('⬅️ Retrocediendo al paso anterior');
-                // La lógica de navegación se maneja en el formulario
-            });
-        });
-        
-        // Configurar radio buttons para tipo de solicitud
-        const tipoSolicitudRadios = document.querySelectorAll('input[name="tipoSolicitud"]');
-        tipoSolicitudRadios.forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                console.log('📋 Tipo de solicitud cambiado:', e.target.value);
-                handleTipoSolicitudChange(e.target.value);
-            });
-        });
-        
-        // Configurar slider de motivación
-        const motivacionRange = document.getElementById('motivacion-range');
-        const motivacionValue = document.getElementById('motivacion-value');
-        
-        if (motivacionRange && motivacionValue) {
-            motivacionRange.addEventListener('input', (e) => {
-                motivacionValue.textContent = e.target.value;
-                updateMotivacionColor(e.target.value);
-            });
-        }
-        
-        console.log('✅ Navegación de formulario configurada');
-        
-    } catch (error) {
-        console.error('❌ Error configurando navegación de formulario:', error);
-    }
-}
-
-/**
- * Manejar cambio de tipo de solicitud
- */
-function handleTipoSolicitudChange(tipo) {
-    const infoEmailContainer = document.getElementById('info-email-container');
-    const basicInfoContainer = document.getElementById('basic-info-container');
-    const nextBtn = document.getElementById('next-step-1');
-    const submitBtn = document.getElementById('submit-step-1');
-    
-    if (tipo === 'informacion') {
-        // Solo información por email
-        if (infoEmailContainer) infoEmailContainer.style.display = 'block';
-        if (basicInfoContainer) basicInfoContainer.style.display = 'none';
-        if (nextBtn) nextBtn.style.display = 'none';
-        if (submitBtn) submitBtn.style.display = 'inline-flex';
-    } else {
-        // Solicitud completa
-        if (infoEmailContainer) infoEmailContainer.style.display = 'none';
-        if (basicInfoContainer) basicInfoContainer.style.display = 'block';
-        if (nextBtn) nextBtn.style.display = 'inline-flex';
-        if (submitBtn) submitBtn.style.display = 'none';
-    }
-}
-
-/**
- * Actualizar color del slider de motivación
- */
-function updateMotivacionColor(value) {
-    const motivacionValue = document.getElementById('motivacion-value');
-    if (!motivacionValue) return;
-    
-    const numValue = parseInt(value);
-    let color = '#10b981'; // verde por defecto
-    
-    if (numValue <= 3) {
-        color = '#ef4444'; // rojo
-    } else if (numValue <= 6) {
-        color = '#f59e0b'; // amarillo
-    } else {
-        color = '#10b981'; // verde
-    }
-    
-    motivacionValue.style.backgroundColor = color;
-}
-
-/**
- * Esperar a que Firebase se inicialice
- */
-async function waitForFirebaseInitialization(maxRetries = 10) {
-    for (let i = 0; i < maxRetries; i++) {
+async function waitForFirebaseInitialization(maxRetries) {
+    maxRetries = maxRetries || 10;
+    for (var i = 0; i < maxRetries; i++) {
         if (window.isFirebaseInitialized && window.isFirebaseInitialized()) {
             return true;
         }
-        console.log(`⏳ Esperando Firebase... (${i + 1}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, 500));
+        console.log('⏳ Esperando Firebase... (' + (i + 1) + '/' + maxRetries + ')');
+        await new Promise(function(resolve) { setTimeout(resolve, 500); });
     }
     throw new Error('Firebase no se inicializó en el tiempo esperado');
 }
 
-/**
- * Inicializar módulos del sistema
- */
 async function initializeSystemModules() {
-    const modules = [
+    var modules = [
         {
             name: 'Calendario',
-            init: async () => {
+            init: async function() {
                 try {
+                    console.log('  📅 Inicializando calendario...');
                     window.initCalendar && window.initCalendar();
+                    console.log('  ✅ Calendario inicializado');
+
+                    console.log('  📋 Inicializando citas próximas...');
                     window.initUpcomingAppointments && window.initUpcomingAppointments();
+                    console.log('  ✅ Citas próximas inicializadas');
+
+                    console.log('  ⏰ Inicializando gestión de horarios...');
                     window.initScheduleManager && window.initScheduleManager();
+                    console.log('  ✅ Horarios inicializados');
                 } catch (error) {
                     console.warn('  ⚠️ Error en módulo calendario:', error);
                     throw error;
@@ -266,11 +112,19 @@ async function initializeSystemModules() {
         },
         {
             name: 'Pacientes',
-            init: async () => {
+            init: async function() {
                 try {
+                    console.log('  👥 Inicializando gestor de pacientes...');
                     window.initPatientsManager && window.initPatientsManager();
+                    console.log('  ✅ Gestor de pacientes inicializado');
+
+                    console.log('  🔍 Inicializando búsqueda de pacientes...');
                     window.initPatientSearch && window.initPatientSearch();
+                    console.log('  ✅ Búsqueda de pacientes inicializada');
+
+                    console.log('  📋 Inicializando fichas de pacientes...');
                     window.initPatientRecord && window.initPatientRecord();
+                    console.log('  ✅ Fichas de pacientes inicializadas');
                 } catch (error) {
                     console.warn('  ⚠️ Error en módulo pacientes:', error);
                     throw error;
@@ -279,82 +133,59 @@ async function initializeSystemModules() {
         },
         {
             name: 'Seguimiento',
-            init: async () => {
+            init: async function() {
                 try {
+                    console.log('  📊 Inicializando timeline...');
                     window.initTimeline && window.initTimeline();
+                    console.log('  ✅ Timeline inicializado');
+
+                    console.log('  🩺 Inicializando registro de atenciones...');
                     window.initAttentions && window.initAttentions();
-                    window.initUpcomingAppointmentsFromSeguimiento && window.initUpcomingAppointmentsFromSeguimiento();
+                    console.log('  ✅ Atenciones inicializadas');
+
+                    if (window.initUpcomingAppointmentsFromSeguimiento && typeof window.initUpcomingAppointmentsFromSeguimiento === 'function') {
+                        window.initUpcomingAppointmentsFromSeguimiento();
+                        console.log('  ✅ Citas próximas (seguimiento) inicializadas');
+                    }
                 } catch (error) {
                     console.warn('  ⚠️ Error en módulo seguimiento:', error);
-                    throw error;
-                }
-            }
-        },
-        {
-            name: 'Solicitudes',
-            init: async () => {
-                try {
-                    window.initSolicitudesManager && window.initSolicitudesManager();
-                } catch (error) {
-                    console.warn('  ⚠️ Error en módulo solicitudes:', error);
                     throw error;
                 }
             }
         }
     ];
 
-    for (const module of modules) {
+    for (var mi = 0; mi < modules.length; mi++) {
+        var module = modules[mi];
         try {
+            console.log('🔧 Inicializando módulo: ' + module.name);
             await module.init();
-            console.log(`✅ Módulo ${module.name} inicializado correctamente`);
+            console.log('✅ Módulo ' + module.name + ' inicializado correctamente\n');
         } catch (error) {
-            console.warn(`⚠️ Error inicializando módulo ${module.name}:`, error);
+            console.warn('⚠️ Error inicializando módulo ' + module.name + ':', error);
             continue;
         }
     }
 }
 
-/**
- * Configurar funciones globales
- */
 function setupGlobalFunctions() {
+    console.log('🔧 Configurando funciones globales...');
     try {
-        // Función para cerrar modales
         window.closeModal = window.closeModal || function(modalId) {
-            console.log('🔧 Cerrando modal:', modalId);
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.style.display = 'none';
-                document.body.style.overflow = 'auto';
-            }
+            var modal = document.getElementById(modalId);
+            if (modal) modal.style.display = 'none';
         };
-        
-        // Función para mostrar modales
         window.showModal = window.showModal || function(modalId) {
-            console.log('🔧 Mostrando modal:', modalId);
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.style.display = 'flex';
-                document.body.style.overflow = 'hidden';
-                
-                // Enfocar primer input
-                setTimeout(() => {
-                    const firstInput = modal.querySelector('input:not([type="hidden"]):not([disabled])');
-                    if (firstInput) {
-                        firstInput.focus();
-                    }
-                }, 150);
-            }
+            var modal = document.getElementById(modalId);
+            if (modal) modal.style.display = 'flex';
         };
-        
-        // Función de cambio de tabs de login
+
         window.switchLoginTab = function(tab) {
             try {
-                const loginTab = document.querySelector('.modal-tab[onclick*="login"]');
-                const registerTab = document.querySelector('.modal-tab[onclick*="register"]');
-                const loginForm = document.getElementById('login-form');
-                const registerForm = document.getElementById('register-form');
-                
+                var loginTab = document.querySelector('.modal-tab[onclick*="login"]');
+                var registerTab = document.querySelector('.modal-tab[onclick*="register"]');
+                var loginForm = document.getElementById('login-form');
+                var registerForm = document.getElementById('register-form');
                 if (tab === 'login') {
                     if (loginTab) loginTab.classList.add('active');
                     if (registerTab) registerTab.classList.remove('active');
@@ -370,176 +201,74 @@ function setupGlobalFunctions() {
                 console.error('Error switching login tab:', error);
             }
         };
-        
-        // Sistema de notificaciones básico
-        window.showNotification = window.showNotification || function(message, type = 'info', duration = 3000) {
-            try {
-                console.log(`📢 [${type.toUpperCase()}] ${message}`);
-                
-                // Crear contenedor si no existe
-                let container = document.getElementById('notifications');
-                if (!container) {
-                    container = document.createElement('div');
-                    container.id = 'notifications';
-                    container.style.cssText = `
-                        position: fixed;
-                        top: 20px;
-                        right: 20px;
-                        z-index: 10000;
-                        max-width: 400px;
-                    `;
-                    document.body.appendChild(container);
-                }
-                
-                // Crear notificación
-                const notification = document.createElement('div');
-                notification.style.cssText = `
-                    background: ${getNotificationColor(type)};
-                    color: white;
-                    padding: 12px 16px;
-                    border-radius: 6px;
-                    margin-bottom: 8px;
-                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    animation: slideInRight 0.3s ease;
-                `;
-                
-                notification.innerHTML = `
-                    <i class="fas fa-${getNotificationIcon(type)}"></i>
-                    <span style="flex: 1;">${message}</span>
-                    <button onclick="this.parentElement.remove()" 
-                            style="background: none; border: none; color: white; cursor: pointer; padding: 0; margin-left: 8px;">
-                        <i class="fas fa-times"></i>
-                    </button>
-                `;
-                
-                container.appendChild(notification);
-                
-                // Auto-remover
-                setTimeout(() => {
-                    if (notification.parentElement) {
-                        notification.remove();
-                    }
-                }, duration);
-                
-            } catch (error) {
-                console.error('Error mostrando notificación:', error);
-                alert(`${type.toUpperCase()}: ${message}`);
-            }
-        };
-        
-        // Debug del sistema
+
         window.SENDA_DEBUG = {
-            getSystemInfo: () => ({
-                version: '2.0',
-                initialized: initializationCompleted,
-                firebase: window.isFirebaseInitialized ? window.isFirebaseInitialized() : false,
-                timestamp: new Date().toISOString()
-            }),
-            reinitialize: () => window.location.reload(),
-            clearStorage: () => {
+            getSystemInfo: function() {
+                return {
+                    version: '2.0',
+                    initialized: initializationCompleted,
+                    firebase: window.isFirebaseInitialized && window.isFirebaseInitialized(),
+                    timestamp: new Date().toISOString()
+                };
+            },
+            reinitialize: function() {
+                console.log('🔄 Reinicializando sistema...');
+                window.location.reload();
+            },
+            clearStorage: function() {
                 localStorage.clear();
                 sessionStorage.clear();
                 console.log('🗑️ Storage limpiado');
-            },
-            firebaseDiagnosis: () => window.firebaseDiagnosis ? window.firebaseDiagnosis() : 'No disponible'
+            }
         };
-        
+
         console.log('✅ Funciones globales configuradas');
     } catch (error) {
         console.error('❌ Error configurando funciones globales:', error);
     }
 }
 
-/**
- * Obtener color para notificaciones
- */
-function getNotificationColor(type) {
-    const colors = {
-        'success': '#10b981',
-        'error': '#ef4444',
-        'warning': '#f59e0b',
-        'info': '#3b82f6'
-    };
-    return colors[type] || colors.info;
-}
-
-/**
- * Obtener icono para notificaciones
- */
-function getNotificationIcon(type) {
-    const icons = {
-        'success': 'check-circle',
-        'error': 'exclamation-triangle',
-        'warning': 'exclamation-triangle',
-        'info': 'info-circle'
-    };
-    return icons[type] || 'info-circle';
-}
-
-/**
- * Mostrar error de inicialización
- */
-function showInitializationError(error = null) {
-    const errorMessage = error ? error.message : 'Error desconocido de inicialización';
-    
-    // Agregar diagnóstico Firebase si está disponible
-    let firebaseDiag = '';
-    if (window.firebaseDiagnosis) {
-        try {
-            const diag = window.firebaseDiagnosis();
-            firebaseDiag = `
-                <div style="margin-top: 16px; padding: 12px; background: #f3f4f6; border-radius: 4px; text-align: left; font-size: 12px;">
-                    <strong>Diagnóstico Firebase:</strong><br>
-                    SDK cargado: ${diag.sdkLoaded ? '✅' : '❌'}<br>
-                    Apps: ${diag.appsCount}<br>
-                    Auth: ${diag.hasAuth ? '✅' : '❌'}<br>
-                    DB: ${diag.hasDB ? '✅' : '❌'}<br>
-                    Estado: ${diag.overallStatus ? '✅' : '❌'}
-                </div>
-            `;
-        } catch (e) {
-            firebaseDiag = '<div style="margin-top: 16px; color: #6b7280;">Diagnóstico no disponible</div>';
-        }
-    }
-    
-    let errorModal = document.getElementById('initialization-error-modal');
+function showInitializationError(error) {
+    var errorMessage = error ? error.message : 'Timeout de inicialización';
+    var errorModal = document.getElementById('initialization-error-modal');
     if (!errorModal) {
         errorModal = document.createElement('div');
         errorModal.id = 'initialization-error-modal';
         errorModal.className = 'modal-overlay';
-        errorModal.style.cssText = 'display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 99999; align-items: center; justify-content: center;';
+        errorModal.style.display = 'flex';
+        errorModal.style.zIndex = '99999';
+
         errorModal.innerHTML = `
-            <div style="background: white; border-radius: 8px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
+            <div class="modal" style="max-width: 500px;">
                 <div style="text-align: center; padding: 24px;">
-                    <div style="color: #ef4444; font-size: 3rem; margin-bottom: 16px;">⚠️</div>
-                    <h2 style="color: #ef4444; margin-bottom: 16px;">Error de Inicialización</h2>
-                    <p style="margin-bottom: 16px; color: #6b7280;">${errorMessage}</p>
-                    ${firebaseDiag}
-                    <div style="margin: 24px 0; padding: 16px; background: #fee2e2; border-radius: 8px;">
-                        <h4 style="margin-bottom: 8px;">Soluciones recomendadas:</h4>
-                        <ol style="text-align: left; color: #7f1d1d; padding-left: 20px;">
-                            <li>Verificar conexión a Internet</li>
-                            <li>Recargar la página (F5)</li>
-                            <li>Limpiar caché del navegador</li>
-                            <li>Verificar configuración de Firebase</li>
-                            <li>Contactar al administrador</li>
-                        </ol>
+                    <div style="color: #ef4444; font-size: 3rem; margin-bottom: 16px;">
+                        ⚠️
                     </div>
-                    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                    <h2 style="color: #ef4444; margin-bottom: 16px;">
+                        Error de Inicialización
+                    </h2>
+                    <p style="margin-bottom: 24px; color: #6b7280;">
+                        ${errorMessage}
+                    </p>
+                    <div style="margin-bottom: 24px; padding: 16px; background: #fee2e2; border-radius: 8px;">
+                        <h4 style="margin-bottom: 8px;">Posibles soluciones:</h4>
+                        <ul style="text-align: left; color: #7f1d1d;">
+                            <li>Verifica tu conexión a Internet</li>
+                            <li>Recarga la página (F5)</li>
+                            <li>Limpia el caché del navegador</li>
+                            <li>Contacta al administrador si persiste</li>
+                        </ul>
+                    </div>
+                    <div style="display: flex; gap: 12px; justify-content: center;">
                         <button onclick="window.location.reload()" 
-                                style="background: #ef4444; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;">
-                            🔄 Recargar
+                                style="background: #ef4444; color: white; border: none; 
+                                       padding: 12px 24px; border-radius: 6px; cursor: pointer;">
+                            🔄 Recargar Página
                         </button>
                         <button onclick="window.SENDA_DEBUG?.clearStorage(); window.location.reload()" 
-                                style="background: #6b7280; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;">
-                            🗑️ Limpiar & Recargar
-                        </button>
-                        <button onclick="if(window.SENDA_DEBUG) console.log(window.SENDA_DEBUG.getSystemInfo())" 
-                                style="background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;">
-                            🔍 Diagnóstico
+                                style="background: #6b7280; color: white; border: none; 
+                                       padding: 12px 24px; border-radius: 6px; cursor: pointer;">
+                            🗑️ Limpiar y Recargar
                         </button>
                     </div>
                 </div>
@@ -551,50 +280,68 @@ function showInitializationError(error = null) {
     }
 }
 
-/**
- * Intentar recuperación básica
- */
 function attemptBasicRecovery() {
+    console.log('🔄 Intentando recuperación básica...');
     try {
-        console.log('🚑 Intentando recuperación de emergencia...');
-        
-        // Configurar funciones mínimas
-        setupGlobalFunctions();
-        
-        // Configurar eventos básicos para cerrar modales
-        document.addEventListener('click', (e) => {
+        window.closeModal = function(modalId) {
+            var modal = document.getElementById(modalId);
+            if (modal) modal.style.display = 'none';
+        };
+
+        window.showModal = function(modalId) {
+            var modal = document.getElementById(modalId);
+            if (modal) modal.style.display = 'flex';
+        };
+
+        document.addEventListener('click', function(e) {
             if (e.target.classList.contains('modal-overlay')) {
                 e.target.style.display = 'none';
             }
         });
-        
-        console.log('✅ Recuperación de emergencia completada');
-        
+
+        console.log('✅ Recuperación básica completada');
     } catch (recoveryError) {
-        console.error('❌ Error en recuperación de emergencia:', recoveryError);
+        console.error('❌ Error en recuperación básica:', recoveryError);
     }
 }
 
-// Event listeners de conectividad
-window.addEventListener('online', () => {
-    console.log('🌐 Conexión restaurada');
-    if (window.showNotification) {
-        window.showNotification('Conexión a Internet restaurada', 'success');
-    }
-});
-
-window.addEventListener('offline', () => {
-    console.log('🌐 Sin conexión');
-    if (window.showNotification) {
-        window.showNotification('Sin conexión a Internet. Algunas funciones pueden no estar disponibles.', 'warning', 5000);
-    }
-});
-
-// Información del sistema
+// Información del navegador para debugging
 console.log('🔍 Información del Sistema:');
-console.log(`   Navegador: ${navigator.userAgent}`);
-console.log(`   Idioma: ${navigator.language}`);
-console.log(`   Conexión: ${navigator.onLine ? 'Online' : 'Offline'}`);
-console.log(`   Local Storage: ${typeof Storage !== 'undefined' ? 'Disponible' : 'No disponible'}`);
+console.log('   Navegador:', navigator.userAgent);
+console.log('   Idioma:', navigator.language);
+console.log('   Conexión:', navigator.onLine ? 'Online' : 'Offline');
+console.log('   Local Storage:', typeof Storage !== 'undefined' ? 'Disponible' : 'No disponible');
+console.log('   Service Worker:', 'serviceWorker' in navigator ? 'Disponible' : 'No disponible');
+
+window.addEventListener('online', function() {
+    console.log('🌐 Conexión restaurada');
+    window.showNotification && window.showNotification('Conexión a Internet restaurada', 'success');
+});
+window.addEventListener('offline', function() {
+    console.log('📴 Conexión perdida');
+    window.showNotification && window.showNotification('Sin conexión a Internet. Algunas funciones pueden no estar disponibles.', 'warning', 5000);
+});
+window.addEventListener('error', function(event) {
+    console.error('❌ Error no capturado:', event.error);
+    if (event.error && event.error.message && 
+        (event.error.message.includes('Firebase') || 
+         event.error.message.includes('network') ||
+         event.error.message.includes('auth'))) {
+        window.showNotification && window.showNotification('Error del sistema detectado. Si persiste, recarga la página.', 'error');
+    }
+});
+window.addEventListener('unhandledrejection', function(event) {
+    console.error('❌ Promesa rechazada no capturada:', event.reason);
+    event.preventDefault();
+    if (event.reason && typeof event.reason === 'object' && event.reason.code) {
+        console.warn('Código de error: ' + event.reason.code);
+    }
+});
+
+if (performance.navigation && performance.navigation.type === performance.navigation.TYPE_RELOAD) {
+    console.log('🔄 Página recargada por el usuario');
+} else {
+    console.log('🆕 Primera carga de la página');
+}
 
 console.log('\n📝 Sistema SENDA listo para inicialización...\n');
