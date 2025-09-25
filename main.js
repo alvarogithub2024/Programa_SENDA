@@ -20,6 +20,7 @@ import { initPatientRecord } from './pacientes/fichas.js';
 import { initTimeline } from './seguimiento/timeline.js';
 import { initAttentions } from './seguimiento/atenciones.js';
 import { initUpcomingAppointments as initUpcomingAppointmentsFromSeguimiento } from './seguimiento/citas-proximas.js';
+import { initGestorSolicitudes } from './solicitudes/gestor-solicitudes.js';
 
 // Utilidades
 import { closeModal, showModal } from './utilidades/modales.js';
@@ -417,6 +418,20 @@ if (performance.navigation.type === performance.navigation.TYPE_RELOAD) {
     console.log('🔄 Página recargada por el usuario');
 } else {
     console.log('🆕 Primera carga de la página');
+}
+
+{
+    name: 'Solicitudes',
+    init: async () => {
+        try {
+            console.log('  📨 Inicializando gestor de solicitudes...');
+            initGestorSolicitudes();
+            console.log('  ✅ Gestor de solicitudes inicializado');
+        } catch (error) {
+            console.warn('  ⚠️ Error en módulo solicitudes:', error);
+            throw error;
+        }
+    }
 }
 
 // Log final
