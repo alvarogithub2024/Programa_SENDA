@@ -1,419 +1,414 @@
-// MAIN.JS - SISTEMA SENDA PUENTE ALTO v2.0
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SENDA Puente Alto - Sistema de Gestión</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="configuracion/constantes.js"></script>
+<script src="configuracion/firebase.js"></script>
+<script src="utilidades/notificaciones.js"></script>
+<script src="utilidades/modales.js"></script>
+<script src="utilidades/validaciones.js"></script>
+<script src="formularios/formulario-paciente.js"></script>
+<script src="formularios/formulario-reingreso.js"></script>
+<script src="formularios/autoguardado.js"></script>
+<script src="navegacion/tabs.js"></script>
+<script src="navegacion/eventos.js"></script>
+<script src="navegacion/shortcuts.js"></script>
+<script src="solicitudes/gestor-solicitudes.js"></script>
+<script src="solicitudes/filtros.js"></script>
+<script src="solicitudes/respuestas.js"></script>
+<script src="calendario/agenda.js"></script>
+<script src="calendario/citas.js"></script>
+<script src="calendario/horarios.js"></script>
+<script src="pacientes/gestor-pacientes.js"></script>
+<script src="pacientes/busqueda.js"></script>
+<script src="pacientes/fichas.js"></script>
+<script src="seguimiento/timeline.js"></script>
+<script src="seguimiento/atenciones.js"></script>
+<script src="seguimiento/citas-proximas.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,">
+<!-- Modularizada autenticación -->
+<script src="autenticacion/registro.js"></script>
+<script src="autenticacion/login.js"></script>
+<script src="autenticacion/sesion.js"></script>
+</head>
+<body>
+<header class="header">
+<div class="header-content">
+<div class="logo">
+<i class="fas fa-heartbeat"></i>
+<span>SENDA Puente Alto</span>
+</div>
+<div class="header-actions">
+<button class="btn btn-professional" id="login-professional">
+<i class="fas fa-user-md"></i>
+Acceso Profesionales
+</button>
+</div>
+</div>
+</header>
+<div class="professional-header" id="professional-header" style="display: none;">
+<div class="header-content">
+<div class="professional-info">
+<div class="professional-avatar">PA</div>
+<div class="professional-details">
+<h3 id="professional-name">Profesional SENDA</h3>
+<p id="professional-profession">Cargando...</p>
+<small id="professional-cesfam">CESFAM</small>
+</div>
+</div>
+<div class="professional-actions">
+<button class="btn btn-danger btn-sm" id="logout-professional">
+<i class="fas fa-sign-out-alt"></i>
+Cerrar Sesión
+</button>
+</div>
+</div>
+</div>
+<main class="main-content">
+<div id="public-content">
+<div class="hero-card">
+<h1>Programa SENDA</h1>
+<p class="subtitle">Servicio Nacional para la Prevención y Rehabilitación</p>
+<p class="description">
+Ofrecemos tratamiento y apoyo integral para la prevención y recuperación 
+del consumo problemático de drogas y alcohol. Tu bienestar es nuestra prioridad.
+</p>
+<div class="stats-grid">
+<div class="stat-item">
+<span class="stat-number">1,200+</span>
+<span class="stat-label">Personas atendidas</span>
+</div>
+<div class="stat-item">
+<span class="stat-number">8</span>
+<span class="stat-label">CESFAM activos</span>
+</div>
+<div class="stat-item">
+<span class="stat-number">24/7</span>
+<span class="stat-label">Línea de ayuda</span>
+</div>
+<div class="stat-item">
+<span class="stat-number">85%</span>
+<span class="stat-label">Tasa de éxito</span>
+</div>
+</div>
+<div class="btn-group">
+<button class="btn btn-primary" id="register-patient">
+<i class="fas fa-user-plus"></i>
+Solicitar Ayuda
+</button>
+<button class="btn btn-secondary" id="reentry-program">
+<i class="fas fa-redo"></i>
+Reingreso al Programa
+</button>
+<button class="btn btn-outline" id="about-program">
+<i class="fas fa-info-circle"></i>
+Sobre el Programa
+</button>
+</div>
+<div class="features">
+<span><i class="fas fa-shield-alt"></i> Confidencial</span>
+<span><i class="fas fa-heart"></i> Apoyo integral</span>
+<span><i class="fas fa-clock"></i> Horarios flexibles</span>
+<span><i class="fas fa-users"></i> Equipo especializado</span>
+</div>
+</div>
+<div class="emergency-info">
+<div class="emergency-title">
+<i class="fas fa-phone-alt"></i>
+En caso de emergencia
+</div>
+<div class="emergency-numbers">
+<span><strong>SENDA:</strong> 1412</span>
+<span><strong>SAPU:</strong> 131</span>
+<span><strong>Emergencias:</strong> 132</span>
+</div>
+</div>
+</div>
+<div id="professional-content" style="display: none;">
+<nav class="tab-navigation">
+<button class="tab-btn active" data-tab="agenda">
+<i class="fas fa-calendar-alt"></i>
+Agenda
+</button>
+<button class="tab-btn" data-tab="solicitudes">
+<i class="fas fa-inbox"></i>
+Solicitudes
+</button>
+<button class="tab-btn" data-tab="pacientes">
+<i class="fas fa-users"></i>
+Pacientes
+</button>
+<button class="tab-btn" data-tab="seguimiento">
+<i class="fas fa-chart-line"></i>
+Seguimiento
+</button>
+</nav>
+<div class="tab-pane" id="solicitudes-tab">
+<div class="section-header">
+<h2>Solicitudes de Ingreso</h2>
+<div class="section-actions">
+<button id="refresh-solicitudes" class="btn btn-secondary">
+<i class="fas fa-sync"></i> Actualizar
+</button>
+<button id="export-solicitudes" class="btn btn-primary">
+<i class="fas fa-download"></i> Exportar
+</button>
+</div>
+</div>
+<div class="filters-container">
+<div class="filter-group"><label>Estado:</label><select id="filtro-estado-solicitudes"><option value="todos">Todos los estados</option></select></div>
+<div class="filter-group"><label>Prioridad:</label><select id="filtro-prioridad-solicitudes"><option value="todos">Todas las prioridades</option></select></div>
+<div class="filter-group"><label>CESFAM:</label><select id="filtro-cesfam-solicitudes"><option value="todos">Todos los CESFAM</option></select></div>
+<div class="filter-group"><label>Fecha:</label><select id="filtro-fecha-solicitudes"><option value="todos">Todas las fechas</option><option value="hoy">Hoy</option><option value="semana">Esta semana</option><option value="mes">Este mes</option></select></div>
+<div class="filter-group"><label>Buscar:</label><input type="text" id="buscar-solicitudes" placeholder="Nombre, RUT, email..."></div>
+</div>
+<div id="solicitudes-stats" class="stats-container"></div>
+<div class="counter-info">Mostrando <span id="solicitudes-counter">0</span> de <span id="solicitudes-total-counter">0</span> solicitudes</div>
+<div id="solicitudes-table-container">
+<table class="solicitudes-table">
+<thead>
+<tr>
+<th>Paciente</th>
+<th>Contacto</th>
+<th>CESFAM</th>
+<th>Estado</th>
+<th>Prioridad</th>
+<th>Fecha</th>
+<th>Sustancias</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody id="solicitudes-table-body"></tbody>
+</table>
+</div>
+</div>
+<div class="tab-pane active" id="agenda-tab">
+<div class="section-header">
+<h2>Gestión de Agenda</h2>
+</div>
+<div class="appointments-stats">
+<span>Hoy: <span id="today-count">0</span></span>
+<span>Próximas: <span id="upcoming-count">0</span></span>
+<span>Vencidas: <span id="overdue-count">0</span></span>
+<span>Pendientes: <span id="pending-count">0</span></span>
+</div>
+<div class="calendar-container">
+<div class="calendar-header">
+<h3 id="calendar-month-year">Cargando...</h3>
+<div>
+<button class="btn btn-outline btn-sm" id="prev-month"><i class="fas fa-chevron-left"></i></button>
+<button class="btn btn-outline btn-sm" id="next-month"><i class="fas fa-chevron-right"></i></button>
+<button class="btn btn-success btn-sm" id="nueva-cita-btn"><i class="fas fa-plus"></i> Nueva Cita</button>
+</div>
+</div>
+<div class="calendar-grid" id="calendar-grid"></div>
+</div>
+<div class="daily-appointments">
+<h3>Citas del Día</h3>
+<div class="appointments-list" id="appointments-list">
+<div class="loading-message"><i class="fas fa-spinner fa-spin"></i> Cargando citas...</div>
+</div>
+</div>
+</div>
+<div class="tab-pane" id="pacientes-tab">
+<div class="section-header">
+<h2>Pacientes</h2>
+<div class="section-actions">
+<div class="search-box">
+<i class="fas fa-search"></i>
+<input type="text" id="search-pacientes-rut" placeholder="Buscar por RUT...">
+</div>
+<button class="btn btn-primary btn-sm" id="buscar-paciente-btn">
+<i class="fas fa-search"></i>
+Buscar
+</button>
+</div>
+</div>
+<div class="patients-grid" id="patients-grid">
+<div class="loading-message"><i class="fas fa-spinner fa-spin"></i> Cargando pacientes...</div>
+</div>
+<div id="pacientes-search-results"></div>
+</div>
+<div class="tab-pane" id="seguimiento-tab">
+<div class="section-header">
+<h2>Seguimiento y Control</h2>
+</div>
+<div class="daily-appointments">
+<h3>Pacientes de Hoy</h3>
+<div class="patients-timeline" id="patients-timeline">
+<div class="loading-message"><i class="fas fa-spinner fa-spin"></i> Cargando seguimiento...</div>
+</div>
+</div>
+<div class="daily-appointments" style="margin-top: 2rem;">
+<h3>Próximas Citas</h3>
+<div class="appointments-grid" id="upcoming-appointments-grid"></div>
+<div id="no-upcoming-section" style="display: none;">
+<div class="no-results">
+<i class="fas fa-calendar-check"></i>
+<p>No hay citas próximas programadas</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- ================= MODAL LOGIN ================= -->
+<div class="modal-overlay" id="login-modal" style="display:none;">
+<div class="modal">
+<button class="modal-close" onclick="closeModal('login-modal')"><i class="fas fa-times"></i></button>
+<h2>Acceso Profesionales</h2>
+<p class="modal-description">Ingresa con tu cuenta autorizada para acceder al sistema.</p>
+<div class="modal-tabs">
+<button class="modal-tab active" onclick="switchLoginTab('login')">Iniciar Sesión</button>
+<button class="modal-tab" onclick="switchLoginTab('register')">Registrarse</button>
+</div>
+<form class="auth-form active" id="login-form">
+<div class="form-group">
+<label class="form-label">Email</label>
+<input type="email" class="form-input" id="login-email" required>
+</div>
+<div class="form-group">
+<label class="form-label">Contraseña</label>
+<input type="password" class="form-input" id="login-password" required>
+</div>
+<div class="form-actions">
+<button type="submit" class="btn btn-primary btn-full"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</button>
+</div>
+</form>
+<form class="auth-form" id="register-form">
+<div class="form-row">
+<div class="form-group">
+<label class="form-label">Nombre</label>
+<input type="text" class="form-input" id="register-nombre" required>
+</div>
+<div class="form-group">
+<label class="form-label">Apellidos</label>
+<input type="text" class="form-input" id="register-apellidos" required>
+</div>
+</div>
+<div class="form-group">
+<label class="form-label">Email</label>
+<input type="email" class="form-input" id="register-email" pattern=".*@senda\.cl$" title="Solo se permiten emails @senda.cl" placeholder="usuario@senda.cl" required>
+</div>
+<div class="form-group">
+<label class="form-label">Contraseña</label>
+<input type="password" class="form-input" id="register-password" required>
+</div>
+<div class="form-group">
+<label class="form-label">Profesión</label>
+<select class="form-select" id="register-profession" required>
+<option value="">Seleccionar profesión...</option>
+<option value="asistente_social">Asistente Social</option>
+<option value="medico">Médico</option>
+<option value="psicologo">Psicólogo</option>
+<option value="terapeuta">Terapeuta Ocupacional</option>
+</select>
+</div>
+<div class="form-group">
+<label class="form-label">CESFAM</label>
+<select class="form-select" id="register-cesfam" required>
+<option value="">Seleccionar CESFAM...</option>
+<option value="CESFAM Alejandro del Río">CESFAM Alejandro del Río</option>
+<option value="CESFAM Karol Wojtyla">CESFAM Karol Wojtyla</option>
+<option value="CESFAM Laurita Vicuña">CESFAM Laurita Vicuña</option>
+<option value="CESFAM Padre Manuel Villaseca">CESFAM Padre Manuel Villaseca</option>
+<option value="CESFAM San Gerónimo">CESFAM San Gerónimo</option>
+<option value="CESFAM Vista Hermosa">CESFAM Vista Hermosa</option>
+<option value="CESFAM Bernardo Leighton">CESFAM Bernardo Leighton</option>
+<option value="CESFAM Cardenal Raúl Silva Henríquez">CESFAM Cardenal Raúl Silva Henríquez</option>
+</select>
+</div>
+<div class="form-actions">
+<button type="submit" class="btn btn-success btn-full"><i class="fas fa-user-plus"></i> Registrarse</button>
+</div>
+</form>
+</div>
+</div>
+<!-- ================= MODAL SOLICITUD PACIENTE ================= -->
+<div class="modal-overlay" id="patient-modal" style="display:none;">
+<div class="modal large-modal">
+<button class="modal-close" onclick="closeModal('patient-modal')"><i class="fas fa-times"></i></button>
+<h2>Solicitud de Ayuda</h2>
+<div class="form-progress">
+<div class="progress-bar"><div class="progress-fill" id="form-progress"></div></div>
+<span class="progress-text" id="progress-text">Paso 1 de 4</span>
+</div>
+<form id="patient-form">
+<!-- ... (resto del formulario de paciente) ... -->
+</form>
+</div>
+</div>
+<!-- ================= MODAL REINGRESO ================= -->
+<div class="modal-overlay" id="reentry-modal" style="display:none;">
+<div class="modal">
+<button class="modal-close" onclick="closeModal('reentry-modal')"><i class="fas fa-times"></i></button>
+<h2>Reingreso al Programa</h2>
+<!-- ... (resto del formulario de reingreso) ... -->
+</div>
+</div>
+<footer class="footer">
+<div class="footer-content">
+<p>&copy; 2024 SENDA Puente Alto. Todos los derechos reservados.</p>
+<p>Desarrollado para el bienestar de nuestra comunidad</p>
+<a href="https://www.senda.gob.cl" target="_blank" class="footer-link"><i class="fas fa-external-link-alt"></i> Sitio oficial SENDA</a>
+</div>
+<!-- ========== MODAL SOBRE EL PROGRAMA ========== -->
+<div class="modal-overlay" id="about-modal" style="display:none;">
+  <div class="modal large-modal">
+    <button class="modal-close" onclick="closeModal('about-modal')">
+      <i class="fas fa-times"></i>
+    </button>
+    <h2>Sobre el Programa</h2>
+    <div class="modal-description">
+      <p>
+        El <strong>Programa SENDA Puente Alto</strong> es un esfuerzo conjunto con los 8 CESFAM de la comuna,
+        enfocado en la prevención y tratamiento del consumo problemático de alcohol y otras drogas.<br><br>
+        <strong>¿Qué hacemos?</strong>
+        <ul>
+          <li>Atención y derivación de personas que requieran apoyo en consumo de sustancias.</li>
+          <li>Orientación familiar y psicoeducación.</li>
+          <li>Gestión de casos y acompañamiento continuo.</li>
+          <li>Trabajo conjunto con equipos de salud y comunidad.</li>
+        </ul>
+        <strong>¿A quiénes atendemos?</strong>
+        <ul>
+          <li>Niños, niñas y adolescentes</li>
+          <li>Personas adultas</li>
+          <li>Familias y cuidadores</li>
+        </ul>
+        <strong>Confidencialidad y calidad:</strong> Todo el proceso es confidencial, voluntario y realizado por profesionales capacitados.<br><br>
+        <strong>Más info:</strong> <a href="https://www.senda.gob.cl" target="_blank">www.senda.gob.cl</a>
+      </p>
+    </div>
+  </div>
+</div>
+<!-- ========== FIN MODAL SOBRE EL PROGRAMA ========== -->
 
-// === VARIABLES DE CONTROL ===
-var initializationCompleted = false;
-var initializationTimer = null;
-
-// === INICIALIZACIÓN GLOBAL ===
-document.addEventListener('DOMContentLoaded', async function() {
-    console.log('\n🚀 SISTEMA SENDA PUENTE ALTO v2.0');
-    console.log('=====================================');
-    console.log('📅 Fecha:', new Date().toLocaleString('es-CL'));
-    console.log('🔄 Iniciando sistema SENDA completo...\n');
-
-    initializationTimer = setTimeout(function() {
-        if (!initializationCompleted) {
-            console.error('❌ TIMEOUT: La inicialización está tomando demasiado tiempo');
-            showInitializationError();
-        }
-    }, 15000);
-
-    try {
-        // Paso 1: Inicializar Firebase
-        console.log('🔧 Paso 1: Inicializando Firebase...');
-        var firebaseInitialized = window.initializeFirebase && window.initializeFirebase();
-        if (!firebaseInitialized) {
-            throw new Error('Firebase no se pudo inicializar');
-        }
-        await waitForFirebaseInitialization();
-        console.log('✅ Firebase verificado y listo\n');
-
-        // Paso 2: Configurar autenticación
-        console.log('🔧 Paso 2: Configurando autenticación...');
-        window.setupAuth && window.setupAuth();
-        console.log('✅ Autenticación configurada\n');
-
-        // Paso 3: Configurar navegación
-        console.log('🔧 Paso 3: Configurando navegación...');
-        window.setupTabs && window.setupTabs();
-        console.log('✅ Navegación configurada\n');
-
-        // Paso 4: Configurar formularios
-        console.log('🔧 Paso 4: Configurando formularios...');
-        window.setupFormularios && window.setupFormularios();
-        console.log('✅ Formularios configurados\n');
-
-        // Paso 5: Configurar eventos globales
-        console.log('🔧 Paso 5: Configurando eventos globales...');
-        window.setupEventListeners && window.setupEventListeners();
-        console.log('✅ Eventos configurados\n');
-
-        // Paso 6: Inicializar módulos del sistema
-        console.log('🔧 Paso 6: Inicializando módulos del sistema...');
-        await initializeSystemModules();
-
-        // Paso 7: Configurar funciones globales
-        setupGlobalFunctions();
-
-        console.log('\n🎉 ¡SISTEMA SENDA INICIALIZADO CORRECTAMENTE!');
-        console.log('=====================================');
-
-        initializationCompleted = true;
-        clearTimeout(initializationTimer);
-
-        setTimeout(function() {
-            window.showNotification && window.showNotification('Sistema SENDA cargado correctamente', 'success', 3000);
-        }, 1000);
-
-    } catch (error) {
-        clearTimeout(initializationTimer);
-        console.error('❌ ERROR CRÍTICO durante la inicialización:', error);
-        showInitializationError(error);
-        attemptBasicRecovery();
-    }
-});
-
-// ====== ESPERAR INICIALIZACIÓN DE FIREBASE ======
-async function waitForFirebaseInitialization(maxRetries) {
-    maxRetries = maxRetries || 10;
-    for (var i = 0; i < maxRetries; i++) {
-        if (window.isFirebaseInitialized && window.isFirebaseInitialized()) {
-            return true;
-        }
-        console.log('⏳ Esperando Firebase... (' + (i + 1) + '/' + maxRetries + ')');
-        await new Promise(function(resolve) { setTimeout(resolve, 500); });
-    }
-    throw new Error('Firebase no se inicializó en el tiempo esperado');
-}
-
-// ====== INICIALIZAR MÓDULOS DEL SISTEMA ======
-async function initializeSystemModules() {
-    var modules = [
-        {
-            name: 'Calendario',
-            init: async function() {
-                try {
-                    window.initCalendar && window.initCalendar();
-                    window.initUpcomingAppointments && window.initUpcomingAppointments();
-                    window.initScheduleManager && window.initScheduleManager();
-                } catch (error) {
-                    console.warn('  ⚠️ Error en módulo calendario:', error);
-                    throw error;
-                }
-            }
-        },
-        {
-            name: 'Pacientes',
-            init: async function() {
-                try {
-                    window.initPatientsManager && window.initPatientsManager();
-                    window.initPatientSearch && window.initPatientSearch();
-                    window.initPatientRecord && window.initPatientRecord();
-                } catch (error) {
-                    console.warn('  ⚠️ Error en módulo pacientes:', error);
-                    throw error;
-                }
-            }
-        },
-        {
-            name: 'Seguimiento',
-            init: async function() {
-                try {
-                    window.initTimeline && window.initTimeline();
-                    window.initAttentions && window.initAttentions();
-                    if (window.initUpcomingAppointmentsFromSeguimiento && typeof window.initUpcomingAppointmentsFromSeguimiento === 'function') {
-                        window.initUpcomingAppointmentsFromSeguimiento();
-                    }
-                } catch (error) {
-                    console.warn('  ⚠️ Error en módulo seguimiento:', error);
-                    throw error;
-                }
-            }
-        }
-    ];
-
-    for (var mi = 0; mi < modules.length; mi++) {
-        var module = modules[mi];
-        try {
-            console.log('🔧 Inicializando módulo: ' + module.name);
-            await module.init();
-            console.log('✅ Módulo ' + module.name + ' inicializado correctamente\n');
-        } catch (error) {
-            console.warn('⚠️ Error inicializando módulo ' + module.name + ':', error);
-            continue;
-        }
-    }
-}
-
-// ====== FUNCIONES GLOBALES ======
-function setupGlobalFunctions() {
-    try {
-        window.closeModal = window.closeModal || function(modalId) {
-            var modal = document.getElementById(modalId);
-            if (modal) modal.style.display = 'none';
-        };
-        window.showModal = window.showModal || function(modalId) {
-            var modal = document.getElementById(modalId);
-            if (modal) modal.style.display = 'flex';
-        };
-        window.switchLoginTab = function(tab) {
-            try {
-                var loginTab = document.querySelector('.modal-tab[onclick*="login"]');
-                var registerTab = document.querySelector('.modal-tab[onclick*="register"]');
-                var loginForm = document.getElementById('login-form');
-                var registerForm = document.getElementById('register-form');
-                if (tab === 'login') {
-                    if (loginTab) loginTab.classList.add('active');
-                    if (registerTab) registerTab.classList.remove('active');
-                    if (loginForm) loginForm.classList.add('active');
-                    if (registerForm) registerForm.classList.remove('active');
-                } else if (tab === 'register') {
-                    if (registerTab) registerTab.classList.add('active');
-                    if (loginTab) loginTab.classList.remove('active');
-                    if (registerForm) registerForm.classList.add('active');
-                    if (loginForm) loginForm.classList.remove('active');
-                }
-            } catch (error) {
-                console.error('Error switching login tab:', error);
-            }
-        };
-        window.SENDA_DEBUG = {
-            getSystemInfo: function() {
-                return {
-                    version: '2.0',
-                    initialized: initializationCompleted,
-                    firebase: window.isFirebaseInitialized && window.isFirebaseInitialized(),
-                    timestamp: new Date().toISOString()
-                };
-            },
-            reinitialize: function() {
-                window.location.reload();
-            },
-            clearStorage: function() {
-                localStorage.clear();
-                sessionStorage.clear();
-            }
-        };
-    } catch (error) {
-        console.error('❌ Error configurando funciones globales:', error);
-    }
-}
-
-// ====== MODAL DE ERROR DE INICIALIZACIÓN ======
-function showInitializationError(error) {
-    var errorMessage = error ? error.message : 'Timeout de inicialización';
-    var errorModal = document.getElementById('initialization-error-modal');
-    if (!errorModal) {
-        errorModal = document.createElement('div');
-        errorModal.id = 'initialization-error-modal';
-        errorModal.className = 'modal-overlay';
-        errorModal.style.display = 'flex';
-        errorModal.style.zIndex = '99999';
-        errorModal.innerHTML = `
-            <div class="modal" style="max-width: 500px;">
-                <div style="text-align: center; padding: 24px;">
-                    <div style="color: #ef4444; font-size: 3rem; margin-bottom: 16px;">
-                        ⚠️
-                    </div>
-                    <h2 style="color: #ef4444; margin-bottom: 16px;">
-                        Error de Inicialización
-                    </h2>
-                    <p style="margin-bottom: 24px; color: #6b7280;">
-                        ${errorMessage}
-                    </p>
-                    <div style="margin-bottom: 24px; padding: 16px; background: #fee2e2; border-radius: 8px;">
-                        <h4 style="margin-bottom: 8px;">Posibles soluciones:</h4>
-                        <ul style="text-align: left; color: #7f1d1d;">
-                            <li>Verifica tu conexión a Internet</li>
-                            <li>Recarga la página (F5)</li>
-                            <li>Limpia el caché del navegador</li>
-                            <li>Contacta al administrador si persiste</li>
-                        </ul>
-                    </div>
-                    <div style="display: flex; gap: 12px; justify-content: center;">
-                        <button onclick="window.location.reload()" 
-                                style="background: #ef4444; color: white; border: none; 
-                                       padding: 12px 24px; border-radius: 6px; cursor: pointer;">
-                            🔄 Recargar Página
-                        </button>
-                        <button onclick="window.SENDA_DEBUG?.clearStorage(); window.location.reload()" 
-                                style="background: #6b7280; color: white; border: none; 
-                                       padding: 12px 24px; border-radius: 6px; cursor: pointer;">
-                            🗑️ Limpiar y Recargar
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(errorModal);
-    } else {
-        errorModal.style.display = 'flex';
-    }
-}
-
-// ====== INTENTO DE RECUPERACIÓN BÁSICA ======
-function attemptBasicRecovery() {
-    try {
-        window.closeModal = function(modalId) {
-            var modal = document.getElementById(modalId);
-            if (modal) modal.style.display = 'none';
-        };
-
-        window.showModal = function(modalId) {
-            var modal = document.getElementById(modalId);
-            if (modal) modal.style.display = 'flex';
-        };
-
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('modal-overlay')) {
-                e.target.style.display = 'none';
-            }
-        });
-    } catch (recoveryError) {
-        console.error('❌ Error en recuperación básica:', recoveryError);
-    }
-}
-
-// ====== LOGIN DE PROFESIONALES CON VERIFICACIÓN EN FIRESTORE ======
+<script>
 document.addEventListener("DOMContentLoaded", function() {
-  const loginForm = document.getElementById('login-form');
-  if (!loginForm) return;
-
-  loginForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    const email = document.getElementById('login-email').value.trim();
-    const password = document.getElementById('login-password').value;
-
-    if (!email || !password) {
-      window.showNotification && window.showNotification("Completa email y contraseña", "warning");
-      return;
-    }
-
-    firebase.auth().signInWithEmailAndPassword(email, password)
-      .then((userCredential) => {
-        const uid = userCredential.user.uid;
-        const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
-
-        // Busca el profesional en la colección y verifica activo
-        return db.collection("profesionales").doc(uid).get();
-      })
-      .then((doc) => {
-        if (!doc.exists) {
-          window.showNotification && window.showNotification("No tienes permisos de acceso como profesional.", "error");
-          firebase.auth().signOut();
-          return;
-        }
-        const profesional = doc.data();
-        if (!profesional.activo) {
-          window.showNotification && window.showNotification("Tu usuario está inactivo. Contacta al administrador.", "error");
-          firebase.auth().signOut();
-          return;
-        }
-
-        window.showNotification && window.showNotification("Bienvenido/a, acceso correcto.", "success");
-        // Ejemplo: mostrar el header profesional y contenido, ocultar público:
-        document.getElementById('professional-header').style.display = '';
-        document.getElementById('professional-content').style.display = '';
-        document.getElementById('public-content').style.display = 'none';
-        // Coloca datos en el header
-        document.getElementById('professional-name').textContent = profesional.nombre + ' ' + profesional.apellidos;
-        document.getElementById('professional-profession').textContent = profesional.profession || '';
-        document.getElementById('professional-cesfam').textContent = profesional.cesfam || '';
-        // Opcional: cerrar modal login
-        window.closeModal && window.closeModal('login-modal');
-      })
-      .catch((error) => {
-        window.showNotification && window.showNotification("Error al iniciar sesión: " + error.message, "error");
-      });
-  });
-});
-
-// ====== REGISTRO DE PROFESIONALES EN FIREBASE ======
-document.addEventListener("DOMContentLoaded", function() {
-  const registerForm = document.getElementById('register-form');
-  if (!registerForm) return;
-
-  registerForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    // Tomar los valores del formulario
-    const nombre = document.getElementById('register-nombre').value.trim();
-    const apellidos = document.getElementById('register-apellidos').value.trim();
-    const email = document.getElementById('register-email').value.trim();
-    const password = document.getElementById('register-password').value;
-    const profession = document.getElementById('register-profession').value;
-    const cesfam = document.getElementById('register-cesfam').value;
-
-    // Validación básica
-    if (!nombre || !apellidos || !email || !password || !profession || !cesfam) {
-      window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
-      return;
-    }
-
-    // CREA el usuario en Firebase Auth
-    firebase.auth().createUserWithEmailAndPassword(email, password)
-      .then((userCredential) => {
-        const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
-        const profesional = {
-          activo: true,
-          nombre: nombre,
-          apellidos: apellidos,
-          cesfam: cesfam,
-          email: email,
-          profession: profession,
-          fechaCreacion: new Date().toISOString()
-        };
-        // Guarda en la colección profesionales (con el UID como doc ID)
-        return db.collection("profesionales").doc(userCredential.user.uid).set(profesional);
-      })
-      .then(() => {
-        window.showNotification && window.showNotification("Registro exitoso. Puedes iniciar sesión.", "success");
-        registerForm.reset();
-        // Opcional: cambia a la pestaña de login automáticamente
-        if (typeof switchLoginTab === 'function') switchLoginTab('login');
-      })
-      .catch((error) => {
-        window.showNotification && window.showNotification("Error al registrar: " + error.message, "error");
-      });
-  });
-});
-
-// ====== LOGOUT Y VISIBILIDAD DE BOTONES ======
-document.addEventListener("DOMContentLoaded", function() {
-  var btnLogin = document.getElementById('login-professional');
-  var btnLogout = document.getElementById('logout-professional');
-
-  // Escucha el estado de autenticación de Firebase
-  firebase.auth().onAuthStateChanged(function(user) {
-    if (user) {
-      // Usuario autenticado: ocultar botón login
-      if (btnLogin) btnLogin.style.display = 'none';
-    } else {
-      // Usuario no autenticado: mostrar botón login
-      if (btnLogin) btnLogin.style.display = '';
-      // Ocultar áreas profesionales por si acaso
-      var profHeader = document.getElementById('professional-header');
-      var profContent = document.getElementById('professional-content');
-      var pubContent = document.getElementById('public-content');
-      if (profHeader) profHeader.style.display = 'none';
-      if (profContent) profContent.style.display = 'none';
-      if (pubContent) pubContent.style.display = '';
-    }
-  });
-
-  // Botón cerrar sesión
-  if (btnLogout) {
-    btnLogout.addEventListener('click', function() {
-      firebase.auth().signOut().then(function() {
-        // El listener onAuthStateChanged se encarga de mostrar el login y ocultar profesional
-        window.showNotification && window.showNotification('Sesión cerrada.', 'success');
-      }).catch(function(error) {
-        window.showNotification && window.showNotification('Error al cerrar sesión: ' + error.message, 'error');
-      });
+  var btnSobre = document.getElementById("about-program");
+  if (btnSobre) {
+    btnSobre.addEventListener("click", function() {
+      if(typeof showModal==='function'){
+        showModal('about-modal');
+      } else {
+        document.getElementById('about-modal').style.display = 'flex';
+      }
     });
   }
 });
+</script>
+</footer>
+</body>
+</html>
 
 // ====== DIAGNÓSTICO DEL SISTEMA EN CONSOLA ======
 console.log('🔍 Información del Sistema:');
