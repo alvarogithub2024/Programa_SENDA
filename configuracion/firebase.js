@@ -1,13 +1,20 @@
-// CONFIGURACION/FIREBASE.JS - VERSIÓN SIN IMPORT/EXPORT
+// CONFIGURACION/FIREBASE.JS - VERSIÓN FINAL COMPATIBLE (SIN IMPORT/EXPORT)
+// Requiere que window.FIREBASE_CONFIG esté definido en constantes.js antes de cargar este archivo.
 
-// Dependencias: window.FIREBASE_CONFIG debe estar definido en constantes.js
+var auth = null, db = null, storage = null, isInitialized = false;
 
-var auth, db, storage, isInitialized = false;
-
+/**
+ * Inicializa Firebase usando la configuración global y expone helpers globales.
+ * Devuelve true si está inicializado, false si falla.
+ */
 function initializeFirebase() {
     try {
         if (typeof firebase === 'undefined') {
             console.error('Firebase SDK no está cargado. Verifica los scripts en index.html');
+            return false;
+        }
+        if (!window.FIREBASE_CONFIG) {
+            console.error('FIREBASE_CONFIG no definida. Revisa constantes.js');
             return false;
         }
 
@@ -19,33 +26,49 @@ function initializeFirebase() {
         var app;
         if (firebase.apps.length === 0) {
             app = firebase.initializeApp(window.FIREBASE_CONFIG);
-            console.log('Nueva app Firebase inicializada');
+            console.log('✅ Nueva app Firebase inicializada');
         } else {
             app = firebase.apps[0];
-            console.log('Usando app Firebase existente');
+            console.log('ℹ️ Usando app Firebase existente');
         }
 
         auth = firebase.auth(app);
         db = firebase.firestore(app);
         storage = firebase.storage ? firebase.storage(app) : null;
 
+        // Habilitar persistencia offline solo la 1ra vez
         if (!isInitialized) {
             configurePersistence();
         }
 
         isInitialized = true;
-        console.log('Firebase inicializado correctamente');
+        // Helpers globales
+        window.db = db;
+        window.auth = auth;
+        window.storage = storage;
+        window.getFirestore = () => db;
+        window.getAuth = () => auth;
+        window.getStorage = () => storage;
+        window.getServerTimestamp = () => firebase.firestore.FieldValue.serverTimestamp();
+        window.isFirebaseInitialized = () => isInitialized && !!auth && !!db;
         return true;
 
     } catch (error) {
         console.error('Error inicializando Firebase:', error);
-
         if (firebase.apps.length > 0) {
             try {
                 auth = firebase.auth();
                 db = firebase.firestore();
                 storage = firebase.storage ? firebase.storage() : null;
                 isInitialized = true;
+                window.db = db;
+                window.auth = auth;
+                window.storage = storage;
+                window.getFirestore = () => db;
+                window.getAuth = () => auth;
+                window.getStorage = () => storage;
+                window.getServerTimestamp = () => firebase.firestore.FieldValue.serverTimestamp();
+                window.isFirebaseInitialized = () => isInitialized && !!auth && !!db;
                 console.log('Usando Firebase existente tras error');
                 return true;
             } catch (fallbackError) {
@@ -56,6 +79,9 @@ function initializeFirebase() {
     }
 }
 
+/**
+ * Habilita persistencia offline para Firestore. No lanza excepción si falla.
+ */
 function configurePersistence() {
     if (!db) return;
     try {
@@ -77,6 +103,9 @@ function configurePersistence() {
     }
 }
 
+/**
+ * Helpers de acceso global a instancias y estado
+ */
 function getAuth() {
     if (!auth) {
         if (!initializeFirebase()) {
@@ -85,7 +114,6 @@ function getAuth() {
     }
     return auth;
 }
-
 function getFirestore() {
     if (!db) {
         if (!initializeFirebase()) {
@@ -94,7 +122,6 @@ function getFirestore() {
     }
     return db;
 }
-
 function getStorage() {
     if (!storage) {
         if (!initializeFirebase()) {
@@ -103,11 +130,29 @@ function getStorage() {
     }
     return storage;
 }
-
 function getServerTimestamp() {
     return firebase.firestore.FieldValue.serverTimestamp();
 }
+function isFirebaseInitialized() {
+    return isInitialized && !!auth && !!db;
+}
+function getCurrentUser() {
+    if (!auth) return null;
+    return auth.currentUser;
+}
+function onAuthStateChanged(callback) {
+    if (!auth) {
+        if (!initializeFirebase()) {
+            callback(null);
+            return;
+        }
+    }
+    return auth.onAuthStateChanged(callback);
+}
 
+/**
+ * Intentar una operación Firestore varias veces con backoff exponencial.
+ */
 async function retryFirestoreOperation(operation, maxRetries) {
     maxRetries = maxRetries || 3;
     for (var i = 0; i < maxRetries; i++) {
@@ -122,25 +167,9 @@ async function retryFirestoreOperation(operation, maxRetries) {
     }
 }
 
-function isFirebaseInitialized() {
-    return isInitialized && !!auth && !!db;
-}
-
-function getCurrentUser() {
-    if (!auth) return null;
-    return auth.currentUser;
-}
-
-function onAuthStateChanged(callback) {
-    if (!auth) {
-        if (!initializeFirebase()) {
-            callback(null);
-            return;
-        }
-    }
-    return auth.onAuthStateChanged(callback);
-}
-
+/**
+ * Crear colecciones iniciales si no existen (útil en primer deploy).
+ */
 async function createInitialCollections() {
     try {
         if (!db) return;
@@ -155,7 +184,6 @@ async function createInitialCollections() {
             'centros',
             'configuracion'
         ];
-
         for (var i = 0; i < collections.length; i++) {
             var collectionName = collections[i];
             try {
@@ -179,6 +207,9 @@ async function createInitialCollections() {
     }
 }
 
+/**
+ * Maneja errores de Firebase y entrega mensaje amigable.
+ */
 function handleFirebaseError(error) {
     var errorMessages = {
         'permission-denied': 'Sin permisos para esta operación',
@@ -203,7 +234,9 @@ function handleFirebaseError(error) {
     };
 }
 
-// Utilidades Firestore
+/**
+ * Utilidades Firestore para CRUD rápido
+ */
 var FirestoreUtils = {
     addDocument: async function(collectionPath, data) {
         var db = getFirestore();
@@ -244,7 +277,7 @@ var FirestoreUtils = {
     }
 };
 
-// Exportar globalmente
+// Exponer globalmente helpers y utilidades
 window.initializeFirebase = initializeFirebase;
 window.configurePersistence = configurePersistence;
 window.getAuth = getAuth;
@@ -258,7 +291,3 @@ window.onAuthStateChanged = onAuthStateChanged;
 window.createInitialCollections = createInitialCollections;
 window.handleFirebaseError = handleFirebaseError;
 window.FirestoreUtils = FirestoreUtils;
-// Para compatibilidad directa
-window.db = db;
-window.auth = auth;
-window.storage = storage;
