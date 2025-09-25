@@ -1,12 +1,3 @@
-/**
- * AUTENTICACION/SESION.JS
- * Sistema completo de manejo de sesión de usuario - VERSIÓN CORREGIDA
- */
-
-import { getAuth, getFirestore, retryFirestoreOperation } from '../configuracion/firebase.js';
-import { showNotification } from '../utilidades/notificaciones.js';
-import { getCachedData, setCachedData, clearUserCache } from '../utilidades/cache.js';
-import { setCurrentUserData } from '../navegacion/tabs.js';
 
 let currentUser = null;
 let currentUserData = null;
@@ -15,7 +6,7 @@ let authInitialized = false;
 /**
  * Configura el sistema de autenticación
  */
-export function setupAuth() {
+function setupAuth() {
     try {
         console.log('🔧 Configurando sistema de autenticación...');
         
@@ -416,7 +407,7 @@ async function validateCurrentSession() {
 /**
  * Cierra la sesión del usuario
  */
-export async function handleLogout() {
+ async function handleLogout() {
     try {
         console.log('🚪 Iniciando cierre de sesión...');
         
@@ -492,7 +483,7 @@ function showAuthLoading(show, message = 'Autenticando...') {
 /**
  * Verifica si el usuario tiene permisos para una acción
  */
-export function hasPermission(permission) {
+ function hasPermission(permission) {
     try {
         if (!currentUserData) return false;
         
@@ -520,28 +511,28 @@ export function hasPermission(permission) {
 /**
  * Obtiene los datos del usuario actual
  */
-export function getCurrentUserData() {
+function getCurrentUserData() {
     return currentUserData;
 }
 
 /**
  * Obtiene el usuario actual de Firebase Auth
  */
-export function getCurrentUser() {
+function getCurrentUser() {
     return currentUser;
 }
 
 /**
  * Verifica si hay un usuario autenticado
  */
-export function isAuthenticated() {
+ function isAuthenticated() {
     return !!(currentUser && currentUserData);
 }
 
 /**
  * Obtiene el nombre completo del usuario actual
  */
-export function getCurrentUserFullName() {
+ function getCurrentUserFullName() {
     if (!currentUserData) return null;
     return `${currentUserData.nombre || ''} ${currentUserData.apellidos || ''}`.trim();
 }
@@ -549,21 +540,21 @@ export function getCurrentUserFullName() {
 /**
  * Obtiene el CESFAM del usuario actual
  */
-export function getCurrentUserCesfam() {
+ function getCurrentUserCesfam() {
     return currentUserData?.cesfam || null;
 }
 
 /**
  * Obtiene la profesión del usuario actual
  */
-export function getCurrentUserProfession() {
+function getCurrentUserProfession() {
     return currentUserData?.profession || null;
 }
 
 /**
  * Refresca los datos del usuario actual
  */
-export async function refreshUserData() {
+async function refreshUserData() {
     try {
         if (!currentUser) return null;
         
@@ -596,9 +587,8 @@ export async function refreshUserData() {
 /**
  * Verifica la inicialización de autenticación
  */
-export function isAuthInitialized() {
+ function isAuthInitialized() {
     return authInitialized;
 }
 
-// Exportar handleAuthStateChange para testing
-export { onAuthStateChanged as handleAuthStateChange };
+window.setCurrentUserData = setCurrentUserData;
