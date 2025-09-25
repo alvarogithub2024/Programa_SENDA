@@ -97,8 +97,19 @@ document.addEventListener("DOMContentLoaded", function() {
             cell.classList.add('calendar-today');
           }
           cell.onclick = function() {
-            document.getElementById('cita-fecha').value = cell.dataset.date;
-            showModal('modal-nueva-cita');
+            // Abre el modal de nueva cita de PACIENTE si existe la función, sino fallback genérico
+            if (window.abrirModalCitaPaciente) {
+              // Si tienes IDs únicos para el campo de fecha del modal paciente
+              var fechaInput = document.getElementById('pac-cita-fecha');
+              if (fechaInput) fechaInput.value = cell.dataset.date;
+              window.abrirModalCitaPaciente();
+            } else {
+              showModal('modal-nueva-cita');
+              setTimeout(function() {
+                const fechaInput = document.getElementById('cita-fecha');
+                if (fechaInput) fechaInput.value = cell.dataset.date;
+              }, 100);
+            }
           }
           date++;
         }
@@ -130,22 +141,37 @@ document.addEventListener("DOMContentLoaded", function() {
   // Inicial: cargar citas y renderizar
   cargarCitasPorDia(() => renderCalendar(currentMonth, currentYear));
 
-  // Botón + Nueva Cita
- nuevaCitaBtn.onclick = function() {
-  showModal('modal-nueva-cita');
-  setTimeout(function() { // Espera breve si el modal se inserta dinámicamente
-    const fechaInput = document.getElementById('cita-fecha');
-    if (fechaInput) {
-      const chileDate = chileNow();
-      fechaInput.value = chileDate.toISOString().slice(0,10);
-    }
-  }, 100);
-};
+  // Botón + Nueva Cita (abre el modal PACIENTE seguro)
+  if (nuevaCitaBtn) {
+    nuevaCitaBtn.onclick = function() {
+      if (window.abrirModalCitaPaciente) {
+        window.abrirModalCitaPaciente();
+        setTimeout(function() {
+          const fechaInput = document.getElementById('pac-cita-fecha');
+          if (fechaInput) {
+            const chileDate = chileNow();
+            fechaInput.value = chileDate.toISOString().slice(0,10);
+          }
+        }, 100);
+      } else {
+        // fallback
+        showModal('modal-nueva-cita');
+        setTimeout(function() {
+          const fechaInput = document.getElementById('cita-fecha');
+          if (fechaInput) {
+            const chileDate = chileNow();
+            fechaInput.value = chileDate.toISOString().slice(0,10);
+          }
+        }, 100);
+      }
+    };
+  }
 
-  // ====== PROFESIONALES PARA CITA ======
+  // --- Función solo para el modal legacy de "modal-nueva-cita" ---
   function cargarProfesionales() {
     const select = document.getElementById('cita-profesional');
     const nombreProf = document.getElementById('cita-profesional-nombre');
+    if (!select) return;
     select.innerHTML = '<option value="">Selecciona profesional...</option>';
     // Busca todos los profesionales activos en Firebase
     firebase.firestore().collection('profesionales').where('activo', '==', true).get().then(snapshot=>{
@@ -158,40 +184,48 @@ document.addEventListener("DOMContentLoaded", function() {
         select.appendChild(opt);
       });
     });
-    select.onchange = function() {
-      let selected = select.options[select.selectedIndex];
-      nombreProf.value = selected.dataset.nombre || '';
+    if (select) {
+      select.onchange = function() {
+        let selected = select.options[select.selectedIndex];
+        if (nombreProf) nombreProf.value = selected.dataset.nombre || '';
+      };
+    }
+  }
+  // Sólo inicializar si existe el select legacy
+  if (document.getElementById('cita-profesional')) {
+    cargarProfesionales();
+  }
+
+  // --- SUBMIT para el modal legacy de "modal-nueva-cita" ---
+  var formNuevaCita = document.getElementById('form-nueva-cita');
+  if (formNuevaCita) {
+    formNuevaCita.onsubmit = function(e) {
+      e.preventDefault();
+      const paciente = document.getElementById('cita-paciente-nombre').value.trim();
+      const rut = document.getElementById('cita-paciente-rut').value.trim();
+      const profesionalID = document.getElementById('cita-profesional').value;
+      const profesionalNombre = document.getElementById('cita-profesional-nombre').value;
+      const fecha = document.getElementById('cita-fecha').value;
+      const hora = document.getElementById('cita-hora').value;
+
+      if (!paciente || !rut || !profesionalID || !profesionalNombre || !fecha || !hora) {
+        window.showNotification && window.showNotification("Completa todos los campos", "warning");
+        return;
+      }
+
+      // Guardar cita en Firebase
+      firebase.firestore().collection('citas').add({
+        paciente, rut, profesionalID, profesionalNombre, fecha, hora,
+        createdAt: new Date().toISOString()
+      }).then(()=>{
+        window.showNotification && window.showNotification("Cita agendada correctamente", "success");
+        closeModal('modal-nueva-cita');
+        // ACTUALIZAR: recargar citas y calendario
+        cargarCitasPorDia(() => renderCalendar(currentMonth, currentYear));
+      }).catch(err=>{
+        window.showNotification && window.showNotification("Error al agendar: "+err.message, "error");
+      });
     };
   }
-  cargarProfesionales();
-
-  // ====== SUBMIT NUEVA CITA ======
-  document.getElementById('form-nueva-cita').onsubmit = function(e) {
-    e.preventDefault();
-    const paciente = document.getElementById('cita-paciente-nombre').value.trim();
-    const rut = document.getElementById('cita-paciente-rut').value.trim();
-    const profesionalID = document.getElementById('cita-profesional').value;
-    const profesionalNombre = document.getElementById('cita-profesional-nombre').value;
-    const fecha = document.getElementById('cita-fecha').value;
-    const hora = document.getElementById('cita-hora').value;
-
-    if (!paciente || !rut || !profesionalID || !profesionalNombre || !fecha || !hora) {
-      window.showNotification && window.showNotification("Completa todos los campos", "warning");
-      return;
-    }
-
-    // Guardar cita en Firebase
-    firebase.firestore().collection('citas').add({
-      paciente, rut, profesionalID, profesionalNombre, fecha, hora,
-      createdAt: new Date().toISOString()
-    }).then(()=>{
-      window.showNotification && window.showNotification("Cita agendada correctamente", "success");
-      closeModal('modal-nueva-cita');
-      // ACTUALIZAR: recargar citas y calendario
-      cargarCitasPorDia(() => renderCalendar(currentMonth, currentYear));
-    }).catch(err=>{
-      window.showNotification && window.showNotification("Error al agendar: "+err.message, "error");
-    });
-  };
 
 });
