@@ -95,7 +95,19 @@ function mostrarHorariosDisponibles(horarios, selectId) {
         select.appendChild(opt);
     });
 }
-
+function cargarProfesionalesParaCita() {
+    const selectProf = document.getElementById('cita-profesional');
+    selectProf.innerHTML = '<option value="">Selecciona profesional...</option>';
+    firebase.firestore().collection('profesionales').where('activo', '==', true).get().then(snapshot=>{
+        snapshot.forEach(doc=>{
+            let p = doc.data();
+            let opt = document.createElement('option');
+            opt.value = doc.id; // ¡IMPORTANTE! Este valor es el UID
+            opt.textContent = `${p.nombre} ${p.apellidos}`;
+            selectProf.appendChild(opt);
+        });
+    });
+}
 // Exportar globalmente
 window.cargarHorariosDisponibles = cargarHorariosDisponibles;
 window.mostrarHorariosDisponibles = mostrarHorariosDisponibles;
