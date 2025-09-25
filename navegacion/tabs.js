@@ -1,6 +1,10 @@
+/**
+ * NAVEGACION/TABS.JS - VERSIÓN SIN IMPORTS
+ */
+
 let currentUserData = null;
 
-function setupTabs() {
+window.setupTabs = function() {
     try {
         const tabBtns = document.querySelectorAll('.tab-btn');
         const tabPanes = document.querySelectorAll('.tab-pane');
@@ -10,7 +14,9 @@ function setupTabs() {
                 const targetTab = btn.dataset.tab;
                 
                 if (!canAccessTab(targetTab)) {
-                    showNotification('No tienes permisos para acceder a esta sección', 'warning');
+                    if (window.showNotification) {
+                        window.showNotification('No tienes permisos para acceder a esta sección', 'warning');
+                    }
                     return;
                 }
 
@@ -31,9 +37,9 @@ function setupTabs() {
     } catch (error) {
         console.error('Error configurando tabs:', error);
     }
-}
+};
 
- function updateTabVisibility() {
+function updateTabVisibility() {
     try {
         const tabBtns = document.querySelectorAll('.tab-btn');
         
@@ -70,18 +76,28 @@ function loadTabData(tabName) {
         switch (tabName) {
             case 'solicitudes':
                 if (hasAccessToSolicitudes()) {
-                    loadSolicitudesData(); // ✅ CORREGIDO
+                    if (window.initSolicitudesManager) {
+                        window.initSolicitudesManager();
+                    }
                 }
                 break;
             case 'agenda':
-                initCalendar();
-                loadAppointments();
+                if (window.initCalendar) {
+                    window.initCalendar();
+                }
+                if (window.loadAppointments) {
+                    window.loadAppointments();
+                }
                 break;
             case 'seguimiento':
-                loadSeguimientoData(); // ✅ CORREGIDO
+                if (window.loadSeguimientoData) {
+                    window.loadSeguimientoData();
+                }
                 break;
             case 'pacientes':
-                loadPatientsData(); // ✅ CORREGIDO
+                if (window.loadPatientsData) {
+                    window.loadPatientsData();
+                }
                 break;
         }
     } catch (error) {
@@ -110,41 +126,48 @@ function hasAccessToSolicitudes() {
 }
 
 // ✅ FUNCIONES AGREGADAS
-async function loadSeguimientoData() {
+window.loadSeguimientoData = async function() {
     try {
         console.log('📊 Cargando datos de seguimiento...');
-        if (typeof loadPatientTimeline === 'function') {
-            await loadPatientTimeline();
+        if (window.loadPatientTimeline) {
+            await window.loadPatientTimeline();
         }
-        showNotification('Seguimiento cargado', 'info');
+        if (window.showNotification) {
+            window.showNotification('Seguimiento cargado', 'info');
+        }
     } catch (error) {
         console.error('Error cargando seguimiento:', error);
-        showNotification('Error cargando seguimiento', 'error');
-    }
-}
-
-async function loadPatientsData() {
-    try {
-        console.log('👥 Cargando pacientes...');
-        if (typeof loadPatients === 'function') {
-            await loadPatients();
+        if (window.showNotification) {
+            window.showNotification('Error cargando seguimiento', 'error');
         }
-        showNotification('Pacientes cargados', 'info');
-    } catch (error) {
-        console.error('Error cargando pacientes:', error);
-        showNotification('Error cargando pacientes', 'error');
     }
-}
-
-function setCurrentUserData(userData) {
-    currentUserData = userData;
-    updateTabVisibility();
-}
-
-
-window.loadSolicitudForResponse = function(solicitudId) {
-
-  console.log("loadSolicitudForResponse llamada con", solicitudId);
 };
 
-window.setCurrentUserData = setCurrentUserData;
+window.loadPatientsData = async function() {
+    try {
+        console.log('👥 Cargando pacientes...');
+        if (window.loadPatients) {
+            await window.loadPatients();
+        }
+        if (window.showNotification) {
+            window.showNotification('Pacientes cargados', 'info');
+        }
+    } catch (error) {
+        console.error('Error cargando pacientes:', error);
+        if (window.showNotification) {
+            window.showNotification('Error cargando pacientes', 'error');
+        }
+    }
+};
+
+window.setCurrentUserData = function(userData) {
+    currentUserData = userData;
+    updateTabVisibility();
+};
+
+// Función para cargar solicitud específica (si se necesita)
+window.loadSolicitudForResponse = function(solicitudId) {
+    console.log("loadSolicitudForResponse llamada con", solicitudId);
+};
+
+console.log('🔄 Sistema de tabs cargado - Funciones disponibles en window');
