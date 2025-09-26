@@ -291,3 +291,65 @@ body {
   display: inline-block;
 }
 .footer-link i { margin-right: 5px; }
+
+/* Tarjeta principal para sección */
+.card-section {
+  background: var(--background-card);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  padding: 1.4rem 2.2rem 1.2rem 2.2rem;
+  margin-bottom: 2rem;
+  margin-top: 0.8rem;
+}
+
+/* Título dentro de la tarjeta */
+.card-section-title {
+  color: var(--primary-blue);
+  font-size: 1.45rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  margin-top: 0;
+}
+
+/* Subtarjeta para contenido interno */
+.card-sub {
+  background: #fff;
+  border-radius: 13px;
+  box-shadow: 0 1px 8px rgba(37,99,235,0.07);
+  padding: 1.2rem 1rem;
+  margin-bottom: 1.1rem;
+  margin-top: 0.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+}
+
+/* Mensaje de "no hay paciente" o vacíos */
+.card-empty {
+  text-align: center;
+  color: var(--danger-red);
+  font-size: 1.18em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 70px;
+}
+.card-empty i {
+  font-size: 2.3em;
+  margin-bottom: .3em;
+  color: var(--danger-red);
+}
+
+/* Reduce espacio entre tarjetas */
+.card-section + .card-section {
+  margin-top: 1rem;
+}
+
+/* Responsive: menos padding en móvil */
+@media (max-width: 700px) {
+  .card-section { padding: .7rem .3rem .7rem .3rem;}
+  .card-section-title { font-size: 1.18rem; }
+  .card-sub { padding: .7rem .2rem;}
+}
