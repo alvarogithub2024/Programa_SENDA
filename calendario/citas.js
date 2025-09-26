@@ -131,5 +131,39 @@ function guardarCitaPaciente(datosCita, callback) {
             if (typeof callback === "function") callback(null, error);
         });
 }
+
+document.getElementById('form-nueva-cita-paciente').onsubmit = function(e) {
+    e.preventDefault();
+
+    const datos = {
+        cesfam: miCesfam,  // Ya lo tienes del usuario logueado
+        estado: "agendada",
+        fechaCreacion: new Date().toISOString(),
+        observaciones: document.getElementById('pac-cita-observaciones')?.value || "",
+        origenSolicitud: "web",
+        pacienteNombre: document.getElementById('pac-cita-paciente-nombre').value.trim(),
+        pacienteRut: document.getElementById('pac-cita-paciente-rut').value.trim(),
+        profesionalId: document.getElementById('pac-cita-profesional').value,
+        profesionalNombre: document.getElementById('pac-cita-profesional-nombre').value,
+        solicitudId: null, // Si la cita está ligada a una solicitud puedes poner el ID aquí
+        tipo: "paciente", // o el tipo que tú manejes
+        tipoProfesional: document.getElementById('pac-cita-profession').value,
+        fecha: document.getElementById('pac-cita-fecha').value,
+        hora: document.getElementById('pac-cita-hora').value
+    };
+
+    // Validación básica
+    if (!datos.pacienteNombre || !datos.pacienteRut || !datos.profesionalId || !datos.fecha || !datos.hora) {
+        window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
+        return;
+    }
+
+    guardarCitaPaciente(datos, function(idCita, error) {
+        if (!error) {
+            closeModal('modal-nueva-cita-paciente');
+            // Recarga calendario, citas del día, etc. si necesitas
+        }
+    });
+};
 window.abrirModalCitaPaciente = abrirModalCitaPaciente;
 window.guardarCitaPaciente = guardarCitaPaciente;
