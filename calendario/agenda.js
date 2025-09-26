@@ -1,22 +1,5 @@
 // calendario/agenda.js
 
-let profesionActual = null;
-
-// Detectar profesión del usuario autenticado
-if (window.getCurrentUser && window.getFirestore) {
-  firebase.auth().onAuthStateChanged(function(user) {
-    if (user) {
-      window.getFirestore().collection('profesionales').doc(user.uid).get().then(function(doc){
-        if (doc.exists) {
-          profesionActual = doc.data().profession || null;
-        }
-      });
-    } else {
-      profesionActual = null;
-    }
-  });
-}
-
 document.addEventListener("DOMContentLoaded", function() {
   const calendarGrid = document.getElementById('calendar-grid');
   const calendarHeader = document.getElementById('calendar-month-year');
@@ -88,12 +71,15 @@ document.addEventListener("DOMContentLoaded", function() {
         } else if (date > daysInMonth) {
           cell.innerHTML = "&nbsp;";
         } else {
+          // Día del mes
           const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+          // Número de día
           const dayNumDiv = document.createElement('div');
           dayNumDiv.className = 'calendar-day-number';
           dayNumDiv.textContent = date;
           cell.appendChild(dayNumDiv);
 
+          // Citas/eventos de ese día
           const eventos = citasPorDia[dateKey] || [];
           if (eventos.length) {
             const eventsDiv = document.createElement('div');
@@ -120,12 +106,8 @@ document.addEventListener("DOMContentLoaded", function() {
             cell.classList.add('calendar-today');
           }
 
+          // === SOLO muestra las citas del día, NO abre modal de nueva cita ===
           cell.onclick = function() {
-            if (window.abrirModalCitaPaciente) {
-              var fechaInput = document.getElementById('pac-cita-fecha');
-              if (fechaInput) fechaInput.value = cell.dataset.date;
-              window.abrirModalCitaPaciente();
-            }
             window.mostrarCitasDelDia(cell.dataset.date);
           };
           date++;
@@ -137,6 +119,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   }
 
+  // Navegación de meses
   if (prevMonthBtn) prevMonthBtn.onclick = function() {
     currentMonth--;
     if (currentMonth < 0) {
@@ -154,8 +137,10 @@ document.addEventListener("DOMContentLoaded", function() {
     cargarCitasPorDia(() => renderCalendar(currentMonth, currentYear));
   };
 
+  // Inicial: cargar citas y renderizar
   cargarCitasPorDia(() => renderCalendar(currentMonth, currentYear));
 
+  // Botón + Nueva Cita (Paciente)
   if (nuevaCitaBtn) {
     nuevaCitaBtn.onclick = function() {
       if (window.abrirModalCitaPaciente) {
@@ -180,6 +165,7 @@ document.addEventListener("DOMContentLoaded", function() {
     };
   }
 
+  // NUEVO: Botón + Nueva Cita Profesional 
   if (nuevaCitaProfesionalBtn && window.abrirModalNuevaCitaProfesional) {
     nuevaCitaProfesionalBtn.onclick = function() {
       window.abrirModalNuevaCitaProfesional();
@@ -237,13 +223,9 @@ document.addEventListener("DOMContentLoaded", function() {
             <div class="appointment-status">
               <span class="status-badge ${cita.estado || "agendada"}">${cita.estado || "Agendada"}</span>
             </div>
-            ${
-              profesionActual && profesionActual !== 'asistente_social'
-                ? `<button class="btn btn-danger btn-sm" onclick="eliminarCita('${cita.id}', '${fecha}')">
-                    <i class="fas fa-trash"></i> Eliminar
-                  </button>`
-                : ''
-            }
+            <button class="btn btn-danger btn-sm" onclick="eliminarCita('${cita.id}', '${fecha}')">
+                <i class="fas fa-trash"></i> Eliminar
+            </button>
           `;
           appointmentsList.appendChild(div);
         });
@@ -260,6 +242,7 @@ document.addEventListener("DOMContentLoaded", function() {
   mostrarCitasDelDia(hoy);
   window.mostrarCitasDelDia = mostrarCitasDelDia;
 
+  // ====== FUNCIÓN PARA ELIMINAR CITAS DEL DÍA ======
   window.eliminarCita = function(citaId, fecha) {
       if (!confirm("¿Seguro que deseas eliminar la cita?")) return;
       var db = window.getFirestore ? window.getFirestore() : firebase.firestore();
