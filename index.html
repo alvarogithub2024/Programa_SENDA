@@ -550,6 +550,17 @@ Seguimiento
     </button>
     <h2 class="modal-title-main"><i class="fas fa-calendar-plus"></i> Agendar Cita entre Profesionales</h2>
     <form id="form-agendar-cita-profesional" class="cita-form">
+      <!-- DATOS DEL PACIENTE ARRIBA -->
+      <div class="form-group">
+        <label class="form-label">Nombre completo del paciente:</label>
+        <span id="modal-cita-nombre-prof"></span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">RUT:</label>
+        <span id="modal-cita-rut-prof"></span>
+      </div>
+
+      <!-- CAMPOS DE LA CITA -->
       <div class="form-group">
         <label class="form-label" for="modal-cita-profession-prof">Profesión *</label>
         <select class="form-select" id="modal-cita-profession-prof" required>
@@ -573,19 +584,18 @@ Seguimiento
           <option value="">Selecciona hora...</option>
         </select>
       </div>
+
+      <!-- RESUMEN OPCIONAL DE LA CITA -->
+      <div class="form-group">
+        <div id="modal-cita-resumen-prof" style="margin-top:1em; background:#f6f6f6; padding:8px; border-radius:6px;"></div>
+      </div>
+
+      <!-- ACCIONES -->
       <div class="form-actions form-actions-row">
         <button type="button" class="btn btn-outline" onclick="closeModal('modal-agendar-cita-profesional')">Cancelar</button>
         <button type="submit" class="btn btn-primary">Agendar</button>
       </div>
       <input type="hidden" id="modal-cita-id-prof">
-      <div class="form-group">
-        <label class="form-label" for="modal-cita-nombre-prof">Nombre:</label>
-        <span id="modal-cita-nombre-prof"></span>
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="modal-cita-rut-prof">RUT:</label>
-        <span id="modal-cita-rut-prof"></span>
-      </div>
     </form>
   </div>
 </div>
