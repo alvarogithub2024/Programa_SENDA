@@ -550,12 +550,32 @@ Buscar
   <div class="modal-content">
     <span class="close" onclick="closeModal('modal-cita')">&times;</span>
     <h2>Agendar cita</h2>
-    <!-- Aquí puedes mostrar Nombre y RUT solo como texto, si lo deseas -->
-    <div class="modal-details">
-      <p><b>Nombre:</b> <span id="modal-cita-nombre"></span></p>
-      <p><b>RUT:</b> <span id="modal-cita-rut"></span></p>
-    </div>
     <form class="modal-form" id="form-agendar-cita">
+      <div class="form-group">
+        <label><b>Nombre:</b></label>
+        <span id="modal-cita-nombre"></span>
+      </div>
+      <div class="form-group">
+        <label><b>RUT:</b></label>
+        <span id="modal-cita-rut"></span>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="modal-cita-profession">Profesión:</label>
+          <select id="modal-cita-profession" required>
+            <option value="">Seleccionar profesión...</option>
+            <!-- Opciones llenadas dinámicamente -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="modal-cita-profesional">Profesional:</label>
+          <select id="modal-cita-profesional" required>
+            <option value="">Selecciona profesional...</option>
+            <!-- Opciones llenadas dinámicamente -->
+          </select>
+          <input type="hidden" id="modal-cita-profesional-nombre">
+        </div>
+      </div>
       <div class="form-row">
         <div class="form-group">
           <label for="modal-cita-fecha">Fecha:</label>
@@ -563,13 +583,15 @@ Buscar
         </div>
         <div class="form-group">
           <label for="modal-cita-hora">Hora:</label>
-          <input type="time" id="modal-cita-hora" required>
+          <select id="modal-cita-hora" required>
+            <option value="">Selecciona hora...</option>
+            <!-- Opciones llenadas dinámicamente -->
+          </select>
         </div>
       </div>
       <div class="form-actions">
         <button type="submit" class="btn btn-primary">Agendar</button>
       </div>
-      <!-- Estos campos ocultos sirven para pasar el id y datos del paciente -->
       <input type="hidden" id="modal-cita-id">
     </form>
   </div>
