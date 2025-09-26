@@ -4,6 +4,7 @@ let profesionalesAtencion = [];
 let profesionesAtencion = [];
 let miCesfam = null;
 
+// Obtener profesionales y profesiones del CESFAM del usuario logueado
 function cargarProfesionalesAtencionPorCesfam(callback) {
   const user = firebase.auth().currentUser;
   if (!user) return;
@@ -31,8 +32,9 @@ function cargarProfesionalesAtencionPorCesfam(callback) {
   });
 }
 
+// Llena select de profesiones en Modal Nueva Cita/Agendar Cita
 function llenarSelectProfesionesPaciente() {
-  const selProf = document.getElementById('pac-cita-profession');
+  const selProf = document.getElementById('pac-cita-profession') || document.getElementById('modal-cita-profession');
   if (!selProf) return;
   selProf.innerHTML = '<option value="">Selecciona profesión...</option>';
   profesionesAtencion.forEach(prof => {
@@ -43,9 +45,10 @@ function llenarSelectProfesionesPaciente() {
   });
 }
 
+// Llena select de profesionales según profesión en Modal Nueva Cita/Agendar Cita
 function llenarSelectProfesionalesPaciente() {
-  const selProfesion = document.getElementById('pac-cita-profession');
-  const selProfesional = document.getElementById('pac-cita-profesional');
+  const selProfesion = document.getElementById('pac-cita-profession') || document.getElementById('modal-cita-profession');
+  const selProfesional = document.getElementById('pac-cita-profesional') || document.getElementById('modal-cita-profesional');
   if (!selProfesion || !selProfesional) return;
   selProfesional.innerHTML = '<option value="">Selecciona profesional...</option>';
   const filtro = selProfesion.value;
@@ -58,24 +61,27 @@ function llenarSelectProfesionalesPaciente() {
       opt.dataset.nombre = `${p.nombre} ${p.apellidos}`;
       selProfesional.appendChild(opt);
     });
-  const nombreInput = document.getElementById('pac-cita-profesional-nombre');
+  const nombreInput = document.getElementById('pac-cita-profesional-nombre') || document.getElementById('modal-cita-profesional-nombre');
   if (nombreInput) nombreInput.value = '';
 }
 
+// Autocompleta nombre de profesional seleccionado
 function autocompletarNombreProfesionalPaciente() {
-  const selProfesional = document.getElementById('pac-cita-profesional');
-  const nombreInput = document.getElementById('pac-cita-profesional-nombre');
+  const selProfesional = document.getElementById('pac-cita-profesional') || document.getElementById('modal-cita-profesional');
+  const nombreInput = document.getElementById('pac-cita-profesional-nombre') || document.getElementById('modal-cita-profesional-nombre');
   if (!selProfesional || !nombreInput) return;
   const selected = selProfesional.options[selProfesional.selectedIndex];
   nombreInput.value = selected && selected.dataset.nombre ? selected.dataset.nombre : '';
 }
 
+// Capitaliza el nombre de la profesión
 function capitalizarProfesion(str) {
   if (!str) return "";
   str = str.replace(/_/g, " ");
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
 
+// Guarda cita de paciente en Firebase
 function guardarCitaPaciente(datosCita, callback) {
   const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
   const datos = Object.assign({}, datosCita);
@@ -94,7 +100,7 @@ function guardarCitaPaciente(datosCita, callback) {
     });
 }
 
-// Inicializa el flujo SOLO cuando abras el modal de paciente
+// Modal Nueva Cita (Gestión de Agenda)
 function abrirModalCitaPaciente() {
   cargarProfesionalesAtencionPorCesfam(function() {
     llenarSelectProfesionesPaciente();
@@ -107,7 +113,6 @@ function abrirModalCitaPaciente() {
       selProf.onchange = function() {
         llenarSelectProfesionalesPaciente();
         autocompletarNombreProfesionalPaciente();
-        // Al cambiar profesión, limpia horarios
         if (window.actualizarHorasPaciente) window.actualizarHorasPaciente();
       };
     }
@@ -119,11 +124,9 @@ function abrirModalCitaPaciente() {
       };
     }
 
-    // Inicializa listeners de fecha y profesional para los horarios
     if (window.inicializarListenersNuevaCitaPaciente) {
       window.inicializarListenersNuevaCitaPaciente();
     }
-    // Intenta cargar horarios si ambos campos tienen valor
     if (window.actualizarHorasPaciente) {
       window.actualizarHorasPaciente();
     }
@@ -171,38 +174,18 @@ function abrirModalCitaPaciente() {
     }, 100);
   });
 }
-document.getElementById('form-agendar-cita').addEventListener('submit', function(e){
-  e.preventDefault();
-  const citaId = document.getElementById('modal-cita-id').value;
-  const nombre = document.getElementById('modal-cita-nombre').textContent;
-  const rut = document.getElementById('modal-cita-rut').textContent;
-  const fecha = document.getElementById('modal-cita-fecha').value;
-  const hora = document.getElementById('modal-cita-hora').value;
 
-
-  // Guardar en Firebase (colección "citas")
-  firebase.firestore().collection("citas").add({
-    solicitudId: citaId,
-    nombre: nombre,
-    rut: rut,
-    fecha: fecha,
-    hora: hora,
-    creado: firebase.firestore.FieldValue.serverTimestamp()
-  })
-  .then(function(docRef) {
-    alert('Cita agendada correctamente');
-    closeModal('modal-cita');
-    // Si necesitas refrescar la UI, hazlo aquí
-  })
-  .catch(function(error) {
-    alert('Error al guardar la cita: ' + error);
-  });
-});
+// Modal Agendar Cita (Solicitud de Ingreso)
 function abrirModalAgendarCita(solicitudId, nombre, rut) {
   document.getElementById('modal-cita-id').value = solicitudId;
   document.getElementById('modal-cita-nombre').textContent = nombre;
   document.getElementById('modal-cita-rut').textContent = rut;
-  // Llama aquí a tus funciones para llenar profesión/profesional/hora si hace falta
+
+  // Si usas selects de profesión/profesional/hora en el modal-cita, llénalos aquí:
+  // llenarSelectProfesionesPaciente();
+  // llenarSelectProfesionalesPaciente();
+  // autocompletarNombreProfesionalPaciente();
+
   showModal('modal-cita');
 
   setTimeout(function() {
@@ -210,11 +193,51 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
     if (form && !form._onsubmitSet) {
       form.addEventListener('submit', function(e){
         e.preventDefault();
-        // ...guarda en Firebase aquí...
+        const citaId = document.getElementById('modal-cita-id').value;
+        const nombre = document.getElementById('modal-cita-nombre').textContent;
+        const rut = document.getElementById('modal-cita-rut').textContent;
+        const profesion = document.getElementById('modal-cita-profession').value;
+        const profesional = document.getElementById('modal-cita-profesional').value;
+        const profesionalNombre = document.getElementById('modal-cita-profesional-nombre').value;
+        const fecha = document.getElementById('modal-cita-fecha').value;
+        const hora = document.getElementById('modal-cita-hora').value;
+
+        // Validación
+        if (!nombre || !rut || !profesion || !profesional || !fecha || !hora) {
+          if (window.showNotification) window.showNotification("Completa todos los campos obligatorios", "warning");
+          return;
+        }
+
+        // Guardar en Firebase
+        firebase.firestore().collection("citas").add({
+          solicitudId: citaId,
+          nombre: nombre,
+          rut: rut,
+          profesion: profesion,
+          profesional: profesional,
+          profesionalNombre: profesionalNombre,
+          fecha: fecha,
+          hora: hora,
+          creado: firebase.firestore.FieldValue.serverTimestamp()
+        })
+        .then(function(docRef) {
+          if (window.showNotification) window.showNotification("Cita agendada correctamente", "success");
+          closeModal('modal-cita');
+          // refresca la UI si lo necesitas
+        })
+        .catch(function(error) {
+          if (window.showNotification) window.showNotification("Error al guardar la cita: " + error, "error");
+        });
       });
       form._onsubmitSet = true;
     }
   }, 100);
 }
+
+// Exponer funciones globalmente si necesitas llamarlas desde otros scripts
 window.abrirModalCitaPaciente = abrirModalCitaPaciente;
 window.guardarCitaPaciente = guardarCitaPaciente;
+window.abrirModalAgendarCita = abrirModalAgendarCita;
+window.llenarSelectProfesionesPaciente = llenarSelectProfesionesPaciente;
+window.llenarSelectProfesionalesPaciente = llenarSelectProfesionalesPaciente;
+window.autocompletarNombreProfesionalPaciente = autocompletarNombreProfesionalPaciente;
