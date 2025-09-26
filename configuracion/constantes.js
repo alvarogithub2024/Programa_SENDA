@@ -1,6 +1,6 @@
 /**
  * CONFIGURACION/CONSTANTES.JS
- * Constantes y configuraciones del sistema
+ * Constantes y configuraciones del sistema SENDA
  */
 
 // Configuración de Firebase
@@ -29,31 +29,32 @@ window.CESFAM_PUENTE_ALTO = [
 // Configuración de horarios
 window.HORARIOS_CONFIG = {
     semana: {
+        diasSemana: [1, 2, 3, 4, 5], // Lunes a Viernes
         horaInicio: 8,
+        minutoInicio: 0,
         horaFin: 16,
         minutoFin: 30,
-        intervaloMinutos: 30,
-        diasSemana: [1, 2, 3, 4, 5]
+        intervaloMinutos: 30
     },
-    finSemana: {
+    sabado: {
+        diasSemana: [6],
         horaInicio: 9,
+        minutoInicio: 0,
         horaFin: 12,
         minutoFin: 30,
-        intervaloMinutos: 30,
-        diasSemana: [0, 6]
+        intervaloMinutos: 30
+    },
+    domingo: {
+        diasSemana: [0],
+        horaInicio: 9,
+        minutoInicio: 0,
+        horaFin: 12,
+        minutoFin: 30,
+        intervaloMinutos: 30
     }
 };
 
-// Configuración general de la app
-window.APP_CONFIG = {
-    MAX_RETRY_ATTEMPTS: 3,
-    RETRY_DELAY: 1000,
-    PAGINATION_LIMIT: 100,
-    CACHE_DURATION: 5 * 60 * 1000,
-    DEBUG_MODE: true
-};
-
-// Profesiones
+// Profesiones disponibles
 window.PROFESIONES = {
     'asistente_social': 'Asistente Social',
     'medico': 'Médico',
@@ -61,8 +62,7 @@ window.PROFESIONES = {
     'terapeuta': 'Terapeuta Ocupacional'
 };
 
-
-// Rutas de colecciones principales Firestore
+// Rutas de colecciones Firestore
 window.COLLECTIONS = {
     PROFESIONALES: "profesionales",
     PACIENTES: "pacientes",
@@ -83,3 +83,12 @@ window.ESTADOS_SOLICITUD = [
     "anulada",
     "finalizada"
 ];
+
+// Configuración general
+window.APP_CONFIG = {
+    MAX_RETRY_ATTEMPTS: 3,
+    RETRY_DELAY: 1000,
+    PAGINATION_LIMIT: 100,
+    CACHE_DURATION: 5 * 60 * 1000,
+    DEBUG_MODE: true
+};
