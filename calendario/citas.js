@@ -142,9 +142,6 @@ function guardarCitaPaciente(datosCita, callback) {
     });
 }
 
-document.getElementById('form-nueva-cita-paciente').onsubmit = function(e) {
-  e.preventDefault();
-
   const datos = {
     cesfam: miCesfam,  // Ya lo tienes del usuario logueado
     estado: "agendada",
