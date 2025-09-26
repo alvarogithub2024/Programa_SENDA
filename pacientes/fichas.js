@@ -299,8 +299,3 @@ window.debugPermisos = function() {
     console.log('Puede editar historial:', tienePermisos);
     console.log('=== FIN DEBUG ===');
 };
-
-// Ejecutar debug automáticamente
-setTimeout(() => {
-    window.debugPermisos();
-}, 2000);
