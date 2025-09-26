@@ -515,28 +515,3 @@ window.cerrarModalNuevaAtencion = function() {
     const fichaModal = document.getElementById('modal-ficha-paciente');
     if (fichaModal) fichaModal.style.display = 'flex';
 };
-
-// ===================================================================
-// DEBUG: Función para verificar el estado actual
-// ===================================================================
-
-window.debugPermisos = function() {
-    console.log('=== DEBUG PERMISOS ===');
-    console.log('profesionActual:', profesionActual);
-    console.log('Usuario autenticado:', firebase.auth().currentUser ? 'Sí' : 'No');
-    
-    if (firebase.auth().currentUser) {
-        window.getFirestore().collection('profesionales').doc(firebase.auth().currentUser.uid).get()
-            .then(doc => {
-                if (doc.exists) {
-                    console.log('Datos del profesional:', doc.data());
-                } else {
-                    console.log('No se encontró documento del profesional');
-                }
-            });
-    }
-    
-    const tienePermisos = profesionActual && ['medico', 'psicologo', 'terapeuta'].includes(profesionActual);
-    console.log('Puede editar historial:', tienePermisos);
-    console.log('=== FIN DEBUG ===');
-};
