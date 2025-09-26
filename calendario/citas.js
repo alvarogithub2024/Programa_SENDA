@@ -83,18 +83,33 @@ function abrirModalCitaPaciente() {
     llenarSelectProfesionalesPaciente();
     autocompletarNombreProfesionalPaciente();
 
-    // Listeners seguros
+    // Listeners seguros (solo si existen los elementos)
     const selProf = document.getElementById('pac-cita-profession');
     if (selProf) {
       selProf.onchange = function() {
         llenarSelectProfesionalesPaciente();
         autocompletarNombreProfesionalPaciente();
+        // Al cambiar profesión, limpia horarios
+        window.actualizarHorasPaciente && window.actualizarHorasPaciente();
       };
     }
     const selPro = document.getElementById('pac-cita-profesional');
     if (selPro) {
-      selPro.onchange = autocompletarNombreProfesionalPaciente;
+      selPro.onchange = function() {
+        autocompletarNombreProfesionalPaciente();
+        window.actualizarHorasPaciente && window.actualizarHorasPaciente();
+      };
     }
+
+    // Inicializa listeners de fecha y profesional para los horarios
+    if (window.inicializarListenersNuevaCitaPaciente) {
+      window.inicializarListenersNuevaCitaPaciente();
+    }
+    // Intenta cargar horarios si ambos campos tienen valor
+    if (window.actualizarHorasPaciente) {
+      window.actualizarHorasPaciente();
+    }
+
     showModal('modal-nueva-cita-paciente');
   });
 }
