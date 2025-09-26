@@ -561,6 +561,29 @@ function updateSolicitudesCounter() {
     if (totalCounter) totalCounter.textContent = solicitudesData.length;
 }
 
+function verDetalleSolicitud(solicitudId) {
+  const solicitud = solicitudesData.find(s => s.id === solicitudId);
+  if (!solicitud) return;
+
+  function setText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.innerText = text || '';
+  }
+
+  setText('modal-detalle-nombre', solicitud.nombre);
+  setText('modal-detalle-rut', solicitud.rut);
+  setText('modal-detalle-telefono', solicitud.telefono);
+  setText('modal-detalle-email', solicitud.email);
+  setText('modal-detalle-motivo', solicitud.motivo);
+  setText('modal-detalle-cesfam', solicitud.cesfam);
+  setText('modal-detalle-prioridad', solicitud.prioridad);
+  setText('modal-detalle-estado', solicitud.estado || solicitud.origen);
+  setText('modal-detalle-fecha', solicitud.fecha ? new Date(solicitud.fecha).toLocaleDateString('es-CL') : '');
+  setText('modal-detalle-sustancias', Array.isArray(solicitud.sustancias) ? solicitud.sustancias.join(', ') : '');
+
+  document.getElementById('modal-detalle').style.display = 'flex';
+}
+
 /**
  * Actualizar estadísticas de solicitudes (puedes poner tu lógica aquí)
  */
