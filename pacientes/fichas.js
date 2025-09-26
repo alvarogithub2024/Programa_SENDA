@@ -1,12 +1,23 @@
 // PACIENTES/FICHAS.JS
-// Muestra pacientes únicos agendados en 'citas'.
-// Grid: nombre + apellidos, rut, teléfono, correo.
-// Modal: nombre + apellidos, rut, teléfono, correo, dirección, historial clínico (profesional, fecha, hora, descripción).
-
 (function() {
     let pacientesTabData = [];
+    let profesionActual = null;
 
-    // Helpers para UI
+    // Detecta profesión actual
+    if (window.getCurrentUser && window.getFirestore && typeof firebase !== "undefined") {
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+                window.getFirestore().collection('profesionales').doc(user.uid).get().then(function(doc){
+                    if (doc.exists) {
+                        profesionActual = doc.data().profession || null;
+                    }
+                });
+            } else {
+                profesionActual = null;
+            }
+        });
+    }
+
     function getGrid() { return document.getElementById('patients-grid'); }
     function getSearchInput() { return document.getElementById('search-pacientes-rut'); }
     function getBuscarBtn() { return document.getElementById('buscar-paciente-btn'); }
@@ -26,7 +37,6 @@
         }
     }
 
-    // Extrae pacientes desde todas las citas y los crea en 'pacientes' si no existen. Usa el id de la cita como referencia.
     async function extraerYCrearPacientesDesdeCitas() {
         const db = window.getFirestore();
         const citasSnap = await db.collection('citas').get();
@@ -34,17 +44,10 @@
 
         citasSnap.forEach(doc => {
             const cita = doc.data();
-
             const rut = (cita.rut || '').replace(/[.\-]/g, "").trim();
             const nombre = cita.nombre || '';
             const apellidos = cita.apellidos || '';
-            if (!rut) {
-                console.warn('Cita sin rut, id:', doc.id, cita);
-                return;
-            }
-            if (!nombre) {
-                console.warn('Cita sin nombre, id:', doc.id, cita);
-            }
+            if (!rut) return;
             if (!pacientesMap[rut]) {
                 pacientesMap[rut] = {
                     rut: rut,
@@ -62,7 +65,6 @@
             }
         });
 
-        // Sincroniza con colección 'pacientes'
         for (const rut in pacientesMap) {
             const paciente = pacientesMap[rut];
             const snap = await db.collection('pacientes').where('rut', '==', rut).limit(1).get();
@@ -70,18 +72,12 @@
                 await db.collection('pacientes').add(paciente);
             }
         }
-
-        // Retorna array para mostrar directamente
         return Object.values(pacientesMap);
     }
 
-    // Renderiza pacientes en el grid
     function renderPacientesGrid(pacientes) {
         const grid = getGrid();
-        if (!grid) {
-            console.error("No se encontró el elemento #patients-grid en el DOM");
-            return;
-        }
+        if (!grid) return;
         grid.innerHTML = '';
         if (!pacientes.length) {
             grid.innerHTML = "<div class='no-results'>No hay pacientes agendados aún.</div>";
@@ -103,7 +99,6 @@
         });
     }
 
-    // Filtro local sobre los pacientes extraídos de citas
     function buscarPacientesLocal(texto) {
         texto = (texto || '').trim().toUpperCase();
         if (!texto) {
@@ -112,15 +107,13 @@
         }
         const filtrados = pacientesTabData.filter(p =>
             (p.rut && p.rut.includes(texto)) ||
-            ((p.nombre + ' ' + (p.apellidos || '')).toUpperCase().includes(texto))
-        );
+            ((p.nombre + ' ' + (p.apellidos || '')).toUpperCase().includes(texto)
+        ));
         renderPacientesGrid(filtrados);
     }
 
-    // Modal ficha paciente (completa + historial clínico)
     window.verFichaPacienteSenda = function(rut) {
         const db = window.getFirestore();
-        // Limpia el rut para consulta
         const rutLimpio = (rut || '').replace(/[.\-]/g, '').trim();
         db.collection('pacientes').where('rut', '==', rutLimpio).limit(1).get().then(function(snapshot) {
             if (snapshot.empty) {
@@ -129,7 +122,6 @@
             }
             const pacienteData = Object.assign({ id: snapshot.docs[0].id }, snapshot.docs[0].data());
 
-            // Crea el modal si no existe
             let modal = document.getElementById('modal-ficha-paciente');
             if (!modal) {
                 modal = document.createElement('div');
@@ -157,7 +149,6 @@
             `;
             modalBody.innerHTML = html;
 
-            // Historial clínico: muestra las atenciones ordenadas por fecha desc, filtrando por rut (LIMPIA rut)
             cargarHistorialClinicoPacientePorRut(pacienteData.rut);
         });
     };
@@ -167,12 +158,10 @@
         if (modal) modal.style.display = 'none';
     };
 
-    // Historial clínico: muestra las atenciones ordenadas por fecha desc, filtrando por rut
     function cargarHistorialClinicoPacientePorRut(rutPaciente) {
         const cont = document.getElementById('historial-clinico');
         if (!cont) return;
         const db = window.getFirestore();
-        // Limpia el rut para asegurar coincidencia
         rutPaciente = (rutPaciente || '').replace(/[.\-]/g, '').trim();
         db.collection('atenciones')
           .where('pacienteRut', '==', rutPaciente)
@@ -198,10 +187,22 @@
                           fechaTexto = fechaObj.toLocaleDateString('es-CL');
                           horaTexto = fechaObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
                       }
+                      let acciones = '';
+                      if (profesionActual && profesionActual !== 'asistente_social') {
+                          acciones = `
+                              <button class="btn btn-outline btn-sm" onclick="window.mostrarModalEditarAtencionDesdeFicha('${doc.id}', '${a.descripcion || ''}', '${a.tipoAtencion || ''}', '${rutPaciente}')">
+                                  <i class="fas fa-edit"></i> Editar
+                              </button>
+                              <button class="btn btn-danger btn-sm" onclick="window.eliminarAtencionDesdeFicha('${doc.id}', '${rutPaciente}')">
+                                  <i class="fas fa-trash"></i> Eliminar
+                              </button>
+                          `;
+                      }
                       html += `<li style="margin-bottom:8px;">
                           <b>Profesional:</b> ${a.profesional || ''} <br>
                           <b>Fecha:</b> ${fechaTexto} <b>Hora:</b> ${horaTexto}<br>
                           <span>${a.descripcion || ''}</span>
+                          <div>${acciones}</div>
                       </li>`;
                   });
                   html += '</ul>';
@@ -222,7 +223,91 @@
           });
     }
 
-    // Refresca la pestaña: extrae pacientes desde citas y los muestra
+    window.mostrarModalEditarAtencionDesdeFicha = function(atencionId, descripcion, tipoAtencion, rutPaciente) {
+        let modal = document.getElementById('modal-editar-atencion-ficha');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'modal-editar-atencion-ficha';
+            modal.className = 'modal-overlay';
+            modal.style.display = 'flex';
+            modal.innerHTML = `<div class="modal-content" style="max-width:400px;">
+                <span class="close" onclick="cerrarModalEditarAtencionFicha()">&times;</span>
+                <h2>Editar atención</h2>
+                <form id="form-editar-atencion-ficha">
+                    <div class="form-group">
+                      <label for="editar-atencion-descripcion-ficha">Descripción</label>
+                      <textarea id="editar-atencion-descripcion-ficha" class="form-textarea" required></textarea>
+                    </div>
+                    <div class="form-group">
+                      <label for="editar-atencion-tipo-ficha">Tipo de atención</label>
+                      <select id="editar-atencion-tipo-ficha" class="form-select" required>
+                        <option value="">Selecciona tipo...</option>
+                        <option value="consulta">Consulta</option>
+                        <option value="seguimiento">Seguimiento</option>
+                        <option value="orientacion">Orientación</option>
+                        <option value="intervencion">Intervención</option>
+                      </select>
+                    </div>
+                    <div class="form-actions">
+                      <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                    </div>
+                    <input type="hidden" id="editar-atencion-id-ficha">
+                    <input type="hidden" id="editar-atencion-rut-ficha">
+                </form>
+            </div>`;
+            document.body.appendChild(modal);
+        } else {
+            modal.style.display = 'flex';
+        }
+        document.getElementById('editar-atencion-id-ficha').value = atencionId;
+        document.getElementById('editar-atencion-descripcion-ficha').value = descripcion;
+        document.getElementById('editar-atencion-tipo-ficha').value = tipoAtencion;
+        document.getElementById('editar-atencion-rut-ficha').value = rutPaciente;
+
+        var form = document.getElementById('form-editar-atencion-ficha');
+        if (form) {
+            form.onsubmit = function(e) {
+                e.preventDefault();
+                const id = document.getElementById('editar-atencion-id-ficha').value;
+                const nuevaDescripcion = document.getElementById('editar-atencion-descripcion-ficha').value.trim();
+                const nuevoTipo = document.getElementById('editar-atencion-tipo-ficha').value;
+                const rutPaciente = document.getElementById('editar-atencion-rut-ficha').value;
+                const db = window.getFirestore();
+                db.collection("atenciones").doc(id).update({
+                    descripcion: nuevaDescripcion,
+                    tipoAtencion: nuevoTipo,
+                    fechaActualizacion: new Date().toISOString()
+                })
+                .then(function() {
+                    window.showNotification("Atención editada correctamente", "success");
+                    cerrarModalEditarAtencionFicha();
+                    cargarHistorialClinicoPacientePorRut(rutPaciente);
+                })
+                .catch(function(error) {
+                    window.showNotification("Error al editar atención: " + error.message, "error");
+                });
+            };
+        }
+    };
+
+    window.cerrarModalEditarAtencionFicha = function() {
+        let modal = document.getElementById('modal-editar-atencion-ficha');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window.eliminarAtencionDesdeFicha = function(atencionId, rutPaciente) {
+        if (!confirm("¿Seguro que deseas eliminar esta atención?")) return;
+        const db = window.getFirestore();
+        db.collection('atenciones').doc(atencionId).delete()
+          .then(() => {
+              window.showNotification && window.showNotification("Atención eliminada correctamente", "success");
+              cargarHistorialClinicoPacientePorRut(rutPaciente);
+          })
+          .catch(error => {
+              window.showNotification && window.showNotification("Error al eliminar atención: " + error.message, "error");
+          });
+    };
+
     async function refrescarPacientesTab() {
         const grid = getGrid();
         if (!grid) {
