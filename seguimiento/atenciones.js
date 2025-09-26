@@ -1,6 +1,5 @@
 // SEGUIMIENTO/ATENCIONES.JS
 
-// Registra una nueva atención para un paciente desde cita agendada
 document.addEventListener("DOMContentLoaded", function() {
     var form = document.getElementById("form-registrar-atencion");
     if (!form) return;
@@ -47,8 +46,8 @@ document.addEventListener("DOMContentLoaded", function() {
             .then(function() {
                 window.showNotification("Atención registrada correctamente", "success");
                 closeModal("modal-registrar-atencion");
-                // Opcional: recargar próximas citas
-                if (window.cargarCitasProximasHoy) window.cargarCitasProximasHoy();
+                // Opcional: recargar pacientes de hoy
+                if (window.mostrarPacienteActualHoy) window.mostrarPacienteActualHoy();
             })
             .catch(function(error) {
                 window.showNotification("Error guardando atención: " + error.message, "error");
