@@ -464,6 +464,8 @@ function verDetalleSolicitud(solicitudId) {
     document.getElementById('modal-detalle-cesfam').textContent = solicitud.cesfam || '';
     document.getElementById('modal-detalle-estado').textContent = solicitud.estado || '';
     document.getElementById('modal-detalle-prioridad').textContent = solicitud.prioridad || '';
+    document.getElementById('modal-detalle-telefono').textContent = solicitud.telefono || '';
+    document.getElementById('modal-detalle-email').textContent = solicitud.email || '';
     // Si tienes otros campos, agrégalos aquí
     document.getElementById('modal-detalle').style.display = 'flex';
 }
@@ -483,7 +485,6 @@ function editarSolicitud(solicitudId) {
 function agendarCitaSolicitud(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
-    // Si tienes el modal de agendar cita de paciente y profesional, llama la función correspondiente
     if (window.abrirModalAgendarCitaProfesional) {
         window.abrirModalAgendarCitaProfesional(solicitud.id, solicitud.nombre, solicitud.rut);
     } else if (window.abrirModalAgendarCita) {
@@ -492,6 +493,7 @@ function agendarCitaSolicitud(solicitudId) {
         window.showNotification && window.showNotification("No se puede abrir el modal de agendar cita.", "error");
     }
 }
+
 // Función para eliminar la solicitud
 function eliminarSolicitud(solicitudId) {
     if (!confirm('¿Estás seguro de que quieres eliminar esta solicitud?')) return;
@@ -503,6 +505,24 @@ function eliminarSolicitud(solicitudId) {
         window.showNotification && window.showNotification('Error eliminando la solicitud', 'error');
         console.error('Error eliminando solicitud:', error);
     });
+}
+
+// Función para mostrar el modal de responder información
+function abrirModalResponder(email, nombre, solicitudId) {
+    document.getElementById('modal-responder-email').value = email || '';
+    document.getElementById('modal-responder-nombre').textContent = nombre || '';
+    document.getElementById('modal-responder-id').value = solicitudId || '';
+    document.getElementById('modal-responder').style.display = 'flex';
+}
+
+// Función para cerrar modal de detalle
+function cerrarModalDetalle() {
+    document.getElementById('modal-detalle').style.display = 'none';
+}
+
+// Función para cerrar modal de responder
+function cerrarModalResponder() {
+    document.getElementById('modal-responder').style.display = 'none';
 }
 
 function toggleAccionesSolicitud(solicitudId) {
@@ -665,3 +685,6 @@ window.verDetalleSolicitud = verDetalleSolicitud;
 window.editarSolicitud = editarSolicitud;
 window.agendarCitaSolicitud = agendarCitaSolicitud;
 window.eliminarSolicitud = eliminarSolicitud;
+window.cerrarModalDetalle = cerrarModalDetalle;
+window.abrirModalResponder = abrirModalResponder;
+window.cerrarModalResponder = cerrarModalResponder;
