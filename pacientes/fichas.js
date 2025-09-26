@@ -9,20 +9,12 @@
                 window.getFirestore().collection('profesionales').doc(user.uid).get().then(function(doc){
                     if (doc.exists) {
                         profesionActual = doc.data().profession || null;
-                        // Depuración
-                        // console.log("Profesión detectada:", profesionActual);
                     }
                 });
             } else {
                 profesionActual = null;
             }
         });
-    }
-
-    // Solo médicos, psicólogos y terapeutas (o terapeuta_ocupacional) pueden editar
-    function puedeEditarHistorial() {
-        const rolesPermitidos = ['medico', 'psicologo', 'terapeuta', 'terapeuta_ocupacional'];
-        return profesionActual && rolesPermitidos.includes(profesionActual);
     }
 
     function getGrid() { return document.getElementById('patients-grid'); }
@@ -99,9 +91,7 @@
                   <div>RUT: ${p.rut}</div>
                   <div>Tel: ${p.telefono || ''}</div>
                   <div>Email: ${p.email || ''}</div>
-                  <button class="btn btn-outline btn-sm" style="margin-left:18px;" onclick="verFichaPacienteSenda('${p.rut}')">
-                    <i class="fas fa-file-medical"></i> Ver Ficha
-                  </button>
+                  <button class="btn btn-outline btn-sm" style="margin-left:18px;" onclick="verFichaPacienteSenda('${p.rut}')"><i class="fas fa-file-medical"></i> Ver Ficha</button>
                 </div>
             `;
             grid.appendChild(div);
@@ -197,7 +187,7 @@
                           horaTexto = fechaObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
                       }
                       let acciones = '';
-                      if (puedeEditarHistorial()) {
+                      if (profesionActual && profesionActual !== 'asistente_social') {
                           acciones = `
                               <button class="btn btn-outline btn-sm" onclick="window.mostrarModalEditarAtencionDesdeFicha('${doc.id}', '${encodeURIComponent(a.descripcion || '')}', '${a.tipoAtencion || ''}', '${rutPaciente}')">
                                   <i class="fas fa-edit"></i> Editar
@@ -232,9 +222,10 @@
           });
     }
 
-    // MODAL DE EDICIÓN DE ATENCIÓN DESDE FICHA
     window.mostrarModalEditarAtencionDesdeFicha = function(atencionId, descripcionEnc, tipoAtencion, rutPaciente) {
+        // Decodifica descripción por si viene con caracteres especiales
         const descripcion = decodeURIComponent(descripcionEnc);
+        // Oculta la ficha paciente mientras editas
         window.cerrarModalFichaPaciente();
 
         let modal = document.getElementById('modal-editar-atencion-ficha');
@@ -259,7 +250,6 @@
                         <option value="seguimiento">Seguimiento</option>
                         <option value="orientacion">Orientación</option>
                         <option value="intervencion">Intervención</option>
-                        <option value="derivacion">Derivación</option>
                       </select>
                     </div>
                     <div class="form-actions">
@@ -307,12 +297,12 @@
     window.cerrarModalEditarAtencionFicha = function() {
         let modal = document.getElementById('modal-editar-atencion-ficha');
         if (modal) modal.style.display = 'none';
+        // Vuelve a mostrar la ficha del paciente
         let fichaModal = document.getElementById('modal-ficha-paciente');
         if (fichaModal) fichaModal.style.display = 'flex';
     };
 
     window.eliminarAtencionDesdeFicha = function(atencionId, rutPaciente) {
-        if (!puedeEditarHistorial()) return;
         if (!confirm("¿Seguro que deseas eliminar esta atención?")) return;
         const db = window.getFirestore();
         db.collection('atenciones').doc(atencionId).delete()
