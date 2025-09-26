@@ -247,7 +247,8 @@ function autocompletarNombreProfesionalAgendarCita() {
   nombreInput.value = selected && selected.dataset.nombre ? selected.dataset.nombre : '';
 }
 
-// Modal Agendar Cita (Solicitud de Ingreso)
+// ----------- AGENDAR CITA (Solicitud de Ingreso) + CAMBIA ESTADO -----------
+
 function abrirModalAgendarCita(solicitudId, nombre, rut) {
   cargarProfesionalesAgendarCita(function() {
     llenarSelectProfesionesAgendarCita();
@@ -305,8 +306,18 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
             creado: firebase.firestore.FieldValue.serverTimestamp()
           })
           .then(function(docRef) {
-            window.showNotification && window.showNotification("Cita agendada correctamente", "success");
-            closeModal('modal-cita');
+            // Cambia estado en solicitudes_ingreso y reingresos
+            db.collection("solicitudes_ingreso").doc(citaId).update({ estado: "agendada" })
+              .catch(() => {})
+              .finally(() => {
+                db.collection("reingresos").doc(citaId).update({ estado: "agendada" })
+                  .catch(() => {})
+                  .finally(() => {
+                    window.showNotification && window.showNotification("Cita agendada correctamente", "success");
+                    closeModal('modal-cita');
+                    if (window.reloadSolicitudesFromFirebase) window.reloadSolicitudesFromFirebase();
+                  });
+              });
           })
           .catch(function(error) {
             window.showNotification && window.showNotification("Error al guardar la cita: " + error, "error");
