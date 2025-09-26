@@ -1,7 +1,7 @@
 // PACIENTES/FICHAS.JS
 // Muestra pacientes únicos agendados en 'citas'.
-// En el grid: muestra nombre completo, rut, teléfono y correo, todo en la misma fila.
-// Al hacer click en "Ver Ficha": muestra nombre, rut, teléfono, correo, dirección y el historial clínico con profesional, fecha y hora.
+// Grid: nombre + apellidos, rut, teléfono, correo.
+// Modal: nombre + apellidos, rut, teléfono, correo, dirección, historial clínico (profesional, fecha, hora, descripción).
 
 (function() {
     let pacientesTabData = [];
@@ -34,10 +34,12 @@
 
         citasSnap.forEach(doc => {
             const cita = doc.data();
-            // Depuración: log de campos usados
-            console.log(`[CITA] id: ${doc.id} rut:`, cita.rut, "nombre:", cita.nombre);
+            // Log de campos usados
+            console.log(`[CITA] id: ${doc.id} rut:`, cita.rut, "nombre:", cita.nombre, "apellidos:", cita.apellidos);
+
             const rut = (cita.rut || '').replace(/[.\-]/g, "").toUpperCase();
             const nombre = cita.nombre || '';
+            const apellidos = cita.apellidos || '';
             if (!rut) {
                 console.warn('Cita sin rut, id:', doc.id, cita);
                 return;
@@ -49,6 +51,7 @@
                 pacientesMap[rut] = {
                     rut: rut,
                     nombre: nombre,
+                    apellidos: apellidos,
                     citaId: doc.id,
                     profesion: cita.profesion || '',
                     fecha: cita.fecha || '',
@@ -91,7 +94,7 @@
             div.className = 'patient-card';
             div.innerHTML = `
                 <div style="display:flex; gap:24px; align-items:center;">
-                  <div style="font-weight:600; min-width:170px;">${p.nombre}</div>
+                  <div style="font-weight:600; min-width:170px;">${p.nombre} ${p.apellidos || ''}</div>
                   <div>RUT: ${p.rut}</div>
                   <div>Tel: ${p.telefono || ''}</div>
                   <div>Email: ${p.email || ''}</div>
@@ -111,7 +114,7 @@
         }
         const filtrados = pacientesTabData.filter(p =>
             (p.rut && p.rut.includes(texto)) ||
-            (p.nombre && p.nombre.toUpperCase().includes(texto))
+            ((p.nombre + ' ' + (p.apellidos || '')).toUpperCase().includes(texto))
         );
         renderPacientesGrid(filtrados);
     }
@@ -141,7 +144,7 @@
 
         const modalBody = document.getElementById('modal-ficha-paciente-body');
         let html = `
-            <h3 style="margin-bottom:10px;">${pacienteData.nombre || ''}</h3>
+            <h3 style="margin-bottom:10px;">${pacienteData.nombre || ''} ${pacienteData.apellidos || ''}</h3>
             <p><b>RUT:</b> ${pacienteData.rut || ''}</p>
             <p><b>Teléfono:</b> ${pacienteData.telefono || ''}</p>
             <p><b>Email:</b> ${pacienteData.email || ''}</p>
