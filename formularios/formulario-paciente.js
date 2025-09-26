@@ -97,7 +97,7 @@ function setupFormularioPaciente() {
             guardarSolicitudInformacion({
                 tipo: "solo_informacion",
                 email: email,
-                fecha: new Date().toISOString()
+                fecha: fechaChileISO()
             });
         }
     }
@@ -126,7 +126,7 @@ function setupFormularioPaciente() {
             tratamientoPrevio: form.querySelector('input[name="tratamientoPrevio"]:checked')?.value || "",
             descripcion: form.querySelector("#patient-description").value.trim(),
             motivacion: form.querySelector("#motivacion-range").value,
-            fecha: new Date().toISOString()
+            fecha: fechaChileISO()
         };
         if (!datos.nombre || !datos.apellidos || !datos.rut || !datos.telefono) {
             return window.showNotification("Completa todos los campos obligatorios", "warning");
@@ -146,7 +146,12 @@ function setupFormularioPaciente() {
     }
 }
 
-// GUARDAR SOLICITUD AYUDA (NUEVO: guarda el id en el documento)
+// FECHA EN CHILE (zona horaria correcta)
+function fechaChileISO() {
+    return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" })).toISOString();
+}
+
+// GUARDAR SOLICITUD AYUDA (NUEVO: guarda el id en el documento y fecha Chile)
 function guardarSolicitudAyuda(datos) {
     const db = window.getFirestore ? window.getFirestore() : null;
     if (!db) {
@@ -155,8 +160,7 @@ function guardarSolicitudAyuda(datos) {
     }
     db.collection("solicitudes_ingreso").add(datos)
         .then(function(docRef) {
-            // Guardar el id en el documento (opcional pero recomendado)
-            db.collection("solicitudes_ingreso").doc(docRef.id).update({ id: docRef.id })
+            db.collection("solicitudes_ingreso").doc(docRef.id).set({ id: docRef.id }, { merge: true })
             .then(function() {
                 window.showNotification && window.showNotification("Solicitud enviada correctamente","success");
                 document.getElementById("patient-form").reset();
