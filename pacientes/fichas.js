@@ -1,3 +1,9 @@
+// PACIENTES/FICHAS.JS
+// Muestra en la pestaña Pacientes TODOS los pacientes únicos agendados en la colección 'citas'.
+// Los crea automáticamente en la colección 'pacientes' si no existen, y los muestra directamente aunque no estén allí.
+// Incluye logs de depuración para verificar ruts y nombres extraídos de las citas.
+// Usa el ID de la cita para referencia y no filtra por CESFAM (ya que tu cita no tiene ese campo).
+
 (function() {
     let pacientesTabData = [];
 
@@ -21,7 +27,7 @@
         }
     }
 
-    // Extrae pacientes desde las citas y los crea en 'pacientes' si no existen. Usa el id de la cita como referencia.
+    // Extrae pacientes desde todas las citas y los crea en 'pacientes' si no existen. Usa el id de la cita como referencia.
     async function extraerYCrearPacientesDesdeCitas() {
         const db = window.getFirestore();
         const citasSnap = await db.collection('citas').get();
@@ -29,7 +35,8 @@
 
         citasSnap.forEach(doc => {
             const cita = doc.data();
-            // Usa los campos que SI existen en tus citas (según tu screenshot)
+            // Depuración: log de campos usados
+            console.log(`[CITA] id: ${doc.id} rut:`, cita.rut, "nombre:", cita.nombre);
             const rut = (cita.rut || '').replace(/[.\-]/g, "").toUpperCase();
             const nombre = cita.nombre || '';
             if (!rut) {
@@ -43,7 +50,7 @@
                 pacientesMap[rut] = {
                     rut: rut,
                     nombre: nombre,
-                    citaId: doc.id, // Usamos el id de la cita
+                    citaId: doc.id, // Usamos el id de la cita como referencia
                     profesion: cita.profesion || '',
                     fecha: cita.fecha || '',
                     telefono: cita.telefono || '',
@@ -113,8 +120,8 @@
         renderPacientesGrid(filtrados);
     }
 
+    // Modal ficha paciente (simplificado, puedes mejorar con modal HTML)
     window.verFichaPacienteSenda = function(rut) {
-        // Muestra un alert simple (puedes mejorar con modal)
         const pacienteData = pacientesTabData.find(p => p.rut === rut);
         if (pacienteData) {
             alert(
@@ -125,6 +132,7 @@
         }
     };
 
+    // Refresca la pestaña: extrae pacientes desde citas y los muestra
     async function refrescarPacientesTab() {
         const grid = getGrid();
         if (!grid) {
