@@ -211,20 +211,24 @@ Seguimiento
 </div>
 </div>
 <div class="tab-pane" id="pacientes-tab">
-<div class="section-header">
-<h2>Pacientes</h2>
-<div class="section-actions">
-<div class="search-box">
-<i class="fas fa-search"></i>
-<input type="text" id="search-pacientes-rut" placeholder="Buscar por RUT...">
-</div>
-<button class="btn btn-primary btn-sm" id="buscar-paciente-btn">
-<i class="fas fa-search"></i>
-Buscar
-</button>
-</div>
-</div>
-<div id="pacientes-search-results"></div>
+  <div class="section-header">
+    <h2>Pacientes</h2>
+    <div class="section-actions">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" id="search-pacientes-rut" placeholder="Buscar por RUT...">
+      </div>
+      <button class="btn btn-primary btn-sm" id="buscar-paciente-btn">
+        <i class="fas fa-search"></i>
+        Buscar
+      </button>
+      <!-- El botón Actualizar se agrega por JS si no existe -->
+    </div>
+  </div>
+  <div class="patients-grid" id="patients-grid">
+    <!-- Aquí se renderizan los pacientes -->
+  </div>
+  <div id="pacientes-search-results"></div>
 </div>
 <div class="tab-pane" id="seguimiento-tab">
 <div class="section-header">
