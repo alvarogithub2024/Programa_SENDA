@@ -2560,7 +2560,89 @@ document.addEventListener('DOMContentLoaded', setupModalTabs);
 .historial-readonly .btn-entry-action {
   display: none !important;
 }
+// ===================================================================
+// CSS ADICIONAL PARA LOS NUEVOS COMPONENTES
+// Agrega esto a tu archivo de estilos
+// ===================================================================
 
+.btn-add-entry {
+    background: var(--success-green);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+}
+
+.btn-add-entry:hover {
+    background: var(--health-green);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-entry-action {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-medium);
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 500;
+}
+
+.btn-entry-action:hover {
+    background: var(--gray-100);
+    color: var(--text-dark);
+}
+
+.btn-entry-action.edit {
+    color: var(--primary-blue);
+    border-color: var(--primary-blue);
+}
+
+.btn-entry-action.edit:hover {
+    background: var(--light-blue);
+    color: var(--primary-dark);
+}
+
+.btn-entry-action.delete {
+    color: var(--danger-red);
+    border-color: var(--danger-red);
+}
+
+.btn-entry-action.delete:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.historial-entry:hover {
+    border-color: var(--primary-blue) !important;
+    box-shadow: var(--shadow-sm);
+}
+
+.historial-readonly .btn-add-entry,
+.historial-readonly .btn-entry-action {
+    display: none !important;
+}
+
+.no-historial {
+    text-align: center;
+    color: var(--text-medium);
+    font-style: italic;
+    padding: 2rem 1rem;
+}
+*/
 /* ================================
    13. RESPONSIVE DESIGN
    ================================ */
