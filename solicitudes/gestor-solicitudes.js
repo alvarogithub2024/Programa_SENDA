@@ -338,52 +338,6 @@ function renderSolicitudesTable() {
     }
 }
 
-/**
- * Exportar UNA solicitud a CSV
- */
-window.exportarSolicitud = function(solicitudId) {
-    try {
-        const solicitud = solicitudesData.find(s => s.id === solicitudId);
-        if (!solicitud) {
-            window.showNotification && window.showNotification('Solicitud no encontrada', 'error');
-            return;
-        }
-        const dataToExport = [{
-            'Nombre Completo': `${solicitud.nombre || ''} ${solicitud.apellidos || ''}`,
-            'RUT': solicitud.rut || '',
-            'Edad': solicitud.edad || '',
-            'Teléfono': solicitud.telefono || '',
-            'Email': solicitud.email || '',
-            'CESFAM': solicitud.cesfam || '',
-            'Estado': solicitud.estado || '',
-            'Prioridad': solicitud.prioridad || '',
-            'Sustancias': Array.isArray(solicitud.sustancias) ? solicitud.sustancias.join(', ') : 'No especificado',
-            'Fecha Creación': solicitud.fechaCreacion ? new Date(solicitud.fechaCreacion).toLocaleDateString('es-CL') : '',
-            'Descripción': solicitud.descripcion || 'Sin descripción',
-            'Motivación (1-10)': solicitud.motivacion || '',
-            'Tiempo de Consumo': solicitud.tiempoConsumo || '',
-            'Tratamiento Previo': solicitud.tratamientoPrevio === 'si' ? 'Sí' : 'No'
-        }];
-
-        const csvContent = convertToCSV(dataToExport);
-        const filename = `solicitud_${solicitudId}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`;
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        if (link.download !== undefined) {
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', filename);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-        window.showNotification && window.showNotification(`Solicitud exportada: ${filename}`, 'success');
-    } catch (error) {
-        console.error('Error exportando solicitud:', error);
-        window.showNotification && window.showNotification('Error al exportar solicitud', 'error');
-    }
-};
 
 /**
  * Exportar TODAS las solicitudes a Excel/CSV
