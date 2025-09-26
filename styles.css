@@ -3956,11 +3956,24 @@ input:invalid {
   z-index: 1;
   animation: modalFadeIn 0.2s;
   color: #222 !important; /* fuerza texto oscuro */
+  font-size: 1rem;
 }
 
-@keyframes modalFadeIn {
-  from { opacity: 0; transform: translateY(30px);}
-  to { opacity: 1; transform: translateY(0);}
+/* Forzar texto oscuro en TODOS los hijos del modal */
+.modal-content * {
+  color: #222 !important;
+  font-size: 1rem;
+}
+
+/* Título del modal */
+.modal-content h3,
+.modal-content h2 {
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 18px;
+  color: #2563eb !important;
+  font-weight: 700;
+  font-size: 1.5rem;
 }
 
 /* Botón de cierre */
@@ -3978,86 +3991,63 @@ input:invalid {
   color: #dc2626;
 }
 
-/* Título del modal */
-.modal-content h3,
-.modal-content h2 {
-  text-align: center;
-  margin-top: 0;
-  margin-bottom: 18px;
-  color: #2563eb;
-  font-weight: 700;
-  font-size: 1.5rem;
-}
-
 /* Inputs, textarea y labels */
 .modal-content label {
   display: block;
   font-weight: 600;
   margin-top: 16px;
   margin-bottom: 4px;
-  color: #374151;
+  color: #374151 !important;
+  font-size: 1rem;
 }
 .modal-content input,
 .modal-content textarea,
 .modal-content select {
   width: 100%;
-  padding: 8px 12px;
+  padding: 10px 14px;
   border-radius: 8px;
   border: 1.5px solid #d1d5db;
   font-size: 1rem;
   margin-bottom: 12px;
-  background: #f3f6fb;
+  background: #f3f4f6;
   box-sizing: border-box;
+  color: #222 !important;
 }
 .modal-content textarea {
   resize: vertical;
+  min-height: 80px;
 }
 
 /* Botón principal dentro del modal */
+.modal-content button,
 .modal-content button.btn-success,
 .modal-content button.btn-primary {
   margin-top: 14px;
   width: 100%;
   border-radius: 8px;
   font-size: 1.06rem;
-}
-
-.modal-content button.btn-success {
-  background: #2563eb;
-  color: #fff;
+  font-weight: 600;
+  padding: 10px 0;
   border: none;
+  background: #2563eb;
+  color: #fff !important;
   box-shadow: 0 2px 8px rgba(37,99,235,0.08);
   transition: background 0.2s;
+  letter-spacing: 0.01em;
 }
-.modal-content button.btn-success:hover {
+.modal-content button.btn-success:hover,
+.modal-content button:hover {
   background: #1e40af;
 }
-
 .modal-content button.btn-primary {
   background: #059669;
-  color: #fff;
-  border: none;
+  color: #fff !important;
   box-shadow: 0 2px 8px rgba(16,185,129,0.08);
-  transition: background 0.2s;
 }
 .modal-content button.btn-primary:hover {
   background: #047857;
 }
 
-/* Forzar texto oscuro en los hijos */
-.modal-content b,
-.modal-content span,
-.modal-content p {
-  color: #222 !important;
-}
-
-/* Responsive para móviles */
-@media (max-width: 600px) {
-  .modal-content {
-    max-width: 98vw;
-    padding: 18px 8px;
-  }
-}
 /* Responsive para móviles */
 @media (max-width: 600px) {
   .modal-content {
