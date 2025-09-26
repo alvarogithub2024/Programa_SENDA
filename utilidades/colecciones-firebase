@@ -1,0 +1,220 @@
+// Estructura base para Firestore
+function registroBase(datos = {}) {
+    return {
+        id: datos.id || "",
+        nombre: datos.nombre || "",
+        apellidos: datos.apellidos || "",
+        rut: datos.rut || "",
+        telefono: datos.telefono || "",
+        direccion: datos.direccion || "",
+        email: datos.email || "",
+        cesfam: datos.cesfam || "",
+        fechaCreacion: fechaChileISO()
+    };
+}
+function fechaChileISO() {
+    return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" })).toISOString();
+}
+window.registroBase = registroBase;
+window.fechaChileISO = fechaChileISO;
+
+// Pacientes
+// Requiere base.js
+function crearPaciente(datos) {
+    return registroBase(datos);
+}
+function guardarPacienteEnFirestore(datos, callback) {
+    const db = window.getFirestore();
+    const registro = crearPaciente(datos);
+    db.collection("pacientes").add(registro)
+        .then(docRef => {
+            window.showNotification && window.showNotification("Paciente guardado correctamente", "success");
+            if (typeof callback === "function") callback(docRef.id);
+        })
+        .catch(error => {
+            window.showNotification && window.showNotification("Error al guardar paciente: " + error.message, "error");
+            if (typeof callback === "function") callback(null, error);
+        });
+}
+window.crearPaciente = crearPaciente;
+window.guardarPacienteEnFirestore = guardarPacienteEnFirestore;
+
+function crearProfesional(datos) {
+    return Object.assign(registroBase(datos), {
+        profession: datos.profession || "",
+        estado: datos.estado || "activo",
+        fechaIngreso: fechaChileISO()
+    });
+}
+function guardarProfesionalEnFirestore(datos, callback) {
+    const db = window.getFirestore();
+    const registro = crearProfesional(datos);
+    db.collection("profesionales").add(registro)
+        .then(docRef => {
+            window.showNotification && window.showNotification("Profesional guardado correctamente", "success");
+            if (typeof callback === "function") callback(docRef.id);
+        })
+        .catch(error => {
+            window.showNotification && window.showNotification("Error al guardar profesional: " + error.message, "error");
+            if (typeof callback === "function") callback(null, error);
+        });
+}
+window.crearProfesional = crearProfesional;
+window.guardarProfesionalEnFirestore = guardarProfesionalEnFirestore;
+
+function crearCita(datos) {
+    return Object.assign(registroBase(datos), {
+        estado: datos.estado || "pendiente",
+        tipo: datos.tipo || "paciente",
+        fecha: datos.fecha || "",
+        horaAgendada: datos.horaAgendada || datos.hora || "",
+        profesional: datos.profesional || "",
+        pacienteId: datos.pacienteId || "",
+        profesionalId: datos.profesionalId || ""
+    });
+}
+function guardarCitaEnFirestore(datos, callback) {
+    const db = window.getFirestore();
+    const registro = crearCita(datos);
+    db.collection("citas").add(registro)
+        .then(docRef => {
+            window.showNotification && window.showNotification("Cita guardada correctamente", "success");
+            if (typeof callback === "function") callback(docRef.id);
+        })
+        .catch(error => {
+            window.showNotification && window.showNotification("Error al guardar cita: " + error.message, "error");
+            if (typeof callback === "function") callback(null, error);
+        });
+}
+window.crearCita = crearCita;
+window.guardarCitaEnFirestore = guardarCitaEnFirestore;
+
+function crearAtencion(datos) {
+    return Object.assign(registroBase(datos), {
+        estado: datos.estado || "pendiente",
+        descripcion: datos.descripcion || "",
+        historialMedico: datos.historialMedico || "",
+        profesional: datos.profesional || "",
+        fecha: datos.fecha || "",
+        horaAgendada: datos.horaAgendada || datos.hora || "",
+        tipoAtencion: datos.tipoAtencion || ""
+    });
+}
+function guardarAtencionEnFirestore(datos, callback) {
+    const db = window.getFirestore();
+    const registro = crearAtencion(datos);
+    db.collection("atenciones").add(registro)
+        .then(docRef => {
+            window.showNotification && window.showNotification("Atención guardada correctamente", "success");
+            if (typeof callback === "function") callback(docRef.id);
+        })
+        .catch(error => {
+            window.showNotification && window.showNotification("Error al guardar atención: " + error.message, "error");
+            if (typeof callback === "function") callback(null, error);
+        });
+}
+window.crearAtencion = crearAtencion;
+window.guardarAtencionEnFirestore = guardarAtencionEnFirestore;
+
+function crearSolicitudIngreso(datos) {
+    return Object.assign(registroBase(datos), {
+        estado: datos.estado || "pendiente",
+        tipo: datos.tipo || "identificado",
+        fechaEnvio: fechaChileISO(),
+        sustancias: datos.sustancias || [],
+        motivacion: datos.motivacion || "",
+        prioridad: datos.prioridad || "",
+        tiempoConsumo: datos.tiempoConsumo || "",
+        tratamientoPrevio: datos.tratamientoPrevio || "",
+        descripcion: datos.descripcion || ""
+    });
+}
+function guardarSolicitudIngresoEnFirestore(datos, callback) {
+    const db = window.getFirestore();
+    const registro = crearSolicitudIngreso(datos);
+    db.collection("solicitudes_ingreso").add(registro)
+        .then(docRef => {
+            window.showNotification && window.showNotification("Solicitud guardada correctamente", "success");
+            if (typeof callback === "function") callback(docRef.id);
+        })
+        .catch(error => {
+            window.showNotification && window.showNotification("Error al guardar solicitud: " + error.message, "error");
+            if (typeof callback === "function") callback(null, error);
+        });
+}
+window.crearSolicitudIngreso = crearSolicitudIngreso;
+window.guardarSolicitudIngresoEnFirestore = guardarSolicitudIngresoEnFirestore;
+
+function crearSolicitudInformacion(datos) {
+    return Object.assign(registroBase(datos), {
+        tipo: datos.tipo || "informacion",
+        mensaje: datos.mensaje || "",
+        estado: datos.estado || "pendiente",
+        fechaEnvio: fechaChileISO()
+    });
+}
+function guardarSolicitudInformacionEnFirestore(datos, callback) {
+    const db = window.getFirestore();
+    const registro = crearSolicitudInformacion(datos);
+    db.collection("solicitudes_informacion").add(registro)
+        .then(docRef => {
+            window.showNotification && window.showNotification("Solicitud de información guardada correctamente", "success");
+            if (typeof callback === "function") callback(docRef.id);
+        })
+        .catch(error => {
+            window.showNotification && window.showNotification("Error al guardar solicitud de información: " + error.message, "error");
+            if (typeof callback === "function") callback(null, error);
+        });
+}
+window.crearSolicitudInformacion = crearSolicitudInformacion;
+window.guardarSolicitudInformacionEnFirestore = guardarSolicitudInformacionEnFirestore;
+
+function crearRespuestaInformacion(datos) {
+    return Object.assign(registroBase(datos), {
+        mensaje: datos.mensaje || "",
+        fechaEnvio: fechaChileISO(),
+        estado: datos.estado || "respondido",
+        tipo: datos.tipo || "respuesta",
+        solicitudId: datos.solicitudId || ""
+    });
+}
+function guardarRespuestaInformacionEnFirestore(datos, callback) {
+    const db = window.getFirestore();
+    const registro = crearRespuestaInformacion(datos);
+    db.collection("respuestas_informacion").add(registro)
+        .then(docRef => {
+            window.showNotification && window.showNotification("Respuesta guardada correctamente", "success");
+            if (typeof callback === "function") callback(docRef.id);
+        })
+        .catch(error => {
+            window.showNotification && window.showNotification("Error al guardar respuesta: " + error.message, "error");
+            if (typeof callback === "function") callback(null, error);
+        });
+}
+window.crearRespuestaInformacion = crearRespuestaInformacion;
+window.guardarRespuestaInformacionEnFirestore = guardarRespuestaInformacionEnFirestore;
+
+function crearActualizacionDatos(datos) {
+    return Object.assign(registroBase(datos), {
+        estado: datos.estado || "",
+        descripcion: datos.descripcion || "",
+        fechaActualizacion: fechaChileISO(),
+        actualizadoPor: datos.actualizadoPor || ""
+    });
+}
+function guardarActualizacionDatosEnFirestore(datos, callback) {
+    const db = window.getFirestore();
+    const registro = crearActualizacionDatos(datos);
+    db.collection("actualizacion_datos").add(registro)
+        .then(docRef => {
+            window.showNotification && window.showNotification("Actualización guardada correctamente", "success");
+            if (typeof callback === "function") callback(docRef.id);
+        })
+        .catch(error => {
+            window.showNotification && window.showNotification("Error al guardar actualización: " + error.message, "error");
+            if (typeof callback === "function") callback(null, error);
+        });
+}
+window.crearActualizacionDatos = crearActualizacionDatos;
+window.guardarActualizacionDatosEnFirestore = guardarActualizacionDatosEnFirestore;
+
