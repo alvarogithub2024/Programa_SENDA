@@ -116,22 +116,29 @@ let miCesfamAgendarProf = null;
 
 function cargarProfesionalesAgendarCitaProfesional(callback) {
   const user = firebase.auth().currentUser;
+  console.log("Usuario logueado para Agendar:", user);
   if (!user) return;
   const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
   db.collection('profesionales').doc(user.uid).get().then(doc => {
-    if (!doc.exists) return;
+    if (!doc.exists) {
+      console.log("No existe el documento de usuario logueado.");
+      return;
+    }
     miCesfamAgendarProf = doc.data().cesfam;
+    console.log("CESFAM del usuario:", miCesfamAgendarProf);
     db.collection('profesionales').where('activo', '==', true).where('cesfam', '==', miCesfamAgendarProf).get().then(snapshot => {
       profesionalesAgendarProf = [];
       profesionesAgendarProf = [];
       snapshot.forEach(docu => {
         const p = docu.data();
+        console.log("Profesional activo encontrado:", p);
         p.uid = docu.id;
         profesionalesAgendarProf.push(p);
         if (p.profession && !profesionesAgendarProf.includes(p.profession)) {
           profesionesAgendarProf.push(p.profession);
         }
       });
+      console.log("Profesiones encontradas:", profesionesAgendarProf);
       if (typeof callback === 'function') callback();
     });
   });
