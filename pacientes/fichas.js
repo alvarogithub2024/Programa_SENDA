@@ -1,8 +1,249 @@
 // ===================================================================
-// FIX ESPECÍFICO PARA MOSTRAR BOTONES DE EDITAR/ELIMINAR
-// Reemplaza la función cargarHistorialClinicoPacientePorRut en tu código
+// MEJORAS PARA TU CÓDIGO EXISTENTE DE FICHAS DE PACIENTES
+// Integra con tu sistema actual manteniendo la funcionalidad
 // ===================================================================
 
+(function() {
+    let pacientesTabData = [];
+    let profesionActual = null;
+
+    // Detecta profesión actual (tu código existente)
+    if (window.getCurrentUser && window.getFirestore && typeof firebase !== "undefined") {
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+                window.getFirestore().collection('profesionales').doc(user.uid).get().then(function(doc){
+                    if (doc.exists) {
+                        profesionActual = doc.data().profession || null;
+                    }
+                });
+            } else {
+                profesionActual = null;
+            }
+        });
+    }
+
+    // ===== FUNCIONES AUXILIARES PARA PERMISOS =====
+    
+    /**
+     * Verifica si el profesional actual puede editar historial
+     */
+    function puedeEditarHistorial() {
+        const rolesPermitidos = ['medico', 'psicologo', 'terapeuta'];
+        return profesionActual && rolesPermitidos.includes(profesionActual);
+    }
+
+    /**
+     * Obtiene información del profesional actual
+     */
+    function obtenerProfesionalActual() {
+        return new Promise((resolve) => {
+            if (profesionActual) {
+                firebase.auth().currentUser && window.getFirestore()
+                    .collection('profesionales')
+                    .doc(firebase.auth().currentUser.uid)
+                    .get()
+                    .then(doc => {
+                        if (doc.exists) {
+                            resolve({
+                                id: doc.id,
+                                ...doc.data(),
+                                profession: profesionActual
+                            });
+                        } else {
+                            resolve(null);
+                        }
+                    })
+                    .catch(() => resolve(null));
+            } else {
+                resolve(null);
+            }
+        });
+    }
+
+    // ===== TUS FUNCIONES EXISTENTES (mantenidas) =====
+    
+    function getGrid() { return document.getElementById('patients-grid'); }
+    function getSearchInput() { return document.getElementById('search-pacientes-rut'); }
+    function getBuscarBtn() { return document.getElementById('buscar-paciente-btn'); }
+    function getActualizarBtn() { return document.getElementById('actualizar-pacientes-btn'); }
+
+    function crearBotonActualizarSiNoExiste() {
+        let actualizarBtn = getActualizarBtn();
+        if (!actualizarBtn) {
+            const header = document.querySelector('#pacientes-tab .section-actions');
+            if (header) {
+                actualizarBtn = document.createElement('button');
+                actualizarBtn.id = 'actualizar-pacientes-btn';
+                actualizarBtn.className = 'btn btn-secondary btn-sm';
+                actualizarBtn.innerHTML = '<i class="fas fa-sync"></i> Actualizar';
+                header.appendChild(actualizarBtn);
+            }
+        }
+    }
+
+    async function extraerYCrearPacientesDesdeCitas() {
+        const db = window.getFirestore();
+        const citasSnap = await db.collection('citas').get();
+        const pacientesMap = {};
+
+        citasSnap.forEach(doc => {
+            const cita = doc.data();
+            const rut = (cita.rut || '').replace(/[.\-]/g, "").trim();
+            const nombre = cita.nombre || '';
+            const apellidos = cita.apellidos || '';
+            if (!rut) return;
+            if (!pacientesMap[rut]) {
+                pacientesMap[rut] = {
+                    rut: rut,
+                    nombre: nombre,
+                    apellidos: apellidos,
+                    citaId: doc.id,
+                    profesion: cita.profesion || '',
+                    fecha: cita.fecha || '',
+                    telefono: cita.telefono || '',
+                    email: cita.email || '',
+                    direccion: cita.direccion || '',
+                    edad: cita.edad || '',
+                    fechaRegistro: cita.creado || new Date().toISOString(),
+                };
+            }
+        });
+
+        for (const rut in pacientesMap) {
+            const paciente = pacientesMap[rut];
+            const snap = await db.collection('pacientes').where('rut', '==', rut).limit(1).get();
+            if (snap.empty) {
+                await db.collection('pacientes').add(paciente);
+            }
+        }
+        return Object.values(pacientesMap);
+    }
+
+    function renderPacientesGrid(pacientes) {
+        const grid = getGrid();
+        if (!grid) return;
+        grid.innerHTML = '';
+        if (!pacientes.length) {
+            grid.innerHTML = "<div class='no-results'>No hay pacientes agendados aún.</div>";
+            return;
+        }
+        pacientes.forEach(p => {
+            const div = document.createElement('div');
+            div.className = 'patient-card';
+            div.innerHTML = `
+                <div style="display:flex; gap:24px; align-items:center;">
+                  <div style="font-weight:600; min-width:170px;">${p.nombre} ${p.apellidos || ''}</div>
+                  <div>RUT: ${p.rut}</div>
+                  <div>Tel: ${p.telefono || ''}</div>
+                  <div>Email: ${p.email || ''}</div>
+                  <button class="btn btn-outline btn-sm" style="margin-left:18px;" onclick="verFichaPacienteSenda('${p.rut}')">
+                    <i class="fas fa-file-medical"></i> Ver Ficha
+                  </button>
+                </div>
+            `;
+            grid.appendChild(div);
+        });
+    }
+
+    function buscarPacientesLocal(texto) {
+        texto = (texto || '').trim().toUpperCase();
+        if (!texto) {
+            renderPacientesGrid(pacientesTabData);
+            return;
+        }
+        const filtrados = pacientesTabData.filter(p =>
+            (p.rut && p.rut.includes(texto)) ||
+            ((p.nombre + ' ' + (p.apellidos || '')).toUpperCase().includes(texto))
+        );
+        renderPacientesGrid(filtrados);
+    }
+
+    // ===== FUNCIÓN PRINCIPAL MEJORADA PARA VER FICHA =====
+    
+    window.verFichaPacienteSenda = async function(rut) {
+        const db = window.getFirestore();
+        const rutLimpio = (rut || '').replace(/[.\-]/g, '').trim();
+        
+        try {
+            const snapshot = await db.collection('pacientes').where('rut', '==', rutLimpio).limit(1).get();
+            
+            if (snapshot.empty) {
+                window.showNotification && window.showNotification('Paciente no encontrado', 'warning');
+                return;
+            }
+            
+            const pacienteData = Object.assign({ id: snapshot.docs[0].id }, snapshot.docs[0].data());
+            const profesional = await obtenerProfesionalActual();
+            const puedeEditar = puedeEditarHistorial();
+
+            // Crear o mostrar modal
+            let modal = document.getElementById('modal-ficha-paciente');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'modal-ficha-paciente';
+                modal.className = 'modal-overlay';
+                modal.innerHTML = `
+                    <div class="modal-content" style="max-width:600px;">
+                        <span class="close" onclick="cerrarModalFichaPaciente()">&times;</span>
+                        <div id="modal-ficha-paciente-body"></div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+            
+            modal.style.display = 'flex';
+
+            // Construir HTML mejorado de la ficha
+            const modalBody = document.getElementById('modal-ficha-paciente-body');
+            const html = construirHTMLFichaMejorada(pacienteData, puedeEditar, profesional);
+            modalBody.innerHTML = html;
+
+            // Cargar historial clínico
+            await cargarHistorialClinicoMejorado(pacienteData.rut, puedeEditar, profesional);
+
+        } catch (error) {
+            console.error('Error al mostrar ficha:', error);
+            window.showNotification && window.showNotification('Error al cargar ficha del paciente', 'error');
+        }
+    };
+
+    /**
+     * Construye HTML mejorado para la ficha del paciente
+     */
+    function construirHTMLFichaMejorada(paciente, puedeEditar, profesional) {
+        return `
+            <h3 style="color: #2563eb; margin-bottom:15px; font-size:1.4rem; font-weight:700;">
+                <i class="fas fa-user-circle"></i> ${paciente.nombre || ''} ${paciente.apellidos || ''}
+            </h3>
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:20px;">
+                <p><i class="fas fa-id-card" style="color:#6366f1; margin-right:8px;"></i><b>RUT:</b> ${paciente.rut || ''}</p>
+                <p><i class="fas fa-phone" style="color:#10b981; margin-right:8px;"></i><b>Teléfono:</b> ${paciente.telefono || 'No disponible'}</p>
+                <p><i class="fas fa-envelope" style="color:#f59e0b; margin-right:8px;"></i><b>Email:</b> ${paciente.email || 'No disponible'}</p>
+                <p><i class="fas fa-map-marker-alt" style="color:#ef4444; margin-right:8px;"></i><b>Dirección:</b> ${paciente.direccion || 'No disponible'}</p>
+            </div>
+            
+            <hr style="margin:20px 0; border:1px solid #e5e7eb;">
+            
+            <div id="historial-clinico" class="${puedeEditar ? '' : 'historial-readonly'}" data-paciente-rut="${paciente.rut}">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h4 style="color:#2563eb; margin:0; font-size:1.2rem; font-weight:600;">
+                        <i class="fas fa-clipboard-list"></i> Historial Clínico
+                    </h4>
+                    ${puedeEditar ? `
+                        <button class="btn-add-entry" onclick="mostrarFormularioNuevaAtencion('${paciente.rut}')">
+                            <i class="fas fa-plus"></i> Agregar Atención
+                        </button>
+                    ` : ''}
+                </div>
+                <div id="historial-contenido">
+                    <div class="loading-message">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando historial...
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 function cargarHistorialClinicoPacientePorRut(rutPaciente) {
     const cont = document.getElementById('historial-clinico');
     if (!cont) return;
