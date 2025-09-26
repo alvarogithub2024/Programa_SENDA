@@ -41,16 +41,21 @@ function setupFormularioReingreso() {
             tipo,
             version,
             estado: "pendiente",
-            fechaCreacion: new Date().toISOString(),
+            fechaCreacion: fechaChileISO(),
             fechaRespuesta: null,
-            fechaUltimaActualizacion: new Date().toISOString()
+            fechaUltimaActualizacion: fechaChileISO()
         };
 
         guardarReingresoEnFirebase(data);
     });
 }
 
-// Guarda en la colección "reingresos"
+// Fecha y hora local Chile
+function fechaChileISO() {
+    return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" })).toISOString();
+}
+
+// Guarda en la colección "reingresos" y añade el id al documento
 function guardarReingresoEnFirebase(data) {
     const db = window.getFirestore ? window.getFirestore() : null;
     if (!db) {
@@ -58,10 +63,16 @@ function guardarReingresoEnFirebase(data) {
         return;
     }
     db.collection("reingresos").add(data)
-        .then(function() {
-            window.showNotification && window.showNotification("Solicitud de reingreso enviada correctamente", "success");
-            document.getElementById("reentry-form").reset();
-            document.getElementById("reentry-modal").style.display = "none";
+        .then(function(docRef) {
+            db.collection("reingresos").doc(docRef.id).set({ id: docRef.id }, { merge: true })
+            .then(function() {
+                window.showNotification && window.showNotification("Solicitud de reingreso enviada correctamente", "success");
+                document.getElementById("reentry-form").reset();
+                document.getElementById("reentry-modal").style.display = "none";
+            })
+            .catch(function(error) {
+                window.showNotification && window.showNotification("Reingreso guardado pero no se pudo registrar el ID: "+error.message, "warning");
+            });
         })
         .catch(function(error) {
             window.showNotification && window.showNotification("Error guardando reingreso: "+error.message, "error");
