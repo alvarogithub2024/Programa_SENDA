@@ -485,12 +485,13 @@ function editarSolicitud(solicitudId) {
 function agendarCitaSolicitud(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
-    // Aseguramos que el campo CESFAM esté presente y lo pasamos al modal
+    // Concatenar nombre y apellidos
+    const nombreCompleto = (solicitud.nombre || "") + " " + (solicitud.apellidos || "");
     const cesfam = solicitud.cesfam || "";
     if (window.abrirModalAgendarCitaProfesional) {
-        window.abrirModalAgendarCitaProfesional(solicitud.id, solicitud.nombre, solicitud.rut, cesfam);
+        window.abrirModalAgendarCitaProfesional(solicitud.id, nombreCompleto, solicitud.rut, cesfam);
     } else if (window.abrirModalAgendarCita) {
-        window.abrirModalAgendarCita(solicitud.id, solicitud.nombre, solicitud.rut, cesfam);
+        window.abrirModalAgendarCita(solicitud.id, nombreCompleto, solicitud.rut, cesfam);
     } else {
         window.showNotification && window.showNotification("No se puede abrir el modal de agendar cita.", "error");
     }
