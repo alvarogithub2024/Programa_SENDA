@@ -73,6 +73,40 @@ function autocompletarNombreProfesionalNuevaCitaProfesional() {
   nombreInput.value = selected && selected.dataset.nombre ? selected.dataset.nombre : '';
 }
 
+// Llenar horas disponibles según fecha y profesional seleccionado (NUEVA CITA)
+function actualizarHorasNuevaCitaProfesional() {
+  const fecha = document.getElementById('prof-cita-fecha')?.value;
+  const profesionalId = document.getElementById('prof-cita-profesional')?.value;
+  const selectHora = document.getElementById('prof-cita-hora');
+  if (!selectHora) return;
+  selectHora.innerHTML = '<option value="">Selecciona hora...</option>';
+  if (!fecha || !profesionalId) return;
+  window.cargarHorariosDisponibles(fecha, profesionalId, function(horariosDisponibles) {
+    if (!horariosDisponibles.length) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = 'Sin horarios disponibles';
+      selectHora.appendChild(opt);
+    } else {
+      horariosDisponibles.forEach(h => {
+        const opt = document.createElement('option');
+        opt.value = h;
+        opt.textContent = h;
+        selectHora.appendChild(opt);
+      });
+    }
+  });
+}
+
+function inicializarListenersNuevaCitaProfesional() {
+  var fechaInput = document.getElementById('prof-cita-fecha');
+  var profSelect = document.getElementById('prof-cita-profesional');
+  if (fechaInput && profSelect) {
+    fechaInput.addEventListener('change', actualizarHorasNuevaCitaProfesional);
+    profSelect.addEventListener('change', actualizarHorasNuevaCitaProfesional);
+  }
+}
+
 function abrirModalNuevaCitaProfesional() {
   cargarProfesionalesNuevaCitaProfesional(function() {
     llenarSelectProfesionesNuevaCitaProfesional();
@@ -84,12 +118,18 @@ function abrirModalNuevaCitaProfesional() {
       selProf.onchange = function() {
         llenarSelectProfesionalesNuevaCitaProfesional();
         autocompletarNombreProfesionalNuevaCitaProfesional();
+        actualizarHorasNuevaCitaProfesional();
       };
     }
     const selPro = document.getElementById('prof-cita-profesional');
     if (selPro) {
-      selPro.onchange = autocompletarNombreProfesionalNuevaCitaProfesional;
+      selPro.onchange = function() {
+        autocompletarNombreProfesionalNuevaCitaProfesional();
+        actualizarHorasNuevaCitaProfesional();
+      };
     }
+    inicializarListenersNuevaCitaProfesional();
+    actualizarHorasNuevaCitaProfesional();
 
     showModal('modal-nueva-cita-profesional');
 
@@ -116,29 +156,22 @@ let miCesfamAgendarProf = null;
 
 function cargarProfesionalesAgendarCitaProfesional(callback) {
   const user = firebase.auth().currentUser;
-  console.log("Usuario logueado para Agendar:", user);
   if (!user) return;
   const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
   db.collection('profesionales').doc(user.uid).get().then(doc => {
-    if (!doc.exists) {
-      console.log("No existe el documento de usuario logueado.");
-      return;
-    }
+    if (!doc.exists) return;
     miCesfamAgendarProf = doc.data().cesfam;
-    console.log("CESFAM del usuario:", miCesfamAgendarProf);
     db.collection('profesionales').where('activo', '==', true).where('cesfam', '==', miCesfamAgendarProf).get().then(snapshot => {
       profesionalesAgendarProf = [];
       profesionesAgendarProf = [];
       snapshot.forEach(docu => {
         const p = docu.data();
-        console.log("Profesional activo encontrado:", p);
         p.uid = docu.id;
         profesionalesAgendarProf.push(p);
         if (p.profession && !profesionesAgendarProf.includes(p.profession)) {
           profesionesAgendarProf.push(p.profession);
         }
       });
-      console.log("Profesiones encontradas:", profesionesAgendarProf);
       if (typeof callback === 'function') callback();
     });
   });
@@ -189,6 +222,40 @@ function autocompletarNombreProfesionalAgendarCitaProfesional() {
   nombreInput.value = selected && selected.dataset.nombre ? selected.dataset.nombre : '';
 }
 
+// Llenar horas disponibles según fecha y profesional seleccionado (AGENDAR CITA)
+function actualizarHorasAgendarProfesional() {
+  const fecha = document.getElementById('modal-cita-fecha-prof')?.value;
+  const profesionalId = document.getElementById('modal-cita-profesional-prof')?.value;
+  const selectHora = document.getElementById('modal-cita-hora-prof');
+  if (!selectHora) return;
+  selectHora.innerHTML = '<option value="">Selecciona hora...</option>';
+  if (!fecha || !profesionalId) return;
+  window.cargarHorariosDisponibles(fecha, profesionalId, function(horariosDisponibles) {
+    if (!horariosDisponibles.length) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = 'Sin horarios disponibles';
+      selectHora.appendChild(opt);
+    } else {
+      horariosDisponibles.forEach(h => {
+        const opt = document.createElement('option');
+        opt.value = h;
+        opt.textContent = h;
+        selectHora.appendChild(opt);
+      });
+    }
+  });
+}
+
+function inicializarListenersAgendarCitaProfesional() {
+  var fechaInput = document.getElementById('modal-cita-fecha-prof');
+  var profSelect = document.getElementById('modal-cita-profesional-prof');
+  if (fechaInput && profSelect) {
+    fechaInput.addEventListener('change', actualizarHorasAgendarProfesional);
+    profSelect.addEventListener('change', actualizarHorasAgendarProfesional);
+  }
+}
+
 function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
   cargarProfesionalesAgendarCitaProfesional(function() {
     llenarSelectProfesionesAgendarCitaProfesional();
@@ -204,12 +271,18 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
       selProf.onchange = function() {
         llenarSelectProfesionalesAgendarCitaProfesional();
         autocompletarNombreProfesionalAgendarCitaProfesional();
+        actualizarHorasAgendarProfesional();
       };
     }
     const selPro = document.getElementById('modal-cita-profesional-prof');
     if (selPro) {
-      selPro.onchange = autocompletarNombreProfesionalAgendarCitaProfesional;
+      selPro.onchange = function() {
+        autocompletarNombreProfesionalAgendarCitaProfesional();
+        actualizarHorasAgendarProfesional();
+      };
     }
+    inicializarListenersAgendarCitaProfesional();
+    actualizarHorasAgendarProfesional();
 
     showModal('modal-agendar-cita-profesional');
 
