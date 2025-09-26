@@ -171,6 +171,33 @@ function abrirModalCitaPaciente() {
     }, 100);
   });
 }
+document.getElementById('form-agendar-cita').addEventListener('submit', function(e){
+  e.preventDefault();
+  const citaId = document.getElementById('modal-cita-id').value;
+  const nombre = document.getElementById('modal-cita-nombre').textContent;
+  const rut = document.getElementById('modal-cita-rut').textContent;
+  const fecha = document.getElementById('modal-cita-fecha').value;
+  const hora = document.getElementById('modal-cita-hora').value;
+
+
+  // Guardar en Firebase (colección "citas")
+  firebase.firestore().collection("citas").add({
+    solicitudId: citaId,
+    nombre: nombre,
+    rut: rut,
+    fecha: fecha,
+    hora: hora,
+    creado: firebase.firestore.FieldValue.serverTimestamp()
+  })
+  .then(function(docRef) {
+    alert('Cita agendada correctamente');
+    closeModal('modal-cita');
+    // Si necesitas refrescar la UI, hazlo aquí
+  })
+  .catch(function(error) {
+    alert('Error al guardar la cita: ' + error);
+  });
+});
 
 window.abrirModalCitaPaciente = abrirModalCitaPaciente;
 window.guardarCitaPaciente = guardarCitaPaciente;
