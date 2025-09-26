@@ -82,7 +82,17 @@ function abrirModalCitaPaciente() {
     llenarSelectProfesionesPaciente();
     llenarSelectProfesionalesPaciente();
     autocompletarNombreProfesionalPaciente();
-
+    showModal('modal-nueva-cita-paciente');
+    setTimeout(function() {
+        var form = document.getElementById('form-nueva-cita-paciente');
+        if (form && !form._onsubmitSet) { // Solo una vez
+            form.onsubmit = function(e) {
+                // ...tu código...
+            };
+            form._onsubmitSet = true;
+        }
+    }, 100);
+}
     // Listeners seguros (solo si existen los elementos)
     const selProf = document.getElementById('pac-cita-profession');
     if (selProf) {
