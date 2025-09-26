@@ -4,6 +4,7 @@ let miCesfamProfesional = null;
 let profesionalesCesfam = [];
 let profesionesCesfam = [];
 
+// Obtiene el CESFAM y los profesionales activos del usuario logueado
 function obtenerMiCesfamYProfesionales(callback) {
   const user = firebase.auth().currentUser;
   if (!user) return;
@@ -34,6 +35,7 @@ function obtenerMiCesfamYProfesionales(callback) {
   });
 }
 
+// Llena el select de profesiones
 function llenarSelectProfesiones() {
   const selProf = document.getElementById('prof-cita-profession');
   if (!selProf) return;
@@ -46,6 +48,7 @@ function llenarSelectProfesiones() {
   });
 }
 
+// Llena el select de profesionales según la profesión seleccionada
 function llenarSelectProfesionales() {
   const selProfesion = document.getElementById('prof-cita-profession');
   const selProfesional = document.getElementById('prof-cita-profesional');
@@ -65,6 +68,7 @@ function llenarSelectProfesionales() {
   if (nombreInput) nombreInput.value = '';
 }
 
+// Autocompleta el nombre del profesional seleccionado
 function autocompletarNombreProfesional() {
   const selProfesional = document.getElementById('prof-cita-profesional');
   const nombreInput = document.getElementById('prof-cita-profesional-nombre');
@@ -73,12 +77,14 @@ function autocompletarNombreProfesional() {
   nombreInput.value = selected && selected.dataset.nombre ? selected.dataset.nombre : '';
 }
 
+// Capitaliza el nombre de la profesión
 function capitalizarProfesion(str) {
   if (!str) return "";
   str = str.replace(/_/g, " ");
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
 
+// Inicializa el flujo: llena los selects y agrega listeners
 function inicializarFlujoProfesionalesCita() {
   obtenerMiCesfamYProfesionales(function() {
     llenarSelectProfesiones();
@@ -99,12 +105,7 @@ function inicializarFlujoProfesionalesCita() {
   });
 }
 
-function abrirModalCitaProfesional() {
-  inicializarFlujoProfesionalesCita();
-  showModal('modal-cita-profesional');
-}
-
-// Llama a esto AL ABRIR el modal de cita profesional
+// Abre el modal y carga los datos
 function abrirModalCitaProfesional() {
   inicializarFlujoProfesionalesCita();
   showModal('modal-cita-profesional');
