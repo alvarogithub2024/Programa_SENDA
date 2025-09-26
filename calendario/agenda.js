@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function() {
   let citasPorDia = {};
 
   function chileNow() {
-    return new Date(new Date().toLocaleString("en-US", {timeZone: "America/Santiago"}));
+    return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" }));
   }
 
   function getMonthName(month) {
@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // Cabecera de días
     let row = document.createElement('div');
     row.className = 'calendar-row calendar-row-header';
-    ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].forEach(dia => {
+    ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].forEach(dia => {
       let cell = document.createElement('div');
       cell.className = 'calendar-cell calendar-header-cell';
       cell.textContent = dia;
@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", function() {
           cell.innerHTML = "&nbsp;";
         } else {
           // Día del mes
-          const dateKey = `${year}-${String(month+1).padStart(2,'0')}-${String(date).padStart(2,'0')}`;
+          const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
           // Número de día
           const dayNumDiv = document.createElement('div');
           dayNumDiv.className = 'calendar-day-number';
@@ -93,13 +93,16 @@ document.addEventListener("DOMContentLoaded", function() {
           }
 
           cell.dataset.date = dateKey;
-          if (date === chileNow().getDate() && month === chileNow().getMonth() && year === chileNow().getFullYear()) {
+          if (
+            date === chileNow().getDate() &&
+            month === chileNow().getMonth() &&
+            year === chileNow().getFullYear()
+          ) {
             cell.classList.add('calendar-today');
           }
           cell.onclick = function() {
             // Abre el modal de nueva cita de PACIENTE si existe la función, sino fallback genérico
             if (window.abrirModalCitaPaciente) {
-              // Si tienes IDs únicos para el campo de fecha del modal paciente
               var fechaInput = document.getElementById('pac-cita-fecha');
               if (fechaInput) fechaInput.value = cell.dataset.date;
               window.abrirModalCitaPaciente();
@@ -110,7 +113,9 @@ document.addEventListener("DOMContentLoaded", function() {
                 if (fechaInput) fechaInput.value = cell.dataset.date;
               }, 100);
             }
-          }
+            // Mostrar citas del día en el panel inferior
+            mostrarCitasDelDia(cell.dataset.date);
+          };
           date++;
         }
         weekRow.appendChild(cell);
@@ -150,17 +155,16 @@ document.addEventListener("DOMContentLoaded", function() {
           const fechaInput = document.getElementById('pac-cita-fecha');
           if (fechaInput) {
             const chileDate = chileNow();
-            fechaInput.value = chileDate.toISOString().slice(0,10);
+            fechaInput.value = chileDate.toISOString().slice(0, 10);
           }
         }, 100);
       } else {
-        // fallback
         showModal('modal-nueva-cita');
         setTimeout(function() {
           const fechaInput = document.getElementById('cita-fecha');
           if (fechaInput) {
             const chileDate = chileNow();
-            fechaInput.value = chileDate.toISOString().slice(0,10);
+            fechaInput.value = chileDate.toISOString().slice(0, 10);
           }
         }, 100);
       }
@@ -173,9 +177,8 @@ document.addEventListener("DOMContentLoaded", function() {
     const nombreProf = document.getElementById('cita-profesional-nombre');
     if (!select) return;
     select.innerHTML = '<option value="">Selecciona profesional...</option>';
-    // Busca todos los profesionales activos en Firebase
-    firebase.firestore().collection('profesionales').where('activo', '==', true).get().then(snapshot=>{
-      snapshot.forEach(doc=>{
+    firebase.firestore().collection('profesionales').where('activo', '==', true).get().then(snapshot => {
+      snapshot.forEach(doc => {
         let p = doc.data();
         let opt = document.createElement('option');
         opt.value = doc.id;
@@ -184,14 +187,11 @@ document.addEventListener("DOMContentLoaded", function() {
         select.appendChild(opt);
       });
     });
-    if (select) {
-      select.onchange = function() {
-        let selected = select.options[select.selectedIndex];
-        if (nombreProf) nombreProf.value = selected.dataset.nombre || '';
-      };
-    }
+    select.onchange = function() {
+      let selected = select.options[select.selectedIndex];
+      if (nombreProf) nombreProf.value = selected.dataset.nombre || '';
+    };
   }
-  // Sólo inicializar si existe el select legacy
   if (document.getElementById('cita-profesional')) {
     cargarProfesionales();
   }
@@ -212,72 +212,72 @@ document.addEventListener("DOMContentLoaded", function() {
         window.showNotification && window.showNotification("Completa todos los campos", "warning");
         return;
       }
-// ==================== CITAS DEL DÍA ====================
-// Solo el panel inferior, NO modifica el calendario
 
-function mostrarCitasDelDia(fecha) {
-  const appointmentsList = document.getElementById('appointments-list');
-  if (!appointmentsList) return;
-  appointmentsList.innerHTML = `<div class="loading-message"><i class="fas fa-spinner fa-spin"></i> Cargando citas...</div>`;
-  const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
-
-  db.collection("citas")
-    .where("fecha", "==", fecha)
-    .orderBy("hora", "asc")
-    .get()
-    .then(function(snapshot) {
-      const citas = [];
-      snapshot.forEach(function(doc) {
-        const cita = doc.data();
-        cita.id = doc.id;
-        citas.push(cita);
-      });
-      appointmentsList.innerHTML = "";
-      if (!citas.length) {
-        appointmentsList.innerHTML = "<div class='no-results'>No hay citas agendadas para este día.</div>";
-        return;
-      }
-      citas.forEach(function(cita) {
-        const div = document.createElement("div");
-        div.className = "appointment-item";
-        div.innerHTML = `
-          <div class="appointment-time">${cita.hora || ""}</div>
-          <div class="appointment-details">
-            <div class="appointment-patient"><strong>${cita.pacienteNombre || cita.paciente || ""}</strong></div>
-            <div class="appointment-professional">${cita.profesionalNombre || ""}</div>
-          </div>
-          <div class="appointment-status">
-            <span class="status-badge ${cita.estado || "agendada"}">${cita.estado || "Agendada"}</span>
-          </div>
-        `;
-        appointmentsList.appendChild(div);
-      });
-      // Si necesitas acceder a los pacientes citados del día desde otros scripts:
-      window.citasDelDia = citas;
-    })
-    .catch(function(error) {
-      appointmentsList.innerHTML = "<div class='no-results'>Error cargando citas.</div>";
-      if (window.showNotification) window.showNotification("Error cargando citas del día: " + error.message, "error");
-    });
-}
-document.addEventListener("DOMContentLoaded", function() {
-  const hoy = new Date().toISOString().slice(0,10);
-  mostrarCitasDelDia(hoy);
-});
-      window.mostrarCitasDelDia = mostrarCitasDelDia;
       // Guardar cita en Firebase
       firebase.firestore().collection('citas').add({
         paciente, rut, profesionalID, profesionalNombre, fecha, hora,
         createdAt: new Date().toISOString()
-      }).then(()=>{
+      }).then(() => {
         window.showNotification && window.showNotification("Cita agendada correctamente", "success");
         closeModal('modal-nueva-cita');
-        // ACTUALIZAR: recargar citas y calendario
         cargarCitasPorDia(() => renderCalendar(currentMonth, currentYear));
-      }).catch(err=>{
-        window.showNotification && window.showNotification("Error al agendar: "+err.message, "error");
+        mostrarCitasDelDia(fecha);
+      }).catch(err => {
+        window.showNotification && window.showNotification("Error al agendar: " + err.message, "error");
       });
     };
   }
+
+  // ==================== CITAS DEL DÍA ====================
+  function mostrarCitasDelDia(fecha) {
+    const appointmentsList = document.getElementById('appointments-list');
+    if (!appointmentsList) return;
+    appointmentsList.innerHTML = `<div class="loading-message"><i class="fas fa-spinner fa-spin"></i> Cargando citas...</div>`;
+    const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
+
+    db.collection("citas")
+      .where("fecha", "==", fecha)
+      .orderBy("hora", "asc")
+      .get()
+      .then(function(snapshot) {
+        const citas = [];
+        snapshot.forEach(function(doc) {
+          const cita = doc.data();
+          cita.id = doc.id;
+          citas.push(cita);
+        });
+        appointmentsList.innerHTML = "";
+        if (!citas.length) {
+          appointmentsList.innerHTML = "<div class='no-results'>No hay citas agendadas para este día.</div>";
+          return;
+        }
+        citas.forEach(function(cita) {
+          const div = document.createElement("div");
+          div.className = "appointment-item";
+          div.innerHTML = `
+            <div class="appointment-time">${cita.hora || ""}</div>
+            <div class="appointment-details">
+              <div class="appointment-patient"><strong>${cita.pacienteNombre || cita.paciente || ""}</strong></div>
+              <div class="appointment-professional">${cita.profesionalNombre || ""}</div>
+            </div>
+            <div class="appointment-status">
+              <span class="status-badge ${cita.estado || "agendada"}">${cita.estado || "Agendada"}</span>
+            </div>
+          `;
+          appointmentsList.appendChild(div);
+        });
+        // Si necesitas acceder a los pacientes citados del día desde otros scripts:
+        window.citasDelDia = citas;
+      })
+      .catch(function(error) {
+        appointmentsList.innerHTML = "<div class='no-results'>Error cargando citas.</div>";
+        if (window.showNotification) window.showNotification("Error cargando citas del día: " + error.message, "error");
+      });
+  }
+
+  // Mostrar citas del día actual al cargar la página
+  const hoy = new Date().toISOString().slice(0, 10);
+  mostrarCitasDelDia(hoy);
+  window.mostrarCitasDelDia = mostrarCitasDelDia;
 
 });
