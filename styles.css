@@ -3921,7 +3921,28 @@ input:invalid {
   .form-actions-row { gap: 0.8rem; }
 }
 
+/* Modal Overlay: Fondo oscurecido y centrado universal */
+.modal-overlay,
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0; top: 0; width: 100vw; height: 100vh;
+  background: rgba(37, 99, 235, 0.12);
+  justify-content: center;
+  align-items: center;
+  overflow: auto;
+  transition: opacity 0.2s;
+}
 
+/* Al mostrar la modal, se centra con flex */
+.modal-overlay.show,
+.modal-overlay[style*="display: flex"],
+.modal.show,
+.modal[style*="display: flex"] {
+  display: flex !important;
+  opacity: 1;
+}
 /* Responsive para móviles */
 @media (max-width: 600px) {
   .modal-content {
