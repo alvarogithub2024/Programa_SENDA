@@ -113,4 +113,22 @@ function abrirModalCitaPaciente() {
     showModal('modal-nueva-cita-paciente');
   });
 }
+
+function guardarCitaPaciente(datosCita, callback) {
+    const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
+    const datos = Object.assign({}, datosCita);
+
+    // Agrega la fecha/hora de creación si no viene
+    datos.fechaCreacion = datos.fechaCreacion || new Date().toISOString();
+
+    db.collection("citas").add(datos)
+        .then(function(docRef) {
+            window.showNotification && window.showNotification("Cita agendada correctamente", "success");
+            if (typeof callback === "function") callback(docRef.id);
+        })
+        .catch(function(error) {
+            window.showNotification && window.showNotification("Error al agendar cita: " + error.message, "error");
+            if (typeof callback === "function") callback(null, error);
+        });
+}
 window.abrirModalCitaPaciente = abrirModalCitaPaciente;
