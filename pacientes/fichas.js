@@ -9,6 +9,8 @@
                 window.getFirestore().collection('profesionales').doc(user.uid).get().then(function(doc){
                     if (doc.exists) {
                         profesionActual = doc.data().profession || null;
+                        // Depuración
+                        // console.log("Profesión detectada:", profesionActual);
                     }
                 });
             } else {
