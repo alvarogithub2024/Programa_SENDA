@@ -1,8 +1,7 @@
 // PACIENTES/FICHAS.JS
-// Muestra en la pestaña Pacientes TODOS los pacientes únicos agendados en la colección 'citas'.
-// Los crea automáticamente en la colección 'pacientes' si no existen, y los muestra directamente aunque no estén allí.
-// Incluye logs de depuración para verificar ruts y nombres extraídos de las citas.
-// Usa el ID de la cita para referencia y no filtra por CESFAM (ya que tu cita no tiene ese campo).
+// Muestra pacientes únicos agendados en la colección 'citas'.
+// Solo muestra nombre completo, rut, teléfono y correo en el grid.
+// Al hacer click en "Ver Ficha", muestra información completa y el historial clínico con profesional, fecha y hora.
 
 (function() {
     let pacientesTabData = [];
@@ -50,7 +49,7 @@
                 pacientesMap[rut] = {
                     rut: rut,
                     nombre: nombre,
-                    citaId: doc.id, // Usamos el id de la cita como referencia
+                    citaId: doc.id,
                     profesion: cita.profesion || '',
                     fecha: cita.fecha || '',
                     telefono: cita.telefono || '',
@@ -91,16 +90,13 @@
             const div = document.createElement('div');
             div.className = 'patient-card';
             div.innerHTML = `
-                <div><strong>${p.nombre}</strong></div>
-                <div>RUT: ${p.rut}</div>
-                <div>Edad: ${p.edad || 'N/A'}</div>
-                <div>Tel: ${p.telefono || ''}</div>
-                <div>Email: ${p.email || ''}</div>
-                <div>Dirección: ${p.direccion || ''}</div>
-                <div>Profesión: ${p.profesion || ''}</div>
-                <div>Fecha de cita: ${p.fecha || ''}</div>
-                <div>ID de cita: ${p.citaId || ''}</div>
-                <button class="btn btn-outline btn-sm" onclick="verFichaPacienteSenda('${p.rut}')"><i class="fas fa-file-medical"></i> Ver Ficha</button>
+                <div style="display:flex; gap:16px;">
+                  <div><strong>${p.nombre}</strong></div>
+                  <div>RUT: ${p.rut}</div>
+                  <div>Tel: ${p.telefono || ''}</div>
+                  <div>Email: ${p.email || ''}</div>
+                  <button class="btn btn-outline btn-sm" style="margin-left:16px;" onclick="verFichaPacienteSenda('${p.rut}')"><i class="fas fa-file-medical"></i> Ver Ficha</button>
+                </div>
             `;
             grid.appendChild(div);
         });
@@ -120,17 +116,89 @@
         renderPacientesGrid(filtrados);
     }
 
-    // Modal ficha paciente (simplificado, puedes mejorar con modal HTML)
+    // Modal ficha paciente (completa + historial clínico)
     window.verFichaPacienteSenda = function(rut) {
         const pacienteData = pacientesTabData.find(p => p.rut === rut);
-        if (pacienteData) {
-            alert(
-                `Paciente: ${pacienteData.nombre}\nRUT: ${pacienteData.rut}\nEdad: ${pacienteData.edad}\nProfesión: ${pacienteData.profesion}\nFecha de cita: ${pacienteData.fecha}\nID de cita: ${pacienteData.citaId}`
-            );
-        } else {
+        if (!pacienteData) {
             window.showNotification && window.showNotification('Paciente no encontrado', 'warning');
+            return;
         }
+        // Crea el modal si no existe
+        let modal = document.getElementById('modal-ficha-paciente');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'modal-ficha-paciente';
+            modal.className = 'modal-overlay';
+            modal.style.display = 'flex';
+            modal.innerHTML = `<div class="modal-content" style="max-width:500px;">
+                <span class="close" onclick="cerrarModalFichaPaciente()">&times;</span>
+                <div id="modal-ficha-paciente-body"></div>
+            </div>`;
+            document.body.appendChild(modal);
+        } else {
+            modal.style.display = 'flex';
+        }
+
+        const modalBody = document.getElementById('modal-ficha-paciente-body');
+        let html = `
+            <h3>${pacienteData.nombre || ''}</h3>
+            <p><b>RUT:</b> ${pacienteData.rut || ''}</p>
+            <p><b>Teléfono:</b> ${pacienteData.telefono || ''}</p>
+            <p><b>Email:</b> ${pacienteData.email || ''}</p>
+            <p><b>Dirección:</b> ${pacienteData.direccion || ''}</p>
+            <hr>
+            <div id="historial-clinico"><b>Historial clínico:</b><div class="loading-message">Cargando...</div></div>
+        `;
+        modalBody.innerHTML = html;
+
+        cargarHistorialClinicoPaciente(pacienteData.rut);
     };
+
+    window.cerrarModalFichaPaciente = function() {
+        const modal = document.getElementById('modal-ficha-paciente');
+        if (modal) modal.style.display = 'none';
+    };
+
+    // Historial clínico: muestra las atenciones ordenadas por fecha desc
+    function cargarHistorialClinicoPaciente(rutPaciente) {
+        const cont = document.getElementById('historial-clinico');
+        if (!cont) return;
+        const db = window.getFirestore();
+        db.collection('atenciones').where('pacienteRut', '==', rutPaciente).orderBy('fechaRegistro', 'desc').get()
+            .then(snapshot => {
+                let html = '';
+                if (snapshot.empty) {
+                    html = "<p>No hay atenciones registradas.</p>";
+                } else {
+                    html = '<ul style="margin-top:8px;">';
+                    snapshot.forEach(doc => {
+                        const a = doc.data();
+                        let fechaTexto = '';
+                        let horaTexto = '';
+                        if (a.fechaRegistro) {
+                            let fechaObj;
+                            if (typeof a.fechaRegistro === 'string') {
+                                fechaObj = new Date(a.fechaRegistro);
+                            } else if (a.fechaRegistro.seconds) {
+                                fechaObj = new Date(a.fechaRegistro.seconds * 1000);
+                            }
+                            fechaTexto = fechaObj.toLocaleDateString('es-CL');
+                            horaTexto = fechaObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+                        }
+                        html += `<li style="margin-bottom:8px;">
+                            <b>Profesional:</b> ${a.profesional || ''} <br>
+                            <b>Fecha:</b> ${fechaTexto} <b>Hora:</b> ${horaTexto}<br>
+                            <span>${a.descripcion || ''}</span>
+                        </li>`;
+                    });
+                    html += '</ul>';
+                }
+                cont.innerHTML = `<b>Historial clínico:</b> ${html}`;
+            })
+            .catch(error => {
+                cont.innerHTML = "<p>Error cargando historial clínico.</p>";
+            });
+    }
 
     // Refresca la pestaña: extrae pacientes desde citas y los muestra
     async function refrescarPacientesTab() {
