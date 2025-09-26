@@ -4005,7 +4005,11 @@ input:invalid {
   margin-top: 12px;
   width: 100%;
 }
-
+#modal-detalle .modal-content {
+  background: #e0e7ff;
+  border: 2px solid #2563eb;
+  box-shadow: 0 8px 32px rgba(37,99,235,0.13);
+}
 /* Responsive modal */
 @media (max-width: 600px) {
   .modal-content {
