@@ -3923,7 +3923,6 @@ input:invalid {
 
 /* Modal Overlay: Fondo oscurecido y centrado universal */
 .modal-overlay,
-.modal {
   display: none;
   position: fixed;
   z-index: 9999;
