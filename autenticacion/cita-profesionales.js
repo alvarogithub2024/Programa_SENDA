@@ -293,40 +293,47 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
           e.preventDefault();
           // --- AGREGAR GUARDADO EN FIREBASE ---
           const cita = {
-            solicitudId: document.getElementById('modal-cita-id-prof').value,
-            nombre: document.getElementById('modal-cita-nombre-prof').textContent,
-            rut: document.getElementById('modal-cita-rut-prof').textContent,
-            profesion: document.getElementById('modal-cita-profession-prof').value,
-            profesionalId: document.getElementById('modal-cita-profesional-prof').value,
-            profesionalNombre: document.getElementById('modal-cita-profesional-nombre-prof').value,
-            fecha: document.getElementById('modal-cita-fecha-prof').value,
-            hora: document.getElementById('modal-cita-hora-prof').value,
-            creado: new Date().toISOString(),
-            tipo: "profesional"
-          };
+    solicitudId: document.getElementById('modal-cita-id-prof').value,
+    nombre: document.getElementById('modal-cita-nombre-prof').textContent,
+    rut: document.getElementById('modal-cita-rut-prof').textContent,
+    profesion: document.getElementById('modal-cita-profession-prof').value,
+    profesionalId: document.getElementById('modal-cita-profesional-prof').value,
+    profesionalNombre: document.getElementById('modal-cita-profesional-nombre-prof').value,
+    fecha: document.getElementById('modal-cita-fecha-prof').value,
+    hora: document.getElementById('modal-cita-hora-prof').value,
+    creado: new Date().toISOString(),
+    tipo: "profesional"
+  };
 
-          // Validar campos obligatorios
-          if (!cita.nombre || !cita.rut || !cita.profesion || !cita.profesionalId || !cita.fecha || !cita.hora) {
-            window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
-            return;
-          }
+  // Validar campos obligatorios
+  if (!cita.nombre || !cita.rut || !cita.profesion || !cita.profesionalId || !cita.fecha || !cita.hora) {
+    window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
+    return;
+  }
 
-          // Guardar en Firebase
-          const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
-          db.collection("citas").add(cita)
-            .then(function(docRef) {
+  // Guardar en Firebase
+  const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
+  db.collection("citas").add(cita)
+    .then(function(docRef) {
+      // Cambia estado en solicitudes_ingreso y reingresos
+      const solicitudId = cita.solicitudId;
+      // Primero intenta en ingreso
+      db.collection("solicitudes_ingreso").doc(solicitudId).update({ estado: "agendada" })
+        .catch(() => {})
+        .finally(() => {
+          // También intenta en reingresos
+          db.collection("reingresos").doc(solicitudId).update({ estado: "agendada" })
+            .catch(() => {})
+            .finally(() => {
               window.showNotification && window.showNotification("Cita agendada correctamente", "success");
               closeModal('modal-agendar-cita-profesional');
-            })
-            .catch(function(error) {
-              window.showNotification && window.showNotification("Error al guardar la cita: " + error, "error");
             });
         });
-        form._onsubmitSet = true;
-      }
-    }, 100);
-  });
-}
+    })
+    .catch(function(error) {
+      window.showNotification && window.showNotification("Error al guardar la cita: " + error, "error");
+    });
+});
 // Exportar funciones globales
 window.abrirModalNuevaCitaProfesional = abrirModalNuevaCitaProfesional;
 window.abrirModalAgendarCitaProfesional = abrirModalAgendarCitaProfesional;
