@@ -6,7 +6,6 @@ document.addEventListener("DOMContentLoaded", function() {
   const prevMonthBtn = document.getElementById('prev-month');
   const nextMonthBtn = document.getElementById('next-month');
   const nuevaCitaBtn = document.getElementById('nueva-cita-btn');
-  const appointmentsList = document.getElementById('appointments-list');
 
   let today = new Date();
   let currentMonth = today.getMonth();
@@ -23,7 +22,7 @@ document.addEventListener("DOMContentLoaded", function() {
     return meses[month];
   }
 
-  // Cargar las citas agrupadas por fecha (para el calendario visual)
+  // Cargar las citas agrupadas por fecha
   function cargarCitasPorDia(callback) {
     const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
     db.collection("citas").get().then(function(snapshot) {
@@ -79,7 +78,7 @@ document.addEventListener("DOMContentLoaded", function() {
           dayNumDiv.textContent = date;
           cell.appendChild(dayNumDiv);
 
-          // Citas/eventos de ese día (para mostrar badges en el calendario)
+          // Citas/eventos de ese día
           const eventos = citasPorDia[dateKey] || [];
           if (eventos.length) {
             const eventsDiv = document.createElement('div');
@@ -98,6 +97,7 @@ document.addEventListener("DOMContentLoaded", function() {
             cell.classList.add('calendar-today');
           }
           cell.onclick = function() {
+            // Al hacer clic en un día, mostrar citas de ese día
             mostrarCitasDelDia(dateKey);
           }
           date++;
@@ -117,8 +117,8 @@ document.addEventListener("DOMContentLoaded", function() {
       currentYear--;
     }
     cargarCitasPorDia(() => renderCalendar(currentMonth, currentYear));
-    const fechaKey = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01`;
-    mostrarCitasDelDia(fechaKey);
+    const fechaKey = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(1).padStart(2,'0')}`;
+    mostrarCitasDelDia(fechaKey); // Mostrar citas del primer día del mes
   };
   if (nextMonthBtn) nextMonthBtn.onclick = function() {
     currentMonth++;
@@ -127,8 +127,8 @@ document.addEventListener("DOMContentLoaded", function() {
       currentYear++;
     }
     cargarCitasPorDia(() => renderCalendar(currentMonth, currentYear));
-    const fechaKey = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01`;
-    mostrarCitasDelDia(fechaKey);
+    const fechaKey = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(1).padStart(2,'0')}`;
+    mostrarCitasDelDia(fechaKey); // Mostrar citas del primer día del mes
   };
 
   // Inicial: cargar citas y renderizar calendario y citas del día actual
@@ -150,6 +150,7 @@ document.addEventListener("DOMContentLoaded", function() {
           }
         }, 100);
       } else {
+        // fallback
         showModal('modal-nueva-cita');
         setTimeout(function() {
           const fechaInput = document.getElementById('cita-fecha');
@@ -166,8 +167,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // Cargar y mostrar todas las citas agendadas para una fecha específica (yyyy-mm-dd)
   function mostrarCitasDelDia(fecha) {
-    if (!appointmentsList) return;
-    appointmentsList.innerHTML = `<div class="loading-message"><i class="fas fa-spinner fa-spin"></i> Cargando citas...</div>`;
+    const cont = document.getElementById('appointments-list');
+    if (!cont) return;
+    cont.innerHTML = `<div class="loading-message"><i class="fas fa-spinner fa-spin"></i> Cargando citas...</div>`;
     const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
     db.collection("citas")
       .where("fecha", "==", fecha)
@@ -180,13 +182,13 @@ document.addEventListener("DOMContentLoaded", function() {
           cita.id = doc.id;
           citas.push(cita);
         });
-        appointmentsList.innerHTML = "";
+        cont.innerHTML = ""; // limpiar contenedor
+
         if (!citas.length) {
-          appointmentsList.innerHTML = "<div class='no-results'>No hay citas agendadas para este día.</div>";
+          cont.innerHTML = "<div class='no-results'>No hay citas agendadas para este día.</div>";
           return;
         }
-        // Almacenar el array para uso adicional
-        window.citasDelDia = citas;
+
         citas.forEach(function(cita) {
           const div = document.createElement("div");
           div.className = "appointment-item";
@@ -200,21 +202,17 @@ document.addEventListener("DOMContentLoaded", function() {
               <span class="status-badge ${cita.estado || "agendada"}">${cita.estado || "Agendada"}</span>
             </div>
           `;
-          appointmentsList.appendChild(div);
+          cont.appendChild(div);
         });
       })
       .catch(function(error) {
-        appointmentsList.innerHTML = "<div class='no-results'>Error cargando citas.</div>";
+        cont.innerHTML = "<div class='no-results'>Error cargando citas.</div>";
         if (window.showNotification) window.showNotification("Error cargando citas del día: " + error.message, "error");
       });
   }
 
-  // Permitir que otros scripts llamen mostrarCitasDelDia(fecha)
-  window.mostrarCitasDelDia = mostrarCitasDelDia;
+  // ==================== FIN CITAS DEL DÍA ====================
 
-  // Cargar citas del día actual al iniciar (para panel "Citas del Día")
-  (function cargarCitasHoy() {
-    const hoy = chileNow().toISOString().slice(0,10);
-    mostrarCitasDelDia(hoy);
-  })();
+  // Opcional: permitir que otros scripts llamen mostrarCitasDelDia(fecha)
+  window.mostrarCitasDelDia = mostrarCitasDelDia;
 });
