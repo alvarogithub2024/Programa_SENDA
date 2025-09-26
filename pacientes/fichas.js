@@ -1,19 +1,17 @@
 // PACIENTES/FICHAS.JS
 // Sincronización y visualización de pacientes en la pestaña Pacientes
-// Incluye modal para ficha, mostrando atenciones (observaciones) del paciente
+// Modal para ficha, mostrando campos anidados (historialAtenciones, sustanciasProblematicas)
 
 (function() {
     let pacientesTabData = [];
     let pacientesCitas = [];
     let miCesfam = null;
 
-    // Utilidades para acceso a elementos UI
     function getGrid() { return document.getElementById('patients-grid'); }
     function getSearchInput() { return document.getElementById('search-pacientes-rut'); }
     function getBuscarBtn() { return document.getElementById('buscar-paciente-btn'); }
     function getActualizarBtn() { return document.getElementById('actualizar-pacientes-btn'); }
 
-    // Si no existe el botón de actualizar, créalo y agrégalo al header de la sección
     function crearBotonActualizarSiNoExiste() {
         let actualizarBtn = getActualizarBtn();
         if (!actualizarBtn) {
@@ -28,7 +26,6 @@
         }
     }
 
-    // Obtiene el CESFAM actual del profesional logueado
     function obtenerCesfamActual(callback) {
         const user = firebase.auth().currentUser;
         if (!user) return callback(null);
@@ -39,7 +36,6 @@
         });
     }
 
-    // Carga todos los pacientes desde las citas del CESFAM actual
     async function cargarPacientesDesdeCitas() {
         const db = window.getFirestore();
         if (!miCesfam) return [];
@@ -54,10 +50,20 @@
                     rut: rut,
                     nombre: cita.pacienteNombre || cita.nombre || '',
                     cesfam: miCesfam,
-                    telefono: cita.pacienteTelefono || cita.telefono || '',
-                    email: cita.pacienteEmail || cita.email || '',
-                    direccion: cita.pacienteDireccion || cita.direccion || '',
-                    edad: cita.pacienteEdad || cita.edad || '',
+                    telefono: cita.pacienteTelefono || cita.telefono || null,
+                    email: cita.pacienteEmail || cita.email || null,
+                    direccion: cita.pacienteDireccion || cita.direccion || null,
+                    edad: cita.pacienteEdad || cita.edad || null,
+                    apellidos: cita.pacienteApellidos || cita.apellidos || null,
+                    estado: cita.estado || null,
+                    citaInicialId: cita.citaInicialId || null,
+                    fechaCreacion: cita.fechaCreacion || null,
+                    fechaPrimeraAtencion: cita.fechaPrimeraAtencion || null,
+                    prioridad: cita.prioridad || null,
+                    origen: cita.origen || null,
+                    // Anidados
+                    historialAtenciones: cita.historialAtenciones || {},
+                    sustanciasProblematicas: cita.sustanciasProblematicas || {},
                 };
             }
         });
@@ -65,7 +71,6 @@
         return pacientesCitas;
     }
 
-    // Sincroniza pacientes: agrega los que faltan en la colección "pacientes"
     async function sincronizarPacientesConColeccion() {
         const db = window.getFirestore();
         for (let paciente of pacientesCitas) {
@@ -80,7 +85,6 @@
         }
     }
 
-    // Muestra la lista de pacientes en el grid
     function renderPacientesGrid(pacientes) {
         const grid = getGrid();
         if (!grid) {
@@ -109,7 +113,6 @@
         });
     }
 
-    // Busca pacientes usando el input/texto
     function buscarPacientesPorTexto(texto) {
         window.buscarPacientesPorTexto(texto, function(resultados) {
             const filtrados = resultados.filter(p => p.cesfam === miCesfam);
@@ -118,7 +121,7 @@
         });
     }
 
-    // MODAL FICHA PACIENTE: abre modal y carga atenciones del paciente
+    // MODAL FICHA PACIENTE: abre modal y carga estructura anidada
     window.verFichaPacienteSenda = function(rut) {
         const db = window.getFirestore();
         const rutLimpio = rut.replace(/[.\-]/g, "").toUpperCase();
@@ -132,19 +135,43 @@
         });
     };
 
+    function renderObjeto(obj) {
+        let html = '<ul>';
+        for (const key in obj) {
+            if (typeof obj[key] === 'object' && obj[key] !== null) {
+                html += `<li><b>${key}:</b> ${renderObjeto(obj[key])}</li>`;
+            } else {
+                html += `<li><b>${key}:</b> ${obj[key] !== null ? obj[key] : '<span style="color:#aaa;">null</span>'}</li>`;
+            }
+        }
+        html += '</ul>';
+        return html;
+    }
+
     function mostrarModalFichaPaciente(paciente) {
         const modal = document.getElementById('modal-ficha-paciente');
         const modalBody = document.getElementById('modal-ficha-paciente-body');
         if (!modal || !modalBody) return;
 
         let html = `
-            <h3>${paciente.nombre || ''}</h3>
+            <h3>${paciente.nombre || ''} ${paciente.apellidos || ''}</h3>
             <p><b>RUT:</b> ${paciente.rut || ''}</p>
+            <p><b>CESFAM:</b> ${paciente.cesfam || ''}</p>
             <p><b>Edad:</b> ${paciente.edad || ''}</p>
             <p><b>Teléfono:</b> ${paciente.telefono || ''}</p>
             <p><b>Email:</b> ${paciente.email || ''}</p>
             <p><b>Dirección:</b> ${paciente.direccion || ''}</p>
-            <p><b>CESFAM:</b> ${paciente.cesfam || ''}</p>
+            <p><b>Estado:</b> ${paciente.estado || ''}</p>
+            <p><b>Prioridad:</b> ${paciente.prioridad || ''}</p>
+            <p><b>Origen:</b> ${paciente.origen || ''}</p>
+            <p><b>Cita inicial ID:</b> ${paciente.citaInicialId || ''}</p>
+            <p><b>Fecha creación:</b> ${paciente.fechaCreacion || ''}</p>
+            <p><b>Fecha primera atención:</b> ${paciente.fechaPrimeraAtencion || ''}</p>
+            <hr>
+            <b>Historial Atenciones:</b>
+            ${paciente.historialAtenciones ? renderObjeto(paciente.historialAtenciones) : '<span style="color:#aaa;">Sin historial</span>'}
+            <b>Sustancias Problematicas:</b>
+            ${paciente.sustanciasProblematicas ? renderObjeto(paciente.sustanciasProblematicas) : '<span style="color:#aaa;">Sin datos</span>'}
             <hr>
             <div id="observaciones-profesional"><b>Observaciones y atención profesional:</b><div class="loading-message">Cargando...</div></div>
         `;
@@ -154,7 +181,6 @@
         cargarObservacionesAtencionPorRut(paciente.rut);
     }
 
-    // Consulta a la colección atenciones usando pacienteRut
     function cargarObservacionesAtencionPorRut(rutPaciente) {
         const cont = document.getElementById('observaciones-profesional');
         if (!cont) return;
@@ -168,7 +194,6 @@
                     html = '<ul>';
                     snapshot.forEach(doc => {
                         const a = doc.data();
-                        // fechaRegistro puede ser string o Timestamp
                         let fechaTexto = '';
                         if (a.fechaRegistro) {
                             if (typeof a.fechaRegistro === 'string') {
