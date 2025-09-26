@@ -1,88 +1,58 @@
 // SEGUIMIENTO/CITAS-PROXIMAS.JS
 
-// Carga las citas próximas de un paciente (por ID) ordenadas por fecha futura
-function cargarCitasProximas(pacienteId, callback) {
-    var db = window.getFirestore();
-    var hoy = new Date().toISOString().slice(0, 10);
-
-    db.collection("citas")
-        .where("pacienteId", "==", pacienteId)
-        .where("fecha", ">=", hoy)
-        .orderBy("fecha", "asc")
-        .get()
-        .then(function(snapshot) {
-            var citas = [];
-            snapshot.forEach(function(doc) {
-                citas.push(Object.assign({ id: doc.id }, doc.data()));
-            });
-            if (typeof callback === "function") callback(citas);
-        })
-        .catch(function(error) {
-            window.showNotification("Error cargando citas próximas: " + error.message, "error");
-            if (typeof callback === "function") callback([]);
-        });
+// Función para obtener la hora actual en formato "HH:mm"
+function getHoraActualChile() {
+    let now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" }));
+    let h = now.getHours();
+    let m = now.getMinutes();
+    return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
 }
 
-// Renderiza la lista de próximas citas en el seguimiento (todas las citas del día)
-function mostrarCitasProximas(citas, contenedorId) {
-    var cont = document.getElementById(contenedorId);
-    if (!cont) return;
-    cont.innerHTML = "";
-    if (!citas.length) {
-        cont.innerHTML = "<p>No hay citas próximas.</p>";
-        return;
-    }
-    var ul = document.createElement("ul");
-    citas.forEach(function(c) {
-        var li = document.createElement("li");
-        li.innerHTML = `
-            <strong>${window.formatFecha ? window.formatFecha(c.fecha) : c.fecha}</strong>
-            &mdash; ${c.hora || ""} (${c.pacienteNombre || c.nombre || ""}) 
-            <button class="btn btn-outline btn-sm" onclick="abrirModalRegistrarAtencion('${c.id}')">Registrar atención</button>
-        `;
-        ul.appendChild(li);
-    });
-    cont.appendChild(ul);
-}
-
-// Mostrar solo citas del día actual en el grid de próximas citas (SEGUIMIENTO)
-function cargarCitasProximasHoy() {
+// Muestra SOLO el paciente de la hora actual en "Pacientes de Hoy"
+function mostrarPacienteActualHoy() {
     var db = window.getFirestore();
     var hoy = new Date().toISOString().slice(0, 10);
+    var horaActual = getHoraActualChile();
+
+    // Buscamos la cita cuyo "hora" coincida con la hora actual (puedes ajustar a un rango si lo prefieres)
     db.collection("citas")
         .where("fecha", "==", hoy)
         .orderBy("hora", "asc")
         .get()
         .then(function(snapshot) {
-            var citas = [];
+            let citaActual = null;
             snapshot.forEach(function(doc) {
-                citas.push(Object.assign({ id: doc.id }, doc.data()));
+                let cita = doc.data();
+                // Solo mostrar si la hora coincide exactamente
+                if (cita.hora === horaActual) {
+                    citaActual = Object.assign({ id: doc.id }, cita);
+                }
             });
-            mostrarCitasProximasSeguimiento(citas, "upcoming-appointments-grid");
+
+            // Render en el grid de pacientes de hoy
+            let cont = document.getElementById("patients-timeline");
+            if (!cont) return;
+            cont.innerHTML = "";
+            if (!citaActual) {
+                cont.innerHTML = `<div class="no-results"><i class="fas fa-user-clock"></i><p>No hay paciente agendado para la hora actual (${horaActual}).</p></div>`;
+                return;
+            }
+
+            let div = document.createElement("div");
+            div.className = "appointment-item";
+            div.innerHTML = `
+                <div>
+                  <b>${citaActual.hora}</b> - <b>${citaActual.pacienteNombre || citaActual.nombre || ""}</b> (${citaActual.tipoProfesional || citaActual.profesion || ""})<br>
+                  <span>${citaActual.cesfam || ""}</span>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="abrirModalRegistrarAtencion('${citaActual.id}')">Registrar atención</button>
+            `;
+            cont.appendChild(div);
         })
         .catch(function(error) {
-            window.showNotification("Error cargando citas del día: " + error.message, "error");
+            let cont = document.getElementById("patients-timeline");
+            if (cont) cont.innerHTML = `<div class="no-results">Error cargando paciente de hoy: ${error.message}</div>`;
         });
-}
-
-function mostrarCitasProximasSeguimiento(citas, contenedorId) {
-    var cont = document.getElementById(contenedorId);
-    if (!cont) return;
-    cont.innerHTML = "";
-    if (!citas.length) {
-        cont.innerHTML = "<p>No hay citas próximas para hoy.</p>";
-        return;
-    }
-    citas.forEach(function(cita) {
-        var div = document.createElement("div");
-        div.className = "appointment-item";
-        div.innerHTML = `
-            <div><b>${cita.hora || ""}</b> - <b>${cita.pacienteNombre || cita.nombre || ""}</b> (${cita.tipoProfesional || cita.profesion || ""})<br>
-            <span>${cita.cesfam || ""}</span></div>
-            <button class="btn btn-outline btn-sm" onclick="abrirModalRegistrarAtencion('${cita.id}')">Registrar atención</button>
-        `;
-        cont.appendChild(div);
-    });
 }
 
 // Función global para abrir el modal de atención
@@ -111,10 +81,7 @@ window.abrirModalRegistrarAtencion = function(citaId) {
 };
 
 document.addEventListener("DOMContentLoaded", function() {
-    cargarCitasProximasHoy();
-    setInterval(cargarCitasProximasHoy, 5 * 60 * 1000);
+    mostrarPacienteActualHoy();
+    // Actualiza cada minuto para mostrar el paciente en tiempo real
+    setInterval(mostrarPacienteActualHoy, 60 * 1000);
 });
-
-// Exportar globalmente
-window.cargarCitasProximas = cargarCitasProximas;
-window.mostrarCitasProximas = mostrarCitasProximas;
