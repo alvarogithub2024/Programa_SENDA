@@ -543,36 +543,32 @@ Buscar
     </form>
   </div>
 </div>
-
+  
 <!-- Modal Agendar Cita -->
 <div class="modal-overlay" id="modal-cita" style="display:none;">
   <div class="modal-content">
     <span class="close" onclick="closeModal('modal-cita')">&times;</span>
     <h2>Agendar cita</h2>
-    <form class="modal-form">
-      <div class="form-row">
-        <div class="form-group">
-          <label><b>Nombre:</b></label>
-          <span id="modal-cita-nombre"></span>
-        </div>
-        <div class="form-group">
-          <label><b>RUT:</b></label>
-          <span id="modal-cita-rut"></span>
-        </div>
-      </div>
+    <!-- Aquí puedes mostrar Nombre y RUT solo como texto, si lo deseas -->
+    <div class="modal-details">
+      <p><b>Nombre:</b> <span id="modal-cita-nombre"></span></p>
+      <p><b>RUT:</b> <span id="modal-cita-rut"></span></p>
+    </div>
+    <form class="modal-form" id="form-agendar-cita">
       <div class="form-row">
         <div class="form-group">
           <label for="modal-cita-fecha">Fecha:</label>
-          <input type="date" id="modal-cita-fecha">
+          <input type="date" id="modal-cita-fecha" required>
         </div>
         <div class="form-group">
           <label for="modal-cita-hora">Hora:</label>
-          <input type="time" id="modal-cita-hora">
+          <input type="time" id="modal-cita-hora" required>
         </div>
       </div>
       <div class="form-actions">
-        <button type="button" onclick="guardarCita()" class="btn btn-primary">Agendar</button>
+        <button type="submit" class="btn btn-primary">Agendar</button>
       </div>
+      <!-- Estos campos ocultos sirven para pasar el id y datos del paciente -->
       <input type="hidden" id="modal-cita-id">
     </form>
   </div>
