@@ -662,7 +662,27 @@ function isSameDay(date1, date2) {
         date1.getMonth() === date2.getMonth() &&
         date1.getFullYear() === date2.getFullYear();
 }
+function guardarEdicionSolicitud() {
+    const id = document.getElementById('modal-editar-id').value;
+    const nombre = document.getElementById('modal-editar-nombre').value;
+    const rut = document.getElementById('modal-editar-rut').value;
+    const telefono = document.getElementById('modal-editar-telefono').value;
 
+    const db = window.getFirestore();
+    db.collection('solicitudes_ingreso').doc(id).update({
+        nombre: nombre,
+        rut: rut,
+        telefono: telefono,
+        // Puedes agregar otros campos si quieres
+    }).then(() => {
+        window.showNotification && window.showNotification('Datos actualizados correctamente', 'success');
+        cerrarModalEditar();
+        window.reloadSolicitudesFromFirebase && window.reloadSolicitudesFromFirebase();
+    }).catch((error) => {
+        window.showNotification && window.showNotification('Error al actualizar datos', 'error');
+        console.error('Error actualizando datos:', error);
+    });
+}
 /**
  * Contador de solicitudes filtradas y totales
  */
@@ -688,3 +708,4 @@ window.eliminarSolicitud = eliminarSolicitud;
 window.cerrarModalDetalle = cerrarModalDetalle;
 window.abrirModalResponder = abrirModalResponder;
 window.cerrarModalResponder = cerrarModalResponder;
+window.guardarEdicionSolicitud = guardarEdicionSolicitud;
