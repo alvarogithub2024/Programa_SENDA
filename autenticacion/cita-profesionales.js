@@ -289,10 +289,9 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
     setTimeout(function() {
       var form = document.getElementById('form-agendar-cita-profesional');
       if (form && !form._onsubmitSet) {
-        form.addEventListener('submit', function(e){
-          e.preventDefault();
-          // --- AGREGAR GUARDADO EN FIREBASE ---
-          const cita = {
+       form.addEventListener('submit', function(e){
+  e.preventDefault();
+  const cita = {
     solicitudId: document.getElementById('modal-cita-id-prof').value,
     nombre: document.getElementById('modal-cita-nombre-prof').textContent,
     rut: document.getElementById('modal-cita-rut-prof').textContent,
@@ -305,28 +304,26 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
     tipo: "profesional"
   };
 
-  // Validar campos obligatorios
   if (!cita.nombre || !cita.rut || !cita.profesion || !cita.profesionalId || !cita.fecha || !cita.hora) {
     window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
     return;
   }
 
-  // Guardar en Firebase
   const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
   db.collection("citas").add(cita)
     .then(function(docRef) {
-      // Cambia estado en solicitudes_ingreso y reingresos
       const solicitudId = cita.solicitudId;
-      // Primero intenta en ingreso
       db.collection("solicitudes_ingreso").doc(solicitudId).update({ estado: "agendada" })
         .catch(() => {})
         .finally(() => {
-          // También intenta en reingresos
           db.collection("reingresos").doc(solicitudId).update({ estado: "agendada" })
             .catch(() => {})
             .finally(() => {
               window.showNotification && window.showNotification("Cita agendada correctamente", "success");
               closeModal('modal-agendar-cita-profesional');
+
+              // --- REFRESCA LA TABLA ---
+              if (window.reloadSolicitudesFromFirebase) window.reloadSolicitudesFromFirebase();
             });
         });
     })
