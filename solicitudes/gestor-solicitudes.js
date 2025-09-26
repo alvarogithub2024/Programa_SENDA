@@ -669,12 +669,21 @@ function guardarEdicionSolicitud() {
     const telefono = document.getElementById('modal-editar-telefono').value;
 
     const db = window.getFirestore();
+    // Actualiza la solicitud principal
     db.collection('solicitudes_ingreso').doc(id).update({
         nombre: nombre,
         rut: rut,
-        telefono: telefono,
-        // Puedes agregar otros campos si quieres
+        telefono: telefono
     }).then(() => {
+        // Agrega el registro de actualización
+        db.collection('actualizacion_datos').add({
+            solicitudId: id,
+            nombre_nuevo: nombre,
+            rut_nuevo: rut,
+            telefono_nuevo: telefono,
+            actualizadoPor: firebase.auth().currentUser?.email || "",
+            fecha: new Date().toISOString()
+        });
         window.showNotification && window.showNotification('Datos actualizados correctamente', 'success');
         cerrarModalEditar();
         window.reloadSolicitudesFromFirebase && window.reloadSolicitudesFromFirebase();
@@ -682,7 +691,6 @@ function guardarEdicionSolicitud() {
         window.showNotification && window.showNotification('Error al actualizar datos', 'error');
         console.error('Error actualizando datos:', error);
     });
-}
 /**
  * Contador de solicitudes filtradas y totales
  */
