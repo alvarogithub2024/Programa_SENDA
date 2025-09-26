@@ -2093,6 +2093,263 @@ body {
 }
 
 /* ================================
+   FIX PARA BOTONES DEL MODAL LOGIN
+   ================================ */
+
+/* Container de las pestañas del modal */
+.modal-tabs {
+  display: flex;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid var(--border-color);
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+  background: var(--gray-50);
+}
+
+/* Botones de pestaña mejorados */
+.modal-tab {
+  flex: 1;
+  padding: 14px 20px;
+  border: none;
+  background: var(--gray-100);
+  color: var(--text-medium);
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  border-bottom: 3px solid transparent;
+  position: relative;
+  
+  /* Eliminar estilos predeterminados del navegador */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  outline: none;
+  text-decoration: none;
+}
+
+/* Separador entre pestañas */
+.modal-tab:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 20%;
+  height: 60%;
+  width: 1px;
+  background: var(--border-color);
+}
+
+/* Estado hover */
+.modal-tab:hover {
+  background: var(--light-blue);
+  color: var(--primary-blue);
+  transform: translateY(-1px);
+}
+
+/* Estado activo */
+.modal-tab.active {
+  background: var(--background-white);
+  color: var(--primary-blue);
+  border-bottom-color: var(--primary-blue);
+  font-weight: 600;
+  box-shadow: 0 -2px 8px rgba(37, 99, 235, 0.1);
+}
+
+/* Estado focus para accesibilidad */
+.modal-tab:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: -2px;
+}
+
+/* Fix específico para el problema visual */
+.modal-tab:first-child {
+  border-radius: 8px 0 0 0;
+}
+
+.modal-tab:last-child {
+  border-radius: 0 8px 0 0;
+}
+
+/* Si los botones aparecen como enlaces */
+.modal-tab[onclick] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* Asegurar que el texto esté centrado */
+.modal-tab span {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+/* ================================
+   ESTILOS ALTERNATIVOS SI EL PROBLEMA PERSISTE
+   ================================ */
+
+/* Opción 1: Botones completamente rediseñados */
+.modal-tabs-redesign {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 2rem;
+  padding: 8px;
+  background: var(--gray-100);
+  border-radius: 12px;
+}
+
+.modal-tab-redesign {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-medium);
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.modal-tab-redesign:hover {
+  background: var(--background-white);
+  color: var(--primary-blue);
+  box-shadow: var(--shadow-sm);
+}
+
+.modal-tab-redesign.active {
+  background: var(--primary-blue);
+  color: var(--text-white);
+  box-shadow: var(--shadow-md);
+}
+
+/* Opción 2: Estilo minimalista */
+.modal-tabs-minimal {
+  display: flex;
+  gap: 0;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-tab-minimal {
+  padding: 16px 24px;
+  border: none;
+  background: none;
+  color: var(--text-medium);
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+}
+
+.modal-tab-minimal:hover {
+  color: var(--primary-blue);
+  background: var(--light-blue);
+}
+
+.modal-tab-minimal.active {
+  color: var(--primary-blue);
+  border-bottom-color: var(--primary-blue);
+  font-weight: 600;
+}
+
+/* ================================
+   JAVASCRIPT PARA MEJORAR FUNCIONALIDAD
+   ================================ */
+
+/*
+// Agregar este JavaScript para mejorar la funcionalidad:
+
+function setupModalTabs() {
+  const tabs = document.querySelectorAll('.modal-tab');
+  
+  tabs.forEach(tab => {
+    // Limpiar eventos existentes
+    tab.removeAttribute('onclick');
+    
+    // Agregar evento click mejorado
+    tab.addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      // Remover clase active de todos los tabs
+      tabs.forEach(t => t.classList.remove('active'));
+      
+      // Agregar clase active al tab clickeado
+      this.classList.add('active');
+      
+      // Obtener el tipo de tab
+      const tabType = this.textContent.trim().toLowerCase().includes('iniciar') ? 'login' : 'register';
+      
+      // Llamar función para cambiar formulario
+      switchLoginTab(tabType);
+    });
+    
+    // Mejorar accesibilidad
+    tab.setAttribute('role', 'tab');
+    tab.setAttribute('tabindex', '0');
+    
+    // Navegación por teclado
+    tab.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        this.click();
+      }
+    });
+  });
+}
+
+// Llamar cuando se carga el DOM
+document.addEventListener('DOMContentLoaded', setupModalTabs);
+*/
+
+/* ================================
+   SOLUCIÓN RÁPIDA CON CSS PURO
+   ================================ */
+
+/* Si necesitas una solución inmediata, agrega esto: */
+.modal-tabs a,
+.modal-tabs button,
+.modal-tabs [onclick] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 44px !important;
+  text-decoration: none !important;
+  border: 2px solid var(--border-color) !important;
+  border-radius: 8px 8px 0 0 !important;
+  background: var(--gray-100) !important;
+  color: var(--text-dark) !important;
+  font-weight: 500 !important;
+  font-size: 0.95rem !important;
+  padding: 12px 20px !important;
+  margin: 0 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  flex: 1 !important;
+}
+
+.modal-tabs a:hover,
+.modal-tabs button:hover,
+.modal-tabs [onclick]:hover {
+  background: var(--light-blue) !important;
+  color: var(--primary-blue) !important;
+  border-color: var(--primary-blue) !important;
+}
+
+.modal-tabs a.active,
+.modal-tabs button.active,
+.modal-tabs [onclick].active {
+  background: var(--background-white) !important;
+  color: var(--primary-blue) !important;
+  border-color: var(--primary-blue) !important;
+  border-bottom-color: var(--background-white) !important;
+  font-weight: 600 !important;
+}
+
+/* ================================
    13. RESPONSIVE DESIGN
    ================================ */
 
