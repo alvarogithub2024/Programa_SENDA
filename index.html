@@ -9,35 +9,52 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<!-- Configuración base -->
 <script src="configuracion/constantes.js"></script>
 <script src="configuracion/firebase.js"></script>
+
+<!-- Utilidades -->
+<script src="utilidades/cache.js"></script>
+<script src="utilidades/formato.js"></script>
 <script src="utilidades/notificaciones.js"></script>
 <script src="utilidades/modales.js"></script>
-<script src="utilidades/validaciones.js"></script>
-<script src="formularios/formulario-paciente.js"></script>
-<script src="formularios/formulario-reingreso.js"></script>
+
+<!-- Formularios y validaciones -->
+<script src="formularios/validaciones.js"></script>
 <script src="formularios/autoguardado.js"></script>
+<script src="formularios/paciente.js"></script>
+<script src="formularios/reingreso.js"></script>
+
+<!-- Autenticación -->
+<script src="autenticacion/sesion.js"></script>
+<script src="autenticacion/login.js"></script>
+<script src="autenticacion/registro.js"></script>
+
+<!-- Navegación -->
 <script src="navegacion/tabs.js"></script>
 <script src="navegacion/eventos.js"></script>
-<script src="navegacion/shortcuts.js"></script>
-<script src="solicitudes/gestor-solicitudes.js"></script>
-<script src="solicitudes/filtros.js"></script>
-<script src="solicitudes/respuestas.js"></script>
-<script src="calendario/agenda.js"></script>
-<script src="calendario/citas.js"></script>
+
+<!-- Calendario -->
 <script src="calendario/horarios.js"></script>
-<script src="pacientes/gestor-pacientes.js"></script>
+<script src="calendario/citas.js"></script>
+<script src="calendario/citas-profesionales.js"></script>
+<script src="calendario/agenda.js"></script>
+
+<!-- Solicitudes -->
+<script src="solicitudes/respuestas.js"></script>
+<script src="solicitudes/gestor.js"></script>
+
+<!-- Pacientes -->
 <script src="pacientes/busqueda.js"></script>
+<script src="pacientes/gestor.js"></script>
 <script src="pacientes/fichas.js"></script>
+
+<!-- Seguimiento -->
 <script src="seguimiento/timeline.js"></script>
 <script src="seguimiento/atenciones.js"></script>
 <script src="seguimiento/citas-proximas.js"></script>
-<script src="autenticacion/registro.js"></script>
-<script src="autenticacion/login.js"></script>
-<script src="autenticacion/sesion.js"></script>
-<script src="autenticacion/cita-profesionales.js"></script>
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-<link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,">
+
+<!-- Sistema principal -->
 <script src="main.js"></script>
 </head>
 <body>
