@@ -1,16 +1,24 @@
-// CALENDARIO/HORARIOS.JS
+// CALENDARIO/HORARIOS2.JS
 
 // CONFIGURACIÓN DE HORARIOS DE ATENCIÓN
 window.HORARIOS_CONFIG = {
     semana: {
-        diasSemana: [1, 2, 3, 4, 5, 6], // Lunes (1) a Sábado (6)
+        diasSemana: [1, 2, 3, 4, 5], // Lunes (1) a Viernes (5)
         horaInicio: 8,         // 08:00
         minutoInicio: 0,
         horaFin: 16,           // 16:30
         minutoFin: 30,
         intervaloMinutos: 30
     },
-    finSemana: {
+    sabado: {
+        diasSemana: [6],       // Sábado (6)
+        horaInicio: 9,         // 09:00
+        minutoInicio: 0,
+        horaFin: 12,           // 12:30
+        minutoFin: 30,
+        intervaloMinutos: 30
+    },
+    domingo: {
         diasSemana: [0],       // Domingo (0)
         horaInicio: 9,         // 09:00
         minutoInicio: 0,
@@ -27,11 +35,21 @@ function cargarHorariosDisponibles(fecha, profesionalId, callback) {
     var db = window.getFirestore ? window.getFirestore() : firebase.firestore();
     var horarios = [];
     var dia = new Date(fecha).getDay(); // 0 = domingo, 6 = sábado
+    let cfg = null;
 
-    // Determina la config
-    var cfg = (dia >= 1 && dia <= 5)
-        ? { horaInicio: 8, minutoInicio: 0, horaFin: 16, minutoFin: 30, intervaloMinutos: 30 }
-        : { horaInicio: 9, minutoInicio: 0, horaFin: 12, minutoFin: 30, intervaloMinutos: 30 };
+    // Determina la config según el día
+    if (window.HORARIOS_CONFIG.semana.diasSemana.includes(dia)) {
+        cfg = window.HORARIOS_CONFIG.semana;
+    } else if (window.HORARIOS_CONFIG.sabado.diasSemana.includes(dia)) {
+        cfg = window.HORARIOS_CONFIG.sabado;
+    } else if (window.HORARIOS_CONFIG.domingo.diasSemana.includes(dia)) {
+        cfg = window.HORARIOS_CONFIG.domingo;
+    }
+
+    if (!cfg) {
+        if (typeof callback === "function") callback([]);
+        return;
+    }
 
     var hora = cfg.horaInicio, minuto = cfg.minutoInicio;
     while (hora < cfg.horaFin || (hora === cfg.horaFin && minuto <= cfg.minutoFin)) {
@@ -78,24 +96,23 @@ function mostrarHorariosDisponibles(horarios, selectId) {
         select.appendChild(opt);
     });
 }
-function cargarProfesionalesParaCita() {
-    const selectProf = document.getElementById('cita-profesional');
-    selectProf.innerHTML = '<option value="">Selecciona profesional...</option>';
-    firebase.firestore().collection('profesionales').where('activo', '==', true).get().then(snapshot=>{
-        snapshot.forEach(doc=>{
-            let p = doc.data();
-            let opt = document.createElement('option');
-            opt.value = doc.id; // ¡IMPORTANTE! Este valor es el UID
-            opt.textContent = `${p.nombre} ${p.apellidos}`;
-            selectProf.appendChild(opt);
-        });
-    });
+
+// Solo debes llamar a estos listeners cuando el modal y sus campos existen en el DOM
+function inicializarListenersNuevaCitaPaciente() {
+    var fechaInput = document.getElementById('pac-cita-fecha');
+    var profSelect = document.getElementById('pac-cita-profesional');
+    if (fechaInput && profSelect) {
+        fechaInput.addEventListener('change', actualizarHorasPaciente);
+        profSelect.addEventListener('change', actualizarHorasPaciente);
+    }
 }
 
+// Llama a esta función AL ABRIR el modal de cita paciente
 function actualizarHorasPaciente() {
-    const fecha = document.getElementById('pac-cita-fecha').value;
-    const profesionalId = document.getElementById('pac-cita-profesional').value;
+    const fecha = document.getElementById('pac-cita-fecha')?.value;
+    const profesionalId = document.getElementById('pac-cita-profesional')?.value;
     const selectHora = document.getElementById('pac-cita-hora');
+    if (!selectHora) return;
     selectHora.innerHTML = '<option value="">Selecciona hora...</option>';
     if (!fecha || !profesionalId) return;
     cargarHorariosDisponibles(fecha, profesionalId, function(horariosDisponibles) {
@@ -115,8 +132,8 @@ function actualizarHorasPaciente() {
     });
 }
 
-document.getElementById('pac-cita-fecha').addEventListener('change', actualizarHorasPaciente);
-document.getElementById('pac-cita-profesional').addEventListener('change', actualizarHorasPaciente);
 // Exportar globalmente
 window.cargarHorariosDisponibles = cargarHorariosDisponibles;
 window.mostrarHorariosDisponibles = mostrarHorariosDisponibles;
+window.inicializarListenersNuevaCitaPaciente = inicializarListenersNuevaCitaPaciente;
+window.actualizarHorasPaciente = actualizarHorasPaciente;
