@@ -1,10 +1,10 @@
-// PACIENTES/PACIENTES-TAB.JS
-// Sincroniza y muestra pacientes extraídos de citas, del CESFAM del profesional logueado
+// PACIENTES/FICHAS.JS
+// Gestión de pacientes en la pestaña Pacientes: sincroniza pacientes desde citas y muestra/busca/actualiza
 
 (function() {
-    let pacientesTabData = []; // Pacientes mostrados actualmente
-    let pacientesCitas = [];   // Pacientes extraídos de citas
-    let miCesfam = null;       // CESFAM actual (del profesional logueado)
+    let pacientesTabData = [];
+    let pacientesCitas = [];
+    let miCesfam = null;
 
     // Elementos UI
     function getGrid() {
@@ -191,7 +191,6 @@
         }
     }
 
-    // Ejecuta inicialización cuando el DOM está listo y cuando la pestaña es activa
     document.addEventListener('DOMContentLoaded', function() {
         inicializarEventos();
         // Si la pestaña pacientes está activa al entrar, refresca
@@ -199,7 +198,5 @@
             refrescarPacientesTab();
         }
     });
-
-    // Si tu sistema de tabs permite un callback cuando se muestra la pestaña, llama refrescarPacientesTab() allí
 
 })();
