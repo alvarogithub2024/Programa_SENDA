@@ -1,6 +1,7 @@
 // PACIENTES/FICHAS.JS
-// Muestra en la pestaña Pacientes TODOS los pacientes únicos agendados en la colección 'citas' del CESFAM logueado
-// Los crea automáticamente en la colección 'pacientes' si no existen, y los muestra directamente aunque no estén allí
+// Muestra en la pestaña Pacientes TODOS los pacientes únicos agendados en la colección 'citas' del CESFAM logueado.
+// Los crea automáticamente en la colección 'pacientes' si no existen, y los muestra directamente aunque no estén allí.
+// Incluye logs de depuración para verificar ruts y nombres extraídos de las citas.
 
 (function() {
     let pacientesTabData = [];
@@ -37,7 +38,7 @@
         });
     }
 
-    // Extrae pacientes desde las citas y los crea en 'pacientes' si no existen
+    // Extrae pacientes desde las citas y los crea en 'pacientes' si no existen. Incluye logs para depuración.
     async function extraerYCrearPacientesDesdeCitas() {
         const db = window.getFirestore();
         if (!miCesfam) return [];
@@ -46,12 +47,22 @@
 
         citasSnap.forEach(doc => {
             const cita = doc.data();
+            // Depuración: log de campos usados
+            console.log(`[CITA] id: ${doc.id} rut:`, cita.pacienteRut, cita.rut, cita.rutPaciente, "nombre:", cita.pacienteNombre, cita.nombre);
+
             const rut = (cita.pacienteRut || cita.rut || cita.rutPaciente || '').replace(/[.\-]/g, "").toUpperCase();
-            if (!rut) return;
+            const nombre = cita.pacienteNombre || cita.nombre || '';
+            if (!rut) {
+                console.warn('Cita sin rut, id:', doc.id, cita);
+                return;
+            }
+            if (!nombre) {
+                console.warn('Cita sin nombre, id:', doc.id, cita);
+            }
             if (!pacientesMap[rut]) {
                 pacientesMap[rut] = {
                     rut: rut,
-                    nombre: cita.pacienteNombre || cita.nombre || '',
+                    nombre: nombre,
                     cesfam: miCesfam,
                     telefono: cita.pacienteTelefono || cita.telefono || '',
                     email: cita.pacienteEmail || cita.email || '',
