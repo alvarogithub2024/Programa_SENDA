@@ -48,6 +48,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 closeModal("modal-registrar-atencion");
                 // Opcional: recargar pacientes de hoy
                 if (window.mostrarPacienteActualHoy) window.mostrarPacienteActualHoy();
+                if (window.mostrarCitasRestantesHoy) window.mostrarCitasRestantesHoy();
             })
             .catch(function(error) {
                 window.showNotification("Error guardando atención: " + error.message, "error");
