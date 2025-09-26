@@ -3920,29 +3920,3 @@ input:invalid {
   .cita-form .form-input, .cita-form .form-select { font-size: .97em; }
   .form-actions-row { gap: 0.8rem; }
 }
-
-
-.modal {
-  display: none;
-  position: fixed !important;
-  z-index: 9999;
-  left: 0; top: 0; width: 100vw; height: 100vh;
-  background: rgba(0,0,0,0.45);
-  justify-content: center;
-  align-items: center;
-  overflow: auto;
-}
-.modal.show,
-.modal[style*="display: flex"] {
-  display: flex !important;
-}
-.modal-content {
-  background: #fff;
-  border-radius: 10px;
-  margin: auto;
-  max-width: 400px;
-  min-width: 320px;
-  box-shadow: 0 8px 32px rgba(50,50,70,0.18);
-  position: relative;
-  padding: 32px 32px 24px 32px;
-}
