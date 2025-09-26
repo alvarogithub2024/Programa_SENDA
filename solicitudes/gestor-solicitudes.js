@@ -339,19 +339,26 @@ function renderSolicitudesTable() {
 
 // Ver detalles
 function verDetalleSolicitud(solicitudId) {
-    const solicitud = solicitudesData.find(s => s.id === solicitudId);
-    if (!solicitud) return;
-    document.getElementById('modal-detalle-nombre').innerText = solicitud.nombre || '';
-    document.getElementById('modal-detalle-rut').innerText = solicitud.rut || '';
-    document.getElementById('modal-detalle-telefono').innerText = solicitud.telefono || '';
-    document.getElementById('modal-detalle-email').innerText = solicitud.email || '';
-    document.getElementById('modal-detalle-motivo').innerText = solicitud.motivo || '';
-    document.getElementById('modal-detalle-cesfam').innerText = solicitud.cesfam || '';
-    document.getElementById('modal-detalle-prioridad').innerText = solicitud.prioridad || '';
-    document.getElementById('modal-detalle-estado').innerText = solicitud.estado || solicitud.origen || '';
-    document.getElementById('modal-detalle-fecha').innerText = solicitud.fecha ? new Date(solicitud.fecha).toLocaleDateString('es-CL') : '';
-    document.getElementById('modal-detalle-sustancias').innerText = Array.isArray(solicitud.sustancias) ? solicitud.sustancias.join(', ') : '';
-    document.getElementById('modal-detalle').style.display = 'block';
+  const solicitud = solicitudesData.find(s => s.id === solicitudId);
+  if (!solicitud) return;
+
+  function setText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.innerText = text || '';
+  }
+
+  setText('modal-detalle-nombre', solicitud.nombre);
+  setText('modal-detalle-rut', solicitud.rut);
+  setText('modal-detalle-telefono', solicitud.telefono);
+  setText('modal-detalle-email', solicitud.email);
+  setText('modal-detalle-motivo', solicitud.motivo);
+  setText('modal-detalle-cesfam', solicitud.cesfam);
+  setText('modal-detalle-prioridad', solicitud.prioridad);
+  setText('modal-detalle-estado', solicitud.estado || solicitud.origen);
+  setText('modal-detalle-fecha', solicitud.fecha ? new Date(solicitud.fecha).toLocaleDateString('es-CL') : '');
+  setText('modal-detalle-sustancias', Array.isArray(solicitud.sustancias) ? solicitud.sustancias.join(', ') : '');
+
+  document.getElementById('modal-detalle').style.display = 'flex';
 }
 function cerrarModalDetalle() {
     document.getElementById('modal-detalle').style.display = 'none';
@@ -366,7 +373,7 @@ function editarSolicitud(solicitudId) {
     document.getElementById('modal-editar-telefono').value = solicitud.telefono || '';
     document.getElementById('modal-editar-id').value = solicitud.id;
     document.getElementById('modal-editar-cita').value = solicitud.citaAgendada || '';
-    document.getElementById('modal-editar').style.display = 'block';
+    document.getElementById('modal-editar').style.display = 'flex';
 }
 function cerrarModalEditar() { document.getElementById('modal-editar').style.display = 'none'; }
 function guardarEdicionSolicitud() {
@@ -391,7 +398,7 @@ function agendarCitaSolicitud(solicitudId) {
     document.getElementById('modal-cita-id').value = solicitud.id;
     document.getElementById('modal-cita-nombre').innerText = solicitud.nombre || '';
     document.getElementById('modal-cita-rut').innerText = solicitud.rut || '';
-    document.getElementById('modal-cita').style.display = 'block';
+    document.getElementById('modal-cita').style.display = 'flex';
 }
 function cerrarModalCita() { document.getElementById('modal-cita').style.display = 'none'; }
 function guardarCita() {
@@ -421,7 +428,7 @@ function abrirModalResponder(email, nombre, solicitudId) {
     document.getElementById('modal-responder-email').value = email;
     document.getElementById('modal-responder-nombre').innerText = nombre;
     document.getElementById('modal-responder-id').value = solicitudId;
-    document.getElementById('modal-responder').style.display = 'block';
+    document.getElementById('modal-responder').style.display = 'flex';
 }
 function cerrarModalResponder() {
     document.getElementById('modal-responder').style.display = 'none';
@@ -561,29 +568,6 @@ function updateSolicitudesCounter() {
     if (totalCounter) totalCounter.textContent = solicitudesData.length;
 }
 
-function verDetalleSolicitud(solicitudId) {
-  const solicitud = solicitudesData.find(s => s.id === solicitudId);
-  if (!solicitud) return;
-
-  function setText(id, text) {
-    const el = document.getElementById(id);
-    if (el) el.innerText = text || '';
-  }
-
-  setText('modal-detalle-nombre', solicitud.nombre);
-  setText('modal-detalle-rut', solicitud.rut);
-  setText('modal-detalle-telefono', solicitud.telefono);
-  setText('modal-detalle-email', solicitud.email);
-  setText('modal-detalle-motivo', solicitud.motivo);
-  setText('modal-detalle-cesfam', solicitud.cesfam);
-  setText('modal-detalle-prioridad', solicitud.prioridad);
-  setText('modal-detalle-estado', solicitud.estado || solicitud.origen);
-  setText('modal-detalle-fecha', solicitud.fecha ? new Date(solicitud.fecha).toLocaleDateString('es-CL') : '');
-  setText('modal-detalle-sustancias', Array.isArray(solicitud.sustancias) ? solicitud.sustancias.join(', ') : '');
-
-  document.getElementById('modal-detalle').style.display = 'flex';
-}
-
 /**
  * Actualizar estadísticas de solicitudes (puedes poner tu lógica aquí)
  */
@@ -591,4 +575,4 @@ function updateSolicitudesStats() {
     // Implementa según tus necesidades de estadísticas
 }
 
-console.log('📋 Gestor de solicitudes extendido listo.');
+console.log('📋 Gestor de solicitudes listo.');
