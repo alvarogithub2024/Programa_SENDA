@@ -2348,6 +2348,218 @@ document.addEventListener('DOMContentLoaded', setupModalTabs);
   border-bottom-color: var(--background-white) !important;
   font-weight: 600 !important;
 }
+/* ================================
+   CSS PARA BOTONES DE HISTORIAL CLÍNICO
+   ================================ */
+
+/* Contenedor del historial clínico */
+#historial-clinico {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 2px solid var(--border-color);
+}
+
+#historial-clinico h4 {
+  color: var(--primary-blue);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Botón para agregar nueva entrada */
+.btn-add-entry {
+  background: var(--success-green);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-add-entry:hover {
+  background: var(--health-green);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Entradas del historial */
+.historial-entry {
+  background: var(--light-blue);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.historial-entry:hover {
+  border-color: var(--primary-blue);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Header de cada entrada */
+.entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.entry-info {
+  flex: 1;
+}
+
+.entry-professional {
+  font-weight: 600;
+  color: var(--primary-blue);
+  font-size: 0.95rem;
+}
+
+.entry-datetime {
+  color: var(--text-medium);
+  font-size: 0.85rem;
+  margin-top: 2px;
+}
+
+/* Botones de acción para cada entrada */
+.entry-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.btn-entry-action {
+  background: none;
+  border: none;
+  color: var(--text-medium);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.btn-entry-action:hover {
+  background: var(--gray-100);
+  color: var(--text-dark);
+}
+
+.btn-entry-action.edit {
+  color: var(--primary-blue);
+}
+
+.btn-entry-action.edit:hover {
+  background: var(--light-blue);
+  color: var(--primary-dark);
+}
+
+.btn-entry-action.delete {
+  color: var(--danger-red);
+}
+
+.btn-entry-action.delete:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Contenido de la entrada */
+.entry-content {
+  color: var(--text-dark);
+  line-height: 1.5;
+  font-size: 0.95rem;
+  padding: 0.5rem 0;
+}
+
+/* Estado de edición */
+.entry-editing .entry-content {
+  display: none;
+}
+
+.entry-edit-form {
+  display: none;
+  margin-top: 0.5rem;
+}
+
+.entry-editing .entry-edit-form {
+  display: block;
+}
+
+.entry-edit-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 8px 12px;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.entry-edit-textarea:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.entry-edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  justify-content: flex-end;
+}
+
+.btn-save,
+.btn-cancel {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-save {
+  background: var(--success-green);
+  color: white;
+}
+
+.btn-save:hover {
+  background: var(--health-green);
+}
+
+.btn-cancel {
+  background: var(--gray-300);
+  color: var(--text-dark);
+}
+
+.btn-cancel:hover {
+  background: var(--gray-400);
+}
+
+/* Mensaje cuando no hay historial */
+.no-historial {
+  text-align: center;
+  color: var(--text-medium);
+  font-style: italic;
+  padding: 2rem 1rem;
+}
+
+/* Permisos ocultos para roles no autorizados */
+.historial-readonly .btn-add-entry,
+.historial-readonly .btn-entry-action {
+  display: none !important;
+}
 
 /* ================================
    13. RESPONSIVE DESIGN
