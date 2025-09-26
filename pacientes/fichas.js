@@ -1,11 +1,5 @@
-// PACIENTES/FICHAS.JS
-// Muestra en la pestaña Pacientes TODOS los pacientes únicos agendados en la colección 'citas' del CESFAM logueado.
-// Los crea automáticamente en la colección 'pacientes' si no existen, y los muestra directamente aunque no estén allí.
-// Incluye logs de depuración para verificar ruts y nombres extraídos de las citas.
-
 (function() {
     let pacientesTabData = [];
-    let miCesfam = null;
 
     // Helpers para UI
     function getGrid() { return document.getElementById('patients-grid'); }
@@ -27,20 +21,10 @@
         }
     }
 
-    // Obtiene el CESFAM actual del profesional logueado
-    async function obtenerCesfamActual() {
-        const user = firebase.auth().currentUser;
-        if (!user) return null;
-        const db = window.getFirestore();
-        const doc = await db.collection('profesionales').doc(user.uid).get();
-        return doc.exists ? doc.data().cesfam : null;
-    }
-
-    // Extrae pacientes desde las citas y los crea en 'pacientes' si no existen. Incluye logs para depuración.
+    // Extrae pacientes desde las citas y los crea en 'pacientes' si no existen. Usa el id de la cita como referencia.
     async function extraerYCrearPacientesDesdeCitas() {
         const db = window.getFirestore();
-        if (!miCesfam) return [];
-        const citasSnap = await db.collection('citas').where('cesfam', '==', miCesfam).get();
+        const citasSnap = await db.collection('citas').get();
         const pacientesMap = {};
 
         citasSnap.forEach(doc => {
@@ -59,11 +43,14 @@
                 pacientesMap[rut] = {
                     rut: rut,
                     nombre: nombre,
-                    cesfam: miCesfam,
+                    citaId: doc.id, // Usamos el id de la cita
+                    profesion: cita.profesion || '',
+                    fecha: cita.fecha || '',
                     telefono: cita.telefono || '',
                     email: cita.email || '',
                     direccion: cita.direccion || '',
                     edad: cita.edad || '',
+                    fechaRegistro: cita.creado || new Date().toISOString(),
                 };
             }
         });
@@ -73,9 +60,7 @@
             const paciente = pacientesMap[rut];
             const snap = await db.collection('pacientes').where('rut', '==', rut).limit(1).get();
             if (snap.empty) {
-                await db.collection('pacientes').add(Object.assign({}, paciente, {
-                    fechaRegistro: new Date().toISOString()
-                }));
+                await db.collection('pacientes').add(paciente);
             }
         }
 
@@ -92,7 +77,7 @@
         }
         grid.innerHTML = '';
         if (!pacientes.length) {
-            grid.innerHTML = "<div class='no-results'>No hay pacientes agendados en este CESFAM.</div>";
+            grid.innerHTML = "<div class='no-results'>No hay pacientes agendados aún.</div>";
             return;
         }
         pacientes.forEach(p => {
@@ -105,7 +90,9 @@
                 <div>Tel: ${p.telefono || ''}</div>
                 <div>Email: ${p.email || ''}</div>
                 <div>Dirección: ${p.direccion || ''}</div>
-                <div>CESFAM: ${p.cesfam}</div>
+                <div>Profesión: ${p.profesion || ''}</div>
+                <div>Fecha de cita: ${p.fecha || ''}</div>
+                <div>ID de cita: ${p.citaId || ''}</div>
                 <button class="btn btn-outline btn-sm" onclick="verFichaPacienteSenda('${p.rut}')"><i class="fas fa-file-medical"></i> Ver Ficha</button>
             `;
             grid.appendChild(div);
@@ -126,91 +113,18 @@
         renderPacientesGrid(filtrados);
     }
 
-    // Modal ficha paciente (con observaciones desde atenciones)
     window.verFichaPacienteSenda = function(rut) {
-        const db = window.getFirestore();
-        const rutLimpio = rut.replace(/[.\-]/g, "").toUpperCase();
-        db.collection('pacientes').where('rut', '==', rutLimpio).limit(1).get().then(snapshot => {
-            if (!snapshot.empty) {
-                const data = Object.assign({ id: snapshot.docs[0].id }, snapshot.docs[0].data());
-                mostrarModalFichaPaciente(data);
-            } else {
-                // Si el paciente no existe en 'pacientes', muestra con los datos del grid
-                const pacienteData = pacientesTabData.find(p => p.rut === rutLimpio);
-                if (pacienteData) {
-                    mostrarModalFichaPaciente(pacienteData);
-                } else {
-                    window.showNotification && window.showNotification('Paciente no encontrado', 'warning');
-                }
-            }
-        });
+        // Muestra un alert simple (puedes mejorar con modal)
+        const pacienteData = pacientesTabData.find(p => p.rut === rut);
+        if (pacienteData) {
+            alert(
+                `Paciente: ${pacienteData.nombre}\nRUT: ${pacienteData.rut}\nEdad: ${pacienteData.edad}\nProfesión: ${pacienteData.profesion}\nFecha de cita: ${pacienteData.fecha}\nID de cita: ${pacienteData.citaId}`
+            );
+        } else {
+            window.showNotification && window.showNotification('Paciente no encontrado', 'warning');
+        }
     };
 
-    function mostrarModalFichaPaciente(paciente) {
-        const modal = document.getElementById('modal-ficha-paciente');
-        const modalBody = document.getElementById('modal-ficha-paciente-body');
-        if (!modal || !modalBody) return;
-
-        let html = `
-            <h3>${paciente.nombre || ''}</h3>
-            <p><b>RUT:</b> ${paciente.rut || ''}</p>
-            <p><b>Edad:</b> ${paciente.edad || ''}</p>
-            <p><b>Teléfono:</b> ${paciente.telefono || ''}</p>
-            <p><b>Email:</b> ${paciente.email || ''}</p>
-            <p><b>Dirección:</b> ${paciente.direccion || ''}</p>
-            <p><b>CESFAM:</b> ${paciente.cesfam || ''}</p>
-            <hr>
-            <div id="observaciones-profesional"><b>Observaciones y atención profesional:</b><div class="loading-message">Cargando...</div></div>
-        `;
-        modalBody.innerHTML = html;
-        modal.style.display = 'flex';
-
-        cargarObservacionesAtencionPorRut(paciente.rut);
-    }
-
-    function cargarObservacionesAtencionPorRut(rutPaciente) {
-        const cont = document.getElementById('observaciones-profesional');
-        if (!cont) return;
-        const db = window.getFirestore();
-        db.collection('atenciones').where('pacienteRut', '==', rutPaciente).orderBy('fechaRegistro', 'desc').get()
-            .then(snapshot => {
-                let html = '';
-                if (snapshot.empty) {
-                    html = "<p>No hay atenciones registradas.</p>";
-                } else {
-                    html = '<ul>';
-                    snapshot.forEach(doc => {
-                        const a = doc.data();
-                        let fechaTexto = '';
-                        if (a.fechaRegistro) {
-                            if (typeof a.fechaRegistro === 'string') {
-                                fechaTexto = new Date(a.fechaRegistro).toLocaleDateString('es-CL');
-                            } else if (a.fechaRegistro.seconds) {
-                                fechaTexto = new Date(a.fechaRegistro.seconds * 1000).toLocaleDateString('es-CL');
-                            }
-                        }
-                        html += `<li>
-                            <b>${fechaTexto}</b> -
-                            <b>${a.tipoAtencion || 'Atención'}</b><br>
-                            <span>${a.descripcion || ''}</span>
-                            <div><small>Profesional: ${a.profesional || ''}</small></div>
-                        </li>`;
-                    });
-                    html += '</ul>';
-                }
-                cont.innerHTML = `<b>Observaciones y atención profesional:</b> ${html}`;
-            })
-            .catch(error => {
-                cont.innerHTML = "<p>Error cargando observaciones.</p>";
-            });
-    }
-
-    window.cerrarModalFichaPaciente = function() {
-        const modal = document.getElementById('modal-ficha-paciente');
-        if (modal) modal.style.display = 'none';
-    };
-
-    // Refresca la pestaña: extrae pacientes desde citas y los muestra
     async function refrescarPacientesTab() {
         const grid = getGrid();
         if (!grid) {
@@ -218,11 +132,6 @@
             return;
         }
         grid.innerHTML = "<div class='loading-message'><i class='fas fa-spinner fa-spin'></i> Actualizando pacientes...</div>";
-        miCesfam = await obtenerCesfamActual();
-        if (!miCesfam) {
-            grid.innerHTML = "<div class='no-results'>No tienes CESFAM asignado.";
-            return;
-        }
         pacientesTabData = await extraerYCrearPacientesDesdeCitas();
         renderPacientesGrid(pacientesTabData);
     }
