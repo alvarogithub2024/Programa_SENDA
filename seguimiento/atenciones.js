@@ -60,3 +60,4 @@ function obtenerAtencionPorId(atencionId, callback) {
 window.registrarAtencion = registrarAtencion;
 window.editarAtencion = editarAtencion;
 window.obtenerAtencionPorId = obtenerAtencionPorId;
+
