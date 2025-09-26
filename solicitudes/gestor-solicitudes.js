@@ -253,9 +253,9 @@ function renderSolicitudesTable() {
                 <button class="btn-accion btn-editar" onclick="editarSolicitud('${solicitud.id}')" title="Editar">
                     <i class="fas fa-edit"></i>
                 </button>
-           <button class="btn-accion btn-exportar" onclick="exportarSolicitud('${solicitud.id}')" title="Exportar">
-    <i class="fas fa-download"></i>
-</button>
+                <button class="btn-accion btn-exportar" onclick="exportarSolicitud('${solicitud.id}')" title="Exportar">
+                    <i class="fas fa-download"></i>
+                </button>
                 <div class="dropdown-acciones">
                     <button class="btn-accion btn-mas" onclick="toggleAccionesSolicitud('${solicitud.id}')" title="Más acciones">
                         <i class="fas fa-ellipsis-v"></i>
@@ -454,7 +454,43 @@ function convertToCSV(objArray) {
 }
 
 // ------------------- FUNCIONES DE MODALES Y ACCIONES -------------------
-// ... (resto de funciones: verDetalleSolicitud, editarSolicitud, etc.) ...
+
+// Función para mostrar el detalle de la solicitud
+function verDetalleSolicitud(solicitudId) {
+    const solicitud = solicitudesData.find(s => s.id === solicitudId);
+    if (!solicitud) return;
+    // Puedes mostrar un modal, llenar campos, etc.
+    alert(`Detalle de la solicitud:\n\nNombre: ${solicitud.nombre}\nRUT: ${solicitud.rut}\nCESFAM: ${solicitud.cesfam}\nEstado: ${solicitud.estado}\nPrioridad: ${solicitud.prioridad}`);
+}
+
+// Función para editar la solicitud
+function editarSolicitud(solicitudId) {
+    const solicitud = solicitudesData.find(s => s.id === solicitudId);
+    if (!solicitud) return;
+    // Aquí puedes mostrar el modal de edición y llenar los campos
+    alert(`Editar solicitud:\n\nNombre: ${solicitud.nombre}\nRUT: ${solicitud.rut}`);
+}
+
+// Función para agendar una cita desde la solicitud
+function agendarCitaSolicitud(solicitudId) {
+    const solicitud = solicitudesData.find(s => s.id === solicitudId);
+    if (!solicitud) return;
+    // Puedes abrir el modal de agendar cita
+    alert(`Agendar cita para:\n\nNombre: ${solicitud.nombre}\nRUT: ${solicitud.rut}`);
+}
+
+// Función para eliminar la solicitud
+function eliminarSolicitud(solicitudId) {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta solicitud?')) return;
+    const db = window.getFirestore();
+    db.collection('solicitudes_ingreso').doc(solicitudId).delete().then(() => {
+        window.reloadSolicitudesFromFirebase && window.reloadSolicitudesFromFirebase();
+        window.showNotification && window.showNotification('Solicitud eliminada correctamente', 'success');
+    }).catch((error) => {
+        window.showNotification && window.showNotification('Error eliminando la solicitud', 'error');
+        console.error('Error eliminando solicitud:', error);
+    });
+}
 
 function toggleAccionesSolicitud(solicitudId) {
     try {
@@ -615,3 +651,4 @@ console.log('📋 Gestor de solicitudes listo.');
 window.verDetalleSolicitud = verDetalleSolicitud;
 window.editarSolicitud = editarSolicitud;
 window.agendarCitaSolicitud = agendarCitaSolicitud;
+window.eliminarSolicitud = eliminarSolicitud;
