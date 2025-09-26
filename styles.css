@@ -3947,3 +3947,16 @@ input:invalid {
   position: relative;
   display: block;
 }
+
+.close {
+  position: absolute;
+  right: 16px;
+  top: 12px;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #888;
+  transition: color 0.2s;
+}
+.close:hover {
+  color: #dc2626;
+}
