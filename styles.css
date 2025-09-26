@@ -3835,7 +3835,15 @@ input:invalid {
   .calendar-row { min-height: 40px; }
   .calendar-cell { min-height: 60px; padding: 4px 2px 2px 4px; }
 }
-
+.calendar-day-number {
+  font-size: 1.02rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #2563eb; /* o #fff si quieres blanco */
+  letter-spacing: 0.01em;
+  text-align: center;
+  display: block;
+}
 /* --- nueva cita --- */
 .modal.large-modal {
   max-width: 520px;
