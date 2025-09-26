@@ -34,10 +34,8 @@
 
         citasSnap.forEach(doc => {
             const cita = doc.data();
-            // Log de campos usados
-            console.log(`[CITA] id: ${doc.id} rut:`, cita.rut, "nombre:", cita.nombre, "apellidos:", cita.apellidos);
 
-            const rut = (cita.rut || '').replace(/[.\-]/g, "").toUpperCase();
+            const rut = (cita.rut || '').replace(/[.\-]/g, "").trim();
             const nombre = cita.nombre || '';
             const apellidos = cita.apellidos || '';
             if (!rut) {
@@ -122,7 +120,9 @@
     // Modal ficha paciente (completa + historial clínico)
     window.verFichaPacienteSenda = function(rut) {
         const db = window.getFirestore();
-        db.collection('pacientes').where('rut', '==', rut).limit(1).get().then(function(snapshot) {
+        // Limpia el rut para consulta
+        const rutLimpio = (rut || '').replace(/[.\-]/g, '').trim();
+        db.collection('pacientes').where('rut', '==', rutLimpio).limit(1).get().then(function(snapshot) {
             if (snapshot.empty) {
                 window.showNotification && window.showNotification('Paciente no encontrado', 'warning');
                 return;
@@ -157,7 +157,7 @@
             `;
             modalBody.innerHTML = html;
 
-            // Historial clínico: muestra las atenciones ordenadas por fecha desc, filtrando por rut
+            // Historial clínico: muestra las atenciones ordenadas por fecha desc, filtrando por rut (LIMPIA rut)
             cargarHistorialClinicoPacientePorRut(pacienteData.rut);
         });
     };
@@ -167,45 +167,61 @@
         if (modal) modal.style.display = 'none';
     };
 
-function cargarHistorialClinicoPacientePorRut(rutPaciente) {
-    // Limpia el rut para asegurar coincidencia
-    rutPaciente = (rutPaciente || '').replace(/[.\-]/g, '').trim();
-    const cont = document.getElementById('historial-clinico');
-    if (!cont) return;
-    const db = window.getFirestore();
-    db.collection('atenciones')
-      .where('pacienteRut', '==', rutPaciente)
-      .orderBy('fechaRegistro', 'desc')
-      .get()
-      .then(snapshot => {
-          let html = '';
-          if (snapshot.empty) {
-              html = "<p>No hay atenciones registradas.</p>";
-          } else {
-              html = '<ul style="margin-top:8px;">';
-              snapshot.forEach(doc => {
-                  const a = doc.data();
-                  let fechaTexto = '';
-                  let horaTexto = '';
-                  if (a.fechaRegistro) {
-                      let fechaObj = new Date(a.fechaRegistro);
-                      fechaTexto = fechaObj.toLocaleDateString('es-CL');
-                      horaTexto = fechaObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
-                  }
-                  html += `<li style="margin-bottom:8px;">
-                      <b>Profesional:</b> ${a.profesional || ''} <br>
-                      <b>Fecha:</b> ${fechaTexto} <b>Hora:</b> ${horaTexto}<br>
-                      <span>${a.descripcion || ''}</span>
-                  </li>`;
-              });
-              html += '</ul>';
-          }
-          cont.innerHTML = `<b>Historial clínico:</b> ${html}`;
-      })
-      .catch(error => {
-          cont.innerHTML = "<p>Error cargando historial clínico.</p>";
-      });
-}
+    // Historial clínico: muestra las atenciones ordenadas por fecha desc, filtrando por rut
+    function cargarHistorialClinicoPacientePorRut(rutPaciente) {
+        const cont = document.getElementById('historial-clinico');
+        if (!cont) return;
+        const db = window.getFirestore();
+        // Limpia el rut para asegurar coincidencia
+        rutPaciente = (rutPaciente || '').replace(/[.\-]/g, '').trim();
+        db.collection('atenciones')
+          .where('pacienteRut', '==', rutPaciente)
+          .orderBy('fechaRegistro', 'desc')
+          .get()
+          .then(snapshot => {
+              let html = '';
+              if (snapshot.empty) {
+                  html = "<p>No hay atenciones registradas.</p>";
+              } else {
+                  html = '<ul style="margin-top:8px;">';
+                  snapshot.forEach(doc => {
+                      const a = doc.data();
+                      let fechaTexto = '';
+                      let horaTexto = '';
+                      if (a.fechaRegistro) {
+                          let fechaObj;
+                          if (typeof a.fechaRegistro === 'string') {
+                              fechaObj = new Date(a.fechaRegistro);
+                          } else if (a.fechaRegistro.seconds) {
+                              fechaObj = new Date(a.fechaRegistro.seconds * 1000);
+                          }
+                          fechaTexto = fechaObj.toLocaleDateString('es-CL');
+                          horaTexto = fechaObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+                      }
+                      html += `<li style="margin-bottom:8px;">
+                          <b>Profesional:</b> ${a.profesional || ''} <br>
+                          <b>Fecha:</b> ${fechaTexto} <b>Hora:</b> ${horaTexto}<br>
+                          <span>${a.descripcion || ''}</span>
+                      </li>`;
+                  });
+                  html += '</ul>';
+              }
+              cont.innerHTML = `<b>Historial clínico:</b> ${html}`;
+          })
+          .catch(error => {
+              if (error.code === 'failed-precondition' || (error.message && error.message.includes('index'))) {
+                  cont.innerHTML = `
+                    <p>Error cargando historial clínico. Firestore requiere un índice compuesto para esta consulta.</p>
+                    <p>Sigue el enlace en la consola de Firebase para crearlo.</p>
+                  `;
+                  console.error("Firestore necesita índice compuesto para atenciones.pacienteRut + fechaRegistro", error);
+              } else {
+                  cont.innerHTML = "<p>Error cargando historial clínico.</p>";
+                  console.error("Error Firestore:", error);
+              }
+          });
+    }
+
     // Refresca la pestaña: extrae pacientes desde citas y los muestra
     async function refrescarPacientesTab() {
         const grid = getGrid();
