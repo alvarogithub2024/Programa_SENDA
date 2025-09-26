@@ -42,7 +42,10 @@
   }
 
   function applyCurrentFilters() {
-    filteredSolicitudesData = solicitudesData.filter(solicitud => {
+    // Aseguramos que solicitudesData esté definida globalmente
+    const datos = typeof solicitudesData !== "undefined" ? solicitudesData : window.solicitudesData;
+    if (!Array.isArray(datos)) { window.filteredSolicitudesData = []; return; }
+    filteredSolicitudesData = datos.filter(solicitud => {
       if (
         currentFilters.estado !== 'todos' &&
         (solicitud.estado || '').toLowerCase() !== currentFilters.estado
@@ -53,9 +56,10 @@
         (solicitud.prioridad || '').toLowerCase() !== currentFilters.prioridad
       )
         return false;
+      // FILTRO CESFAM CON INSENSIBILIDAD A MAYÚSCULAS/MINÚSCULAS Y ESPACIOS
       if (
         currentFilters.cesfam !== 'todos' &&
-        (solicitud.cesfam || '') !== currentFilters.cesfam
+        (solicitud.cesfam || '').trim().toLowerCase() !== currentFilters.cesfam.trim().toLowerCase()
       )
         return false;
       if (currentFilters.fecha !== 'todos') {
@@ -81,11 +85,15 @@
       }
       if (currentFilters.busqueda) {
         const rut = (solicitud.rut || '').replace(/\./g, '').toLowerCase();
+        const nombre = (solicitud.nombre || '').toLowerCase();
+        const apellidos = (solicitud.apellidos || '').toLowerCase();
+        const email = (solicitud.email || '').toLowerCase();
         const q = currentFilters.busqueda.replace(/\./g, '').toLowerCase();
-        if (!rut.includes(q)) return false;
+        if (!rut.includes(q) && !nombre.includes(q) && !apellidos.includes(q) && !email.includes(q)) return false;
       }
       return true;
     });
+    window.filteredSolicitudesData = filteredSolicitudesData;
     if (typeof renderSolicitudesTable === 'function') renderSolicitudesTable();
     if (typeof updateSolicitudesCounter === 'function') updateSolicitudesCounter();
   }
