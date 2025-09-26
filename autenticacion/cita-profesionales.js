@@ -291,14 +291,42 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
       if (form && !form._onsubmitSet) {
         form.addEventListener('submit', function(e){
           e.preventDefault();
-          // Guardar la cita agendada aquí
+          // --- AGREGAR GUARDADO EN FIREBASE ---
+          const cita = {
+            solicitudId: document.getElementById('modal-cita-id-prof').value,
+            nombre: document.getElementById('modal-cita-nombre-prof').textContent,
+            rut: document.getElementById('modal-cita-rut-prof').textContent,
+            profesion: document.getElementById('modal-cita-profession-prof').value,
+            profesionalId: document.getElementById('modal-cita-profesional-prof').value,
+            profesionalNombre: document.getElementById('modal-cita-profesional-nombre-prof').value,
+            fecha: document.getElementById('modal-cita-fecha-prof').value,
+            hora: document.getElementById('modal-cita-hora-prof').value,
+            creado: new Date().toISOString(),
+            tipo: "profesional"
+          };
+
+          // Validar campos obligatorios
+          if (!cita.nombre || !cita.rut || !cita.profesion || !cita.profesionalId || !cita.fecha || !cita.hora) {
+            window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
+            return;
+          }
+
+          // Guardar en Firebase
+          const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
+          db.collection("citas").add(cita)
+            .then(function(docRef) {
+              window.showNotification && window.showNotification("Cita agendada correctamente", "success");
+              closeModal('modal-agendar-cita-profesional');
+            })
+            .catch(function(error) {
+              window.showNotification && window.showNotification("Error al guardar la cita: " + error, "error");
+            });
         });
         form._onsubmitSet = true;
       }
     }, 100);
   });
 }
-
 // Exportar funciones globales
 window.abrirModalNuevaCitaProfesional = abrirModalNuevaCitaProfesional;
 window.abrirModalAgendarCitaProfesional = abrirModalAgendarCitaProfesional;
