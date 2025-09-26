@@ -1,4 +1,4 @@
-// CONFIGURACION/FIREBASE.JS - VERSIÓN CORREGIDA
+// CONFIGURACION/FIREBASE.JS - VERSIÓN ACTUALIZADA
 
 var auth = null, db = null, storage = null, isInitialized = false;
 
@@ -31,10 +31,8 @@ function initializeFirebase() {
         db = firebase.firestore(app);
         storage = firebase.storage ? firebase.storage(app) : null;
 
-        // Habilitar persistencia sin configuración obsoleta
-        if (!isInitialized) {
-            configurePersistence();
-        }
+        // ✅ PERSISTENCIA ACTUALIZADA - SIN MÉTODOS OBSOLETOS
+        configurePersistence();
 
         isInitialized = true;
         
@@ -56,28 +54,31 @@ function initializeFirebase() {
     }
 }
 
+// ✅ FUNCIÓN DE PERSISTENCIA ACTUALIZADA
 function configurePersistence() {
     if (!db) return;
+    
     try {
+        // USAR MÉTODO ACTUAL (no deprecado)
         db.enablePersistence({ synchronizeTabs: false })
             .then(function() {
-                console.log('Persistencia offline habilitada');
+                console.log('✅ Persistencia offline habilitada');
             })
             .catch(function(err) {
                 if (err.code === 'failed-precondition') {
-                    console.warn('Persistencia: Múltiples pestañas abiertas');
+                    console.warn('⚠️ Persistencia: Múltiples pestañas abiertas');
                 } else if (err.code === 'unimplemented') {
-                    console.warn('Persistencia no soportada');
+                    console.warn('⚠️ Persistencia no soportada en este navegador');
                 } else {
-                    console.warn('Error configurando persistencia:', err.code);
+                    console.warn('⚠️ Error configurando persistencia:', err.code);
                 }
             });
     } catch (syncError) {
-        console.warn('Error con persistencia:', syncError);
+        console.warn('⚠️ Error con persistencia:', syncError);
     }
 }
 
-// Resto de funciones helper...
+// Funciones helper
 function getFirestore() {
     if (!db) {
         if (!initializeFirebase()) {
@@ -87,13 +88,40 @@ function getFirestore() {
     return db;
 }
 
+function getAuth() {
+    if (!auth) {
+        if (!initializeFirebase()) {
+            throw new Error('No se pudo inicializar Firebase Auth');
+        }
+    }
+    return auth;
+}
+
+function getStorage() {
+    if (!storage) {
+        if (!initializeFirebase()) {
+            throw new Error('No se pudo inicializar Storage');
+        }
+    }
+    return storage;
+}
+
+function getServerTimestamp() {
+    return firebase.firestore.FieldValue.serverTimestamp();
+}
+
+function isFirebaseInitialized() {
+    return isInitialized && !!auth && !!db;
+}
+
 // Exportar globalmente
 window.initializeFirebase = initializeFirebase;
+window.configurePersistence = configurePersistence;
+window.getAuth = getAuth;
 window.getFirestore = getFirestore;
-window.getAuth = () => auth;
-window.getStorage = () => storage;
-window.getServerTimestamp = () => firebase.firestore.FieldValue.serverTimestamp();
-window.isFirebaseInitialized = () => isInitialized && !!auth && !!db;
+window.getStorage = getStorage;
+window.getServerTimestamp = getServerTimestamp;
+window.isFirebaseInitialized = isFirebaseInitialized;
 
 // Inicializar automáticamente
 initializeFirebase();
