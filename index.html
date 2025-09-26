@@ -516,21 +516,19 @@ Buscar
 </div>
 
   <!-- Modal Ver Detalles -->
-<div class="modal-overlay" id="modal-detalle" style="display:none;">
-    <div class="modal-content">
-        <span class="close" onclick="closeModal('modal-detalle')">&times;</span>
-        <h3>Detalles del paciente</h3>
-        <p><b>Nombre:</b> <span id="modal-detalle-nombre"></span></p>
-        <p><b>RUT:</b> <span id="modal-detalle-rut"></span></p>
-        <p><b>Teléfono:</b> <span id="modal-detalle-telefono"></span></p>
-        <p><b>Email:</b> <span id="modal-detalle-email"></span></p>
-        <p><b>Motivo de atención:</b> <span id="modal-detalle-motivo"></span></p>
-        <p><b>CESFAM:</b> <span id="modal-detalle-cesfam"></span></p>
-        <p><b>Prioridad:</b> <span id="modal-detalle-prioridad"></span></p>
-        <p><b>Estado:</b> <span id="modal-detalle-estado"></span></p>
-        <p><b>Fecha:</b> <span id="modal-detalle-fecha"></span></p>
-        <p><b>Sustancias:</b> <span id="modal-detalle-sustancias"></span></p>
-    </div>
+<div class="modal-overlay" id="modal-responder" style="display:none;">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal('modal-responder')">&times;</span>
+    <h3>Responder solicitud de información</h3>
+    <p><b>Nombre:</b> <span id="modal-responder-nombre"></span></p> <!-- AGREGA ESTA LINEA -->
+    <input type="hidden" id="modal-responder-email">
+    <input type="hidden" id="modal-responder-id">
+    <label>Asunto:</label>
+    <input type="text" id="modal-responder-asunto" value="Respuesta a su solicitud de información">
+    <label>Mensaje:</label>
+    <textarea id="modal-responder-mensaje" rows="5"></textarea>
+    <button onclick="enviarCorreoSenda()" class="btn btn-success">Enviar correo</button>
+  </div>
 </div>
 
 <!-- Modal Editar -->
