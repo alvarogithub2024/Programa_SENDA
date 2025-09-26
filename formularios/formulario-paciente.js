@@ -146,6 +146,7 @@ function setupFormularioPaciente() {
     }
 }
 
+// GUARDAR SOLICITUD AYUDA (NUEVO: guarda el id en el documento)
 function guardarSolicitudAyuda(datos) {
     const db = window.getFirestore ? window.getFirestore() : null;
     if (!db) {
@@ -153,10 +154,17 @@ function guardarSolicitudAyuda(datos) {
         return;
     }
     db.collection("solicitudes_ingreso").add(datos)
-        .then(function() {
-            window.showNotification && window.showNotification("Solicitud enviada correctamente","success");
-            document.getElementById("patient-form").reset();
-            document.getElementById("patient-modal").style.display = "none";
+        .then(function(docRef) {
+            // Guardar el id en el documento (opcional pero recomendado)
+            db.collection("solicitudes_ingreso").doc(docRef.id).update({ id: docRef.id })
+            .then(function() {
+                window.showNotification && window.showNotification("Solicitud enviada correctamente","success");
+                document.getElementById("patient-form").reset();
+                document.getElementById("patient-modal").style.display = "none";
+            })
+            .catch(function(error) {
+                window.showNotification && window.showNotification("Solicitud guardada pero no se pudo registrar el ID: "+error.message,"warning");
+            });
         })
         .catch(function(error) {
             window.showNotification && window.showNotification("Error guardando solicitud: "+error.message,"error");
