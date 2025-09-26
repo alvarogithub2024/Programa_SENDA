@@ -110,15 +110,17 @@ function loadAllSolicitudes() {
                     }
                     solicitudesData.push(data);
                 });
-                infoSnap.forEach(doc => {
-                    let data = doc.data();
-                    data.id = doc.id;
-                    data.origen = 'informacion';
-                    if (data.fecha && !(data.fecha instanceof Date)) {
-                        data.fecha = new Date(data.fecha);
-                    }
-                    solicitudesData.push(data);
-                });
+              infoSnap.forEach(doc => {
+        let data = doc.data();
+        data.id = doc.id;
+        data.origen = 'informacion';
+        data.tipo = 'informacion'; // <-- AGREGA ESTA LÍNEA
+        if (data.fecha && !(data.fecha instanceof Date)) {
+        data.fecha = new Date(data.fecha);
+    }
+        solicitudesData.push(data);
+});
+
                 // Ordenar por fecha descendente
                 solicitudesData.sort((a, b) => (b.fecha?.getTime?.() || 0) - (a.fecha?.getTime?.() || 0));
                 resolve();
