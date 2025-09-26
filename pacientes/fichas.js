@@ -230,6 +230,7 @@
           });
     }
 
+    // MODAL DE EDICIÓN DE ATENCIÓN DESDE FICHA
     window.mostrarModalEditarAtencionDesdeFicha = function(atencionId, descripcionEnc, tipoAtencion, rutPaciente) {
         const descripcion = decodeURIComponent(descripcionEnc);
         window.cerrarModalFichaPaciente();
