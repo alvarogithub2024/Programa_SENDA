@@ -215,6 +215,11 @@ function setupAutoRefresh() {
     }
 }
 
+// Botón de exportar
+        const exportBtn = document.getElementById('export-solicitudes');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', exportSolicitudesToExcel);
+        }
 /**
  * Renderiza la tabla con los botones y diferenciaciones
  */
@@ -334,7 +339,55 @@ function renderSolicitudesTable() {
         console.error('❌ Error renderizando tabla:', error);
     }
 }
-
+/**
+ * Exportar solicitudes a Excel
+ */
+function exportSolicitudesToExcel() {
+    try {
+        console.log('📊 Exportando solicitudes a Excel...');
+        const dataToExport = filteredSolicitudesData.map(solicitud => ({
+            'Nombre Completo': `${solicitud.nombre} ${solicitud.apellidos}`,
+            'RUT': solicitud.rut,
+            'Edad': solicitud.edad,
+            'Teléfono': solicitud.telefono,
+            'Email': solicitud.email,
+            'CESFAM': solicitud.cesfam,
+            'Estado': ESTADOS_SOLICITUDES[solicitud.estado]?.label || solicitud.estado,
+            'Prioridad': PRIORIDADES_SOLICITUDES[solicitud.prioridad]?.label || solicitud.prioridad,
+            'Sustancias': Array.isArray(solicitud.sustancias) ? solicitud.sustancias.join(', ') : 'No especificado',
+            'Fecha Creación': solicitud.fechaCreacion ? new Date(solicitud.fechaCreacion).toLocaleDateString('es-CL') : '',
+            'Descripción': solicitud.descripcion || 'Sin descripción',
+            'Motivación (1-10)': solicitud.motivacion || 'No especificado',
+            'Tiempo de Consumo': solicitud.tiempoConsumo || 'No especificado',
+            'Tratamiento Previo': solicitud.tratamientoPrevio === 'si' ? 'Sí' : 'No'
+        }));
+        
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+        const filename = `solicitudes_senda_${timestamp}.csv`;
+        const csvContent = convertToCSV(dataToExport);
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        if (window.showNotification) {
+            window.showNotification(`Solicitudes exportadas: ${filename}`, 'success');
+        }
+    } catch (error) {
+        console.error('❌ Error exportando solicitudes:', error);
+        if (window.showNotification) {
+            window.showNotification('Error al exportar solicitudes', 'error');
+        }
+    }
+}
 // ------------------- FUNCIONES DE MODALES Y ACCIONES -------------------
 
 // Ver detalles
