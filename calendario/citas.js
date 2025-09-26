@@ -198,6 +198,22 @@ document.getElementById('form-agendar-cita').addEventListener('submit', function
     alert('Error al guardar la cita: ' + error);
   });
 });
+function abrirModalAgendarCita(solicitudId, nombre, rut) {
+  document.getElementById('modal-cita-id').value = solicitudId;
+  document.getElementById('modal-cita-nombre').textContent = nombre;
+  document.getElementById('modal-cita-rut').textContent = rut;
+  showModal('modal-cita');
 
+  setTimeout(function() {
+    var form = document.getElementById('form-agendar-cita');
+    if (form && !form._onsubmitSet) {
+      form.addEventListener('submit', function(e){
+        e.preventDefault();
+        // ...guardar cita...
+      });
+      form._onsubmitSet = true;
+    }
+  }, 100);
+}
 window.abrirModalCitaPaciente = abrirModalCitaPaciente;
 window.guardarCitaPaciente = guardarCitaPaciente;
