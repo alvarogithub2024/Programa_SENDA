@@ -132,3 +132,4 @@ function guardarCitaPaciente(datosCita, callback) {
         });
 }
 window.abrirModalCitaPaciente = abrirModalCitaPaciente;
+window.guardarCitaPaciente = guardarCitaPaciente;
