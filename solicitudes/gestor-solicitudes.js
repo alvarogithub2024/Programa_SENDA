@@ -238,6 +238,11 @@ function renderSolicitudesTable() {
     try {
         const tableBody = document.getElementById('solicitudes-table-body');
         if (!tableBody) {
+            <td>
+    <span class="estado-badge">
+        ${solicitud.estado || solicitud.tipo || solicitud.origen || ""}
+    </span>
+</td>
             console.warn('⚠️ Elemento solicitudes-table-body no encontrado');
             return;
         }
