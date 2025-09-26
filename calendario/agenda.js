@@ -6,13 +6,31 @@ document.addEventListener("DOMContentLoaded", function() {
   const prevMonthBtn = document.getElementById('prev-month');
   const nextMonthBtn = document.getElementById('next-month');
   const nuevaCitaBtn = document.getElementById('nueva-cita-btn');
-  const nuevaCitaProfesionalBtn = document.getElementById('nueva-cita-profesional-btn'); // NUEVO para profesionales
+  const nuevaCitaProfesionalBtn = document.getElementById('nueva-cita-profesional-btn');
 
   let today = new Date();
   let currentMonth = today.getMonth();
   let currentYear = today.getFullYear();
 
   let citasPorDia = {};
+
+  // === VARIABLE PARA PROFESIÓN DEL USUARIO ACTUAL ===
+  let profesionActual = null;
+
+  // Obtener profesión al autenticarse
+  if (window.getCurrentUser && window.getFirestore && typeof firebase !== "undefined") {
+    firebase.auth().onAuthStateChanged(function(user) {
+      if (user) {
+        window.getFirestore().collection('profesionales').doc(user.uid).get().then(function(doc){
+          if (doc.exists) {
+            profesionActual = doc.data().profession || null;
+          }
+        });
+      } else {
+        profesionActual = null;
+      }
+    });
+  }
 
   function chileNow() {
     return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" }));
@@ -23,7 +41,6 @@ document.addEventListener("DOMContentLoaded", function() {
     return meses[month];
   }
 
-  // Cargar las citas agrupadas por fecha
   function cargarCitasPorDia(callback) {
     const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
     db.collection("citas").get().then(function(snapshot) {
@@ -42,7 +59,6 @@ document.addEventListener("DOMContentLoaded", function() {
     calendarGrid.innerHTML = "";
     calendarHeader.textContent = `${getMonthName(month)} ${year}`;
 
-    // Cabecera de días
     let row = document.createElement('div');
     row.className = 'calendar-row calendar-row-header';
     ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].forEach(dia => {
@@ -53,10 +69,9 @@ document.addEventListener("DOMContentLoaded", function() {
     });
     calendarGrid.appendChild(row);
 
-    // Dibuja cada semana
     let primerDia = new Date(year, month, 1);
     let ultimoDia = new Date(year, month + 1, 0);
-    let startDay = (primerDia.getDay() + 6) % 7; // Lunes=0, Domingo=6
+    let startDay = (primerDia.getDay() + 6) % 7;
     let daysInMonth = ultimoDia.getDate();
 
     let date = 1;
@@ -71,15 +86,12 @@ document.addEventListener("DOMContentLoaded", function() {
         } else if (date > daysInMonth) {
           cell.innerHTML = "&nbsp;";
         } else {
-          // Día del mes
           const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
-          // Número de día
           const dayNumDiv = document.createElement('div');
           dayNumDiv.className = 'calendar-day-number';
           dayNumDiv.textContent = date;
           cell.appendChild(dayNumDiv);
 
-          // Citas/eventos de ese día
           const eventos = citasPorDia[dateKey] || [];
           if (eventos.length) {
             const eventsDiv = document.createElement('div');
@@ -106,7 +118,6 @@ document.addEventListener("DOMContentLoaded", function() {
             cell.classList.add('calendar-today');
           }
 
-          // === SOLO muestra las citas del día, NO abre modal de nueva cita ===
           cell.onclick = function() {
             window.mostrarCitasDelDia(cell.dataset.date);
           };
@@ -119,7 +130,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   }
 
-  // Navegación de meses
   if (prevMonthBtn) prevMonthBtn.onclick = function() {
     currentMonth--;
     if (currentMonth < 0) {
@@ -137,10 +147,8 @@ document.addEventListener("DOMContentLoaded", function() {
     cargarCitasPorDia(() => renderCalendar(currentMonth, currentYear));
   };
 
-  // Inicial: cargar citas y renderizar
   cargarCitasPorDia(() => renderCalendar(currentMonth, currentYear));
 
-  // Botón + Nueva Cita (Paciente)
   if (nuevaCitaBtn) {
     nuevaCitaBtn.onclick = function() {
       if (window.abrirModalCitaPaciente) {
@@ -165,7 +173,6 @@ document.addEventListener("DOMContentLoaded", function() {
     };
   }
 
-  // NUEVO: Botón + Nueva Cita Profesional 
   if (nuevaCitaProfesionalBtn && window.abrirModalNuevaCitaProfesional) {
     nuevaCitaProfesionalBtn.onclick = function() {
       window.abrirModalNuevaCitaProfesional();
@@ -179,7 +186,6 @@ document.addEventListener("DOMContentLoaded", function() {
     };
   }
 
-  // ==================== CITAS DEL DÍA ====================
   function mostrarCitasDelDia(fecha) {
     const appointmentsList = document.getElementById('appointments-list');
     if (!appointmentsList) return;
@@ -223,9 +229,13 @@ document.addEventListener("DOMContentLoaded", function() {
             <div class="appointment-status">
               <span class="status-badge ${cita.estado || "agendada"}">${cita.estado || "Agendada"}</span>
             </div>
-            <button class="btn btn-danger btn-sm" onclick="eliminarCita('${cita.id}', '${fecha}')">
-                <i class="fas fa-trash"></i> Eliminar
-            </button>
+            ${
+              profesionActual && profesionActual !== 'asistente_social'
+                ? `<button class="btn btn-danger btn-sm" onclick="eliminarCita('${cita.id}', '${fecha}')">
+                    <i class="fas fa-trash"></i> Eliminar
+                  </button>`
+                : ''
+            }
           `;
           appointmentsList.appendChild(div);
         });
@@ -237,12 +247,10 @@ document.addEventListener("DOMContentLoaded", function() {
       });
   }
 
-  // Mostrar citas del día actual al cargar la página
   const hoy = new Date().toISOString().slice(0, 10);
   mostrarCitasDelDia(hoy);
   window.mostrarCitasDelDia = mostrarCitasDelDia;
 
-  // ====== FUNCIÓN PARA ELIMINAR CITAS DEL DÍA ======
   window.eliminarCita = function(citaId, fecha) {
       if (!confirm("¿Seguro que deseas eliminar la cita?")) return;
       var db = window.getFirestore ? window.getFirestore() : firebase.firestore();
