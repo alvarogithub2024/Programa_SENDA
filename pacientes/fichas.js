@@ -1,19 +1,18 @@
 // PACIENTES/FICHAS.JS
-// Sincronización y visualización de pacientes en la pestaña Pacientes
-// Incluye modal para ficha, mostrando atenciones (observaciones) del paciente
+// Sincroniza pacientes desde la colección 'citas' para mostrarlos en la pestaña Pacientes
 
 (function() {
     let pacientesTabData = [];
     let pacientesCitas = [];
     let miCesfam = null;
 
-    // Utilidades para acceso a elementos UI
+    // Elementos UI
     function getGrid() { return document.getElementById('patients-grid'); }
     function getSearchInput() { return document.getElementById('search-pacientes-rut'); }
     function getBuscarBtn() { return document.getElementById('buscar-paciente-btn'); }
     function getActualizarBtn() { return document.getElementById('actualizar-pacientes-btn'); }
 
-    // Si no existe el botón de actualizar, créalo y agrégalo al header de la sección
+    // Crea el botón Actualizar si no existe
     function crearBotonActualizarSiNoExiste() {
         let actualizarBtn = getActualizarBtn();
         if (!actualizarBtn) {
@@ -39,7 +38,7 @@
         });
     }
 
-    // Carga todos los pacientes desde las citas del CESFAM actual
+    // Extrae pacientes únicos desde la colección 'citas' del CESFAM actual
     async function cargarPacientesDesdeCitas() {
         const db = window.getFirestore();
         if (!miCesfam) return [];
@@ -47,6 +46,7 @@
         const pacientesMap = {};
         snapshot.forEach(doc => {
             const cita = doc.data();
+            // Asegúrate que el campo pacienteRut existe en cada cita
             const rut = cita.pacienteRut || cita.rut || cita.rutPaciente || '';
             if (!rut) return;
             if (!pacientesMap[rut]) {
@@ -65,7 +65,7 @@
         return pacientesCitas;
     }
 
-    // Sincroniza pacientes: agrega los que faltan en la colección "pacientes"
+    // Sincroniza pacientes: agrega los que faltan a la colección 'pacientes'
     async function sincronizarPacientesConColeccion() {
         const db = window.getFirestore();
         for (let paciente of pacientesCitas) {
@@ -80,7 +80,7 @@
         }
     }
 
-    // Muestra la lista de pacientes en el grid
+    // Renderiza la lista de pacientes en el grid
     function renderPacientesGrid(pacientes) {
         const grid = getGrid();
         if (!grid) {
@@ -118,7 +118,7 @@
         });
     }
 
-    // MODAL FICHA PACIENTE: abre modal y carga atenciones del paciente
+    // Modal ficha paciente
     window.verFichaPacienteSenda = function(rut) {
         const db = window.getFirestore();
         const rutLimpio = rut.replace(/[.\-]/g, "").toUpperCase();
@@ -154,7 +154,6 @@
         cargarObservacionesAtencionPorRut(paciente.rut);
     }
 
-    // Consulta a la colección atenciones usando pacienteRut
     function cargarObservacionesAtencionPorRut(rutPaciente) {
         const cont = document.getElementById('observaciones-profesional');
         if (!cont) return;
@@ -168,7 +167,6 @@
                     html = '<ul>';
                     snapshot.forEach(doc => {
                         const a = doc.data();
-                        // fechaRegistro puede ser string o Timestamp
                         let fechaTexto = '';
                         if (a.fechaRegistro) {
                             if (typeof a.fechaRegistro === 'string') {
@@ -286,4 +284,3 @@
     };
 
 })();
-  
