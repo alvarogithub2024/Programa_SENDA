@@ -515,65 +515,118 @@ Buscar
 </div>
 </div>
 
-  <!-- Modal Ver Detalles -->
-<div class="modal-overlay" id="modal-responder" style="display:none;">
+<!-- Modal Editar Solicitud -->
+<div class="modal-overlay" id="modal-editar" style="display:none;">
   <div class="modal-content">
-    <span class="close" onclick="closeModal('modal-responder')">&times;</span>
-    <h3>Responder solicitud de información</h3>
-    <p><b>Nombre:</b> <span id="modal-responder-nombre"></span></p> <!-- AGREGA ESTA LINEA -->
-    <input type="hidden" id="modal-responder-email">
-    <input type="hidden" id="modal-responder-id">
-    <label>Asunto:</label>
-    <input type="text" id="modal-responder-asunto" value="Respuesta a su solicitud de información">
-    <label>Mensaje:</label>
-    <textarea id="modal-responder-mensaje" rows="5"></textarea>
-    <button onclick="enviarCorreoSenda()" class="btn btn-success">Enviar correo</button>
-  </div>
-</div>
-
-<!-- Modal Editar -->
-<div class="modal-overlay" id="modal-detalle" style="display:none;">
-  <div class="modal-content">
-    <span class="close" onclick="cerrarModalDetalle()">&times;</span>
-    <h3>Detalles del paciente</h3>
-    <p><b>Nombre:</b> <span id="modal-detalle-nombre"></span></p>
-    <p><b>RUT:</b> <span id="modal-detalle-rut"></span></p>
-    <p><b>Teléfono:</b> <span id="modal-detalle-telefono"></span></p>
-    <p><b>Email:</b> <span id="modal-detalle-email"></span></p>
-    <p><b>Motivo de atención:</b> <span id="modal-detalle-motivo"></span></p>
-    <p><b>CESFAM:</b> <span id="modal-detalle-cesfam"></span></p>
-    <p><b>Prioridad:</b> <span id="modal-detalle-prioridad"></span></p>
-    <p><b>Estado:</b> <span id="modal-detalle-estado"></span></p>
-    <p><b>Fecha:</b> <span id="modal-detalle-fecha"></span></p>
-    <p><b>Sustancias:</b> <span id="modal-detalle-sustancias"></span></p>
+    <span class="close" onclick="closeModal('modal-editar')">&times;</span>
+    <h2>Editar solicitud</h2>
+    <form class="modal-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="modal-editar-nombre">Nombre:</label>
+          <input type="text" id="modal-editar-nombre">
+        </div>
+        <div class="form-group">
+          <label for="modal-editar-rut">RUT:</label>
+          <input type="text" id="modal-editar-rut">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="modal-editar-telefono">Teléfono:</label>
+          <input type="text" id="modal-editar-telefono">
+        </div>
+        <div class="form-group">
+          <label for="modal-editar-cita">Cita agendada:</label>
+          <input type="text" id="modal-editar-cita">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" onclick="guardarEdicionSolicitud()" class="btn btn-primary">Guardar cambios</button>
+      </div>
+      <input type="hidden" id="modal-editar-id">
+    </form>
   </div>
 </div>
 
 <!-- Modal Agendar Cita -->
 <div class="modal-overlay" id="modal-cita" style="display:none;">
-    <div class="modal-content">
-        <span class="close" onclick="closeModal('modal-cita')">&times;</span>
-        <h3>Agendar cita</h3>
-        <input type="hidden" id="modal-cita-id">
-        <p><b>Nombre:</b> <span id="modal-cita-nombre"></span></p>
-        <p><b>RUT:</b> <span id="modal-cita-rut"></span></p>
-        <label>Fecha:</label> <input type="date" id="modal-cita-fecha">
-        <label>Hora:</label> <input type="time" id="modal-cita-hora">
-        <button onclick="guardarCita()" class="btn btn-success">Agendar</button>
-    </div>
+  <div class="modal-content">
+    <span class="close" onclick="closeModal('modal-cita')">&times;</span>
+    <h2>Agendar cita</h2>
+    <form class="modal-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label><b>Nombre:</b></label>
+          <span id="modal-cita-nombre"></span>
+        </div>
+        <div class="form-group">
+          <label><b>RUT:</b></label>
+          <span id="modal-cita-rut"></span>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="modal-cita-fecha">Fecha:</label>
+          <input type="date" id="modal-cita-fecha">
+        </div>
+        <div class="form-group">
+          <label for="modal-cita-hora">Hora:</label>
+          <input type="time" id="modal-cita-hora">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" onclick="guardarCita()" class="btn btn-primary">Agendar</button>
+      </div>
+      <input type="hidden" id="modal-cita-id">
+    </form>
+  </div>
 </div>
 
-<!-- Modal Responder -->
+<!-- Modal Responder Solicitud -->
 <div class="modal-overlay" id="modal-responder" style="display:none;">
   <div class="modal-content">
     <span class="close" onclick="closeModal('modal-responder')">&times;</span>
-    <h3>Responder solicitud de información</h3>
-    <input type="hidden" id="modal-responder-email">
-    <label>Asunto:</label>
-    <input type="text" id="modal-responder-asunto" value="Respuesta a su solicitud de información">
-    <label>Mensaje:</label>
-    <textarea id="modal-responder-mensaje" rows="5"></textarea>
-    <button onclick="enviarCorreoSenda()" class="btn btn-success">Enviar correo</button>
+    <h2>Responder solicitud de información</h2>
+    <form class="modal-form">
+      <div class="form-group">
+        <label><b>Nombre:</b></label>
+        <span id="modal-responder-nombre"></span>
+      </div>
+      <div class="form-group">
+        <label for="modal-responder-asunto">Asunto:</label>
+        <input type="text" id="modal-responder-asunto" value="Respuesta a su solicitud de información">
+      </div>
+      <div class="form-group">
+        <label for="modal-responder-mensaje">Mensaje:</label>
+        <textarea id="modal-responder-mensaje" rows="5"></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="button" onclick="enviarCorreoSenda()" class="btn btn-primary">Enviar correo</button>
+      </div>
+      <input type="hidden" id="modal-responder-email">
+      <input type="hidden" id="modal-responder-id">
+    </form>
+  </div>
+</div>
+
+<!-- Modal Detalles del Paciente -->
+<div class="modal-overlay" id="modal-detalle" style="display:none;">
+  <div class="modal-content">
+    <span class="close" onclick="cerrarModalDetalle()">&times;</span>
+    <h2>Detalles del paciente</h2>
+    <div class="modal-details">
+      <p><b>Nombre:</b> <span id="modal-detalle-nombre"></span></p>
+      <p><b>RUT:</b> <span id="modal-detalle-rut"></span></p>
+      <p><b>Teléfono:</b> <span id="modal-detalle-telefono"></span></p>
+      <p><b>Email:</b> <span id="modal-detalle-email"></span></p>
+      <p><b>Motivo de atención:</b> <span id="modal-detalle-motivo"></span></p>
+      <p><b>CESFAM:</b> <span id="modal-detalle-cesfam"></span></p>
+      <p><b>Prioridad:</b> <span id="modal-detalle-prioridad"></span></p>
+      <p><b>Estado:</b> <span id="modal-detalle-estado"></span></p>
+      <p><b>Fecha:</b> <span id="modal-detalle-fecha"></span></p>
+      <p><b>Sustancias:</b> <span id="modal-detalle-sustancias"></span></p>
+    </div>
   </div>
 </div>
   
