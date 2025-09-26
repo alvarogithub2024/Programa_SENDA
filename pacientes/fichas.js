@@ -1,26 +1,17 @@
 // PACIENTES/FICHAS.JS
-// Gestión de pacientes en la pestaña Pacientes: sincroniza pacientes desde citas y muestra/busca/actualiza
-
 (function() {
     let pacientesTabData = [];
     let pacientesCitas = [];
     let miCesfam = null;
 
-    // Elementos UI
-    function getGrid() {
-        return document.getElementById('patients-grid');
-    }
-    function getSearchInput() {
-        return document.getElementById('search-pacientes-rut');
-    }
-    function getBuscarBtn() {
-        return document.getElementById('buscar-paciente-btn');
-    }
-    function getActualizarBtn() {
-        return document.getElementById('actualizar-pacientes-btn');
-    }
+    function getGrid() { return document.getElementById('patients-grid'); }
+    function getSearchInput() { return document.getElementById('search-pacientes-rut'); }
+    function getBuscarBtn() { return document.getElementById('buscar-paciente-btn'); }
+    function getActualizarBtn() { return document.getElementById('actualizar-pacientes-btn'); }
+    function getFichaModal() { return document.getElementById('modal-ficha-paciente'); }
+    function getFichaModalBody() { return document.getElementById('modal-ficha-paciente-body'); }
 
-    // Si no existe el botón de actualizar, créalo y agrégalo al header de la sección
+    // Botón de actualizar si no existe
     function crearBotonActualizarSiNoExiste() {
         let actualizarBtn = getActualizarBtn();
         if (!actualizarBtn) {
@@ -35,7 +26,6 @@
         }
     }
 
-    // Obtiene el CESFAM actual del profesional logueado
     function obtenerCesfamActual(callback) {
         const user = firebase.auth().currentUser;
         if (!user) return callback(null);
@@ -46,7 +36,6 @@
         });
     }
 
-    // Carga todos los pacientes desde las citas del CESFAM actual
     async function cargarPacientesDesdeCitas() {
         const db = window.getFirestore();
         if (!miCesfam) return [];
@@ -72,7 +61,6 @@
         return pacientesCitas;
     }
 
-    // Sincroniza pacientes: agrega los que faltan en la colección "pacientes"
     async function sincronizarPacientesConColeccion() {
         const db = window.getFirestore();
         for (let paciente of pacientesCitas) {
@@ -87,7 +75,6 @@
         }
     }
 
-    // Muestra la lista de pacientes en el grid
     function renderPacientesGrid(pacientes) {
         const grid = getGrid();
         if (!grid) {
@@ -116,7 +103,6 @@
         });
     }
 
-    // Busca pacientes usando el input/texto
     function buscarPacientesPorTexto(texto) {
         window.buscarPacientesPorTexto(texto, function(resultados) {
             const filtrados = resultados.filter(p => p.cesfam === miCesfam);
@@ -125,23 +111,82 @@
         });
     }
 
-    // Muestra la ficha al hacer clic
+    // MODAL FICHA PACIENTE
     window.verFichaPacienteSenda = function(rut) {
         const db = window.getFirestore();
         const rutLimpio = rut.replace(/[.\-]/g, "").toUpperCase();
         db.collection('pacientes').where('rut', '==', rutLimpio).limit(1).get().then(snapshot => {
             if (!snapshot.empty) {
                 const data = Object.assign({ id: snapshot.docs[0].id }, snapshot.docs[0].data());
-                window.obtenerFichaPaciente && window.obtenerFichaPaciente(data.id, function(datos) {
-                    alert(`Ficha de ${datos.nombre}\nRUT: ${datos.rut}\nEdad: ${datos.edad}\nTeléfono: ${datos.telefono}\nCESFAM: ${datos.cesfam}`);
-                });
+                mostrarModalFichaPaciente(data);
             } else {
                 window.showNotification && window.showNotification('Paciente no encontrado', 'warning');
             }
         });
     };
 
-    // Refresca todo: recarga, sincroniza, muestra todo
+    // Muestra el modal con la ficha y observaciones del profesional
+    function mostrarModalFichaPaciente(paciente) {
+        const modal = getFichaModal();
+        const modalBody = getFichaModalBody();
+        if (!modal || !modalBody) return;
+
+        // Info principal
+        let html = `
+            <h3>${paciente.nombre || ''}</h3>
+            <p><b>RUT:</b> ${paciente.rut || ''}</p>
+            <p><b>Edad:</b> ${paciente.edad || ''}</p>
+            <p><b>Teléfono:</b> ${paciente.telefono || ''}</p>
+            <p><b>Email:</b> ${paciente.email || ''}</p>
+            <p><b>Dirección:</b> ${paciente.direccion || ''}</p>
+            <p><b>CESFAM:</b> ${paciente.cesfam || ''}</p>
+            <hr>
+            <div id="observaciones-profesional"><b>Observaciones y atención profesional:</b><div class="loading-message">Cargando...</div></div>
+        `;
+        modalBody.innerHTML = html;
+        modal.style.display = 'flex';
+
+        // Cargar observaciones/atenciones
+        cargarObservacionesAtencion(paciente.id);
+    }
+
+    // Cargar las observaciones/agregado del profesional (puedes mejorar el query según tu modelo)
+    function cargarObservacionesAtencion(pacienteId) {
+        const cont = document.getElementById('observaciones-profesional');
+        if (!cont) return;
+        const db = window.getFirestore();
+        // Ejemplo: buscar atenciones del paciente
+        db.collection('atenciones').where('pacienteId', '==', pacienteId).orderBy('fechaRegistro', 'desc').get()
+            .then(snapshot => {
+                let html = '';
+                if (snapshot.empty) {
+                    html = "<p>No hay atenciones registradas.</p>";
+                } else {
+                    html = '<ul>';
+                    snapshot.forEach(doc => {
+                        const a = doc.data();
+                        html += `<li>
+                            <b>${a.fechaRegistro ? new Date(a.fechaRegistro.seconds ? a.fechaRegistro.seconds*1000 : a.fechaRegistro).toLocaleDateString('es-CL') : ''}</b> -
+                            <b>${a.tipoAtencion || 'Atención'}</b><br>
+                            <span>${a.descripcion || ''}</span>
+                            <div><small>Profesional: ${a.profesional || ''}</small></div>
+                        </li>`;
+                    });
+                    html += '</ul>';
+                }
+                cont.innerHTML = `<b>Observaciones y atención profesional:</b> ${html}`;
+            })
+            .catch(error => {
+                cont.innerHTML = "<p>Error cargando observaciones.</p>";
+            });
+    }
+
+    // Cerrar modal ficha paciente (agrega al HTML el botón de cerrar que llama esta función)
+    window.cerrarModalFichaPaciente = function() {
+        const modal = getFichaModal();
+        if (modal) modal.style.display = 'none';
+    };
+
     async function refrescarPacientesTab() {
         const grid = getGrid();
         if (!grid) {
@@ -164,10 +209,8 @@
         });
     }
 
-    // Inicialización al cargar pestaña
     window.loadPatients = refrescarPacientesTab;
 
-    // Inicializa búsqueda y actualización
     function inicializarEventos() {
         crearBotonActualizarSiNoExiste();
         const buscarBtn = getBuscarBtn();
@@ -193,7 +236,6 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         inicializarEventos();
-        // Si la pestaña pacientes está activa al entrar, refresca
         if (document.getElementById('pacientes-tab')?.classList.contains('active')) {
             refrescarPacientesTab();
         }
