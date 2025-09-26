@@ -12,10 +12,11 @@
   --text-dark: #222b45;
   --text-light: #6b7280;
   --border-color: #e3e9f3;
-  --border-radius: 10px;
-  --shadow-md: 0 4px 14px rgba(37,99,235,0.09);
-  --shadow-sm: 0 2px 6px rgba(37,99,235,0.06);
-  --transition: 0.19s cubic-bezier(.46,.03,.52,.96);
+  --border-radius: 14px;
+  --shadow-md: 0 4px 18px rgba(37,99,235,0.10);
+  --shadow-sm: 0 2px 9px rgba(37,99,235,0.07);
+  --transition: 0.2s cubic-bezier(.46,.03,.52,.96);
+
 }
 
 body {
