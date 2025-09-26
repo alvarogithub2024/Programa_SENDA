@@ -717,3 +717,4 @@ window.cerrarModalDetalle = cerrarModalDetalle;
 window.abrirModalResponder = abrirModalResponder;
 window.cerrarModalResponder = cerrarModalResponder;
 window.guardarEdicionSolicitud = guardarEdicionSolicitud;
+}
