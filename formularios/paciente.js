@@ -1,3 +1,5 @@
+// FORMULARIOS/PACIENTE.JS - CÓDIGO COMPLETO CORREGIDO
+
 function setupFormularioPaciente() {
     const form = document.getElementById("patient-form");
     if (!form) return;
@@ -49,6 +51,7 @@ function setupFormularioPaciente() {
         if (!cesfam) return window.showNotification("Selecciona un CESFAM","warning");
         mostrarPaso(1);
     };
+
     form.querySelector("#next-step-2").onclick = function() {
         const nombre = form.querySelector("#patient-name").value.trim();
         const apellidos = form.querySelector("#patient-lastname").value.trim();
@@ -61,6 +64,7 @@ function setupFormularioPaciente() {
         if (!validarTelefonoChileno(tel)) return window.showNotification("Teléfono inválido","warning");
         mostrarPaso(2);
     };
+
     form.querySelector("#next-step-3").onclick = function() {
         const su = form.querySelectorAll('input[name="sustancias"]:checked');
         const urg = form.querySelector('input[name="urgencia"]:checked');
@@ -70,6 +74,7 @@ function setupFormularioPaciente() {
         if (!trat) return window.showNotification("Indica si hubo tratamiento previo","warning");
         mostrarPaso(3);
     };
+
     ["#prev-step-2","#prev-step-3","#prev-step-4"].forEach((sel,idx) => {
         const btn = form.querySelector(sel);
         if (btn) btn.onclick = ()=>mostrarPaso(idx);
@@ -86,7 +91,7 @@ function setupFormularioPaciente() {
         });
     });
 
-    // BOTÓN ENVIAR para solo información (guarda SOLO en solicitudes_informacion, con estado pendiente)
+    // BOTÓN ENVIAR para solo información
     const btnSoloInfo = form.querySelector("#enviar-solo-info");
     if (btnSoloInfo) {
         btnSoloInfo.onclick = function(e) {
@@ -99,7 +104,7 @@ function setupFormularioPaciente() {
                 email: email,
                 fecha: fechaChileISO()
             });
-        }
+        };
     }
 
     // Submit final (solo identificado)
@@ -128,17 +133,15 @@ function setupFormularioPaciente() {
             motivacion: form.querySelector("#motivacion-range").value,
             fecha: fechaChileISO()
         };
-  if (!datos.nombre || !datos.apellidos || !datos.rut || !datos.telefono) {
-    return window.showNotification("Completa todos los campos obligatorios", "warning");
-}
-     if (!window.validarRut(datos.rut)) {
-            return window.showNotification("RUT inválido", "warning");
+        if (!datos.nombre || !datos.apellidos || !datos.rut || !datos.telefono) {
+            return window.showNotification("Completa todos los campos obligatorios", "warning");
         }
-        if (!window.validarTelefono(datos.telefono)) {
-            return window.showNotification("Teléfono inválido", "warning")
+        if (!window.validarRut || !window.validarRut(datos.rut)) return window.showNotification("RUT inválido", "warning");
+        if (!validarTelefonoChileno(datos.telefono)) return window.showNotification("Teléfono inválido", "warning");
+        guardarSolicitudAyuda(datos);
     };
 
-    // Actualiza valor motivación
+    // Actualizar valor motivación
     const motivacionRange = form.querySelector("#motivacion-range");
     const motivacionValue = form.querySelector("#motivacion-value");
     if (motivacionRange && motivacionValue) {
@@ -153,7 +156,7 @@ function fechaChileISO() {
     return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" })).toISOString();
 }
 
-// GUARDAR SOLICITUD AYUDA (NUEVO: guarda el id en el documento y fecha Chile)
+// GUARDAR SOLICITUD AYUDA
 function guardarSolicitudAyuda(datos) {
     const db = window.getFirestore ? window.getFirestore() : null;
     if (!db) {
@@ -195,7 +198,7 @@ function guardarSolicitudInformacion(datos) {
         });
 }
 
-// Validación RUT robusta (ya está arriba)
+// Validación RUT (copia de seguridad si no está disponible globalmente)
 function validarRut(rut) {
     if (!rut) return false;
     rut = rut.replace(/[^0-9kK]/g, '').toUpperCase();
@@ -212,24 +215,45 @@ function validarRut(rut) {
     dvEsperado = dvEsperado === 11 ? '0' : dvEsperado === 10 ? 'K' : dvEsperado.toString();
     return dv === dvEsperado;
 }
-window.validarRut = window.validarRut || validarRut;
 
-// Validación de teléfono chileno robusta (9 dígitos, empieza con 9)
+// Usar validación global si está disponible, sino usar la local
+if (!window.validarRut) {
+    window.validarRut = validarRut;
+}
+
+// Validación de teléfono chileno
 function limpiarTelefonoChileno(tel) {
     tel = tel.replace(/\D/g, '');
     if (tel.startsWith("56")) tel = tel.slice(2);
     if (tel.length === 11 && tel.startsWith("569")) tel = tel.slice(2);
     return tel;
 }
+
 function validarTelefonoChileno(telefono) {
     telefono = limpiarTelefonoChileno(telefono);
     return telefono.length === 9 && telefono[0] === "9";
 }
-window.validarTelefono = validarTelefonoChileno;
 
+// Usar validación global si está disponible, sino usar la local
+if (!window.validarTelefono) {
+    window.validarTelefono = validarTelefonoChileno;
+}
+
+// Validación de email (copia de seguridad)
+function validarEmail(email) {
+    if (!email) return false;
+    return /^[\w\.\-]+@([\w\-]+\.)+[a-zA-Z]{2,7}$/.test(email);
+}
+
+// Usar validación global si está disponible, sino usar la local
+if (!window.validarEmail) {
+    window.validarEmail = validarEmail;
+}
+
+// Exportar funciones globalmente
 window.setupFormularioPaciente = setupFormularioPaciente;
 window.guardarSolicitudAyuda = guardarSolicitudAyuda;
 window.guardarSolicitudInformacion = guardarSolicitudInformacion;
 
+// Inicializar cuando el DOM esté listo
 document.addEventListener("DOMContentLoaded", setupFormularioPaciente);
-window.setupFormularioPaciente = setupFormularioPaciente;
