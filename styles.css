@@ -4014,3 +4014,67 @@ input:invalid {
     padding: 18px 8px;
   }
 }
+/* Centrado flex para TODOS los modales */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 999;
+  left: 0; top: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.45);
+  justify-content: center;
+  align-items: center;    /* CENTRADO VERTICAL */
+  overflow: auto;
+}
+.modal.show {
+  display: flex !important;
+}
+
+/* Modal General */
+.modal-content {
+  background: #fff;
+  border-radius: 10px;
+  margin: auto;
+  padding: 32px 32px 24px 32px;
+  max-width: 400px;
+  min-width: 320px;
+  box-shadow: 0 8px 32px rgba(50,50,70,0.18);
+  position: relative;
+}
+
+/* Modal Detalles con fondo azul claro y borde azul intenso */
+#modal-detalle .modal-content {
+  background: #e0e7ff;
+  border: 2px solid #2563eb;
+  box-shadow: 0 8px 32px rgba(37,99,235,0.13);
+}
+
+/* Título del modal */
+#modal-detalle h3 {
+  color: #2563eb;
+  font-weight: 700;
+  background: none;
+  text-align: center;
+  margin-top: 0;
+}
+
+/* Cierra modal */
+.close {
+  position: absolute;
+  right: 16px;
+  top: 12px;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #888;
+  transition: color 0.2s;
+}
+.close:hover {
+  color: #dc2626;
+}
+
+/* Responsive modal */
+@media (max-width: 600px) {
+  .modal-content {
+    max-width: 96vw;
+    padding: 18px 8px;
+  }
+}
