@@ -94,12 +94,34 @@ function guardarCitaPaciente(datosCita, callback) {
   const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
   const datos = Object.assign({}, datosCita);
   datos.fechaCreacion = datos.fechaCreacion || new Date().toISOString();
-  // ASEGURAR CESFAM EN EL OBJETO DE LA CITA
-  if (!datos.cesfam) datos.cesfam = miCesfam;
 
   db.collection("citas").add(datos)
     .then(function(docRef) {
       window.showNotification && window.showNotification("Cita agendada correctamente", "success");
+      // --- CREAR O ACTUALIZAR PACIENTE AUTOMÁTICAMENTE ---
+      if (datos.pacienteRut && datos.pacienteNombre) {
+        const rutLimpio = datos.pacienteRut.replace(/[.\-]/g, "").toUpperCase();
+        db.collection("pacientes").where("rut", "==", rutLimpio).limit(1).get()
+          .then(function(snapshot) {
+            const pacienteData = {
+              nombre: datos.pacienteNombre,
+              rut: rutLimpio,
+              cesfam: datos.cesfam,
+              telefono: datos.telefono || "",
+              email: datos.email || "",
+              direccion: datos.direccion || "",
+              fechaRegistro: datos.fechaCreacion || new Date().toISOString(),
+            };
+            if (!snapshot.empty) {
+              // Actualiza paciente existente
+              const docId = snapshot.docs[0].id;
+              db.collection("pacientes").doc(docId).update(pacienteData);
+            } else {
+              // Crea nuevo paciente
+              db.collection("pacientes").add(pacienteData);
+            }
+          });
+      }
       if (typeof callback === "function") callback(docRef.id);
     })
     .catch(function(error) {
@@ -142,7 +164,7 @@ function abrirModalCitaPaciente() {
         form.onsubmit = function(e) {
           e.preventDefault();
           const datos = {
-            cesfam: miCesfam, // ASEGURA CESFAM EN LA CITA
+            cesfam: miCesfam,
             estado: "agendada",
             fechaCreacion: new Date().toISOString(),
             observaciones: document.getElementById('pac-cita-observaciones')?.value || "",
@@ -257,22 +279,22 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
     llenarSelectProfesionalesAgendarCita();
     autocompletarNombreProfesionalAgendarCita();
 
-    // Asigna los datos solo si el elemento existe
-    var inputId = document.getElementById('modal-cita-id');
-    if (inputId) inputId.value = solicitudId;
+  // Asigna los datos solo si el elemento existe
+var inputId = document.getElementById('modal-cita-id');
+if (inputId) inputId.value = solicitudId;
 
-    var inputIdProf = document.getElementById('modal-cita-id-prof');
-    if (inputIdProf) inputIdProf.value = solicitudId;
+var inputIdProf = document.getElementById('modal-cita-id-prof');
+if (inputIdProf) inputIdProf.value = solicitudId;
 
-    var nombreSpan = document.getElementById('modal-cita-nombre');
-    if (nombreSpan) nombreSpan.textContent = nombre;
-    var nombreSpanProf = document.getElementById('modal-cita-nombre-prof');
-    if (nombreSpanProf) nombreSpanProf.textContent = nombre;
+var nombreSpan = document.getElementById('modal-cita-nombre');
+if (nombreSpan) nombreSpan.textContent = nombre;
+var nombreSpanProf = document.getElementById('modal-cita-nombre-prof');
+if (nombreSpanProf) nombreSpanProf.textContent = nombre;
 
-    var rutSpan = document.getElementById('modal-cita-rut');
-    if (rutSpan) rutSpan.textContent = rut;
-    var rutSpanProf = document.getElementById('modal-cita-rut-prof');
-    if (rutSpanProf) rutSpanProf.textContent = rut;
+var rutSpan = document.getElementById('modal-cita-rut');
+if (rutSpan) rutSpan.textContent = rut;
+var rutSpanProf = document.getElementById('modal-cita-rut-prof');
+if (rutSpanProf) rutSpanProf.textContent = rut;
 
     // Listeners para selects en el modal de agendar cita
     const selProf = document.getElementById('modal-cita-profession');
@@ -302,8 +324,6 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
           const profesionalNombre = document.getElementById('modal-cita-profesional-nombre').value;
           const fecha = document.getElementById('modal-cita-fecha').value;
           const hora = document.getElementById('modal-cita-hora').value;
-          // ASEGURA CESFAM EN LA CITA - USAR miCesfamAgendar
-          const cesfam = miCesfamAgendar;
 
           if (!nombre || !rut || !profesion || !profesional || !fecha || !hora) {
             window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
@@ -320,7 +340,6 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
             profesionalNombre: profesionalNombre,
             fecha: fecha,
             hora: hora,
-            cesfam: cesfam, // AGREGADO CESFAM A LA CITA
             creado: firebase.firestore.FieldValue.serverTimestamp()
           })
           .then(function(docRef) {
