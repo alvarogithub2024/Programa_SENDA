@@ -94,6 +94,8 @@ function guardarCitaPaciente(datosCita, callback) {
   const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
   const datos = Object.assign({}, datosCita);
   datos.fechaCreacion = datos.fechaCreacion || new Date().toISOString();
+  // ASEGURAR CESFAM EN EL OBJETO DE LA CITA
+  if (!datos.cesfam) datos.cesfam = miCesfam;
 
   db.collection("citas").add(datos)
     .then(function(docRef) {
@@ -140,7 +142,7 @@ function abrirModalCitaPaciente() {
         form.onsubmit = function(e) {
           e.preventDefault();
           const datos = {
-            cesfam: miCesfam,
+            cesfam: miCesfam, // ASEGURA CESFAM EN LA CITA
             estado: "agendada",
             fechaCreacion: new Date().toISOString(),
             observaciones: document.getElementById('pac-cita-observaciones')?.value || "",
@@ -255,22 +257,22 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
     llenarSelectProfesionalesAgendarCita();
     autocompletarNombreProfesionalAgendarCita();
 
-  // Asigna los datos solo si el elemento existe
-var inputId = document.getElementById('modal-cita-id');
-if (inputId) inputId.value = solicitudId;
+    // Asigna los datos solo si el elemento existe
+    var inputId = document.getElementById('modal-cita-id');
+    if (inputId) inputId.value = solicitudId;
 
-var inputIdProf = document.getElementById('modal-cita-id-prof');
-if (inputIdProf) inputIdProf.value = solicitudId;
+    var inputIdProf = document.getElementById('modal-cita-id-prof');
+    if (inputIdProf) inputIdProf.value = solicitudId;
 
-var nombreSpan = document.getElementById('modal-cita-nombre');
-if (nombreSpan) nombreSpan.textContent = nombre;
-var nombreSpanProf = document.getElementById('modal-cita-nombre-prof');
-if (nombreSpanProf) nombreSpanProf.textContent = nombre;
+    var nombreSpan = document.getElementById('modal-cita-nombre');
+    if (nombreSpan) nombreSpan.textContent = nombre;
+    var nombreSpanProf = document.getElementById('modal-cita-nombre-prof');
+    if (nombreSpanProf) nombreSpanProf.textContent = nombre;
 
-var rutSpan = document.getElementById('modal-cita-rut');
-if (rutSpan) rutSpan.textContent = rut;
-var rutSpanProf = document.getElementById('modal-cita-rut-prof');
-if (rutSpanProf) rutSpanProf.textContent = rut;
+    var rutSpan = document.getElementById('modal-cita-rut');
+    if (rutSpan) rutSpan.textContent = rut;
+    var rutSpanProf = document.getElementById('modal-cita-rut-prof');
+    if (rutSpanProf) rutSpanProf.textContent = rut;
 
     // Listeners para selects en el modal de agendar cita
     const selProf = document.getElementById('modal-cita-profession');
@@ -300,6 +302,8 @@ if (rutSpanProf) rutSpanProf.textContent = rut;
           const profesionalNombre = document.getElementById('modal-cita-profesional-nombre').value;
           const fecha = document.getElementById('modal-cita-fecha').value;
           const hora = document.getElementById('modal-cita-hora').value;
+          // ASEGURA CESFAM EN LA CITA - USAR miCesfamAgendar
+          const cesfam = miCesfamAgendar;
 
           if (!nombre || !rut || !profesion || !profesional || !fecha || !hora) {
             window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
@@ -316,6 +320,7 @@ if (rutSpanProf) rutSpanProf.textContent = rut;
             profesionalNombre: profesionalNombre,
             fecha: fecha,
             hora: hora,
+            cesfam: cesfam, // AGREGADO CESFAM A LA CITA
             creado: firebase.firestore.FieldValue.serverTimestamp()
           })
           .then(function(docRef) {
