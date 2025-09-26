@@ -255,9 +255,22 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
     llenarSelectProfesionalesAgendarCita();
     autocompletarNombreProfesionalAgendarCita();
 
-    document.getElementById('modal-cita-id').value = solicitudId;
-    document.getElementById('modal-cita-nombre').textContent = nombre;
-    document.getElementById('modal-cita-rut').textContent = rut;
+  // Asigna los datos solo si el elemento existe
+var inputId = document.getElementById('modal-cita-id');
+if (inputId) inputId.value = solicitudId;
+
+var inputIdProf = document.getElementById('modal-cita-id-prof');
+if (inputIdProf) inputIdProf.value = solicitudId;
+
+var nombreSpan = document.getElementById('modal-cita-nombre');
+if (nombreSpan) nombreSpan.textContent = nombre;
+var nombreSpanProf = document.getElementById('modal-cita-nombre-prof');
+if (nombreSpanProf) nombreSpanProf.textContent = nombre;
+
+var rutSpan = document.getElementById('modal-cita-rut');
+if (rutSpan) rutSpan.textContent = rut;
+var rutSpanProf = document.getElementById('modal-cita-rut-prof');
+if (rutSpanProf) rutSpanProf.textContent = rut;
 
     // Listeners para selects en el modal de agendar cita
     const selProf = document.getElementById('modal-cita-profession');
