@@ -390,15 +390,21 @@ function guardarEdicionSolicitud() {
     });
 }
 
-// Agendar cita
+// Agendar cita (corregido: abre el modal profesional si corresponde)
 function agendarCitaSolicitud(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
-  document.getElementById('modal-cita-profession-prof')
-document.getElementById('modal-cita-profesional-prof')
-document.getElementById('modal-cita-nombre-prof')
-document.getElementById('modal-cita-rut-prof')
-document.getElementById('form-agendar-cita-profesional')
+    // Si quieres agendar cita como profesional:
+    if (window.abrirModalAgendarCitaProfesional) {
+        window.abrirModalAgendarCitaProfesional(solicitud.id, solicitud.nombre, solicitud.rut);
+    } else {
+        // Fallback al modal de paciente si el profesional no aplica
+        if (window.abrirModalAgendarCita) {
+            window.abrirModalAgendarCita(solicitud.id, solicitud.nombre, solicitud.rut);
+        } else {
+            window.showNotification && window.showNotification("No se puede abrir el modal de agendar cita.", "error");
+        }
+    }
 }
 function cerrarModalCita() { document.getElementById('modal-cita').style.display = 'none'; }
 function guardarCita() {
