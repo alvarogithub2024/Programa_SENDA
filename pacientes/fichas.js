@@ -530,5 +530,14 @@
         const modal = document.getElementById('modal-ficha-paciente');
         if (modal) modal.style.display = 'none';
     };
-
+function construirEntradaHistorial(docId, atencion, puedeEditar, profesional, rutPaciente) {
+    // ...
+    const clickable = puedeEditar ? `onclick="testClickHistorial('${docId}')"` : "";
+    // ...
+}
+window.testClickHistorial = function(docId) {
+    console.log("¡Click en atención! ID:", docId);
+    // Si quieres, también puedes llamar a abrirModalEditarAtencion con datos de test
+    // abrirModalEditarAtencion(docId, encodeURIComponent("Descripción de prueba"), "consulta", "RUTTEST");
+};
 })();
