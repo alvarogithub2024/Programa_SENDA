@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", function() {
   const prevMonthBtn = document.getElementById('prev-month');
   const nextMonthBtn = document.getElementById('next-month');
   const nuevaCitaBtn = document.getElementById('nueva-cita-btn');
+  const nuevaCitaProfesionalBtn = document.getElementById('nueva-cita-profesional-btn'); // NUEVO para profesionales
 
   let today = new Date();
   let currentMonth = today.getMonth();
@@ -86,7 +87,7 @@ document.addEventListener("DOMContentLoaded", function() {
             eventos.forEach(evt => {
               const evDiv = document.createElement('div');
               evDiv.className = 'calendar-event';
-              evDiv.textContent = evt.paciente || evt.pacienteNombre || "Sin nombre";
+              evDiv.textContent = evt.paciente || evt.pacienteNombre || evt.profesionalNombre || "Sin nombre";
               eventsDiv.appendChild(evDiv);
             });
             cell.appendChild(eventsDiv);
@@ -100,19 +101,19 @@ document.addEventListener("DOMContentLoaded", function() {
           ) {
             cell.classList.add('calendar-today');
           }
+
           cell.onclick = function() {
-            // Abre el modal de nueva cita de PACIENTE si existe la función, sino fallback genérico
+            // Decide según el tipo de cita que quieres abrir:
+            // Si tienes un selector de tipo de cita, úsalo aquí.
+            // Ejemplo simple: abre modal de paciente por defecto
             if (window.abrirModalCitaPaciente) {
               var fechaInput = document.getElementById('pac-cita-fecha');
               if (fechaInput) fechaInput.value = cell.dataset.date;
               window.abrirModalCitaPaciente();
-            } else {
-              showModal('modal-nueva-cita');
-              setTimeout(function() {
-                const fechaInput = document.getElementById('cita-fecha');
-                if (fechaInput) fechaInput.value = cell.dataset.date;
-              }, 100);
             }
+            // Si quieres abrir el de profesionales, puedes agregar una condición:
+            // else if (window.abrirModalNuevaCitaProfesional) { ... }
+
             // Mostrar citas del día en el panel inferior
             mostrarCitasDelDia(cell.dataset.date);
           };
@@ -146,7 +147,7 @@ document.addEventListener("DOMContentLoaded", function() {
   // Inicial: cargar citas y renderizar
   cargarCitasPorDia(() => renderCalendar(currentMonth, currentYear));
 
-  // Botón + Nueva Cita (abre el modal PACIENTE seguro)
+  // Botón + Nueva Cita (Paciente)
   if (nuevaCitaBtn) {
     nuevaCitaBtn.onclick = function() {
       if (window.abrirModalCitaPaciente) {
@@ -171,60 +172,17 @@ document.addEventListener("DOMContentLoaded", function() {
     };
   }
 
-  // --- Función solo para el modal legacy de "modal-nueva-cita" ---
-  function cargarProfesionales() {
-    const select = document.getElementById('cita-profesional');
-    const nombreProf = document.getElementById('cita-profesional-nombre');
-    if (!select) return;
-    select.innerHTML = '<option value="">Selecciona profesional...</option>';
-    firebase.firestore().collection('profesionales').where('activo', '==', true).get().then(snapshot => {
-      snapshot.forEach(doc => {
-        let p = doc.data();
-        let opt = document.createElement('option');
-        opt.value = doc.id;
-        opt.textContent = `${p.nombre} ${p.apellidos}`;
-        opt.dataset.nombre = `${p.nombre} ${p.apellidos}`;
-        select.appendChild(opt);
-      });
-    });
-    select.onchange = function() {
-      let selected = select.options[select.selectedIndex];
-      if (nombreProf) nombreProf.value = selected.dataset.nombre || '';
-    };
-  }
-  if (document.getElementById('cita-profesional')) {
-    cargarProfesionales();
-  }
-
-  // --- SUBMIT para el modal legacy de "modal-nueva-cita" ---
-  var formNuevaCita = document.getElementById('form-nueva-cita');
-  if (formNuevaCita) {
-    formNuevaCita.onsubmit = function(e) {
-      e.preventDefault();
-      const paciente = document.getElementById('cita-paciente-nombre').value.trim();
-      const rut = document.getElementById('cita-paciente-rut').value.trim();
-      const profesionalID = document.getElementById('cita-profesional').value;
-      const profesionalNombre = document.getElementById('cita-profesional-nombre').value;
-      const fecha = document.getElementById('cita-fecha').value;
-      const hora = document.getElementById('cita-hora').value;
-
-      if (!paciente || !rut || !profesionalID || !profesionalNombre || !fecha || !hora) {
-        window.showNotification && window.showNotification("Completa todos los campos", "warning");
-        return;
-      }
-
-      // Guardar cita en Firebase
-      firebase.firestore().collection('citas').add({
-        paciente, rut, profesionalID, profesionalNombre, fecha, hora,
-        createdAt: new Date().toISOString()
-      }).then(() => {
-        window.showNotification && window.showNotification("Cita agendada correctamente", "success");
-        closeModal('modal-nueva-cita');
-        cargarCitasPorDia(() => renderCalendar(currentMonth, currentYear));
-        mostrarCitasDelDia(fecha);
-      }).catch(err => {
-        window.showNotification && window.showNotification("Error al agendar: " + err.message, "error");
-      });
+  // NUEVO: Botón + Nueva Cita Profesional 
+  if (nuevaCitaProfesionalBtn && window.abrirModalNuevaCitaProfesional) {
+    nuevaCitaProfesionalBtn.onclick = function() {
+      window.abrirModalNuevaCitaProfesional();
+      setTimeout(function() {
+        const fechaInput = document.getElementById('prof-cita-fecha');
+        if (fechaInput) {
+          const chileDate = chileNow();
+          fechaInput.value = chileDate.toISOString().slice(0, 10);
+        }
+      }, 100);
     };
   }
 
@@ -257,7 +215,7 @@ document.addEventListener("DOMContentLoaded", function() {
           div.innerHTML = `
             <div class="appointment-time">${cita.hora || ""}</div>
             <div class="appointment-details">
-              <div class="appointment-patient"><strong>${cita.pacienteNombre || cita.paciente || ""}</strong></div>
+              <div class="appointment-patient"><strong>${cita.pacienteNombre || cita.paciente || cita.nombre || ""}</strong></div>
               <div class="appointment-professional">${cita.profesionalNombre || ""}</div>
             </div>
             <div class="appointment-status">
