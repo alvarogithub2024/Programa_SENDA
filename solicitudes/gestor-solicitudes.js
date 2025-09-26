@@ -1,6 +1,6 @@
 /**
  * Gestor de Solicitudes - Muestra solicitudes de ingreso, reingresos y solicitudes de información.
- * Botones funcionales y modales integrados.
+ * Botones funcionales y modales integrados. Todas las funciones necesarias para evitar errores de referencia.
  */
 
 // Variables globales
@@ -130,6 +130,89 @@ function loadAllSolicitudes() {
             resolve();
         }
     });
+}
+
+function setupFilters() {
+    // Estado
+    fillSelectOptions('filtro-estado-solicitudes', ['todos', 'pendiente', 'en_proceso', 'agendada', 'completada'], {
+        todos: 'Todos los estados',
+        pendiente: 'Pendiente',
+        en_proceso: 'En proceso',
+        agendada: 'Agendada',
+        completada: 'Completada'
+    });
+    // Prioridad
+    fillSelectOptions('filtro-prioridad-solicitudes', ['todos', 'alta', 'media', 'baja'], {
+        todos: 'Todas las prioridades',
+        alta: 'Alta',
+        media: 'Media',
+        baja: 'Baja'
+    });
+    // CESFAM
+    fillSelectOptions('filtro-cesfam-solicitudes', ['todos', ...CESFAM_OPTIONS], {
+        todos: 'Todos los CESFAM'
+    });
+
+    // Listeners de cambio de filtro
+    const filters = [
+        { id: 'filtro-estado-solicitudes', prop: 'estado' },
+        { id: 'filtro-prioridad-solicitudes', prop: 'prioridad' },
+        { id: 'filtro-cesfam-solicitudes', prop: 'cesfam' },
+        { id: 'filtro-fecha-solicitudes', prop: 'fecha' }
+    ];
+    filters.forEach(filter => {
+        const element = document.getElementById(filter.id);
+        if (element) {
+            element.addEventListener('change', function(e) {
+                currentFilters[filter.prop] = e.target.value;
+                applyCurrentFilters();
+            });
+        }
+    });
+
+    // Filtro de búsqueda
+    const searchInput = document.getElementById('buscar-solicitudes');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            currentFilters.busqueda = e.target.value;
+            applyCurrentFilters();
+        });
+    }
+}
+
+function fillSelectOptions(id, options, labelMap = {}) {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = '';
+    options.forEach(opt => {
+        const o = document.createElement('option');
+        o.value = opt;
+        o.textContent = labelMap[opt] || (opt === 'todos' ? 'Todos' : opt.charAt(0).toUpperCase() + opt.slice(1));
+        sel.appendChild(o);
+    });
+}
+
+function setupEvents() {
+    // Botón de refresh
+    const refreshBtn = document.getElementById('refresh-solicitudes');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            resetFilters();
+            if (window.showNotification) {
+                window.showNotification('Filtros limpiados', 'info');
+            }
+        });
+    }
+    // Otros eventos (agrega más si lo necesitas)
+}
+
+function setupAutoRefresh() {
+    if (isAutoRefreshEnabled && !autoRefreshInterval) {
+        autoRefreshInterval = setInterval(() => {
+            console.log('🔄 Auto-actualizando solicitudes desde Firebase...');
+            loadAllSolicitudes().then(applyCurrentFilters);
+        }, 30000); // Cada 30 segundos
+    }
 }
 
 /**
