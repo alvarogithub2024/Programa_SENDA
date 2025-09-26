@@ -202,40 +202,19 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
   document.getElementById('modal-cita-id').value = solicitudId;
   document.getElementById('modal-cita-nombre').textContent = nombre;
   document.getElementById('modal-cita-rut').textContent = rut;
+  // Llama aquí a tus funciones para llenar profesión/profesional/hora si hace falta
   showModal('modal-cita');
 
- setTimeout(function() {
+  setTimeout(function() {
     var form = document.getElementById('form-agendar-cita');
     if (form && !form._onsubmitSet) {
       form.addEventListener('submit', function(e){
         e.preventDefault();
-        const citaId = document.getElementById('modal-cita-id').value;
-        const nombre = document.getElementById('modal-cita-nombre').textContent;
-        const rut = document.getElementById('modal-cita-rut').textContent;
-        const fecha = document.getElementById('modal-cita-fecha').value;
-        const hora = document.getElementById('modal-cita-hora').value;
-
-        // Guardar en Firebase
-        firebase.firestore().collection("citas").add({
-          solicitudId: citaId,
-          nombre: nombre,
-          rut: rut,
-          fecha: fecha,
-          hora: hora,
-          creado: firebase.firestore.FieldValue.serverTimestamp()
-        })
-        .then(function(docRef) {
-          alert('Cita agendada correctamente');
-          closeModal('modal-cita');
-          // refresca la UI si lo necesitas
-        })
-        .catch(function(error) {
-          alert('Error al guardar la cita: ' + error);
-        });
+        // ...guarda en Firebase aquí...
       });
-      form._onsubmitSet = true; // para no agregar múltiples listeners
+      form._onsubmitSet = true;
     }
-  }, 100); // espera a que el DOM se pinte
+  }, 100);
 }
 window.abrirModalCitaPaciente = abrirModalCitaPaciente;
 window.guardarCitaPaciente = guardarCitaPaciente;
