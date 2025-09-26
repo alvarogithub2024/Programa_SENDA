@@ -87,7 +87,14 @@ document.addEventListener("DOMContentLoaded", function() {
             eventos.forEach(evt => {
               const evDiv = document.createElement('div');
               evDiv.className = 'calendar-event';
-              evDiv.textContent = evt.paciente || evt.pacienteNombre || evt.profesionalNombre || "Sin nombre";
+              // Mostrar nombre del paciente si existe, si no, nombre profesional
+              if (evt.tipo === "profesional") {
+                // Mostrar profesional principal
+                evDiv.textContent = evt.profesionalNombre || "Sin nombre";
+              } else {
+                // Mostrar paciente (por defecto)
+                evDiv.textContent = evt.pacienteNombre || evt.paciente || evt.nombre || "Sin nombre";
+              }
               eventsDiv.appendChild(evDiv);
             });
             cell.appendChild(eventsDiv);
@@ -212,11 +219,24 @@ document.addEventListener("DOMContentLoaded", function() {
         citas.forEach(function(cita) {
           const div = document.createElement("div");
           div.className = "appointment-item";
+          let mainName = "";
+          let subName = "";
+          if (cita.tipo === "profesional") {
+            // Cita entre profesionales
+            mainName = cita.profesionalNombre || cita.nombre || "Sin nombre";
+            // Si hay otro profesional involucrado, podría estar en cita.nombre, cita.profesionalNombre, cita.pacienteNombre según tu modelo
+            // Si tienes ambos profesionales, muestra los dos: principal y secundario
+            subName = cita.nombre && cita.nombre !== mainName ? cita.nombre : "";
+          } else {
+            // Cita de paciente
+            mainName = cita.pacienteNombre || cita.paciente || cita.nombre || "Sin nombre";
+            subName = cita.profesionalNombre || "";
+          }
           div.innerHTML = `
             <div class="appointment-time">${cita.hora || ""}</div>
             <div class="appointment-details">
-              <div class="appointment-patient"><strong>${cita.pacienteNombre || cita.paciente || cita.nombre || ""}</strong></div>
-              <div class="appointment-professional">${cita.profesionalNombre || ""}</div>
+              <div class="appointment-patient"><strong>${mainName}</strong></div>
+              ${subName ? `<div class="appointment-professional">${subName}</div>` : ""}
             </div>
             <div class="appointment-status">
               <span class="status-badge ${cita.estado || "agendada"}">${cita.estado || "Agendada"}</span>
