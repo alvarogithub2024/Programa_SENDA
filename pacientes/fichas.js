@@ -301,6 +301,10 @@
 
     // ===== MODAL DE EDICIÓN/ELIMINACIÓN DE ATENCIÓN INDIVIDUAL =====
     window.abrirModalEditarAtencion = function(atencionId, descripcionEnc, tipoAtencion, rutPaciente) {
+        // Oculta la modal de ficha de paciente si está abierta
+        var fichaModal = document.getElementById('modal-ficha-paciente');
+        if (fichaModal) fichaModal.style.display = 'none';
+
         const descripcion = decodeURIComponent(descripcionEnc);
         let modal = document.getElementById('modal-editar-atencion');
         if (!modal) {
@@ -374,6 +378,9 @@
     window.cerrarModalEditarAtencion = function() {
         const modal = document.getElementById('modal-editar-atencion');
         if (modal) modal.remove();
+        // Vuelve a mostrar la ficha del paciente
+        var fichaModal = document.getElementById('modal-ficha-paciente');
+        if (fichaModal) fichaModal.style.display = 'flex';
     };
 
     window.eliminarAtencionDesdeModal = async function(atencionId, rutPaciente) {
