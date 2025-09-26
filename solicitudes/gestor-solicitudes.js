@@ -455,30 +455,43 @@ function convertToCSV(objArray) {
 
 // ------------------- FUNCIONES DE MODALES Y ACCIONES -------------------
 
-// Función para mostrar el detalle de la solicitud
+// Mostrar detalles en un modal personalizado
 function verDetalleSolicitud(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
-    // Puedes mostrar un modal, llenar campos, etc.
-    alert(`Detalle de la solicitud:\n\nNombre: ${solicitud.nombre}\nRUT: ${solicitud.rut}\nCESFAM: ${solicitud.cesfam}\nEstado: ${solicitud.estado}\nPrioridad: ${solicitud.prioridad}`);
+    document.getElementById('modal-detalle-nombre').textContent = solicitud.nombre || '';
+    document.getElementById('modal-detalle-rut').textContent = solicitud.rut || '';
+    document.getElementById('modal-detalle-cesfam').textContent = solicitud.cesfam || '';
+    document.getElementById('modal-detalle-estado').textContent = solicitud.estado || '';
+    document.getElementById('modal-detalle-prioridad').textContent = solicitud.prioridad || '';
+    // Si tienes otros campos, agrégalos aquí
+    document.getElementById('modal-detalle').style.display = 'flex';
 }
 
-// Función para editar la solicitud
+// Mostrar la edición en un modal personalizado
 function editarSolicitud(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
-    // Aquí puedes mostrar el modal de edición y llenar los campos
-    alert(`Editar solicitud:\n\nNombre: ${solicitud.nombre}\nRUT: ${solicitud.rut}`);
+    document.getElementById('modal-editar-nombre').value = solicitud.nombre || '';
+    document.getElementById('modal-editar-rut').value = solicitud.rut || '';
+    document.getElementById('modal-editar-telefono').value = solicitud.telefono || '';
+    document.getElementById('modal-editar-id').value = solicitud.id || '';
+    document.getElementById('modal-editar').style.display = 'flex';
 }
 
-// Función para agendar una cita desde la solicitud
+// Mostrar agendar cita en un modal personalizado
 function agendarCitaSolicitud(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
-    // Puedes abrir el modal de agendar cita
-    alert(`Agendar cita para:\n\nNombre: ${solicitud.nombre}\nRUT: ${solicitud.rut}`);
+    // Si tienes el modal de agendar cita de paciente y profesional, llama la función correspondiente
+    if (window.abrirModalAgendarCitaProfesional) {
+        window.abrirModalAgendarCitaProfesional(solicitud.id, solicitud.nombre, solicitud.rut);
+    } else if (window.abrirModalAgendarCita) {
+        window.abrirModalAgendarCita(solicitud.id, solicitud.nombre, solicitud.rut);
+    } else {
+        window.showNotification && window.showNotification("No se puede abrir el modal de agendar cita.", "error");
+    }
 }
-
 // Función para eliminar la solicitud
 function eliminarSolicitud(solicitudId) {
     if (!confirm('¿Estás seguro de que quieres eliminar esta solicitud?')) return;
