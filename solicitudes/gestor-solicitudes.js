@@ -253,9 +253,9 @@ function renderSolicitudesTable() {
                 <button class="btn-accion btn-editar" onclick="editarSolicitud('${solicitud.id}')" title="Editar">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button class="btn-accion btn-exportar" onclick="exportarSolicitud('${solicitud.id}')" title="Exportar">
-                    <i class="fas fa-download"></i> Exportar
-                </button>
+           <button class="btn-accion btn-exportar" onclick="exportarSolicitud('${solicitud.id}')" title="Exportar">
+    <i class="fas fa-download"></i>
+</button>
                 <div class="dropdown-acciones">
                     <button class="btn-accion btn-mas" onclick="toggleAccionesSolicitud('${solicitud.id}')" title="Más acciones">
                         <i class="fas fa-ellipsis-v"></i>
