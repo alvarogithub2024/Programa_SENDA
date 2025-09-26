@@ -643,6 +643,36 @@ Seguimiento
     <div id="modal-ficha-paciente-body"></div>
   </div>
 </div>
+
+  <!-- MODAL REGISTRAR ATENCION -->
+<div class="modal-overlay" id="modal-registrar-atencion" style="display:none;">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal('modal-registrar-atencion')">&times;</span>
+    <h2>Registrar Atención</h2>
+    <div id="atencion-paciente-info"></div>
+    <form id="form-registrar-atencion">
+      <div class="form-group">
+        <label for="atencion-descripcion">Descripción de la atención *</label>
+        <textarea id="atencion-descripcion" class="form-textarea" required></textarea>
+      </div>
+      <div class="form-group">
+        <label for="atencion-tipo">Tipo de atención *</label>
+        <select id="atencion-tipo" class="form-select" required>
+          <option value="">Selecciona tipo...</option>
+          <option value="consulta">Consulta</option>
+          <option value="seguimiento">Seguimiento</option>
+          <option value="orientacion">Orientación</option>
+          <option value="intervencion">Intervención</option>
+        </select>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-success">Guardar atención</button>
+      </div>
+      <input type="hidden" id="atencion-cita-id">
+      <input type="hidden" id="atencion-paciente-id">
+    </form>
+  </div>
+</div>
 <!-- ========== MODAL SOBRE EL PROGRAMA ========== -->
 <div class="modal-overlay" id="about-modal" style="display:none;">
   <div class="modal large-modal">
