@@ -1,13 +1,13 @@
 // PACIENTES/FICHAS.JS
-// Gestión de pacientes en la pestaña Pacientes: sincroniza pacientes desde citas y muestra/busca/actualiza
-// MODAL incluido para ver ficha y observaciones (atenciones) por paciente
+// Sincronización y visualización de pacientes en la pestaña Pacientes
+// Incluye modal para ficha, mostrando atenciones (observaciones) del paciente
 
 (function() {
     let pacientesTabData = [];
     let pacientesCitas = [];
     let miCesfam = null;
 
-    // Elementos UI
+    // Utilidades para acceso a elementos UI
     function getGrid() { return document.getElementById('patients-grid'); }
     function getSearchInput() { return document.getElementById('search-pacientes-rut'); }
     function getBuscarBtn() { return document.getElementById('buscar-paciente-btn'); }
@@ -28,6 +28,7 @@
         }
     }
 
+    // Obtiene el CESFAM actual del profesional logueado
     function obtenerCesfamActual(callback) {
         const user = firebase.auth().currentUser;
         if (!user) return callback(null);
@@ -38,6 +39,7 @@
         });
     }
 
+    // Carga todos los pacientes desde las citas del CESFAM actual
     async function cargarPacientesDesdeCitas() {
         const db = window.getFirestore();
         if (!miCesfam) return [];
@@ -63,6 +65,7 @@
         return pacientesCitas;
     }
 
+    // Sincroniza pacientes: agrega los que faltan en la colección "pacientes"
     async function sincronizarPacientesConColeccion() {
         const db = window.getFirestore();
         for (let paciente of pacientesCitas) {
@@ -77,6 +80,7 @@
         }
     }
 
+    // Muestra la lista de pacientes en el grid
     function renderPacientesGrid(pacientes) {
         const grid = getGrid();
         if (!grid) {
@@ -105,6 +109,7 @@
         });
     }
 
+    // Busca pacientes usando el input/texto
     function buscarPacientesPorTexto(texto) {
         window.buscarPacientesPorTexto(texto, function(resultados) {
             const filtrados = resultados.filter(p => p.cesfam === miCesfam);
@@ -113,7 +118,7 @@
         });
     }
 
-    // MODAL FICHA PACIENTE
+    // MODAL FICHA PACIENTE: abre modal y carga atenciones del paciente
     window.verFichaPacienteSenda = function(rut) {
         const db = window.getFirestore();
         const rutLimpio = rut.replace(/[.\-]/g, "").toUpperCase();
@@ -149,6 +154,7 @@
         cargarObservacionesAtencionPorRut(paciente.rut);
     }
 
+    // Consulta a la colección atenciones usando pacienteRut
     function cargarObservacionesAtencionPorRut(rutPaciente) {
         const cont = document.getElementById('observaciones-profesional');
         if (!cont) return;
