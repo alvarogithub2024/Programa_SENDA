@@ -691,6 +691,8 @@ function guardarEdicionSolicitud() {
         window.showNotification && window.showNotification('Error al actualizar datos', 'error');
         console.error('Error actualizando datos:', error);
     });
+} // ← Cierre correcto de la función
+
 /**
  * Contador de solicitudes filtradas y totales
  */
@@ -717,4 +719,3 @@ window.cerrarModalDetalle = cerrarModalDetalle;
 window.abrirModalResponder = abrirModalResponder;
 window.cerrarModalResponder = cerrarModalResponder;
 window.guardarEdicionSolicitud = guardarEdicionSolicitud;
-}
