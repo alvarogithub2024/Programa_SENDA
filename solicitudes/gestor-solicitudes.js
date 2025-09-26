@@ -416,19 +416,15 @@ function resetFilters() {
  */
 function applyCurrentFilters() {
     filteredSolicitudesData = solicitudesData.filter(solicitud => {
-        // Filtro por Estado
         if (currentFilters.estado !== 'todos' && (solicitud.estado || '').toLowerCase() !== currentFilters.estado) {
             return false;
         }
-        // Filtro por Prioridad
         if (currentFilters.prioridad !== 'todos' && (solicitud.prioridad || '').toLowerCase() !== currentFilters.prioridad) {
             return false;
         }
-        // Filtro por CESFAM
         if (currentFilters.cesfam !== 'todos' && (solicitud.cesfam || '') !== currentFilters.cesfam) {
             return false;
         }
-        // Filtro por Fecha
         if (currentFilters.fecha !== 'todos') {
             const today = new Date();
             const solicitudDate = solicitud.fecha ? new Date(solicitud.fecha) : null;
@@ -449,7 +445,6 @@ function applyCurrentFilters() {
                     break;
             }
         }
-        // Filtro por Búsqueda
         if (currentFilters.busqueda) {
             const rut = (solicitud.rut || '').replace(/\./g, '').toLowerCase();
             const nombre = (solicitud.nombre || '').toLowerCase();
@@ -473,6 +468,21 @@ function isSameDay(date1, date2) {
         date1.getFullYear() === date2.getFullYear();
 }
 
-/* Resto de funciones: setupFilters, setupEvents, setupAutoRefresh, updateSolicitudesCounter y updateSolicitudesStats igual que ya tienes */
+/**
+ * Contador de solicitudes filtradas y totales
+ */
+function updateSolicitudesCounter() {
+    const counter = document.getElementById('solicitudes-counter');
+    const totalCounter = document.getElementById('solicitudes-total-counter');
+    if (counter) counter.textContent = filteredSolicitudesData.length;
+    if (totalCounter) totalCounter.textContent = solicitudesData.length;
+}
+
+/**
+ * Actualizar estadísticas de solicitudes (puedes poner tu lógica aquí)
+ */
+function updateSolicitudesStats() {
+    // Implementa según tus necesidades de estadísticas
+}
 
 console.log('📋 Gestor de solicitudes extendido listo.');
