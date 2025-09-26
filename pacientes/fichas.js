@@ -151,7 +151,7 @@
         `;
         modalBody.innerHTML = html;
 
-        cargarHistorialClinicoPaciente(pacienteData.rut);
+        cargarHistorialClinicoPaciente(pacienteData.id));
     };
 
     window.cerrarModalFichaPaciente = function() {
@@ -160,13 +160,15 @@
     };
 
     // Historial clínico: muestra las atenciones ordenadas por fecha desc
-    function cargarHistorialClinicoPaciente(rutPaciente) {
-        const cont = document.getElementById('historial-clinico');
-        if (!cont) return;
-        const db = window.getFirestore();
-        db.collection('atenciones').where('pacienteRut', '==', rutPaciente).orderBy('fechaRegistro', 'desc').get()
-            .then(snapshot => {
-                let html = '';
+    function cargarHistorialClinicoPaciente(pacienteId) {
+    const cont = document.getElementById('historial-clinico');
+    if (!cont) return;
+    const db = window.getFirestore();
+    db.collection('atenciones')
+      .where('pacienteId', '==', pacienteId)
+      .orderBy('fechaRegistro', 'desc')
+      .get()
+      .then(snapshot => {
                 if (snapshot.empty) {
                     html = "<p>No hay atenciones registradas.</p>";
                 } else {
