@@ -1,20 +1,17 @@
 // PACIENTES/FICHAS.JS
-// Al cargar la pestaña de Pacientes, sincroniza automáticamente todos los pacientes de la colección 'citas' al CESFAM del usuario actual.
-// Si el paciente de una cita no existe en 'pacientes', lo crea automáticamente.
-// Así, la pestaña Pacientes muestra TODOS los pacientes agendados en citas del CESFAM logueado.
+// Muestra en la pestaña Pacientes TODOS los pacientes únicos agendados en la colección 'citas' del CESFAM logueado
+// Los crea automáticamente en la colección 'pacientes' si no existen, y los muestra directamente aunque no estén allí
 
 (function() {
     let pacientesTabData = [];
-    let pacientesCitas = [];
     let miCesfam = null;
 
-    // UI helpers
+    // Helpers para UI
     function getGrid() { return document.getElementById('patients-grid'); }
     function getSearchInput() { return document.getElementById('search-pacientes-rut'); }
     function getBuscarBtn() { return document.getElementById('buscar-paciente-btn'); }
     function getActualizarBtn() { return document.getElementById('actualizar-pacientes-btn'); }
 
-    // Crear botón Actualizar si no existe
     function crearBotonActualizarSiNoExiste() {
         let actualizarBtn = getActualizarBtn();
         if (!actualizarBtn) {
@@ -40,23 +37,20 @@
         });
     }
 
-    // Extrae pacientes únicos desde citas del CESFAM actual y crea en colección 'pacientes' si no existen
-    async function sincronizarPacientesDesdeCitas() {
+    // Extrae pacientes desde las citas y los crea en 'pacientes' si no existen
+    async function extraerYCrearPacientesDesdeCitas() {
         const db = window.getFirestore();
         if (!miCesfam) return [];
-
         const citasSnap = await db.collection('citas').where('cesfam', '==', miCesfam).get();
         const pacientesMap = {};
 
         citasSnap.forEach(doc => {
             const cita = doc.data();
-            const rut = cita.pacienteRut || cita.rut || cita.rutPaciente || '';
+            const rut = (cita.pacienteRut || cita.rut || cita.rutPaciente || '').replace(/[.\-]/g, "").toUpperCase();
             if (!rut) return;
-            const rutLimpio = rut.replace(/[.\-]/g, "").toUpperCase();
-            // Paciente único por RUT
-            if (!pacientesMap[rutLimpio]) {
-                pacientesMap[rutLimpio] = {
-                    rut: rutLimpio,
+            if (!pacientesMap[rut]) {
+                pacientesMap[rut] = {
+                    rut: rut,
                     nombre: cita.pacienteNombre || cita.nombre || '',
                     cesfam: miCesfam,
                     telefono: cita.pacienteTelefono || cita.telefono || '',
@@ -67,7 +61,7 @@
             }
         });
 
-        // Sincroniza colección 'pacientes'
+        // Sincroniza con colección 'pacientes'
         for (const rut in pacientesMap) {
             const paciente = pacientesMap[rut];
             const snap = await db.collection('pacientes').where('rut', '==', rut).limit(1).get();
@@ -77,11 +71,9 @@
                 }));
             }
         }
-        // Retorna lista de pacientes del CESFAM actual
-        const pacientesSnap = await db.collection('pacientes').where('cesfam', '==', miCesfam).get();
-        const pacientesList = [];
-        pacientesSnap.forEach(doc => pacientesList.push(Object.assign({ id: doc.id }, doc.data())));
-        return pacientesList;
+
+        // Retorna array para mostrar directamente
+        return Object.values(pacientesMap);
     }
 
     // Renderiza pacientes en el grid
@@ -93,7 +85,7 @@
         }
         grid.innerHTML = '';
         if (!pacientes.length) {
-            grid.innerHTML = "<div class='no-results'>No hay pacientes registrados en este CESFAM.</div>";
+            grid.innerHTML = "<div class='no-results'>No hay pacientes agendados en este CESFAM.</div>";
             return;
         }
         pacientes.forEach(p => {
@@ -113,13 +105,18 @@
         });
     }
 
-    // Buscar pacientes por texto (nombre, rut, etc)
-    function buscarPacientesPorTexto(texto) {
-        window.buscarPacientesPorTexto(texto, function(resultados) {
-            const filtrados = resultados.filter(p => p.cesfam === miCesfam);
-            pacientesTabData = filtrados;
+    // Filtro local sobre los pacientes extraídos de citas
+    function buscarPacientesLocal(texto) {
+        texto = (texto || '').trim().toUpperCase();
+        if (!texto) {
             renderPacientesGrid(pacientesTabData);
-        });
+            return;
+        }
+        const filtrados = pacientesTabData.filter(p =>
+            (p.rut && p.rut.includes(texto)) ||
+            (p.nombre && p.nombre.toUpperCase().includes(texto))
+        );
+        renderPacientesGrid(filtrados);
     }
 
     // Modal ficha paciente (con observaciones desde atenciones)
@@ -131,7 +128,13 @@
                 const data = Object.assign({ id: snapshot.docs[0].id }, snapshot.docs[0].data());
                 mostrarModalFichaPaciente(data);
             } else {
-                window.showNotification && window.showNotification('Paciente no encontrado', 'warning');
+                // Si el paciente no existe en 'pacientes', muestra con los datos del grid
+                const pacienteData = pacientesTabData.find(p => p.rut === rutLimpio);
+                if (pacienteData) {
+                    mostrarModalFichaPaciente(pacienteData);
+                } else {
+                    window.showNotification && window.showNotification('Paciente no encontrado', 'warning');
+                }
             }
         });
     };
@@ -200,7 +203,7 @@
         if (modal) modal.style.display = 'none';
     };
 
-    // Refresca la pestaña: sincroniza pacientes desde citas y los muestra
+    // Refresca la pestaña: extrae pacientes desde citas y los muestra
     async function refrescarPacientesTab() {
         const grid = getGrid();
         if (!grid) {
@@ -209,8 +212,7 @@
         }
         grid.innerHTML = "<div class='loading-message'><i class='fas fa-spinner fa-spin'></i> Actualizando pacientes...</div>";
         await obtenerCesfamActual(async function() {
-            const lista = await sincronizarPacientesDesdeCitas();
-            pacientesTabData = lista;
+            pacientesTabData = await extraerYCrearPacientesDesdeCitas();
             renderPacientesGrid(pacientesTabData);
         });
     }
@@ -226,11 +228,7 @@
         if (buscarBtn) {
             buscarBtn.onclick = function() {
                 const texto = searchInput ? searchInput.value.trim() : "";
-                if (!texto) {
-                    refrescarPacientesTab();
-                } else {
-                    buscarPacientesPorTexto(texto);
-                }
+                buscarPacientesLocal(texto);
             };
         }
         if (actualizarBtn) {
@@ -246,38 +244,5 @@
             refrescarPacientesTab();
         }
     });
-
-    // Extra: funciones originales para obtener/actualizar ficha desde otros lugares
-    window.obtenerFichaPaciente = function(pacienteId, callback) {
-        var db = window.getFirestore();
-        db.collection("pacientes").doc(pacienteId).get()
-            .then(function(doc) {
-                if (!doc.exists) {
-                    window.showNotification("Paciente no encontrado", "warning");
-                    if (typeof callback === "function") callback(null);
-                    return;
-                }
-                var datos = doc.data();
-                datos.id = doc.id;
-                if (typeof callback === "function") callback(datos);
-            })
-            .catch(function(error) {
-                window.showNotification("Error obteniendo ficha: " + error.message, "error");
-                if (typeof callback === "function") callback(null);
-            });
-    };
-
-    window.actualizarFichaPaciente = function(pacienteId, datosExtra, callback) {
-        var db = window.getFirestore();
-        db.collection("pacientes").doc(pacienteId).update(datosExtra)
-            .then(function() {
-                window.showNotification("Ficha actualizada correctamente", "success");
-                if (typeof callback === "function") callback(true);
-            })
-            .catch(function(error) {
-                window.showNotification("Error actualizando ficha: " + error.message, "error");
-                if (typeof callback === "function") callback(false);
-            });
-    };
 
 })();
