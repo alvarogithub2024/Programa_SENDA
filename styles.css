@@ -4450,6 +4450,17 @@ input:invalid {
   }
 }
 /* ==== END Pacientes Tab Custom Styles ==== */
+
+/* Ejemplo de estilos CSS para los modales */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(30,30,30,0.5);
+  z-index: 10000; /* Asegúrate que sea alto */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 /* Responsive para móviles */
 @media (max-width: 600px) {
   .modal-content {
