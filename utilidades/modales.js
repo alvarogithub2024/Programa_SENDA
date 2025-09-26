@@ -36,28 +36,3 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
 });
-
-
-function showDetalleSolicitudModal(solicitud) {
-    document.getElementById('modal-detalle-nombre').textContent = solicitud.nombre || '';
-    document.getElementById('modal-detalle-rut').textContent = solicitud.rut || '';
-    // ... otros campos
-    document.getElementById('modal-detalle').style.display = 'flex';
-}
-
-function showEditarSolicitudModal(solicitud) {
-    document.getElementById('modal-editar-nombre').value = solicitud.nombre || '';
-    // ... otros campos
-    document.getElementById('modal-editar').style.display = 'flex';
-}
-
-function showResponderSolicitudModal(email, nombre, solicitudId) {
-    document.getElementById('modal-responder-email').value = email || '';
-    document.getElementById('modal-responder-nombre').textContent = nombre || '';
-    document.getElementById('modal-responder-id').value = solicitudId || '';
-    document.getElementById('modal-responder').style.display = 'flex';
-}
-
-window.showDetalleSolicitudModal = showDetalleSolicitudModal;
-window.showEditarSolicitudModal = showEditarSolicitudModal;
-window.showResponderSolicitudModal = showResponderSolicitudModal;
