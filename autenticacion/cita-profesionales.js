@@ -111,3 +111,10 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
     }, 100);
   });
 }
+window.cargarProfesionalesAgendarCitaProfesional = cargarProfesionalesAgendarCitaProfesional;
+window.abrirModalAgendarCitaProfesional = abrirModalAgendarCitaProfesional;
+window.llenarSelectProfesionesAgendarCitaProfesional = llenarSelectProfesionesAgendarCitaProfesional;
+window.llenarSelectProfesionalesAgendarCitaProfesional = llenarSelectProfesionalesAgendarCitaProfesional;
+window.autocompletarNombreProfesionalAgendarCitaProfesional = autocompletarNombreProfesionalAgendarCitaProfesional;
+window.inicializarListenersAgendarCitaProfesional = inicializarListenersAgendarCitaProfesional;
+window.actualizarHorasAgendarProfesional = actualizarHorasAgendarProfesional;
