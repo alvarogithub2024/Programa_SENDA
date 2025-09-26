@@ -128,9 +128,9 @@ function setupFormularioPaciente() {
             motivacion: form.querySelector("#motivacion-range").value,
             fecha: fechaChileISO()
         };
-        if (!datos.nombre || !datos.apellidos || !datos.rut || !datos.telefono) {
-            return window.showNotification("Completa todos los campos obligatorios", "warning");
-        }
+  if (!datos.nombre || !datos.apellidos || !datos.rut || !datos.telefono) {
+    return window.showNotification("Completa todos los campos obligatorios", "warning");
+}
      if (!window.validarRut(datos.rut)) {
             return window.showNotification("RUT inválido", "warning");
         }
