@@ -212,7 +212,59 @@ document.addEventListener("DOMContentLoaded", function() {
         window.showNotification && window.showNotification("Completa todos los campos", "warning");
         return;
       }
+// ==================== CITAS DEL DÍA ====================
+// Solo el panel inferior, NO modifica el calendario
 
+function mostrarCitasDelDia(fecha) {
+  const appointmentsList = document.getElementById('appointments-list');
+  if (!appointmentsList) return;
+  appointmentsList.innerHTML = `<div class="loading-message"><i class="fas fa-spinner fa-spin"></i> Cargando citas...</div>`;
+  const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
+
+  db.collection("citas")
+    .where("fecha", "==", fecha)
+    .orderBy("hora", "asc")
+    .get()
+    .then(function(snapshot) {
+      const citas = [];
+      snapshot.forEach(function(doc) {
+        const cita = doc.data();
+        cita.id = doc.id;
+        citas.push(cita);
+      });
+      appointmentsList.innerHTML = "";
+      if (!citas.length) {
+        appointmentsList.innerHTML = "<div class='no-results'>No hay citas agendadas para este día.</div>";
+        return;
+      }
+      citas.forEach(function(cita) {
+        const div = document.createElement("div");
+        div.className = "appointment-item";
+        div.innerHTML = `
+          <div class="appointment-time">${cita.hora || ""}</div>
+          <div class="appointment-details">
+            <div class="appointment-patient"><strong>${cita.pacienteNombre || cita.paciente || ""}</strong></div>
+            <div class="appointment-professional">${cita.profesionalNombre || ""}</div>
+          </div>
+          <div class="appointment-status">
+            <span class="status-badge ${cita.estado || "agendada"}">${cita.estado || "Agendada"}</span>
+          </div>
+        `;
+        appointmentsList.appendChild(div);
+      });
+      // Si necesitas acceder a los pacientes citados del día desde otros scripts:
+      window.citasDelDia = citas;
+    })
+    .catch(function(error) {
+      appointmentsList.innerHTML = "<div class='no-results'>Error cargando citas.</div>";
+      if (window.showNotification) window.showNotification("Error cargando citas del día: " + error.message, "error");
+    });
+}
+document.addEventListener("DOMContentLoaded", function() {
+  const hoy = new Date().toISOString().slice(0,10);
+  mostrarCitasDelDia(hoy);
+});
+      window.mostrarCitasDelDia = mostrarCitasDelDia;
       // Guardar cita en Firebase
       firebase.firestore().collection('citas').add({
         paciente, rut, profesionalID, profesionalNombre, fecha, hora,
