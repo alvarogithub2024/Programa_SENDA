@@ -612,3 +612,6 @@ function updateSolicitudesStats() {
 }
 
 console.log('📋 Gestor de solicitudes listo.');
+window.verDetalleSolicitud = verDetalleSolicitud;
+window.editarSolicitud = editarSolicitud;
+window.agendarCitaSolicitud = agendarCitaSolicitud;
