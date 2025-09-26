@@ -1,17 +1,19 @@
 // PACIENTES/FICHAS.JS
+// Gestión de pacientes en la pestaña Pacientes: sincroniza pacientes desde citas y muestra/busca/actualiza
+// MODAL incluido para ver ficha y observaciones (atenciones) por paciente
+
 (function() {
     let pacientesTabData = [];
     let pacientesCitas = [];
     let miCesfam = null;
 
+    // Elementos UI
     function getGrid() { return document.getElementById('patients-grid'); }
     function getSearchInput() { return document.getElementById('search-pacientes-rut'); }
     function getBuscarBtn() { return document.getElementById('buscar-paciente-btn'); }
     function getActualizarBtn() { return document.getElementById('actualizar-pacientes-btn'); }
-    function getFichaModal() { return document.getElementById('modal-ficha-paciente'); }
-    function getFichaModalBody() { return document.getElementById('modal-ficha-paciente-body'); }
 
-    // Botón de actualizar si no existe
+    // Si no existe el botón de actualizar, créalo y agrégalo al header de la sección
     function crearBotonActualizarSiNoExiste() {
         let actualizarBtn = getActualizarBtn();
         if (!actualizarBtn) {
@@ -125,13 +127,11 @@
         });
     };
 
-    // Muestra el modal con la ficha y observaciones del profesional
     function mostrarModalFichaPaciente(paciente) {
-        const modal = getFichaModal();
-        const modalBody = getFichaModalBody();
+        const modal = document.getElementById('modal-ficha-paciente');
+        const modalBody = document.getElementById('modal-ficha-paciente-body');
         if (!modal || !modalBody) return;
 
-        // Info principal
         let html = `
             <h3>${paciente.nombre || ''}</h3>
             <p><b>RUT:</b> ${paciente.rut || ''}</p>
@@ -146,17 +146,14 @@
         modalBody.innerHTML = html;
         modal.style.display = 'flex';
 
-        // Cargar observaciones/atenciones
-        cargarObservacionesAtencion(paciente.id);
+        cargarObservacionesAtencionPorRut(paciente.rut);
     }
 
-    // Cargar las observaciones/agregado del profesional (puedes mejorar el query según tu modelo)
-    function cargarObservacionesAtencion(pacienteId) {
+    function cargarObservacionesAtencionPorRut(rutPaciente) {
         const cont = document.getElementById('observaciones-profesional');
         if (!cont) return;
         const db = window.getFirestore();
-        // Ejemplo: buscar atenciones del paciente
-        db.collection('atenciones').where('pacienteId', '==', pacienteId).orderBy('fechaRegistro', 'desc').get()
+        db.collection('atenciones').where('pacienteRut', '==', rutPaciente).orderBy('fechaRegistro', 'desc').get()
             .then(snapshot => {
                 let html = '';
                 if (snapshot.empty) {
@@ -165,8 +162,17 @@
                     html = '<ul>';
                     snapshot.forEach(doc => {
                         const a = doc.data();
+                        // fechaRegistro puede ser string o Timestamp
+                        let fechaTexto = '';
+                        if (a.fechaRegistro) {
+                            if (typeof a.fechaRegistro === 'string') {
+                                fechaTexto = new Date(a.fechaRegistro).toLocaleDateString('es-CL');
+                            } else if (a.fechaRegistro.seconds) {
+                                fechaTexto = new Date(a.fechaRegistro.seconds * 1000).toLocaleDateString('es-CL');
+                            }
+                        }
                         html += `<li>
-                            <b>${a.fechaRegistro ? new Date(a.fechaRegistro.seconds ? a.fechaRegistro.seconds*1000 : a.fechaRegistro).toLocaleDateString('es-CL') : ''}</b> -
+                            <b>${fechaTexto}</b> -
                             <b>${a.tipoAtencion || 'Atención'}</b><br>
                             <span>${a.descripcion || ''}</span>
                             <div><small>Profesional: ${a.profesional || ''}</small></div>
@@ -181,9 +187,8 @@
             });
     }
 
-    // Cerrar modal ficha paciente (agrega al HTML el botón de cerrar que llama esta función)
     window.cerrarModalFichaPaciente = function() {
-        const modal = getFichaModal();
+        const modal = document.getElementById('modal-ficha-paciente');
         if (modal) modal.style.display = 'none';
     };
 
@@ -240,5 +245,38 @@
             refrescarPacientesTab();
         }
     });
+
+    // Funciones originales para obtener/actualizar ficha desde otras partes del sistema
+    window.obtenerFichaPaciente = function(pacienteId, callback) {
+        var db = window.getFirestore();
+        db.collection("pacientes").doc(pacienteId).get()
+            .then(function(doc) {
+                if (!doc.exists) {
+                    window.showNotification("Paciente no encontrado", "warning");
+                    if (typeof callback === "function") callback(null);
+                    return;
+                }
+                var datos = doc.data();
+                datos.id = doc.id;
+                if (typeof callback === "function") callback(datos);
+            })
+            .catch(function(error) {
+                window.showNotification("Error obteniendo ficha: " + error.message, "error");
+                if (typeof callback === "function") callback(null);
+            });
+    };
+
+    window.actualizarFichaPaciente = function(pacienteId, datosExtra, callback) {
+        var db = window.getFirestore();
+        db.collection("pacientes").doc(pacienteId).update(datosExtra)
+            .then(function() {
+                window.showNotification("Ficha actualizada correctamente", "success");
+                if (typeof callback === "function") callback(true);
+            })
+            .catch(function(error) {
+                window.showNotification("Error actualizando ficha: " + error.message, "error");
+                if (typeof callback === "function") callback(false);
+            });
+    };
 
 })();
