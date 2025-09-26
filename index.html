@@ -532,17 +532,21 @@ Buscar
 </div>
 
 <!-- Modal Editar -->
-<div class="modal-overlay" id="modal-editar" style="display:none;">
-    <div class="modal-content">
-        <span class="close" onclick="closeModal('modal-editar')">&times;</span>
-        <h3>Editar solicitud</h3>
-        <input type="hidden" id="modal-editar-id">
-        <label>Nombre:</label><input type="text" id="modal-editar-nombre">
-        <label>RUT:</label><input type="text" id="modal-editar-rut">
-        <label>Teléfono:</label><input type="text" id="modal-editar-telefono">
-        <label>Cita agendada:</label><input type="text" id="modal-editar-cita">
-        <button onclick="guardarEdicionSolicitud()" class="btn btn-success">Guardar cambios</button>
-    </div>
+<div class="modal-overlay" id="modal-detalle" style="display:none;">
+  <div class="modal-content">
+    <span class="close" onclick="cerrarModalDetalle()">&times;</span>
+    <h3>Detalles del paciente</h3>
+    <p><b>Nombre:</b> <span id="modal-detalle-nombre"></span></p>
+    <p><b>RUT:</b> <span id="modal-detalle-rut"></span></p>
+    <p><b>Teléfono:</b> <span id="modal-detalle-telefono"></span></p>
+    <p><b>Email:</b> <span id="modal-detalle-email"></span></p>
+    <p><b>Motivo de atención:</b> <span id="modal-detalle-motivo"></span></p>
+    <p><b>CESFAM:</b> <span id="modal-detalle-cesfam"></span></p>
+    <p><b>Prioridad:</b> <span id="modal-detalle-prioridad"></span></p>
+    <p><b>Estado:</b> <span id="modal-detalle-estado"></span></p>
+    <p><b>Fecha:</b> <span id="modal-detalle-fecha"></span></p>
+    <p><b>Sustancias:</b> <span id="modal-detalle-sustancias"></span></p>
+  </div>
 </div>
 
 <!-- Modal Agendar Cita -->
