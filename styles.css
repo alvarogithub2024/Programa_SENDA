@@ -353,3 +353,96 @@ body {
   .card-section-title { font-size: 1.18rem; }
   .card-sub { padding: .7rem .2rem;}
 }
+/* --- OVERLAY MODAL --- */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(37,99,235,0.13); /* azul translúcido */
+  backdrop-filter: blur(2px);
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: opacity .3s;
+}
+.modal-overlay.active,
+.modal-overlay[style*="display: flex"] {
+  display: flex !important;
+  opacity: 1;
+}
+
+/* --- MODAL VENTANA --- */
+.modal, .modal-content, .large-modal {
+  background: var(--background-white, #fff);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(37,99,235,0.15), 0 2px 9px rgba(0,0,0,0.07);
+  max-width: 480px;
+  width: 97vw;
+  position: relative;
+  margin: auto;
+  padding: 2.5rem 2rem 2rem 2rem;
+  animation: modalPop .22s;
+}
+.large-modal { max-width: 700px; }
+
+@keyframes modalPop {
+  from { transform: scale(.93); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+/* --- BOTÓN CERRAR --- */
+.modal-close, .close {
+  position: absolute;
+  top: 1rem; right: 1.2rem;
+  background: none;
+  border: none;
+  font-size: 1.7rem;
+  color: var(--primary-blue, #2563eb);
+  cursor: pointer;
+  transition: color .16s;
+  z-index: 10;
+}
+.modal-close:hover, .close:hover { color: var(--danger-red, #ef4444); }
+
+/* --- TÍTULO DEL MODAL --- */
+.modal h2, .modal-title-main {
+  font-size: 2rem;
+  color: var(--primary-blue, #2563eb);
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+/* --- FORMULARIOS EN MODAL --- */
+.modal-form, .cita-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+.form-group {
+  margin-bottom: 1rem;
+}
+.form-label {
+  color: var(--primary-dark, #1e40af);
+  font-weight: 500;
+  margin-bottom: .5em;
+  display: block;
+  font-size: 1rem;
+}
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: .85em 1em;
+  border: 2px solid var(--border-color, #e3e9f3);
+  border-radius: 8px;
+  font-size: 1rem;
+  background: var(--background-white, #fff);
+  color: var(--text-dark, #222b45);
+  transition: border-color .19s;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 600px) {
+  .modal, .modal-content, .large-modal { padding: 1.2rem 0.3rem; }
+  .large-modal { max-width: 99vw; }
+}
