@@ -4140,6 +4140,163 @@ input:invalid {
   flex-direction: column;
   gap: 0.5rem;
 }
+
+/* ==== Pacientes Tab Custom Styles ==== */
+
+/* Grid de pacientes: una fila para cada paciente, con datos alineados horizontalmente */
+#patients-grid {
+  margin: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Tarjeta de paciente: fila horizontal */
+.patient-card {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px 18px;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.06);
+  gap: 32px;
+  font-size: 1rem;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.patient-card:hover {
+  box-shadow: 0 4px 16px rgba(37,99,235,0.12);
+  border-color: #2563eb;
+}
+
+.patient-card > div {
+  min-width: 120px;
+  padding: 0 5px;
+  color: #222;
+}
+
+.patient-card > div:first-child {
+  font-weight: 600;
+  color: #2563eb;
+  min-width: 180px;
+}
+
+.patient-card .btn {
+  margin-left: auto;
+}
+
+.patient-card .btn-outline {
+  background: #fff;
+  color: #2563eb;
+  border: 2px solid #2563eb;
+  border-radius: 6px;
+  padding: 6px 18px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.patient-card .btn-outline:hover {
+  background: #2563eb;
+  color: #fff;
+}
+
+/* Modal de ficha paciente */
+.modal-overlay#modal-ficha-paciente {
+  display: none;
+  position: fixed;
+  top:0; left:0; right:0; bottom:0;
+  background: rgba(30,64,175,0.24);
+  align-items: center;
+  justify-content: center;
+  z-index: 10002;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px 28px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 6px 32px rgba(37,99,235,0.09);
+  position: relative;
+}
+
+.modal-content .close {
+  position: absolute;
+  right: 16px;
+  top: 12px;
+  font-size: 1.6rem;
+  color: #2563eb;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+#modal-ficha-paciente-body h3 {
+  margin-bottom: 8px;
+  font-size: 1.4rem;
+  color: #2563eb;
+  font-weight: 700;
+}
+
+#modal-ficha-paciente-body p {
+  margin: 3px 0 7px 0;
+  font-size: 1rem;
+  color: #24292f;
+}
+
+#modal-ficha-paciente-body hr {
+  margin: 18px 0;
+  border: none;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+#modal-ficha-paciente-body #historial-clinico {
+  margin-top: 12px;
+  font-size: 0.98rem;
+}
+
+#modal-ficha-paciente-body #historial-clinico ul {
+  padding-left: 18px;
+  margin: 8px 0 0 0;
+}
+
+#modal-ficha-paciente-body #historial-clinico li {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+#modal-ficha-paciente-body #historial-clinico b {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+/* Estilos para mensaje de no resultados y loading */
+.no-results, .loading-message {
+  font-size: 1.05rem;
+  color: #6b7280;
+  padding: 24px;
+  text-align: center;
+}
+
+/* Responsive modal */
+@media (max-width: 600px) {
+  .modal-content {
+    padding: 18px 7px;
+    max-width: 98vw;
+  }
+  #modal-ficha-paciente-body h3 {
+    font-size: 1.1rem;
+  }
+  #modal-ficha-paciente-body p {
+    font-size: 0.92rem;
+  }
+}
+
+/* ==== END Pacientes Tab Custom Styles ==== */
 /* Responsive para móviles */
 @media (max-width: 600px) {
   .modal-content {
