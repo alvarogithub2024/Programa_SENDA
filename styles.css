@@ -3948,6 +3948,34 @@ input:invalid {
   font-size: 22px;
   cursor: pointer;
 }
+
+.modal-content .modal-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.modal-content .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.modal-content .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+#modal-responder-asunto,
+#modal-responder-mensaje {
+  width: 100%;
+  font-size: 1rem;
+  border-radius: 7px;
+  border: 1px solid #ccc;
+  padding: 8px;
+  box-sizing: border-box;
+}
 /* Responsive para móviles */
 @media (max-width: 600px) {
   .modal-content {
