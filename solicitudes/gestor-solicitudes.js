@@ -252,6 +252,8 @@ function renderSolicitudesTable() {
     }
 }
 
+// ------------------- FUNCIONES DE MODALES Y ACCIONES -------------------
+
 // Ver detalles
 window.verDetalleSolicitud = function(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
@@ -382,5 +384,33 @@ document.addEventListener('click', (e) => {
 window.reloadSolicitudesFromFirebase = function() {
     loadAllSolicitudes().then(applyCurrentFilters);
 };
+
+/**
+ * Resetear los filtros a estado inicial.
+ */
+function resetFilters() {
+    currentFilters = {
+        estado: 'todos',
+        prioridad: 'todos',
+        cesfam: 'todos',
+        fecha: 'todos',
+        busqueda: ''
+    };
+    const elements = {
+        estado: document.getElementById('filtro-estado-solicitudes'),
+        prioridad: document.getElementById('filtro-prioridad-solicitudes'),
+        cesfam: document.getElementById('filtro-cesfam-solicitudes'),
+        fecha: document.getElementById('filtro-fecha-solicitudes'),
+        busqueda: document.getElementById('buscar-solicitudes')
+    };
+    Object.entries(elements).forEach(([key, element]) => {
+        if (element) {
+            element.value = key === 'busqueda' ? '' : 'todos';
+        }
+    });
+    applyCurrentFilters();
+}
+
+// ... (agrega aquí tus funciones de filtros, stats, etc. igual que siempre)
 
 console.log('📋 Gestor de solicitudes extendido listo.');
