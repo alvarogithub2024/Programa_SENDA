@@ -4059,16 +4059,86 @@ input:invalid {
   color: #222;
 }
 
-#modal-registrar-atencion .modal-content {
-    max-width: 450px;
-    padding: 2rem;
-    background: white;
-    border-radius: 8px;
-    box-shadow: var(--shadow-lg);
+/* Estilos para citas y botones en seguimiento */
+.appointment-item {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 18px 24px;
+  margin-bottom: 14px;
+  background: var(--light-blue, #eff6ff);
+  border-radius: 10px;
+  border: 1.5px solid var(--border-color, #e5e7eb);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  transition: box-shadow .2s;
 }
-#atencion-paciente-info p {
-    margin: 0.2em 0;
-    font-size: 1em;
+
+.appointment-item:hover {
+  box-shadow: 0 6px 18px rgba(37,99,235,0.09);
+}
+
+.cita-info {
+  flex: 1 1 60%;
+  font-size: 1.13em;
+  color: var(--primary-blue, #2563eb);
+  min-width: 180px;
+}
+
+.cita-info b {
+  font-weight: 700;
+  color: var(--primary-dark, #1e40af);
+}
+
+.cita-info span {
+  display: block;
+  color: var(--text-medium, #4b5563);
+  font-size: 0.97em;
+  margin-top: 4px;
+}
+
+.cita-actions {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* Estilos de botones */
+.btn.btn-outline.btn-sm {
+  border: 2px solid var(--primary-blue, #2563eb);
+  color: var(--primary-blue, #2563eb);
+  background: var(--background-white, #fff);
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 0.95em;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  box-shadow: 0 1px 3px rgba(37,99,235,0.06);
+}
+
+.btn.btn-outline.btn-sm:hover, .btn.btn-outline.btn-sm:focus {
+  background: var(--primary-blue, #2563eb);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.13);
+  transform: translateY(-1px) scale(1.04);
+}
+
+.btn.btn-outline.btn-sm i {
+  font-size: 1.1em;
+  margin-right: 2px;
+}
+
+/* Opcional: para el contenedor de grid si usas varias columnas */
+.upcoming-appointments-grid, .patients-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 /* Responsive para móviles */
 @media (max-width: 600px) {
