@@ -232,3 +232,4 @@ window.guardarSolicitudAyuda = guardarSolicitudAyuda;
 window.guardarSolicitudInformacion = guardarSolicitudInformacion;
 
 document.addEventListener("DOMContentLoaded", setupFormularioPaciente);
+window.setupFormularioPaciente = setupFormularioPaciente;
