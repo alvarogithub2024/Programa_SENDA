@@ -394,10 +394,11 @@ function guardarEdicionSolicitud() {
 function agendarCitaSolicitud(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
-    document.getElementById('modal-cita-id').value = solicitud.id;
-    document.getElementById('modal-cita-nombre').innerText = solicitud.nombre || '';
-    document.getElementById('modal-cita-rut').innerText = solicitud.rut || '';
-    document.getElementById('modal-cita').style.display = 'flex';
+  document.getElementById('modal-cita-profession-prof')
+document.getElementById('modal-cita-profesional-prof')
+document.getElementById('modal-cita-nombre-prof')
+document.getElementById('modal-cita-rut-prof')
+document.getElementById('form-agendar-cita-profesional')
 }
 function cerrarModalCita() { document.getElementById('modal-cita').style.display = 'none'; }
 function guardarCita() {
