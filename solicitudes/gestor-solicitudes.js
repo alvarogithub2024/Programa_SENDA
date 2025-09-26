@@ -1,8 +1,5 @@
 /**
- * SOLICITUDES/GESTOR-SOLICITUDES.JS - VINCULADO CON FIREBASE
- * Versión extendida para cargar, filtrar y actualizar solicitudes desde Firestore.
- * Mantiene tu lógica de filtrado y UI.
- * MODIFICADO: Usa campo 'fecha' en vez de 'fechaCreacion'
+ * Gestor de Solicitudes - Muestra solicitudes de ingreso, reingresos y solicitudes de información.
  */
 
 // Variables globales
@@ -52,15 +49,14 @@ window.initSolicitudesManager = function() {
     try {
         console.log('📋 Inicializando gestor de solicitudes...');
         
-        // Verificar pestaña activa
         const solicitudesTab = document.getElementById('solicitudes-tab');
         if (!solicitudesTab || !solicitudesTab.classList.contains('active')) {
             console.log('⏸️ Solicitudes no se inicializa - pestaña no activa');
             return;
         }
 
-        // Cargar solicitudes desde Firebase
-        loadSolicitudesFromFirebase().then(() => {
+        // Cargar todas las solicitudes desde las 3 colecciones
+        loadAllSolicitudes().then(() => {
             resetFilters();
             applyCurrentFilters();
             setupFilters();
@@ -81,37 +77,58 @@ window.initSolicitudesManager = function() {
 };
 
 /**
- * Carga todas las solicitudes desde Firestore
- * MODIFICADO: Usa campo 'fecha' en vez de 'fechaCreacion'
+ * Carga todas las solicitudes desde las 3 colecciones y las une
  */
-function loadSolicitudesFromFirebase() {
+function loadAllSolicitudes() {
     return new Promise((resolve, reject) => {
         try {
             const db = window.getFirestore();
-            db.collection('solicitudes_ingreso')
-                .orderBy('fecha', 'desc') // CAMBIO PRINCIPAL
-                .get()
-                .then(snapshot => {
-                    solicitudesData = [];
-                    snapshot.forEach(doc => {
-                        let data = doc.data();
-                        // Normalizar fechas para filtrado
-                        if (data.fecha && !(data.fecha instanceof Date)) {
-                            if (data.fecha.toDate) data.fecha = data.fecha.toDate();
-                            else data.fecha = new Date(data.fecha);
-                        }
-                        data.id = doc.id;
-                        solicitudesData.push(data);
-                    });
-                    resolve();
-                })
-                .catch(error => {
-                    console.error('Error cargando solicitudes Firebase:', error);
-                    if (window.showNotification) {
-                        window.showNotification('Error cargando solicitudes de ingreso', 'error');
+            // Promesas para cada colección
+            const ingresoPromise = db.collection('solicitudes_ingreso').get();
+            const reingresoPromise = db.collection('reingresos').get();
+            const infoPromise = db.collection('solicitudes_informacion').get();
+
+            Promise.all([ingresoPromise, reingresoPromise, infoPromise]).then(([ingresoSnap, reingresoSnap, infoSnap]) => {
+                solicitudesData = [];
+                // Unir todas las personas en un solo array
+                ingresoSnap.forEach(doc => {
+                    let data = doc.data();
+                    data.id = doc.id;
+                    data.origen = 'ingreso';
+                    // Normalizar fecha
+                    if (data.fecha && !(data.fecha instanceof Date)) {
+                        data.fecha = new Date(data.fecha);
                     }
-                    resolve(); // No rechazar, para que la UI igual funcione con datos vacíos
+                    solicitudesData.push(data);
                 });
+                reingresoSnap.forEach(doc => {
+                    let data = doc.data();
+                    data.id = doc.id;
+                    data.origen = 'reingreso';
+                    if (data.fecha && !(data.fecha instanceof Date)) {
+                        data.fecha = new Date(data.fecha);
+                    }
+                    solicitudesData.push(data);
+                });
+                infoSnap.forEach(doc => {
+                    let data = doc.data();
+                    data.id = doc.id;
+                    data.origen = 'informacion';
+                    if (data.fecha && !(data.fecha instanceof Date)) {
+                        data.fecha = new Date(data.fecha);
+                    }
+                    solicitudesData.push(data);
+                });
+                // Ordenar por fecha descendente
+                solicitudesData.sort((a, b) => (b.fecha?.getTime?.() || 0) - (a.fecha?.getTime?.() || 0));
+                resolve();
+            }).catch(error => {
+                console.error('Error cargando solicitudes Firebase:', error);
+                if (window.showNotification) {
+                    window.showNotification('Error cargando solicitudes (ingreso, reingreso, info)', 'error');
+                }
+                resolve();
+            });
         } catch (error) {
             console.error('Error accediendo a Firestore:', error);
             resolve();
@@ -210,7 +227,7 @@ function setupAutoRefresh() {
     if (isAutoRefreshEnabled && !autoRefreshInterval) {
         autoRefreshInterval = setInterval(() => {
             console.log('🔄 Auto-actualizando solicitudes desde Firebase...');
-            loadSolicitudesFromFirebase().then(applyCurrentFilters);
+            loadAllSolicitudes().then(applyCurrentFilters);
         }, 30000); // Cada 30 segundos
     }
 }
@@ -236,7 +253,7 @@ function renderSolicitudesTable() {
                                   currentFilters.prioridad !== 'todos' || 
                                   currentFilters.cesfam !== 'todos' 
                                   ? 'No se encontraron solicitudes con los filtros aplicados' 
-                                  : 'No hay solicitudes de ingreso registradas'}
+                                  : 'No hay solicitudes registradas'}
                             </p>
                         </div>
                     </td>
@@ -246,9 +263,7 @@ function renderSolicitudesTable() {
         }
         
         const rows = filteredSolicitudesData.map(solicitud => {
-            const estadoConfig = ESTADOS_SOLICITUDES[solicitud.estado] || ESTADOS_SOLICITUDES['pendiente'];
-            const prioridadConfig = PRIORIDADES_SOLICITUDES[solicitud.prioridad] || PRIORIDADES_SOLICITUDES['media'];
-            
+            // Usa los campos que existan en cada tipo de solicitud
             return `
                 <tr class="solicitud-row" data-solicitud-id="${solicitud.id}">
                     <td>
@@ -274,22 +289,19 @@ function renderSolicitudesTable() {
                         </div>
                     </td>
                     <td>
-                        <span class="estado-badge" style="background-color: ${estadoConfig.color}20; color: ${estadoConfig.color}; border: 1px solid ${estadoConfig.color}40;">
-                            ${estadoConfig.icon} ${estadoConfig.label}
+                        <span class="estado-badge">
+                            ${solicitud.estado || solicitud.origen || ""}
                         </span>
                     </td>
                     <td>
-                        <span class="prioridad-badge" style="background-color: ${prioridadConfig.color}20; color: ${prioridadConfig.color}; border: 1px solid ${prioridadConfig.color}40;">
-                            ${prioridadConfig.icon} ${prioridadConfig.label}
+                        <span class="prioridad-badge">
+                            ${solicitud.prioridad || solicitud.urgencia || ""}
                         </span>
                     </td>
                     <td>
                         <div class="fecha-info">
                             <div class="fecha-principal">
                                 ${solicitud.fecha ? new Date(solicitud.fecha).toLocaleDateString('es-CL') : ""}
-                            </div>
-                            <div class="tiempo-transcurrido">
-                                ${solicitud.tiempoTranscurrido || ""}
                             </div>
                         </div>
                     </td>
@@ -312,29 +324,6 @@ function renderSolicitudesTable() {
                             <button class="btn-accion btn-ver" onclick="verDetalleSolicitud('${solicitud.id}')" title="Ver detalles">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            <button class="btn-accion btn-editar" onclick="editarSolicitud('${solicitud.id}')" title="Editar">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <div class="dropdown-acciones">
-                                <button class="btn-accion btn-mas" onclick="toggleAccionesSolicitud('${solicitud.id}')" title="Más acciones">
-                                    <i class="fas fa-ellipsis-v"></i>
-                                </button>
-                                <div class="dropdown-menu" id="acciones-${solicitud.id}">
-                                    <button onclick="cambiarEstadoSolicitud('${solicitud.id}', 'en_proceso')">
-                                        <i class="fas fa-clock"></i> Marcar en proceso
-                                    </button>
-                                    <button onclick="agendarCitaSolicitud('${solicitud.id}')">
-                                        <i class="fas fa-calendar-plus"></i> Agendar cita
-                                    </button>
-                                    <button onclick="exportarSolicitud('${solicitud.id}')">
-                                        <i class="fas fa-download"></i> Exportar
-                                    </button>
-                                    <hr>
-                                    <button onclick="eliminarSolicitud('${solicitud.id}')" class="accion-peligro">
-                                        <i class="fas fa-trash"></i> Eliminar
-                                    </button>
-                                </div>
-                            </div>
                         </div>
                     </td>
                 </tr>
@@ -441,14 +430,13 @@ function updateSolicitudesStats() {
 
 /**
  * Calcular estadísticas de solicitudes
- * MODIFICADO: Usa campo 'fecha'
  */
 function calculateSolicitudesStats() {
     const today = new Date();
     return {
         total: solicitudesData.length,
         pendientes: solicitudesData.filter(s => s.estado === 'pendiente').length,
-        altaPrioridad: solicitudesData.filter(s => s.prioridad === 'alta').length,
+        altaPrioridad: solicitudesData.filter(s => s.prioridad === 'alta' || s.urgencia === 'alta').length,
         completadas: solicitudesData.filter(s => s.estado === 'completada').length,
         hoy: solicitudesData.filter(s => isSameDay(s.fecha, today)).length,
         enProceso: solicitudesData.filter(s => s.estado === 'en_proceso').length,
@@ -467,7 +455,7 @@ function applyCurrentFilters() {
         }
         
         // Filtro por Prioridad
-        if (currentFilters.prioridad !== 'todos' && (solicitud.prioridad || '').toLowerCase() !== currentFilters.prioridad) {
+        if (currentFilters.prioridad !== 'todos' && ((solicitud.prioridad || solicitud.urgencia || '').toLowerCase() !== currentFilters.prioridad)) {
             return false;
         }
         
@@ -499,11 +487,14 @@ function applyCurrentFilters() {
             }
         }
         
-        // Filtro por Búsqueda (solo RUT)
+        // Filtro por Búsqueda (nombre, rut, email)
         if (currentFilters.busqueda) {
             const rut = (solicitud.rut || '').replace(/\./g, '').toLowerCase();
+            const nombre = (solicitud.nombre || '').toLowerCase();
+            const apellidos = (solicitud.apellidos || '').toLowerCase();
+            const email = (solicitud.email || '').toLowerCase();
             const q = currentFilters.busqueda.replace(/\./g, '').toLowerCase();
-            if (!rut.includes(q)) return false;
+            if (!rut.includes(q) && !nombre.includes(q) && !apellidos.includes(q) && !email.includes(q)) return false;
         }
         
         return true;
@@ -530,7 +521,8 @@ function fillSelectOptions(id, options, labelMap = {}) {
 }
 
 function isSameDay(date1, date2) {
-    return date1.getDate() === date2.getDate() &&
+    return date1 && date2 &&
+           date1.getDate() === date2.getDate() &&
            date1.getMonth() === date2.getMonth() &&
            date1.getFullYear() === date2.getFullYear();
 }
@@ -569,20 +561,17 @@ function exportSolicitudesToExcel() {
     try {
         console.log('📊 Exportando solicitudes a Excel...');
         const dataToExport = filteredSolicitudesData.map(solicitud => ({
-            'Nombre Completo': `${solicitud.nombre} ${solicitud.apellidos}`,
-            'RUT': solicitud.rut,
-            'Edad': solicitud.edad,
-            'Teléfono': solicitud.telefono,
-            'Email': solicitud.email,
-            'CESFAM': solicitud.cesfam,
-            'Estado': ESTADOS_SOLICITUDES[solicitud.estado]?.label || solicitud.estado,
-            'Prioridad': PRIORIDADES_SOLICITUDES[solicitud.prioridad]?.label || solicitud.prioridad,
+            'Nombre Completo': `${solicitud.nombre || ""} ${solicitud.apellidos || ""}`,
+            'RUT': solicitud.rut || "",
+            'Edad': solicitud.edad || "",
+            'Teléfono': solicitud.telefono || "",
+            'Email': solicitud.email || "",
+            'CESFAM': solicitud.cesfam || "",
+            'Estado': solicitud.estado || solicitud.origen || "",
+            'Prioridad': solicitud.prioridad || solicitud.urgencia || "",
             'Sustancias': Array.isArray(solicitud.sustancias) ? solicitud.sustancias.join(', ') : 'No especificado',
             'Fecha': solicitud.fecha ? new Date(solicitud.fecha).toLocaleDateString('es-CL') : '',
-            'Descripción': solicitud.descripcion || 'Sin descripción',
-            'Motivación (1-10)': solicitud.motivacion || 'No especificado',
-            'Tiempo de Consumo': solicitud.tiempoConsumo || 'No especificado',
-            'Tratamiento Previo': solicitud.tratamientoPrevio === 'si' ? 'Sí' : 'No'
+            'Descripción': solicitud.descripcion || 'Sin descripción'
         }));
         
         const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
@@ -629,7 +618,7 @@ function convertToCSV(data) {
 }
 
 /**
- * Funciones globales para acciones de solicitudes
+ * Funciones globales para acciones de solicitudes (puedes extenderlas según tu lógica)
  */
 window.verDetalleSolicitud = function(solicitudId) {
     try {
@@ -645,71 +634,10 @@ window.verDetalleSolicitud = function(solicitudId) {
     }
 };
 
-window.editarSolicitud = function(solicitudId) {
-    try {
-        const solicitud = solicitudesData.find(s => s.id === solicitudId);
-        if (solicitud) {
-            console.log('Editar solicitud:', solicitud);
-            if (window.showNotification) {
-                window.showNotification('Función de edición en desarrollo', 'info');
-            }
-        }
-    } catch (error) {
-        console.error('Error editando solicitud:', error);
-    }
-};
-
-window.cambiarEstadoSolicitud = function(solicitudId, nuevoEstado) {
-    try {
-        console.log(`Cambiar estado de ${solicitudId} a ${nuevoEstado}`);
-        if (window.showNotification) {
-            window.showNotification('Función de cambio de estado en desarrollo', 'info');
-        }
-    } catch (error) {
-        console.error('Error cambiando estado:', error);
-    }
-};
-
-window.agendarCitaSolicitud = function(solicitudId) {
-    try {
-        console.log('Agendar cita para solicitud:', solicitudId);
-        if (window.showNotification) {
-            window.showNotification('Función de agendamiento en desarrollo', 'info');
-        }
-    } catch (error) {
-        console.error('Error agendando cita:', error);
-    }
-};
-
-window.exportarSolicitud = function(solicitudId) {
-    try {
-        const solicitud = solicitudesData.find(s => s.id === solicitudId);
-        if (solicitud) {
-            exportSolicitudesToExcel();
-        }
-    } catch (error) {
-        console.error('Error exportando solicitud:', error);
-    }
-};
-
-window.eliminarSolicitud = function(solicitudId) {
-    try {
-        if (confirm('¿Estás seguro de que quieres eliminar esta solicitud?')) {
-            console.log('Eliminar solicitud:', solicitudId);
-            if (window.showNotification) {
-                window.showNotification('Función de eliminación en desarrollo', 'warning');
-            }
-        }
-    } catch (error) {
-        console.error('Error eliminando solicitud:', error);
-    }
-};
-
 window.toggleAccionesSolicitud = function(solicitudId) {
     try {
         const dropdown = document.getElementById(`acciones-${solicitudId}`);
         if (dropdown) {
-            // Cerrar otros dropdowns
             document.querySelectorAll('.dropdown-menu').forEach(menu => {
                 if (menu.id !== `acciones-${solicitudId}`) {
                     menu.classList.remove('show');
@@ -733,7 +661,7 @@ document.addEventListener('click', (e) => {
 
 // Permite recargar manualmente desde Firebase (opcional)
 window.reloadSolicitudesFromFirebase = function() {
-    loadSolicitudesFromFirebase().then(applyCurrentFilters);
+    loadAllSolicitudes().then(applyCurrentFilters);
 };
 
-console.log('📋 Gestor de solicitudes conectado a Firebase listo.');
+console.log('📋 Gestor de solicitudes extendido listo.');
