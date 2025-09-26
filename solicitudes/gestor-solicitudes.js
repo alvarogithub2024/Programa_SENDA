@@ -538,4 +538,148 @@ window.reloadSolicitudesFromFirebase = function() {
     loadAllSolicitudes().then(applyCurrentFilters);
 };
 
+// ... código anterior ...
+
+function renderSolicitudesTable() {
+    try {
+        const tableBody = document.getElementById('solicitudes-table-body');
+        if (!tableBody) return;
+        if (filteredSolicitudesData.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="8" class="text-center" style="padding:48px;">No hay solicitudes</td></tr>`;
+            return;
+        }
+        const rows = filteredSolicitudesData.map(solicitud => {
+            // Estado visual
+            let estadoHtml;
+            if (solicitud.origen === 'informacion') {
+                estadoHtml = `<span class="estado-badge" style="background-color:#4f46e5;color:#fff;border:1px solid #818cf8;">
+                                <i class="fas fa-info-circle"></i> Información
+                              </span>`;
+            } else if (solicitud.origen === 'reingreso') {
+                estadoHtml = `<span class="estado-badge" style="background-color:#059669;color:#fff;border:1px solid #34d399;">
+                                <i class="fas fa-retweet"></i> Reingreso
+                              </span>`;
+            } else {
+                const estadoConfig = ESTADOS_SOLICITUDES[solicitud.estado] || ESTADOS_SOLICITUDES['pendiente'];
+                estadoHtml = `<span class="estado-badge" style="background-color:${estadoConfig.color}20;color:${estadoConfig.color};border:1px solid ${estadoConfig.color}40;">
+                                ${estadoConfig.icon} ${estadoConfig.label}
+                              </span>`;
+            }
+            const prioridadConfig = PRIORIDADES_SOLICITUDES[solicitud.prioridad] || PRIORIDADES_SOLICITUDES['media'];
+
+            // Botones (diferenciados)
+            let botones = `
+                <button class="btn-accion btn-ver" onclick="verDetalleSolicitud('${solicitud.id}')" title="Ver detalles">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn-accion btn-editar" onclick="editarSolicitud('${solicitud.id}')" title="Editar">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <div class="dropdown-acciones">
+                    <button class="btn-accion btn-mas" onclick="toggleAccionesSolicitud('${solicitud.id}')" title="Más acciones">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <div class="dropdown-menu" id="acciones-${solicitud.id}">
+                        <button onclick="cambiarEstadoSolicitud('${solicitud.id}', 'en_proceso')">
+                            <i class="fas fa-clock"></i> Marcar en proceso
+                        </button>
+                        ${solicitud.origen !== 'informacion' ? `
+                        <button onclick="agendarCitaSolicitud('${solicitud.id}')">
+                            <i class="fas fa-calendar-plus"></i> Agendar cita
+                        </button>
+                        ` : ''}
+                        ${solicitud.origen === 'informacion' ? `
+                        <button onclick="abrirModalResponder('${solicitud.email}', '${solicitud.nombre || ''}')">
+                            <i class="fas fa-envelope"></i> Responder
+                        </button>
+                        ` : ''}
+                        <hr>
+                        <button onclick="eliminarSolicitud('${solicitud.id}')" class="accion-peligro">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            return `
+                <tr class="solicitud-row" data-solicitud-id="${solicitud.id}">
+                    <td>
+                        <div class="paciente-info">
+                            <div class="paciente-nombre">
+                                ${solicitud.nombre || ""} ${solicitud.apellidos || ""}
+                            </div>
+                            <div class="paciente-detalles">
+                                RUT: ${solicitud.rut || ""}<br>
+                                Edad: ${solicitud.edad || ""} años
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="contacto-info">
+                            <div><i class="fas fa-phone"></i> ${solicitud.telefono || ""}</div>
+                            <div><i class="fas fa-envelope"></i> ${solicitud.email || ""}</div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="cesfam-badge">${solicitud.cesfam || ""}</div>
+                    </td>
+                    <td>${estadoHtml}</td>
+                    <td>
+                        <span class="prioridad-badge" style="background-color:${prioridadConfig.color}20;color:${prioridadConfig.color};border:1px solid ${prioridadConfig.color}40;">
+                            ${prioridadConfig.icon} ${prioridadConfig.label}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="fecha-info">
+                            <div class="fecha-principal">
+                                ${solicitud.fecha ? new Date(solicitud.fecha).toLocaleDateString('es-CL') : ""}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="sustancias-info">
+                            ${Array.isArray(solicitud.sustancias) 
+                                ? solicitud.sustancias.slice(0, 2).map(s => 
+                                    `<span class="sustancia-tag">${s}</span>`
+                                  ).join(' ')
+                                : '<span class="sustancia-tag">No especificado</span>'
+                            }
+                            ${Array.isArray(solicitud.sustancias) && solicitud.sustancias.length > 2 
+                                ? `<span class="sustancia-tag">+${solicitud.sustancias.length - 2}</span>` 
+                                : ''
+                            }
+                        </div>
+                    </td>
+                    <td><div class="acciones-solicitud">${botones}</div></td>
+                </tr>
+            `;
+        }).join('');
+        tableBody.innerHTML = rows;
+    } catch (error) {
+        console.error('❌ Error renderizando tabla:', error);
+    }
+}
+
+// Modal responder (puedes ponerlo en tu HTML principal)
+function abrirModalResponder(email, nombre) {
+    const modal = document.getElementById('modal-responder');
+    if (!modal) return;
+    document.getElementById('modal-responder-email').value = email;
+    document.getElementById('modal-responder-nombre').innerText = nombre;
+    modal.style.display = 'block';
+}
+function cerrarModalResponder() {
+    const modal = document.getElementById('modal-responder');
+    if (modal) modal.style.display = 'none';
+}
+function enviarCorreoSenda() {
+    const email = document.getElementById('modal-responder-email').value;
+    const asunto = document.getElementById('modal-responder-asunto').value;
+    const mensaje = document.getElementById('modal-responder-mensaje').value;
+    // Aquí iría la lógica para enviar el correo usando el correo de Senda (API o backend propio)
+    alert(`Correo enviado a ${email} desde la cuenta de Senda.\nAsunto: ${asunto}\nMensaje: ${mensaje}`);
+    cerrarModalResponder();
+}
+
+
 console.log('📋 Gestor de solicitudes extendido listo.');
