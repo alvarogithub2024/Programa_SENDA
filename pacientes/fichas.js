@@ -9,6 +9,8 @@
                 window.getFirestore().collection('profesionales').doc(user.uid).get().then(function(doc){
                     if (doc.exists) {
                         profesionActual = doc.data().profession || null;
+                        // Depuración
+                        // console.log("Profesión detectada:", profesionActual);
                     }
                 });
             } else {
@@ -102,7 +104,6 @@
                   </button>
                 </div>
             `;
-            div.dataset.pacienteRut = p.rut;
             grid.appendChild(div);
         });
     }
@@ -120,7 +121,6 @@
         renderPacientesGrid(filtrados);
     }
 
-    // Cambiado: ahora busca por ID del paciente
     window.verFichaPacienteSenda = function(rut) {
         const db = window.getFirestore();
         const rutLimpio = (rut || '').replace(/[.\-]/g, '').trim();
@@ -158,7 +158,7 @@
             `;
             modalBody.innerHTML = html;
 
-            cargarHistorialClinicoPacientePorId(pacienteData.id);
+            cargarHistorialClinicoPacientePorRut(pacienteData.rut);
         });
     };
 
@@ -167,13 +167,13 @@
         if (modal) modal.style.display = 'none';
     };
 
-    // Cambiado: buscar por pacienteId
-    function cargarHistorialClinicoPacientePorId(pacienteId) {
+    function cargarHistorialClinicoPacientePorRut(rutPaciente) {
         const cont = document.getElementById('historial-clinico');
         if (!cont) return;
         const db = window.getFirestore();
+        rutPaciente = (rutPaciente || '').replace(/[.\-]/g, '').trim();
         db.collection('atenciones')
-          .where('pacienteId', '==', pacienteId)
+          .where('pacienteRut', '==', rutPaciente)
           .orderBy('fechaRegistro', 'desc')
           .get()
           .then(snapshot => {
@@ -199,10 +199,10 @@
                       let acciones = '';
                       if (puedeEditarHistorial()) {
                           acciones = `
-                              <button class="btn btn-outline btn-sm" onclick="window.mostrarModalEditarAtencionDesdeFicha('${doc.id}', '${encodeURIComponent(a.descripcion || '')}', '${a.tipoAtencion || ''}', '${pacienteId}')">
+                              <button class="btn btn-outline btn-sm" onclick="window.mostrarModalEditarAtencionDesdeFicha('${doc.id}', '${encodeURIComponent(a.descripcion || '')}', '${a.tipoAtencion || ''}', '${rutPaciente}')">
                                   <i class="fas fa-edit"></i> Editar
                               </button>
-                              <button class="btn btn-danger btn-sm" onclick="window.eliminarAtencionDesdeFicha('${doc.id}', '${pacienteId}')">
+                              <button class="btn btn-danger btn-sm" onclick="window.eliminarAtencionDesdeFicha('${doc.id}', '${rutPaciente}')">
                                   <i class="fas fa-trash"></i> Eliminar
                               </button>
                           `;
@@ -224,7 +224,7 @@
                     <p>Error cargando historial clínico. Firestore requiere un índice compuesto para esta consulta.</p>
                     <p>Sigue el enlace en la consola de Firebase para crearlo.</p>
                   `;
-                  console.error("Firestore necesita índice compuesto para atenciones.pacienteId + fechaRegistro", error);
+                  console.error("Firestore necesita índice compuesto para atenciones.pacienteRut + fechaRegistro", error);
               } else {
                   cont.innerHTML = "<p>Error cargando historial clínico.</p>";
                   console.error("Error Firestore:", error);
@@ -233,7 +233,7 @@
     }
 
     // MODAL DE EDICIÓN DE ATENCIÓN DESDE FICHA
-    window.mostrarModalEditarAtencionDesdeFicha = function(atencionId, descripcionEnc, tipoAtencion, pacienteId) {
+    window.mostrarModalEditarAtencionDesdeFicha = function(atencionId, descripcionEnc, tipoAtencion, rutPaciente) {
         const descripcion = decodeURIComponent(descripcionEnc);
         window.cerrarModalFichaPaciente();
 
@@ -266,7 +266,7 @@
                       <button type="submit" class="btn btn-primary">Guardar cambios</button>
                     </div>
                     <input type="hidden" id="editar-atencion-id-ficha">
-                    <input type="hidden" id="editar-atencion-paciente-id-ficha">
+                    <input type="hidden" id="editar-atencion-rut-ficha">
                 </form>
             </div>`;
             document.body.appendChild(modal);
@@ -276,7 +276,7 @@
         document.getElementById('editar-atencion-id-ficha').value = atencionId;
         document.getElementById('editar-atencion-descripcion-ficha').value = descripcion || "";
         document.getElementById('editar-atencion-tipo-ficha').value = tipoAtencion || "";
-        document.getElementById('editar-atencion-paciente-id-ficha').value = pacienteId;
+        document.getElementById('editar-atencion-rut-ficha').value = rutPaciente;
 
         var form = document.getElementById('form-editar-atencion-ficha');
         if (form) {
@@ -285,7 +285,7 @@
                 const id = document.getElementById('editar-atencion-id-ficha').value;
                 const nuevaDescripcion = document.getElementById('editar-atencion-descripcion-ficha').value.trim();
                 const nuevoTipo = document.getElementById('editar-atencion-tipo-ficha').value;
-                const pacienteId = document.getElementById('editar-atencion-paciente-id-ficha').value;
+                const rutPaciente = document.getElementById('editar-atencion-rut-ficha').value;
                 const db = window.getFirestore();
                 db.collection("atenciones").doc(id).update({
                     descripcion: nuevaDescripcion,
@@ -295,7 +295,7 @@
                 .then(function() {
                     window.showNotification("Atención editada correctamente", "success");
                     cerrarModalEditarAtencionFicha();
-                    cargarHistorialClinicoPacientePorId(pacienteId);
+                    cargarHistorialClinicoPacientePorRut(rutPaciente);
                 })
                 .catch(function(error) {
                     window.showNotification("Error al editar atención: " + error.message, "error");
@@ -311,14 +311,14 @@
         if (fichaModal) fichaModal.style.display = 'flex';
     };
 
-    window.eliminarAtencionDesdeFicha = function(atencionId, pacienteId) {
+    window.eliminarAtencionDesdeFicha = function(atencionId, rutPaciente) {
         if (!puedeEditarHistorial()) return;
         if (!confirm("¿Seguro que deseas eliminar esta atención?")) return;
         const db = window.getFirestore();
         db.collection('atenciones').doc(atencionId).delete()
           .then(() => {
               window.showNotification && window.showNotification("Atención eliminada correctamente", "success");
-              cargarHistorialClinicoPacientePorId(pacienteId);
+              cargarHistorialClinicoPacientePorRut(rutPaciente);
           })
           .catch(error => {
               window.showNotification && window.showNotification("Error al eliminar atención: " + error.message, "error");
