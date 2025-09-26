@@ -545,58 +545,53 @@ Buscar
   </div>
 </div>
   
-<!-- Modal Agendar Cita -->
-<div class="modal-overlay" id="modal-cita" style="display:none;">
-  <div class="modal-content">
-    <span class="close" onclick="closeModal('modal-cita')">&times;</span>
-    <h2>Agendar cita</h2>
-    <form class="modal-form" id="form-agendar-cita">
+<!-- ========== MODAL AGENDAR CITA ENTRE PROFESIONALES ========== -->
+<div class="modal-overlay" id="modal-agendar-cita-profesional" style="display:none;">
+  <div class="modal-content large-modal">
+    <button class="close" onclick="closeModal('modal-agendar-cita-profesional')">
+      <i class="fas fa-times"></i>
+    </button>
+    <h2 class="modal-title-main"><i class="fas fa-calendar-plus"></i> Agendar Cita entre Profesionales</h2>
+    <form id="form-agendar-cita-profesional" class="cita-form">
       <div class="form-group">
-        <label><b>Nombre:</b></label>
-        <span id="modal-cita-nombre"></span>
+        <label class="form-label" for="modal-cita-profession-prof">Profesión *</label>
+        <select class="form-select" id="modal-cita-profession-prof" required>
+          <option value="">Seleccionar profesión...</option>
+        </select>
       </div>
       <div class="form-group">
-        <label><b>RUT:</b></label>
-        <span id="modal-cita-rut"></span>
+        <label class="form-label" for="modal-cita-profesional-prof">Profesional *</label>
+        <select class="form-select" id="modal-cita-profesional-prof" required>
+          <option value="">Selecciona profesional...</option>
+        </select>
+        <input type="hidden" id="modal-cita-profesional-nombre-prof">
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="modal-cita-profession">Profesión:</label>
-          <select id="modal-cita-profession" required>
-            <option value="">Seleccionar profesión...</option>
-            <!-- Opciones llenadas dinámicamente -->
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="modal-cita-profesional">Profesional:</label>
-          <select id="modal-cita-profesional" required>
-            <option value="">Selecciona profesional...</option>
-            <!-- Opciones llenadas dinámicamente -->
-          </select>
-          <input type="hidden" id="modal-cita-profesional-nombre">
-        </div>
+      <div class="form-group">
+        <label class="form-label" for="modal-cita-fecha-prof">Fecha *</label>
+        <input type="date" class="form-input" id="modal-cita-fecha-prof" required>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="modal-cita-fecha">Fecha:</label>
-          <input type="date" id="modal-cita-fecha" required>
-        </div>
-        <div class="form-group">
-          <label for="modal-cita-hora">Hora:</label>
-          <select id="modal-cita-hora" required>
-            <option value="">Selecciona hora...</option>
-            <!-- Opciones llenadas dinámicamente -->
-          </select>
-        </div>
+      <div class="form-group">
+        <label class="form-label" for="modal-cita-hora-prof">Hora *</label>
+        <select class="form-select" id="modal-cita-hora-prof" required>
+          <option value="">Selecciona hora...</option>
+        </select>
       </div>
-      <div class="form-actions">
+      <div class="form-actions form-actions-row">
+        <button type="button" class="btn btn-outline" onclick="closeModal('modal-agendar-cita-profesional')">Cancelar</button>
         <button type="submit" class="btn btn-primary">Agendar</button>
       </div>
-      <input type="hidden" id="modal-cita-id">
+      <input type="hidden" id="modal-cita-id-prof">
+      <div class="form-group">
+        <label class="form-label" for="modal-cita-nombre-prof">Nombre:</label>
+        <span id="modal-cita-nombre-prof"></span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="modal-cita-rut-prof">RUT:</label>
+        <span id="modal-cita-rut-prof"></span>
+      </div>
     </form>
   </div>
 </div>
-
 <!-- Modal Responder Solicitud -->
 <div class="modal-overlay" id="modal-responder" style="display:none;">
   <div class="modal-content">
