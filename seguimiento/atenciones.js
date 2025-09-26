@@ -1,12 +1,67 @@
 // SEGUIMIENTO/ATENCIONES.JS
 
-// Requiere: window.getFirestore, window.showNotification, window.getServerTimestamp
+// Registra una nueva atención para un paciente desde cita agendada
+document.addEventListener("DOMContentLoaded", function() {
+    var form = document.getElementById("form-registrar-atencion");
+    if (!form) return;
 
-// Registra una nueva atención para un paciente
-function registrarAtencion(datosAtencion, callback) {
+    form.addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        var citaId = document.getElementById("atencion-cita-id").value;
+        var pacienteId = document.getElementById("atencion-paciente-id").value;
+        var descripcion = document.getElementById("atencion-descripcion").value.trim();
+        var tipoAtencion = document.getElementById("atencion-tipo").value;
+
+        if (!descripcion || !tipoAtencion) {
+            window.showNotification("Completa los campos obligatorios", "warning");
+            return;
+        }
+
+        var db = window.getFirestore();
+        var user = firebase.auth().currentUser;
+
+        db.collection("citas").doc(citaId).get().then(function(doc) {
+            if (!doc.exists) {
+                window.showNotification("Cita no encontrada", "error");
+                return;
+            }
+            var cita = doc.data();
+
+            var datosAtencion = {
+                pacienteId: pacienteId,
+                pacienteNombre: cita.pacienteNombre || cita.nombre || "",
+                pacienteRut: cita.pacienteRut || cita.rut || "",
+                cesfam: cita.cesfam || "",
+                fecha: cita.fecha || "",
+                hora: cita.hora || "",
+                descripcion: descripcion,
+                tipoAtencion: tipoAtencion,
+                profesional: cita.profesionalNombre || (user ? user.email : ""),
+                profesionalId: cita.profesionalId || (user ? user.uid : ""),
+                fechaRegistro: new Date().toISOString(),
+                citaId: citaId
+            };
+
+            db.collection("atenciones").add(datosAtencion)
+            .then(function() {
+                window.showNotification("Atención registrada correctamente", "success");
+                closeModal("modal-registrar-atencion");
+                // Opcional: recargar próximas citas
+                if (window.cargarCitasProximasHoy) window.cargarCitasProximasHoy();
+            })
+            .catch(function(error) {
+                window.showNotification("Error guardando atención: " + error.message, "error");
+            });
+        });
+    });
+});
+
+// Exportar globalmente
+window.registrarAtencion = function(datosAtencion, callback) {
     var db = window.getFirestore();
     var datos = Object.assign({}, datosAtencion, {
-        fechaRegistro: window.getServerTimestamp ? window.getServerTimestamp() : new Date().toISOString()
+        fechaRegistro: new Date().toISOString()
     });
 
     db.collection("atenciones")
@@ -19,45 +74,4 @@ function registrarAtencion(datosAtencion, callback) {
             window.showNotification("Error al registrar atención: " + error.message, "error");
             if (typeof callback === "function") callback(false, null);
         });
-}
-
-// Edita una atención existente
-function editarAtencion(atencionId, nuevosDatos, callback) {
-    var db = window.getFirestore();
-    db.collection("atenciones").doc(atencionId)
-        .update(nuevosDatos)
-        .then(function() {
-            window.showNotification("Atención actualizada", "success");
-            if (typeof callback === "function") callback(true);
-        })
-        .catch(function(error) {
-            window.showNotification("Error actualizando atención: " + error.message, "error");
-            if (typeof callback === "function") callback(false);
-        });
-}
-
-// Obtiene una atención por ID
-function obtenerAtencionPorId(atencionId, callback) {
-    var db = window.getFirestore();
-    db.collection("atenciones").doc(atencionId).get()
-        .then(function(doc) {
-            if (!doc.exists) {
-                window.showNotification("Atención no encontrada", "warning");
-                if (typeof callback === "function") callback(null);
-                return;
-            }
-            var data = doc.data();
-            data.id = doc.id;
-            if (typeof callback === "function") callback(data);
-        })
-        .catch(function(error) {
-            window.showNotification("Error obteniendo atención: " + error.message, "error");
-            if (typeof callback === "function") callback(null);
-        });
-}
-
-// Exportar globalmente
-window.registrarAtencion = registrarAtencion;
-window.editarAtencion = editarAtencion;
-window.obtenerAtencionPorId = obtenerAtencionPorId;
-
+};
