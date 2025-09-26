@@ -639,21 +639,6 @@ Buscar
     </form>
   </div>
 </div>
-<!-- Modal Responder -->
-<div id="modal-responder" class="modal" style="display:none;">
-    <div class="modal-content">
-        <span class="close" onclick="cerrarModalResponder()">&times;</span>
-        <h3>Responder solicitud de información</h3>
-        <input type="hidden" id="modal-responder-id">
-        <p>Para: <span id="modal-responder-nombre"></span></p>
-        <input type="hidden" id="modal-responder-email">
-        <label>Asunto:</label>
-        <input type="text" id="modal-responder-asunto" value="Respuesta a su solicitud de información">
-        <label>Mensaje:</label>
-        <textarea id="modal-responder-mensaje" rows="5"></textarea>
-        <button onclick="enviarCorreoSenda()" class="btn btn-success">Enviar correo</button>
-    </div>
-</div>
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
