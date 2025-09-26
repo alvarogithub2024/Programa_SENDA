@@ -277,27 +277,13 @@
             horaTexto = fechaObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
         }
         const tipoFormateado = formatearTipoAtencion(atencion.tipoAtencion);
-        // Solo clickeable si puede editar
         const clickable = puedeEditar ? `onclick="abrirModalEditarAtencion('${docId}', '${encodeURIComponent(atencion.descripcion || "")}', '${atencion.tipoAtencion || ""}', '${rutPaciente}')"` : "";
 
         return `
             <div class="historial-entry" data-entry-id="${docId}" style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:1rem; margin-bottom:1rem; cursor:${puedeEditar ? 'pointer' : 'default'};" ${clickable}>
-                <div class="entry-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
-                    <div class="entry-info">
-                        <div class="entry-professional" style="font-weight:600; color:#2563eb; font-size:0.95rem;">
-                            <i class="fas fa-user-md"></i> ${atencion.profesional || 'Profesional no especificado'}
-                        </div>
-                        <div class="entry-datetime" style="color:#6b7280; font-size:0.85rem; margin-top:2px;">
-                            <i class="fas fa-calendar"></i> ${fechaTexto} - <i class="fas fa-clock"></i> ${horaTexto}
-                        </div>
-                        <div class="entry-type" style="color:#059669; font-size:0.85rem; margin-top:2px;">
-                            <i class="fas fa-stethoscope"></i> ${tipoFormateado}
-                        </div>
-                    </div>
-                </div>
-                <div class="entry-content" style="color:#374151; line-height:1.5; margin:8px 0;">
-                    ${atencion.descripcion || 'Sin descripción'}
-                </div>
+                <div><b>${fechaTexto} ${horaTexto}</b> - ${tipoFormateado}</div>
+                <div><i>${atencion.profesional || ''}</i></div>
+                <div>${atencion.descripcion || 'Sin descripción'}</div>
             </div>
         `;
     }
