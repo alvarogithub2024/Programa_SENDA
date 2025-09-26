@@ -552,6 +552,47 @@ window.reloadSolicitudesFromFirebase = function() {
 };
 
 /**
+ * Listar todas las solicitudes de ingreso
+ */
+function listarSolicitudesIngreso(callback) {
+    const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
+    db.collection('solicitudes_ingreso').get().then(querySnapshot => {
+        const solicitudes = [];
+        querySnapshot.forEach(doc => {
+            const id = doc.id; // <-- este es el ID del documento
+            const data = doc.data();
+            solicitudes.push({ id, ...data });
+            // Aquí puedes mostrar en la UI, o pasar a un callback
+        });
+        if (typeof callback === "function") callback(solicitudes);
+    });
+}
+
+/**
+ * Actualizar una solicitud por ID
+ */
+function actualizarSolicitudIngreso(id, nuevoNombre, nuevoRut, nuevoTelefono, callback) {
+    const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
+    db.collection('solicitudes_ingreso').doc(id).update({
+        nombre: nuevoNombre,
+        rut: nuevoRut,
+        telefono: nuevoTelefono
+    })
+    .then(() => {
+        window.showNotification && window.showNotification('Solicitud actualizada correctamente', 'success');
+        if (typeof callback === "function") callback(true);
+    })
+    .catch((error) => {
+        window.showNotification && window.showNotification('Error actualizando solicitud: ' + error.message, 'error');
+        if (typeof callback === "function") callback(false, error);
+    });
+}
+
+// Exportar globalmente
+window.listarSolicitudesIngreso = listarSolicitudesIngreso;
+window.actualizarSolicitudIngreso = actualizarSolicitudIngreso;
+
+/**
  * Resetear los filtros a estado inicial.
  */
 function resetFilters() {
@@ -693,6 +734,10 @@ function guardarEdicionSolicitud() {
     });
 } // ← Cierre correcto de la función
 
+function cerrarModalEditar() {
+    document.getElementById('modal-editar').style.display = 'none';
+}
+window.cerrarModalEditar = cerrarModalEditar;
 /**
  * Contador de solicitudes filtradas y totales
  */
