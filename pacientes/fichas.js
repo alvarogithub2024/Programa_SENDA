@@ -1,78 +1,67 @@
+// ===================================================================
+// MEJORAS PARA TU CÓDIGO EXISTENTE DE FICHAS DE PACIENTES
+// Integra con tu sistema actual manteniendo la funcionalidad
+// ===================================================================
+
 (function() {
     let pacientesTabData = [];
     let profesionActual = null;
 
-    // Detecta profesión actual con mejores logs para debug
+    // Detecta profesión actual (tu código existente)
     if (window.getCurrentUser && window.getFirestore && typeof firebase !== "undefined") {
         firebase.auth().onAuthStateChanged(function(user) {
             if (user) {
-                console.log('Usuario autenticado:', user.uid);
                 window.getFirestore().collection('profesionales').doc(user.uid).get().then(function(doc){
                     if (doc.exists) {
-                        const data = doc.data();
-                        profesionActual = data.profession || null;
-                        console.log('Profesión encontrada:', profesionActual);
-                        console.log('Datos del profesional:', data);
-                    } else {
-                        console.warn('Documento de profesional no encontrado para UID:', user.uid);
-                        profesionActual = null;
+                        profesionActual = doc.data().profession || null;
                     }
-                }).catch(function(error) {
-                    console.error('Error al obtener datos del profesional:', error);
-                    profesionActual = null;
                 });
             } else {
-                console.log('Usuario no autenticado');
                 profesionActual = null;
             }
         });
     }
 
-    // Función auxiliar para verificar permisos
+    // ===== FUNCIONES AUXILIARES PARA PERMISOS =====
+    
+    /**
+     * Verifica si el profesional actual puede editar historial
+     */
     function puedeEditarHistorial() {
         const rolesPermitidos = ['medico', 'psicologo', 'terapeuta'];
-        const resultado = profesionActual && rolesPermitidos.includes(profesionActual);
-        console.log('Verificando permisos - profesionActual:', profesionActual, 'puedeEditar:', resultado);
-        return resultado;
+        return profesionActual && rolesPermitidos.includes(profesionActual);
     }
 
-    // Función para obtener profesional actual con más detalle
+    /**
+     * Obtiene información del profesional actual
+     */
     function obtenerProfesionalActual() {
         return new Promise((resolve) => {
-            const user = firebase.auth().currentUser;
-            if (!user) {
-                console.log('No hay usuario autenticado');
+            if (profesionActual) {
+                firebase.auth().currentUser && window.getFirestore()
+                    .collection('profesionales')
+                    .doc(firebase.auth().currentUser.uid)
+                    .get()
+                    .then(doc => {
+                        if (doc.exists) {
+                            resolve({
+                                id: doc.id,
+                                ...doc.data(),
+                                profession: profesionActual
+                            });
+                        } else {
+                            resolve(null);
+                        }
+                    })
+                    .catch(() => resolve(null));
+            } else {
                 resolve(null);
-                return;
             }
-
-            window.getFirestore()
-                .collection('profesionales')
-                .doc(user.uid)
-                .get()
-                .then(doc => {
-                    if (doc.exists) {
-                        const data = doc.data();
-                        const profesional = {
-                            id: doc.id,
-                            ...data,
-                            profession: profesionActual || data.profession
-                        };
-                        console.log('Profesional obtenido:', profesional);
-                        resolve(profesional);
-                    } else {
-                        console.warn('Documento de profesional no encontrado');
-                        resolve(null);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error al obtener profesional:', error);
-                    resolve(null);
-                });
         });
     }
 
-    // Funciones básicas del sistema
+    // ===== TUS FUNCIONES EXISTENTES (mantenidas) =====
+    
     function getGrid() { return document.getElementById('patients-grid'); }
     function getSearchInput() { return document.getElementById('search-pacientes-rut'); }
     function getBuscarBtn() { return document.getElementById('buscar-paciente-btn'); }
@@ -169,12 +158,9 @@
         renderPacientesGrid(filtrados);
     }
 
-    // FUNCIÓN PRINCIPAL PARA VER FICHA (CORREGIDA)
+    // ===== FUNCIÓN PRINCIPAL MEJORADA PARA VER FICHA =====
+    
     window.verFichaPacienteSenda = async function(rut) {
-        console.log('=== ABRIENDO FICHA DE PACIENTE ===');
-        console.log('Usuario actual:', firebase.auth().currentUser);
-        console.log('profesionActual al abrir ficha:', profesionActual);
-        
         const db = window.getFirestore();
         const rutLimpio = (rut || '').replace(/[.\-]/g, '').trim();
         
@@ -187,17 +173,8 @@
             }
             
             const pacienteData = Object.assign({ id: snapshot.docs[0].id }, snapshot.docs[0].data());
-            
-            // Esperar un poco si profesionActual aún es null
-            if (profesionActual === null && firebase.auth().currentUser) {
-                console.log('Esperando profesionActual...');
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-            
             const profesional = await obtenerProfesionalActual();
             const puedeEditar = puedeEditarHistorial();
-            
-            console.log('Estado final - profesional:', profesional, 'puedeEditar:', puedeEditar);
 
             // Crear o mostrar modal
             let modal = document.getElementById('modal-ficha-paciente');
@@ -216,12 +193,13 @@
             
             modal.style.display = 'flex';
 
-            // Construir HTML de la ficha
+            // Construir HTML mejorado de la ficha
             const modalBody = document.getElementById('modal-ficha-paciente-body');
-            modalBody.innerHTML = construirHTMLFicha(pacienteData, puedeEditar, profesional);
+            const html = construirHTMLFichaMejorada(pacienteData, puedeEditar, profesional);
+            modalBody.innerHTML = html;
 
             // Cargar historial clínico
-            await cargarHistorialClinico(pacienteData.rut, puedeEditar, profesional);
+            await cargarHistorialClinicoMejorado(pacienteData.rut, puedeEditar, profesional);
 
         } catch (error) {
             console.error('Error al mostrar ficha:', error);
@@ -229,9 +207,10 @@
         }
     };
 
-    function construirHTMLFicha(paciente, puedeEditar, profesional) {
-        console.log('Construyendo HTML - puedeEditar:', puedeEditar);
-        
+    /**
+     * Construye HTML mejorado para la ficha del paciente
+     */
+    function construirHTMLFichaMejorada(paciente, puedeEditar, profesional) {
         return `
             <h3 style="color: #2563eb; margin-bottom:15px; font-size:1.4rem; font-weight:700;">
                 <i class="fas fa-user-circle"></i> ${paciente.nombre || ''} ${paciente.apellidos || ''}
@@ -246,13 +225,13 @@
             
             <hr style="margin:20px 0; border:1px solid #e5e7eb;">
             
-            <div id="historial-clinico" data-paciente-rut="${paciente.rut}">
+            <div id="historial-clinico" class="${puedeEditar ? '' : 'historial-readonly'}" data-paciente-rut="${paciente.rut}">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                     <h4 style="color:#2563eb; margin:0; font-size:1.2rem; font-weight:600;">
                         <i class="fas fa-clipboard-list"></i> Historial Clínico
                     </h4>
                     ${puedeEditar ? `
-                        <button class="btn btn-success btn-sm" onclick="mostrarFormularioNuevaAtencion('${paciente.rut}')" style="background:#10b981; color:white; border:none; padding:8px 12px; border-radius:6px; font-size:0.85rem; cursor:pointer;">
+                        <button class="btn-add-entry" onclick="mostrarFormularioNuevaAtencion('${paciente.rut}')">
                             <i class="fas fa-plus"></i> Agregar Atención
                         </button>
                     ` : ''}
@@ -266,14 +245,14 @@
         `;
     }
 
-    async function cargarHistorialClinico(rutPaciente, puedeEditar, profesional) {
+    // ===== FUNCIÓN MEJORADA PARA CARGAR HISTORIAL =====
+    
+    async function cargarHistorialClinicoMejorado(rutPaciente, puedeEditar, profesional) {
         const cont = document.getElementById('historial-contenido');
         if (!cont) return;
         
         const db = window.getFirestore();
         const rutLimpio = (rutPaciente || '').replace(/[.\-]/g, '').trim();
-        
-        console.log('Cargando historial - puedeEditar:', puedeEditar, 'profesional:', profesional);
         
         try {
             const snapshot = await db.collection('atenciones')
@@ -283,7 +262,7 @@
             
             if (snapshot.empty) {
                 cont.innerHTML = `
-                    <div style="text-align:center; padding:2rem; color:#6b7280;">
+                    <div class="no-historial" style="text-align:center; padding:2rem; color:#6b7280;">
                         <i class="fas fa-clipboard" style="font-size:2rem; margin-bottom:1rem; color:#d1d5db;"></i>
                         <p>No hay atenciones registradas en el historial clínico</p>
                     </div>
@@ -320,6 +299,9 @@
         }
     }
 
+    /**
+     * Construye HTML para una entrada del historial
+     */
     function construirEntradaHistorial(docId, atencion, puedeEditar, profesional, rutPaciente) {
         // Formatear fecha y hora
         let fechaTexto = '';
@@ -341,21 +323,19 @@
             atencion.profesionalId === profesional.id || 
             profesional.profession === 'medico' // Los médicos pueden editar todo
         );
-        
-        console.log(`Entrada ${docId} - puedeEditar: ${puedeEditar}, puedeEditarEsta: ${puedeEditarEsta}`);
 
         // Botones de acción
         let acciones = '';
         if (puedeEditarEsta) {
             acciones = `
-                <div style="display:flex; gap:8px; margin-top:8px;">
-                    <button onclick="mostrarModalEditarAtencionDesdeFicha('${docId}', '${encodeURIComponent(atencion.descripcion || '')}', '${atencion.tipoAtencion || ''}', '${rutPaciente}')"
-                            style="background:#2563eb; color:white; border:none; padding:6px 12px; border-radius:4px; font-size:0.85rem; cursor:pointer; display:inline-flex; align-items:center; gap:4px;"
+                <div class="entry-actions" style="display:flex; gap:8px; margin-top:8px;">
+                    <button class="btn-entry-action edit" 
+                            onclick="mostrarModalEditarAtencionDesdeFicha('${docId}', '${encodeURIComponent(atencion.descripcion || '')}', '${atencion.tipoAtencion || ''}', '${rutPaciente}')"
                             title="Editar atención">
                         <i class="fas fa-edit"></i> Editar
                     </button>
-                    <button onclick="confirmarEliminarAtencion('${docId}', '${rutPaciente}')"
-                            style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:4px; font-size:0.85rem; cursor:pointer; display:inline-flex; align-items:center; gap:4px;"
+                    <button class="btn-entry-action delete" 
+                            onclick="confirmarEliminarAtencion('${docId}', '${rutPaciente}')"
                             title="Eliminar atención">
                         <i class="fas fa-trash"></i> Eliminar
                     </button>
@@ -367,20 +347,22 @@
         const tipoFormateado = formatearTipoAtencion(atencion.tipoAtencion);
 
         return `
-            <div style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:1rem; margin-bottom:1rem;">
-                <div style="margin-bottom:8px;">
-                    <div style="font-weight:600; color:#2563eb; font-size:0.95rem;">
-                        <i class="fas fa-user-md"></i> ${atencion.profesional || 'Profesional no especificado'}
-                    </div>
-                    <div style="color:#6b7280; font-size:0.85rem; margin-top:2px;">
-                        <i class="fas fa-calendar"></i> ${fechaTexto} - <i class="fas fa-clock"></i> ${horaTexto}
-                    </div>
-                    <div style="color:#059669; font-size:0.85rem; margin-top:2px;">
-                        <i class="fas fa-stethoscope"></i> ${tipoFormateado}
+            <div class="historial-entry" data-entry-id="${docId}" style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:1rem; margin-bottom:1rem; transition:all 0.2s;">
+                <div class="entry-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                    <div class="entry-info">
+                        <div class="entry-professional" style="font-weight:600; color:#2563eb; font-size:0.95rem;">
+                            <i class="fas fa-user-md"></i> ${atencion.profesional || 'Profesional no especificado'}
+                        </div>
+                        <div class="entry-datetime" style="color:#6b7280; font-size:0.85rem; margin-top:2px;">
+                            <i class="fas fa-calendar"></i> ${fechaTexto} - <i class="fas fa-clock"></i> ${horaTexto}
+                        </div>
+                        <div class="entry-type" style="color:#059669; font-size:0.85rem; margin-top:2px;">
+                            <i class="fas fa-stethoscope"></i> ${tipoFormateado}
+                        </div>
                     </div>
                 </div>
                 
-                <div style="color:#374151; line-height:1.5; margin:8px 0;">
+                <div class="entry-content" style="color:#374151; line-height:1.5; margin:8px 0;">
                     ${atencion.descripcion || 'Sin descripción'}
                 </div>
                 
@@ -389,6 +371,9 @@
         `;
     }
 
+    /**
+     * Formatea el tipo de atención para mostrar
+     */
     function formatearTipoAtencion(tipo) {
         const tipos = {
             'consulta': 'Consulta General',
@@ -400,18 +385,20 @@
         return tipos[tipo] || 'Consulta General';
     }
 
-    // Función para agregar nueva atención
+    // ===== NUEVA FUNCIÓN PARA AGREGAR ATENCIÓN =====
+    
     window.mostrarFormularioNuevaAtencion = function(rutPaciente) {
         const modalHTML = `
-            <div class="modal-overlay" id="modal-nueva-atencion" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:10000;">
-                <div class="modal-content" style="background:white; border-radius:12px; padding:2rem; max-width:500px; width:90%;">
+            <div class="modal-overlay" id="modal-nueva-atencion">
+                <div class="modal-content" style="max-width:500px;">
+                    <span class="close" onclick="cerrarModalNuevaAtencion()">&times;</span>
                     <h2 style="color:#2563eb; margin-bottom:1.5rem;">
                         <i class="fas fa-plus-circle"></i> Nueva Atención
                     </h2>
                     <form id="form-nueva-atencion">
-                        <div style="margin-bottom:1rem;">
-                            <label style="display:block; margin-bottom:0.5rem; font-weight:500;">Tipo de atención *</label>
-                            <select id="nueva-atencion-tipo" style="width:100%; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px;" required>
+                        <div class="form-group">
+                            <label for="nueva-atencion-tipo">Tipo de atención *</label>
+                            <select id="nueva-atencion-tipo" class="form-select" required>
                                 <option value="">Selecciona tipo...</option>
                                 <option value="consulta">Consulta</option>
                                 <option value="seguimiento">Seguimiento</option>
@@ -420,17 +407,17 @@
                                 <option value="derivacion">Derivación</option>
                             </select>
                         </div>
-                        <div style="margin-bottom:1rem;">
-                            <label style="display:block; margin-bottom:0.5rem; font-weight:500;">Descripción *</label>
-                            <textarea id="nueva-atencion-descripcion" style="width:100%; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; min-height:100px;" 
-                                      placeholder="Describe la atención realizada..." required></textarea>
+                        <div class="form-group">
+                            <label for="nueva-atencion-descripcion">Descripción de la atención *</label>
+                            <textarea id="nueva-atencion-descripcion" class="form-textarea" rows="5" 
+                                      placeholder="Describe la atención realizada, observaciones, recomendaciones..." required></textarea>
                         </div>
-                        <div style="display:flex; gap:1rem; justify-content:flex-end;">
-                            <button type="button" onclick="cerrarModalNuevaAtencion()" style="background:#6b7280; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">
-                                Cancelar
+                        <div class="form-actions" style="display:flex; gap:1rem; justify-content:flex-end;">
+                            <button type="button" class="btn btn-outline" onclick="cerrarModalNuevaAtencion()">
+                                <i class="fas fa-times"></i> Cancelar
                             </button>
-                            <button type="submit" style="background:#10b981; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">
-                                Guardar Atención
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Guardar Atención
                             </button>
                         </div>
                         <input type="hidden" id="nueva-atencion-rut" value="${rutPaciente}">
@@ -439,7 +426,18 @@
             </div>
         `;
 
+        // Agregar modal al DOM
+        let modalElement = document.getElementById('modal-nueva-atencion');
+        if (modalElement) {
+            modalElement.remove();
+        }
         document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Mostrar modal
+        document.getElementById('modal-nueva-atencion').style.display = 'flex';
+        document.getElementById('nueva-atencion-descripcion').focus();
+
+        // Configurar evento submit
         document.getElementById('form-nueva-atencion').onsubmit = guardarNuevaAtencion;
     };
 
@@ -451,14 +449,14 @@
         const rutPaciente = document.getElementById('nueva-atencion-rut').value;
         
         if (!tipo || !descripcion) {
-            alert('Completa todos los campos obligatorios');
+            window.showNotification && window.showNotification('Completa todos los campos obligatorios', 'warning');
             return;
         }
 
         try {
             const profesional = await obtenerProfesionalActual();
             if (!profesional) {
-                alert('Error: No se pudo obtener información del profesional');
+                window.showNotification && window.showNotification('Error: No se pudo obtener información del profesional', 'error');
                 return;
             }
 
@@ -480,136 +478,183 @@
             
             // Recargar historial
             const profesionalActualizado = await obtenerProfesionalActual();
-            await cargarHistorialClinico(rutPaciente, puedeEditarHistorial(), profesionalActualizado);
+            await cargarHistorialClinicoMejorado(rutPaciente, puedeEditarHistorial(), profesionalActualizado);
 
         } catch (error) {
             console.error('Error al guardar atención:', error);
-            alert('Error al guardar la atención: ' + error.message);
+            window.showNotification && window.showNotification('Error al guardar la atención: ' + error.message, 'error');
         }
     }
 
     window.cerrarModalNuevaAtencion = function() {
         const modal = document.getElementById('modal-nueva-atencion');
-        if (modal) modal.remove();
-    };
-
-    // Función para confirmar eliminación
-    window.confirmarEliminarAtencion = function(atencionId, rutPaciente) {
-        if (confirm('¿Está seguro de que desea eliminar esta atención del historial clínico?\n\nEsta acción no se puede deshacer.')) {
-            eliminarAtencionConfirmada(atencionId, rutPaciente);
+        if (modal) {
+            modal.remove();
         }
     };
 
-    async function eliminarAtencionConfirmada(atencionId, rutPaciente) {
+    // ===== FUNCIÓN MEJORADA PARA CONFIRMAR ELIMINACIÓN =====
+    
+    window.confirmarEliminarAtencion = function(atencionId, rutPaciente) {
+        const confirmModal = `
+            <div class="modal-overlay" id="modal-confirm-delete-atencion">
+                <div class="modal-content" style="max-width:400px;">
+                    <h2 style="color:#ef4444; margin-bottom:1rem;">
+                        <i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación
+                    </h2>
+                    <p>¿Está seguro de que desea eliminar esta atención del historial clínico?</p>
+                    <p style="color:#ef4444; font-weight:600;">Esta acción no se puede deshacer.</p>
+                    <div class="form-actions" style="display:flex; gap:1rem; justify-content:flex-end; margin-top:1.5rem;">
+                        <button class="btn btn-outline" onclick="cerrarModalConfirmDelete()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button class="btn btn-danger" onclick="eliminarAtencionConfirmada('${atencionId}', '${rutPaciente}')">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', confirmModal);
+        document.getElementById('modal-confirm-delete-atencion').style.display = 'flex';
+    };
+
+    window.cerrarModalConfirmDelete = function() {
+        const modal = document.getElementById('modal-confirm-delete-atencion');
+        if (modal) {
+            modal.remove();
+        }
+    };
+
+    window.eliminarAtencionConfirmada = async function(atencionId, rutPaciente) {
         try {
             const db = window.getFirestore();
             await db.collection('atenciones').doc(atencionId).delete();
             
             window.showNotification && window.showNotification("Atención eliminada correctamente", "success");
+            cerrarModalConfirmDelete();
             
             // Recargar historial
             const profesional = await obtenerProfesionalActual();
-            await cargarHistorialClinico(rutPaciente, puedeEditarHistorial(), profesional);
+            await cargarHistorialClinicoMejorado(rutPaciente, puedeEditarHistorial(), profesional);
 
         } catch (error) {
             console.error('Error al eliminar:', error);
-            alert("Error al eliminar atención: " + error.message);
+            window.showNotification && window.showNotification("Error al eliminar atención: " + error.message, "error");
         }
-    }
-
-    // Función para editar atención
-    window.mostrarModalEditarAtencionDesdeFicha = function(atencionId, descripcionEnc, tipoAtencion, rutPaciente) {
-        const descripcion = decodeURIComponent(descripcionEnc);
-        
-        const modalHTML = `
-            <div class="modal-overlay" id="modal-editar-atencion" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:10000;">
-                <div class="modal-content" style="background:white; border-radius:12px; padding:2rem; max-width:500px; width:90%;">
-                    <h2 style="color:#2563eb; margin-bottom:1.5rem;">
-                        <i class="fas fa-edit"></i> Editar Atención
-                    </h2>
-                    <form id="form-editar-atencion">
-                        <div style="margin-bottom:1rem;">
-                            <label style="display:block; margin-bottom:0.5rem; font-weight:500;">Tipo de atención *</label>
-                            <select id="editar-atencion-tipo" style="width:100%; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px;" required>
-                                <option value="">Selecciona tipo...</option>
-                                <option value="consulta" ${tipoAtencion === 'consulta' ? 'selected' : ''}>Consulta</option>
-                                <option value="seguimiento" ${tipoAtencion === 'seguimiento' ? 'selected' : ''}>Seguimiento</option>
-                                <option value="orientacion" ${tipoAtencion === 'orientacion' ? 'selected' : ''}>Orientación</option>
-                                <option value="intervencion" ${tipoAtencion === 'intervencion' ? 'selected' : ''}>Intervención</option>
-                                <option value="derivacion" ${tipoAtencion === 'derivacion' ? 'selected' : ''}>Derivación</option>
-                            </select>
-                        </div>
-                        <div style="margin-bottom:1rem;">
-                            <label style="display:block; margin-bottom:0.5rem; font-weight:500;">Descripción *</label>
-                            <textarea id="editar-atencion-descripcion" style="width:100%; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; min-height:100px;" required>${descripcion}</textarea>
-                        </div>
-                        <div style="display:flex; gap:1rem; justify-content:flex-end;">
-                            <button type="button" onclick="cerrarModalEditarAtencion()" style="background:#6b7280; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">
-                                Cancelar
-                            </button>
-                            <button type="submit" style="background:#2563eb; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">
-                                Guardar Cambios
-                            </button>
-                        </div>
-                        <input type="hidden" id="editar-atencion-id" value="${atencionId}">
-                        <input type="hidden" id="editar-atencion-rut" value="${rutPaciente}">
-                    </form>
-                </div>
-            </div>
-        `;
-        
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-        
-        document.getElementById('form-editar-atencion').onsubmit = async function(e) {
-            e.preventDefault();
-            
-            const id = document.getElementById('editar-atencion-id').value;
-            const nuevaDescripcion = document.getElementById('editar-atencion-descripcion').value.trim();
-            const nuevoTipo = document.getElementById('editar-atencion-tipo').value;
-            const rutPaciente = document.getElementById('editar-atencion-rut').value;
-            
-            if (!nuevaDescripcion || !nuevoTipo) {
-                alert('Completa todos los campos');
-                return;
-            }
-
-            try {
-                const db = window.getFirestore();
-                await db.collection("atenciones").doc(id).update({
-                    descripcion: nuevaDescripcion,
-                    tipoAtencion: nuevoTipo,
-                    fechaActualizacion: new Date().toISOString()
-                });
-                
-                window.showNotification && window.showNotification("Atención editada correctamente", "success");
-                cerrarModalEditarAtencion();
-                
-                // Recargar historial
-                const profesional = await obtenerProfesionalActual();
-                await cargarHistorialClinico(rutPaciente, puedeEditarHistorial(), profesional);
-
-            } catch (error) {
-                console.error('Error al editar:', error);
-                alert("Error al editar atención: " + error.message);
-            }
-        };
     };
 
-    window.cerrarModalEditarAtencion = function() {
-        const modal = document.getElementById('modal-editar-atencion');
-        if (modal) modal.remove();
-    };
-
-    // Funciones del sistema original
+    // ===== TUS FUNCIONES EXISTENTES MANTENIDAS =====
+    
     window.cerrarModalFichaPaciente = function() {
         const modal = document.getElementById('modal-ficha-paciente');
         if (modal) modal.style.display = 'none';
     };
 
-    // Mantener compatibilidad con funciones existentes
+    // Mantener tu función de editar existente pero mejorada
+    window.mostrarModalEditarAtencionDesdeFicha = function(atencionId, descripcionEnc, tipoAtencion, rutPaciente) {
+        const descripcion = decodeURIComponent(descripcionEnc);
+        
+        let modal = document.getElementById('modal-editar-atencion-ficha');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'modal-editar-atencion-ficha';
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width:500px;">
+                    <span class="close" onclick="cerrarModalEditarAtencionFicha()">&times;</span>
+                    <h2 style="color:#2563eb;">
+                        <i class="fas fa-edit"></i> Editar Atención
+                    </h2>
+                    <form id="form-editar-atencion-ficha">
+                        <div class="form-group">
+                            <label for="editar-atencion-descripcion-ficha">Descripción *</label>
+                            <textarea id="editar-atencion-descripcion-ficha" class="form-textarea" rows="5" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="editar-atencion-tipo-ficha">Tipo de atención *</label>
+                            <select id="editar-atencion-tipo-ficha" class="form-select" required>
+                                <option value="">Selecciona tipo...</option>
+                                <option value="consulta">Consulta</option>
+                                <option value="seguimiento">Seguimiento</option>
+                                <option value="orientacion">Orientación</option>
+                                <option value="intervencion">Intervención</option>
+                                <option value="derivacion">Derivación</option>
+                            </select>
+                        </div>
+                        <div class="form-actions" style="display:flex; gap:1rem; justify-content:flex-end;">
+                            <button type="button" class="btn btn-outline" onclick="cerrarModalEditarAtencionFicha()">
+                                <i class="fas fa-times"></i> Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar Cambios
+                            </button>
+                        </div>
+                        <input type="hidden" id="editar-atencion-id-ficha">
+                        <input type="hidden" id="editar-atencion-rut-ficha">
+                    </form>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        modal.style.display = 'flex';
+        document.getElementById('editar-atencion-id-ficha').value = atencionId;
+        document.getElementById('editar-atencion-descripcion-ficha').value = descripcion || "";
+        document.getElementById('editar-atencion-tipo-ficha').value = tipoAtencion || "";
+        document.getElementById('editar-atencion-rut-ficha').value = rutPaciente;
+
+        // Configurar evento submit
+        const form = document.getElementById('form-editar-atencion-ficha');
+        if (form) {
+            form.onsubmit = async function(e) {
+                e.preventDefault();
+                
+                const id = document.getElementById('editar-atencion-id-ficha').value;
+                const nuevaDescripcion = document.getElementById('editar-atencion-descripcion-ficha').value.trim();
+                const nuevoTipo = document.getElementById('editar-atencion-tipo-ficha').value;
+                const rutPaciente = document.getElementById('editar-atencion-rut-ficha').value;
+                
+                if (!nuevaDescripcion || !nuevoTipo) {
+                    window.showNotification && window.showNotification('Completa todos los campos', 'warning');
+                    return;
+                }
+
+                try {
+                    const db = window.getFirestore();
+                    await db.collection("atenciones").doc(id).update({
+                        descripcion: nuevaDescripcion,
+                        tipoAtencion: nuevoTipo,
+                        fechaActualizacion: new Date().toISOString()
+                    });
+                    
+                    window.showNotification && window.showNotification("Atención editada correctamente", "success");
+                    cerrarModalEditarAtencionFicha();
+                    
+                    // Recargar historial
+                    const profesional = await obtenerProfesionalActual();
+                    await cargarHistorialClinicoMejorado(rutPaciente, puedeEditarHistorial(), profesional);
+
+                } catch (error) {
+                    console.error('Error al editar:', error);
+                    window.showNotification && window.showNotification("Error al editar atención: " + error.message, "error");
+                }
+            };
+        }
+    };
+
+    window.cerrarModalEditarAtencionFicha = function() {
+        let modal = document.getElementById('modal-editar-atencion-ficha');
+        if (modal) modal.style.display = 'none';
+    };
+
+    // Mantener tu función de eliminar existente (ya mejorada arriba)
     window.eliminarAtencionDesdeFicha = function(atencionId, rutPaciente) {
         window.confirmarEliminarAtencion(atencionId, rutPaciente);
     };
+
+    // ===== FUNCIONES DE TU SISTEMA ORIGINAL MANTENIDAS =====
 
     async function refrescarPacientesTab() {
         const grid = getGrid();
@@ -643,10 +688,11 @@
         }
     }
 
-    // Inicialización
+    // ===== INICIALIZACIÓN =====
     document.addEventListener('DOMContentLoaded', function() {
         inicializarEventos();
         refrescarPacientesTab();
     });
 
 })();
+
