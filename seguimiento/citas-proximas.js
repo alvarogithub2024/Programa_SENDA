@@ -9,6 +9,7 @@ function getHoraActualChile() {
 }
 
 // --- Mostrar el paciente de la hora actual en "Pacientes de Hoy" ---
+// MODIFICADO: El paciente permanece en pantalla al menos 7 minutos desde que inicia su cita
 function mostrarPacienteActualHoy() {
     var db = window.getFirestore();
     var hoy = new Date().toISOString().slice(0, 10);
@@ -20,9 +21,12 @@ function mostrarPacienteActualHoy() {
         .get()
         .then(function(snapshot) {
             let citaActual = null;
+            let nowMinutes = parseInt(horaActual.slice(0,2),10)*60 + parseInt(horaActual.slice(3,5),10);
             snapshot.forEach(function(doc) {
                 let cita = doc.data();
-                if (cita.hora === horaActual) {
+                let citaMin = parseInt(cita.hora.slice(0,2),10)*60 + parseInt(cita.hora.slice(3,5),10);
+                // Mostrar paciente si la cita comenzó hace <= 7 minutos
+                if (nowMinutes >= citaMin && nowMinutes <= citaMin + 7) {
                     citaActual = Object.assign({ id: doc.id }, cita);
                 }
             });
