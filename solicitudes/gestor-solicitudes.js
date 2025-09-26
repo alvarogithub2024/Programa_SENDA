@@ -60,6 +60,8 @@ window.initSolicitudesManager = function() {
 
         // Cargar solicitudes desde Firebase
         loadSolicitudesFromFirebase().then(() => {
+            // MODIFICACIÓN: SIEMPRE RESETEA FILTROS AL INICIALIZAR
+            resetFilters();
             applyCurrentFilters();
             setupFilters();
             setupEvents();
