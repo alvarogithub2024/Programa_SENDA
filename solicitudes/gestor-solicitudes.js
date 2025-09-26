@@ -2,6 +2,7 @@
  * SOLICITUDES/GESTOR-SOLICITUDES.JS - VINCULADO CON FIREBASE
  * Versión extendida para cargar, filtrar y actualizar solicitudes desde Firestore.
  * Mantiene tu lógica de filtrado y UI.
+ * MODIFICADO: Usa campo 'fecha' en vez de 'fechaCreacion'
  */
 
 // Variables globales
@@ -60,7 +61,6 @@ window.initSolicitudesManager = function() {
 
         // Cargar solicitudes desde Firebase
         loadSolicitudesFromFirebase().then(() => {
-            // MODIFICACIÓN: SIEMPRE RESETEA FILTROS AL INICIALIZAR
             resetFilters();
             applyCurrentFilters();
             setupFilters();
@@ -82,22 +82,23 @@ window.initSolicitudesManager = function() {
 
 /**
  * Carga todas las solicitudes desde Firestore
+ * MODIFICADO: Usa campo 'fecha' en vez de 'fechaCreacion'
  */
 function loadSolicitudesFromFirebase() {
     return new Promise((resolve, reject) => {
         try {
             const db = window.getFirestore();
             db.collection('solicitudes_ingreso')
-                .orderBy('fechaCreacion', 'desc')
+                .orderBy('fecha', 'desc') // CAMBIO PRINCIPAL
                 .get()
                 .then(snapshot => {
                     solicitudesData = [];
                     snapshot.forEach(doc => {
                         let data = doc.data();
                         // Normalizar fechas para filtrado
-                        if (data.fechaCreacion && !(data.fechaCreacion instanceof Date)) {
-                            if (data.fechaCreacion.toDate) data.fechaCreacion = data.fechaCreacion.toDate();
-                            else data.fechaCreacion = new Date(data.fechaCreacion);
+                        if (data.fecha && !(data.fecha instanceof Date)) {
+                            if (data.fecha.toDate) data.fecha = data.fecha.toDate();
+                            else data.fecha = new Date(data.fecha);
                         }
                         data.id = doc.id;
                         solicitudesData.push(data);
@@ -285,7 +286,7 @@ function renderSolicitudesTable() {
                     <td>
                         <div class="fecha-info">
                             <div class="fecha-principal">
-                                ${solicitud.fechaCreacion ? new Date(solicitud.fechaCreacion).toLocaleDateString('es-CL') : ""}
+                                ${solicitud.fecha ? new Date(solicitud.fecha).toLocaleDateString('es-CL') : ""}
                             </div>
                             <div class="tiempo-transcurrido">
                                 ${solicitud.tiempoTranscurrido || ""}
@@ -440,6 +441,7 @@ function updateSolicitudesStats() {
 
 /**
  * Calcular estadísticas de solicitudes
+ * MODIFICADO: Usa campo 'fecha'
  */
 function calculateSolicitudesStats() {
     const today = new Date();
@@ -448,7 +450,7 @@ function calculateSolicitudesStats() {
         pendientes: solicitudesData.filter(s => s.estado === 'pendiente').length,
         altaPrioridad: solicitudesData.filter(s => s.prioridad === 'alta').length,
         completadas: solicitudesData.filter(s => s.estado === 'completada').length,
-        hoy: solicitudesData.filter(s => isSameDay(s.fechaCreacion, today)).length,
+        hoy: solicitudesData.filter(s => isSameDay(s.fecha, today)).length,
         enProceso: solicitudesData.filter(s => s.estado === 'en_proceso').length,
         agendadas: solicitudesData.filter(s => s.estado === 'agendada').length
     };
@@ -477,7 +479,7 @@ function applyCurrentFilters() {
         // Filtro por Fecha
         if (currentFilters.fecha !== 'todos') {
             const today = new Date();
-            const solicitudDate = solicitud.fechaCreacion ? new Date(solicitud.fechaCreacion) : null;
+            const solicitudDate = solicitud.fecha ? new Date(solicitud.fecha) : null;
             if (!solicitudDate) return false;
             
             switch (currentFilters.fecha) {
@@ -576,7 +578,7 @@ function exportSolicitudesToExcel() {
             'Estado': ESTADOS_SOLICITUDES[solicitud.estado]?.label || solicitud.estado,
             'Prioridad': PRIORIDADES_SOLICITUDES[solicitud.prioridad]?.label || solicitud.prioridad,
             'Sustancias': Array.isArray(solicitud.sustancias) ? solicitud.sustancias.join(', ') : 'No especificado',
-            'Fecha Creación': solicitud.fechaCreacion ? new Date(solicitud.fechaCreacion).toLocaleDateString('es-CL') : '',
+            'Fecha': solicitud.fecha ? new Date(solicitud.fecha).toLocaleDateString('es-CL') : '',
             'Descripción': solicitud.descripcion || 'Sin descripción',
             'Motivación (1-10)': solicitud.motivacion || 'No especificado',
             'Tiempo de Consumo': solicitud.tiempoConsumo || 'No especificado',
