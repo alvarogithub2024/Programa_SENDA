@@ -495,7 +495,6 @@ function agendarCitaSolicitud(solicitudId) {
         window.showNotification && window.showNotification("No se puede abrir el modal de agendar cita.", "error");
     }
 }
-}
 
 // Función para eliminar la solicitud
 function eliminarSolicitud(solicitudId) {
