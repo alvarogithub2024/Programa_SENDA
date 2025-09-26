@@ -23,6 +23,7 @@ const ESTADOS_SOLICITUDES = {
     'completada': { label: 'Completada', color: '#059669', icon: '✅' },
     'cancelada': { label: 'Cancelada', color: '#ef4444', icon: '❌' },
     'rechazada': { label: 'Rechazada', color: '#dc2626', icon: '🚫' }
+    // Elimina 'identificado' si existía
 };
 
 const PRIORIDADES_SOLICITUDES = {
@@ -85,7 +86,6 @@ function loadAllSolicitudes() {
 
             Promise.all([ingresoPromise, reingresoPromise, infoPromise]).then(([ingresoSnap, reingresoSnap, infoSnap]) => {
                 solicitudesData = [];
-                // solicitudes_ingreso
                 ingresoSnap.forEach(doc => {
                     let data = doc.data();
                     data.id = doc.id;
@@ -95,7 +95,6 @@ function loadAllSolicitudes() {
                     }
                     solicitudesData.push(data);
                 });
-                // reingresos
                 reingresoSnap.forEach(doc => {
                     let data = doc.data();
                     data.id = doc.id;
@@ -108,7 +107,6 @@ function loadAllSolicitudes() {
                     }
                     solicitudesData.push(data);
                 });
-                // solicitudes_informacion
                 infoSnap.forEach(doc => {
                     let data = doc.data();
                     data.id = doc.id;
@@ -119,7 +117,6 @@ function loadAllSolicitudes() {
                     }
                     solicitudesData.push(data);
                 });
-                // Ordenar por fecha descendente
                 solicitudesData.sort((a, b) => (b.fecha?.getTime?.() || 0) - (a.fecha?.getTime?.() || 0));
                 resolve();
             }).catch(error => {
@@ -137,90 +134,8 @@ function loadAllSolicitudes() {
 }
 
 /**
- * Configurar filtros
+ * Renderiza la tabla, diferenciando tipos y botones
  */
-function setupFilters() {
-    try {
-        fillSelectOptions('filtro-estado-solicitudes', ['todos', 'pendiente', 'en_proceso', 'agendada', 'completada'], {
-            todos: 'Todos los estados',
-            pendiente: 'Pendiente',
-            en_proceso: 'En proceso',
-            agendada: 'Agendada',
-            completada: 'Completada'
-        });
-        fillSelectOptions('filtro-prioridad-solicitudes', ['todos', 'alta', 'media', 'baja'], {
-            todos: 'Todas las prioridades',
-            alta: 'Alta',
-            media: 'Media',
-            baja: 'Baja'
-        });
-        fillSelectOptions('filtro-cesfam-solicitudes', ['todos', ...CESFAM_OPTIONS], {
-            todos: 'Todos los CESFAM'
-        });
-
-        const filters = [
-            { id: 'filtro-estado-solicitudes', prop: 'estado' },
-            { id: 'filtro-prioridad-solicitudes', prop: 'prioridad' },
-            { id: 'filtro-cesfam-solicitudes', prop: 'cesfam' },
-            { id: 'filtro-fecha-solicitudes', prop: 'fecha' }
-        ];
-        filters.forEach(filter => {
-            const element = document.getElementById(filter.id);
-            if (element) {
-                element.addEventListener('change', function(e) {
-                    currentFilters[filter.prop] = e.target.value;
-                    applyCurrentFilters();
-                });
-            }
-        });
-
-        const searchInput = document.getElementById('buscar-solicitudes');
-        if (searchInput) {
-            searchInput.addEventListener('input', function(e) {
-                currentFilters.busqueda = e.target.value;
-                applyCurrentFilters();
-            });
-        }
-    } catch (error) {
-        console.error('Error configurando filtros:', error);
-    }
-}
-
-/**
- * Configurar eventos
- */
-function setupEvents() {
-    try {
-        const refreshBtn = document.getElementById('refresh-solicitudes');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', function() {
-                resetFilters();
-                if (window.showNotification) {
-                    window.showNotification('Filtros limpiados', 'info');
-                }
-            });
-        }
-        const exportBtn = document.getElementById('export-solicitudes');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', exportSolicitudesToExcel);
-        }
-    } catch (error) {
-        console.error('Error configurando eventos:', error);
-    }
-}
-
-/**
- * Configurar auto-actualización
- */
-function setupAutoRefresh() {
-    if (isAutoRefreshEnabled && !autoRefreshInterval) {
-        autoRefreshInterval = setInterval(() => {
-            console.log('🔄 Auto-actualizando solicitudes desde Firebase...');
-            loadAllSolicitudes().then(applyCurrentFilters);
-        }, 30000); // Cada 30 segundos
-    }
-}
-
 function renderSolicitudesTable() {
     try {
         const tableBody = document.getElementById('solicitudes-table-body');
@@ -235,14 +150,6 @@ function renderSolicitudesTable() {
                         <div class="empty-state">
                             <div style="font-size: 3rem; margin-bottom: 16px;">📋</div>
                             <h3 style="margin-bottom: 8px; color: #6b7280;">No hay solicitudes</h3>
-                            <p style="color: #9ca3af;">
-                                ${currentFilters.busqueda || 
-                                  currentFilters.estado !== 'todos' || 
-                                  currentFilters.prioridad !== 'todos' || 
-                                  currentFilters.cesfam !== 'todos' 
-                                  ? 'No se encontraron solicitudes con los filtros aplicados' 
-                                  : 'No hay solicitudes registradas'}
-                            </p>
                         </div>
                     </td>
                 </tr>
@@ -250,6 +157,28 @@ function renderSolicitudesTable() {
             return;
         }
         const rows = filteredSolicitudesData.map(solicitud => {
+            // Diferencia cada tipo para la columna Estado
+            let estadoHtml;
+            if (solicitud.origen === 'informacion') {
+                estadoHtml = `<span class="estado-badge" style="background-color: #4f46e5; color: #fff; border: 1px solid #818cf8;">
+                                <i class="fas fa-info-circle"></i> Información
+                              </span>`;
+            } else if (solicitud.origen === 'reingreso') {
+                estadoHtml = `<span class="estado-badge" style="background-color: #059669; color: #fff; border: 1px solid #34d399;">
+                                <i class="fas fa-retweet"></i> Reingreso
+                              </span>`;
+            } else {
+                // Estado normal
+                const estadoConfig = ESTADOS_SOLICITUDES[solicitud.estado] || ESTADOS_SOLICITUDES['pendiente'];
+                estadoHtml = `<span class="estado-badge" style="background-color: ${estadoConfig.color}20; color: ${estadoConfig.color}; border: 1px solid ${estadoConfig.color}40;">
+                                ${estadoConfig.icon} ${estadoConfig.label}
+                              </span>`;
+            }
+
+            // Prioridad
+            const prioridadConfig = PRIORIDADES_SOLICITUDES[solicitud.prioridad] || PRIORIDADES_SOLICITUDES['media'];
+
+            // Botones: todos menos Exportar
             return `
                 <tr class="solicitud-row" data-solicitud-id="${solicitud.id}">
                     <td>
@@ -270,18 +199,12 @@ function renderSolicitudesTable() {
                         </div>
                     </td>
                     <td>
-                        <div class="cesfam-badge">
-                            ${solicitud.cesfam || ""}
-                        </div>
+                        <div class="cesfam-badge">${solicitud.cesfam || ""}</div>
                     </td>
+                    <td>${estadoHtml}</td>
                     <td>
-                        <span class="estado-badge">
-                            ${solicitud.estado || solicitud.tipo || solicitud.origen || ""}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="prioridad-badge">
-                            ${solicitud.prioridad || solicitud.urgencia || ""}
+                        <span class="prioridad-badge" style="background-color: ${prioridadConfig.color}20; color: ${prioridadConfig.color}; border: 1px solid ${prioridadConfig.color}40;">
+                            ${prioridadConfig.icon} ${prioridadConfig.label}
                         </span>
                     </td>
                     <td>
@@ -310,6 +233,26 @@ function renderSolicitudesTable() {
                             <button class="btn-accion btn-ver" onclick="verDetalleSolicitud('${solicitud.id}')" title="Ver detalles">
                                 <i class="fas fa-eye"></i>
                             </button>
+                            <button class="btn-accion btn-editar" onclick="editarSolicitud('${solicitud.id}')" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <div class="dropdown-acciones">
+                                <button class="btn-accion btn-mas" onclick="toggleAccionesSolicitud('${solicitud.id}')" title="Más acciones">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div class="dropdown-menu" id="acciones-${solicitud.id}">
+                                    <button onclick="cambiarEstadoSolicitud('${solicitud.id}', 'en_proceso')">
+                                        <i class="fas fa-clock"></i> Marcar en proceso
+                                    </button>
+                                    <button onclick="agendarCitaSolicitud('${solicitud.id}')">
+                                        <i class="fas fa-calendar-plus"></i> Agendar cita
+                                    </button>
+                                    <hr>
+                                    <button onclick="eliminarSolicitud('${solicitud.id}')" class="accion-peligro">
+                                        <i class="fas fa-trash"></i> Eliminar
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </td>
                 </tr>
