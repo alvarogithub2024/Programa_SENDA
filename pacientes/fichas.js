@@ -1,11 +1,11 @@
 // PACIENTES/LISTA-PACIENTES.JS
 
-// Requiere: window.getFirestore, window.showNotification, window.buscarPacientesPorTexto, window.obtenerFichaPaciente, window.actualizarFichaPaciente
+// Requiere: window.getFirestore, window.showNotification, window.buscarPacientesPorTexto
 
 // Sincroniza pacientes desde "citas" y los guarda en "pacientes" si no existen
 async function sincronizarPacientesDesdeCitas(cesfam) {
     const db = window.getFirestore();
-    // 1. Obtener todas las citas del cesfam actual
+    // 1. Obtener todas las citas del CESFAM
     const citasSnap = await db.collection("citas").where("cesfam", "==", cesfam).get();
     const pacientesMap = {}; // Rut como key
 
@@ -16,12 +16,12 @@ async function sincronizarPacientesDesdeCitas(cesfam) {
                 rut: cita.pacienteRut,
                 nombre: cita.pacienteNombre,
                 cesfam: cesfam,
-                // Puedes agregar más campos si los tienes en la cita
+                // Puedes agregar más campos si tienes en cita
             };
         }
     });
 
-    // 2. Obtener todos los pacientes actuales de la coleccion "pacientes"
+    // 2. Obtener pacientes actuales de "pacientes"
     const pacientesSnap = await db.collection("pacientes").where("cesfam", "==", cesfam).get();
     const existentes = {};
     pacientesSnap.forEach(doc => {
@@ -36,10 +36,9 @@ async function sincronizarPacientesDesdeCitas(cesfam) {
         }
     }
     await Promise.all(promesas);
-    return Object.values(pacientesMap);
 }
 
-// Renderiza la lista de pacientes en el grid
+// Renderiza la lista en el grid
 function renderizarPacientes(pacientes) {
     const grid = document.getElementById("patients-grid");
     if (!grid) return;
@@ -84,7 +83,7 @@ function buscarPacientePorRut() {
     });
 }
 
-// Evento para botón "Actualizar"
+// Eventos para botones
 document.addEventListener("DOMContentLoaded", function() {
     const btnActualizar = document.getElementById("actualizar-pacientes-btn");
     if (btnActualizar) {
@@ -94,10 +93,14 @@ document.addEventListener("DOMContentLoaded", function() {
     if (btnBuscar) {
         btnBuscar.onclick = buscarPacientePorRut;
     }
-    // Carga inicial
-    cargarPacientesDeCesfam();
+    // Carga inicial al mostrar la pestaña
+    document.querySelector('.tab-btn[data-tab="pacientes"]')?.addEventListener('click', cargarPacientesDeCesfam);
+    // Si la pestaña ya está activa al cargar, mostrar pacientes
+    if (document.getElementById('pacientes-tab')?.classList.contains('active')) {
+        cargarPacientesDeCesfam();
+    }
 });
 
-// Exportar globalmente
+// Exportar globalmente para debug
 window.cargarPacientesDeCesfam = cargarPacientesDeCesfam;
 window.buscarPacientePorRut = buscarPacientePorRut;
