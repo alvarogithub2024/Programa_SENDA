@@ -1,4 +1,3 @@
-// PACIENTES/FICHAS.JS
 (function() {
     let pacientesTabData = [];
     let profesionActual = null;
@@ -190,7 +189,7 @@
                       let acciones = '';
                       if (profesionActual && profesionActual !== 'asistente_social') {
                           acciones = `
-                              <button class="btn btn-outline btn-sm" onclick="window.mostrarModalEditarAtencionDesdeFicha('${doc.id}', '${a.descripcion || ''}', '${a.tipoAtencion || ''}', '${rutPaciente}')">
+                              <button class="btn btn-outline btn-sm" onclick="window.mostrarModalEditarAtencionDesdeFicha('${doc.id}', '${encodeURIComponent(a.descripcion || '')}', '${a.tipoAtencion || ''}', '${rutPaciente}')">
                                   <i class="fas fa-edit"></i> Editar
                               </button>
                               <button class="btn btn-danger btn-sm" onclick="window.eliminarAtencionDesdeFicha('${doc.id}', '${rutPaciente}')">
@@ -223,7 +222,12 @@
           });
     }
 
-    window.mostrarModalEditarAtencionDesdeFicha = function(atencionId, descripcion, tipoAtencion, rutPaciente) {
+    window.mostrarModalEditarAtencionDesdeFicha = function(atencionId, descripcionEnc, tipoAtencion, rutPaciente) {
+        // Decodifica descripción por si viene con caracteres especiales
+        const descripcion = decodeURIComponent(descripcionEnc);
+        // Oculta la ficha paciente mientras editas
+        window.cerrarModalFichaPaciente();
+
         let modal = document.getElementById('modal-editar-atencion-ficha');
         if (!modal) {
             modal = document.createElement('div');
@@ -260,8 +264,8 @@
             modal.style.display = 'flex';
         }
         document.getElementById('editar-atencion-id-ficha').value = atencionId;
-        document.getElementById('editar-atencion-descripcion-ficha').value = descripcion;
-        document.getElementById('editar-atencion-tipo-ficha').value = tipoAtencion;
+        document.getElementById('editar-atencion-descripcion-ficha').value = descripcion || "";
+        document.getElementById('editar-atencion-tipo-ficha').value = tipoAtencion || "";
         document.getElementById('editar-atencion-rut-ficha').value = rutPaciente;
 
         var form = document.getElementById('form-editar-atencion-ficha');
@@ -293,6 +297,9 @@
     window.cerrarModalEditarAtencionFicha = function() {
         let modal = document.getElementById('modal-editar-atencion-ficha');
         if (modal) modal.style.display = 'none';
+        // Vuelve a mostrar la ficha del paciente
+        let fichaModal = document.getElementById('modal-ficha-paciente');
+        if (fichaModal) fichaModal.style.display = 'flex';
     };
 
     window.eliminarAtencionDesdeFicha = function(atencionId, rutPaciente) {
