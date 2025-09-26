@@ -1,7 +1,7 @@
 // PACIENTES/FICHAS.JS
-// Muestra pacientes únicos agendados en la colección 'citas'.
-// Solo muestra nombre completo, rut, teléfono y correo en el grid.
-// Al hacer click en "Ver Ficha", muestra información completa y el historial clínico con profesional, fecha y hora.
+// Muestra pacientes únicos agendados en 'citas'.
+// En el grid: muestra nombre completo, rut, teléfono y correo, todo en la misma fila.
+// Al hacer click en "Ver Ficha": muestra nombre, rut, teléfono, correo, dirección y el historial clínico con profesional, fecha y hora.
 
 (function() {
     let pacientesTabData = [];
@@ -90,12 +90,12 @@
             const div = document.createElement('div');
             div.className = 'patient-card';
             div.innerHTML = `
-                <div style="display:flex; gap:16px;">
-                  <div><strong>${p.nombre}</strong></div>
+                <div style="display:flex; gap:24px; align-items:center;">
+                  <div style="font-weight:600; min-width:170px;">${p.nombre}</div>
                   <div>RUT: ${p.rut}</div>
                   <div>Tel: ${p.telefono || ''}</div>
                   <div>Email: ${p.email || ''}</div>
-                  <button class="btn btn-outline btn-sm" style="margin-left:16px;" onclick="verFichaPacienteSenda('${p.rut}')"><i class="fas fa-file-medical"></i> Ver Ficha</button>
+                  <button class="btn btn-outline btn-sm" style="margin-left:18px;" onclick="verFichaPacienteSenda('${p.rut}')"><i class="fas fa-file-medical"></i> Ver Ficha</button>
                 </div>
             `;
             grid.appendChild(div);
@@ -141,7 +141,7 @@
 
         const modalBody = document.getElementById('modal-ficha-paciente-body');
         let html = `
-            <h3>${pacienteData.nombre || ''}</h3>
+            <h3 style="margin-bottom:10px;">${pacienteData.nombre || ''}</h3>
             <p><b>RUT:</b> ${pacienteData.rut || ''}</p>
             <p><b>Teléfono:</b> ${pacienteData.telefono || ''}</p>
             <p><b>Email:</b> ${pacienteData.email || ''}</p>
@@ -151,7 +151,7 @@
         `;
         modalBody.innerHTML = html;
 
-        cargarHistorialClinicoPaciente(pacienteData.id));
+        cargarHistorialClinicoPacientePorRut(pacienteData.rut);
     };
 
     window.cerrarModalFichaPaciente = function() {
@@ -159,16 +159,14 @@
         if (modal) modal.style.display = 'none';
     };
 
-    // Historial clínico: muestra las atenciones ordenadas por fecha desc
-    function cargarHistorialClinicoPaciente(pacienteId) {
-    const cont = document.getElementById('historial-clinico');
-    if (!cont) return;
-    const db = window.getFirestore();
-    db.collection('atenciones')
-      .where('pacienteId', '==', pacienteId)
-      .orderBy('fechaRegistro', 'desc')
-      .get()
-      .then(snapshot => {
+    // Historial clínico: muestra las atenciones ordenadas por fecha desc, filtrando por rut
+    function cargarHistorialClinicoPacientePorRut(rutPaciente) {
+        const cont = document.getElementById('historial-clinico');
+        if (!cont) return;
+        const db = window.getFirestore();
+        db.collection('atenciones').where('pacienteRut', '==', rutPaciente).orderBy('fechaRegistro', 'desc').get()
+            .then(snapshot => {
+                let html = '';
                 if (snapshot.empty) {
                     html = "<p>No hay atenciones registradas.</p>";
                 } else {
