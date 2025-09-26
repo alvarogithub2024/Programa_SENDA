@@ -372,7 +372,6 @@ function editarSolicitud(solicitudId) {
     document.getElementById('modal-editar-rut').value = solicitud.rut || '';
     document.getElementById('modal-editar-telefono').value = solicitud.telefono || '';
     document.getElementById('modal-editar-id').value = solicitud.id;
-    document.getElementById('modal-editar-cita').value = solicitud.citaAgendada || '';
     document.getElementById('modal-editar').style.display = 'flex';
 }
 function cerrarModalEditar() { document.getElementById('modal-editar').style.display = 'none'; }
