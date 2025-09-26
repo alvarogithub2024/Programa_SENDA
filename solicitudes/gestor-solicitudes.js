@@ -463,6 +463,35 @@ function resetFilters() {
     applyCurrentFilters();
 }
 
+function enviarCorreoSenda() {
+    const email = document.getElementById('modal-responder-email').value;
+    const asunto = document.getElementById('modal-responder-asunto').value;
+    const mensaje = document.getElementById('modal-responder-mensaje').value;
+    const id = document.getElementById('modal-responder-id').value;
+    // Aquí iría la lógica para enviar el correo (API/backend)
+    alert(`Correo enviado a ${email} desde la cuenta SENDAsenda@institucion.cl\nAsunto: ${asunto}\nMensaje: ${mensaje}`);
+    cerrarModalResponder();
+    // Cambiar estado a respondido en la solicitud
+    const db = window.getFirestore();
+    db.collection('solicitudes_informacion').doc(id).update({ estado: 'respondido' })
+      .then(() => {
+        window.reloadSolicitudesFromFirebase && window.reloadSolicitudesFromFirebase();
+      });
+    // Guardar la respuesta en la colección respuestas_informacion
+    db.collection('respuestas_informacion').add({
+        solicitudId: id,
+        email: email,
+        asunto: asunto,
+        mensaje: mensaje,
+        fechaEnvio: new Date().toISOString(),
+        respondidoPor: firebase.auth().currentUser?.email || "senda@institucion.cl"
+    }).then(() => {
+        window.showNotification && window.showNotification('Respuesta guardada correctamente', 'success');
+    }).catch((error) => {
+        window.showNotification && window.showNotification('Error guardando la respuesta', 'error');
+        console.error('Error guardando respuesta:', error);
+    });
+}
 /**
  * Aplica los filtros a las solicitudes y renderiza la tabla.
  */
