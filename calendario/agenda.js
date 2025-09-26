@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", function() {
     return meses[month];
   }
 
-  // Cargar las citas agrupadas por fecha
+  // Cargar las citas agrupadas por fecha (para el calendario visual)
   function cargarCitasPorDia(callback) {
     const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
     db.collection("citas").get().then(function(snapshot) {
@@ -79,7 +79,7 @@ document.addEventListener("DOMContentLoaded", function() {
           dayNumDiv.textContent = date;
           cell.appendChild(dayNumDiv);
 
-          // Citas/eventos de ese día
+          // Citas/eventos de ese día (para mostrar badges en el calendario)
           const eventos = citasPorDia[dateKey] || [];
           if (eventos.length) {
             const eventsDiv = document.createElement('div');
@@ -185,6 +185,8 @@ document.addEventListener("DOMContentLoaded", function() {
           appointmentsList.innerHTML = "<div class='no-results'>No hay citas agendadas para este día.</div>";
           return;
         }
+        // Almacenar el array para uso adicional
+        window.citasDelDia = citas;
         citas.forEach(function(cita) {
           const div = document.createElement("div");
           div.className = "appointment-item";
@@ -209,4 +211,10 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // Permitir que otros scripts llamen mostrarCitasDelDia(fecha)
   window.mostrarCitasDelDia = mostrarCitasDelDia;
+
+  // Cargar citas del día actual al iniciar (para panel "Citas del Día")
+  (function cargarCitasHoy() {
+    const hoy = chileNow().toISOString().slice(0,10);
+    mostrarCitasDelDia(hoy);
+  })();
 });
