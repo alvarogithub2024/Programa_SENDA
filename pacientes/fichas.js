@@ -251,9 +251,8 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         inicializarEventos();
-        if (document.getElementById('pacientes-tab')?.classList.contains('active')) {
-            refrescarPacientesTab();
-        }
+        // Siempre refresca la lista al cargar el tab (independiente si está activo en el DOM)
+        refrescarPacientesTab();
     });
 
 })();
