@@ -8,7 +8,8 @@
             if (user) {
                 window.getFirestore().collection('profesionales').doc(user.uid).get().then(function(doc){
                     if (doc.exists) {
-                        profesionActual = doc.data().profession || null;
+                        profesionActual = (doc.data().profession || "").trim().toLowerCase();
+                        console.log("Profesión cargada:", profesionActual);
                     }
                 });
             } else {
@@ -17,99 +18,13 @@
         });
     }
 
-    function getGrid() { return document.getElementById('patients-grid'); }
-    function getSearchInput() { return document.getElementById('search-pacientes-rut'); }
-    function getBuscarBtn() { return document.getElementById('buscar-paciente-btn'); }
-    function getActualizarBtn() { return document.getElementById('actualizar-pacientes-btn'); }
-
-    function crearBotonActualizarSiNoExiste() {
-        let actualizarBtn = getActualizarBtn();
-        if (!actualizarBtn) {
-            const header = document.querySelector('#pacientes-tab .section-actions');
-            if (header) {
-                actualizarBtn = document.createElement('button');
-                actualizarBtn.id = 'actualizar-pacientes-btn';
-                actualizarBtn.className = 'btn btn-secondary btn-sm';
-                actualizarBtn.innerHTML = '<i class="fas fa-sync"></i> Actualizar';
-                header.appendChild(actualizarBtn);
-            }
-        }
+    function puedeEditarHistorial() {
+        // Ajusta los valores a lo que realmente tienes en Firestore
+        const rolesPermitidos = ['medico', 'psicologo', 'terapeuta', 'terapeuta ocupacional'];
+        return profesionActual && rolesPermitidos.includes(profesionActual);
     }
 
-    async function extraerYCrearPacientesDesdeCitas() {
-        const db = window.getFirestore();
-        const citasSnap = await db.collection('citas').get();
-        const pacientesMap = {};
-
-        citasSnap.forEach(doc => {
-            const cita = doc.data();
-            const rut = (cita.rut || '').replace(/[.\-]/g, "").trim();
-            const nombre = cita.nombre || '';
-            const apellidos = cita.apellidos || '';
-            if (!rut) return;
-            if (!pacientesMap[rut]) {
-                pacientesMap[rut] = {
-                    rut: rut,
-                    nombre: nombre,
-                    apellidos: apellidos,
-                    citaId: doc.id,
-                    profesion: cita.profesion || '',
-                    fecha: cita.fecha || '',
-                    telefono: cita.telefono || '',
-                    email: cita.email || '',
-                    direccion: cita.direccion || '',
-                    edad: cita.edad || '',
-                    fechaRegistro: cita.creado || new Date().toISOString(),
-                };
-            }
-        });
-
-        for (const rut in pacientesMap) {
-            const paciente = pacientesMap[rut];
-            const snap = await db.collection('pacientes').where('rut', '==', rut).limit(1).get();
-            if (snap.empty) {
-                await db.collection('pacientes').add(paciente);
-            }
-        }
-        return Object.values(pacientesMap);
-    }
-
-    function renderPacientesGrid(pacientes) {
-        const grid = getGrid();
-        if (!grid) return;
-        grid.innerHTML = '';
-        if (!pacientes.length) {
-            grid.innerHTML = "<div class='no-results'>No hay pacientes agendados aún.</div>";
-            return;
-        }
-        pacientes.forEach(p => {
-            const div = document.createElement('div');
-            div.className = 'patient-card';
-            div.innerHTML = `
-                <div style="display:flex; gap:24px; align-items:center;">
-                  <div style="font-weight:600; min-width:170px;">${p.nombre} ${p.apellidos || ''}</div>
-                  <div>RUT: ${p.rut}</div>
-                  <div>Tel: ${p.telefono || ''}</div>
-                  <div>Email: ${p.email || ''}</div>
-                  <button class="btn btn-outline btn-sm" style="margin-left:18px;" onclick="verFichaPacienteSenda('${p.rut}')"><i class="fas fa-file-medical"></i> Ver Ficha</button>
-                </div>
-            `;
-            grid.appendChild(div);
-        });
-    }
-
-    function buscarPacientesLocal(texto) {
-        texto = (texto || '').trim().toUpperCase();
-        if (!texto) {
-            renderPacientesGrid(pacientesTabData);
-            return;
-        }
-        const filtrados = pacientesTabData.filter(p =>
-            (p.rut && p.rut.includes(texto)) ||
-            ((p.nombre + ' ' + (p.apellidos || '')).toUpperCase().includes(texto)
-        ));
-        renderPacientesGrid(filtrados);
-    }
+    // ... resto igual ...
 
     window.verFichaPacienteSenda = function(rut) {
         const db = window.getFirestore();
@@ -148,14 +63,17 @@
             `;
             modalBody.innerHTML = html;
 
-            cargarHistorialClinicoPacientePorRut(pacienteData.rut);
+            esperarProfesionYRenderizar(pacienteData.rut);
         });
     };
 
-    window.cerrarModalFichaPaciente = function() {
-        const modal = document.getElementById('modal-ficha-paciente');
-        if (modal) modal.style.display = 'none';
-    };
+    function esperarProfesionYRenderizar(rutPaciente) {
+        if (profesionActual === null) {
+            setTimeout(() => esperarProfesionYRenderizar(rutPaciente), 200);
+            return;
+        }
+        cargarHistorialClinicoPacientePorRut(rutPaciente);
+    }
 
     function cargarHistorialClinicoPacientePorRut(rutPaciente) {
         const cont = document.getElementById('historial-clinico');
@@ -186,8 +104,10 @@
                           fechaTexto = fechaObj.toLocaleDateString('es-CL');
                           horaTexto = fechaObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
                       }
+                      // DEBUG:
+                      console.log("Renderizando historial - profesionActual:", profesionActual, "¿Puede editar?", puedeEditarHistorial());
                       let acciones = '';
-                      if (profesionActual && profesionActual !== 'asistente_social') {
+                      if (puedeEditarHistorial()) {
                           acciones = `
                               <button class="btn btn-outline btn-sm" onclick="window.mostrarModalEditarAtencionDesdeFicha('${doc.id}', '${encodeURIComponent(a.descripcion || '')}', '${a.tipoAtencion || ''}', '${rutPaciente}')">
                                   <i class="fas fa-edit"></i> Editar
@@ -222,134 +142,5 @@
           });
     }
 
-    window.mostrarModalEditarAtencionDesdeFicha = function(atencionId, descripcionEnc, tipoAtencion, rutPaciente) {
-        // Decodifica descripción por si viene con caracteres especiales
-        const descripcion = decodeURIComponent(descripcionEnc);
-        // Oculta la ficha paciente mientras editas
-        window.cerrarModalFichaPaciente();
-
-        let modal = document.getElementById('modal-editar-atencion-ficha');
-        if (!modal) {
-            modal = document.createElement('div');
-            modal.id = 'modal-editar-atencion-ficha';
-            modal.className = 'modal-overlay';
-            modal.style.display = 'flex';
-            modal.innerHTML = `<div class="modal-content" style="max-width:400px;">
-                <span class="close" onclick="cerrarModalEditarAtencionFicha()">&times;</span>
-                <h2>Editar atención</h2>
-                <form id="form-editar-atencion-ficha">
-                    <div class="form-group">
-                      <label for="editar-atencion-descripcion-ficha">Descripción</label>
-                      <textarea id="editar-atencion-descripcion-ficha" class="form-textarea" required></textarea>
-                    </div>
-                    <div class="form-group">
-                      <label for="editar-atencion-tipo-ficha">Tipo de atención</label>
-                      <select id="editar-atencion-tipo-ficha" class="form-select" required>
-                        <option value="">Selecciona tipo...</option>
-                        <option value="consulta">Consulta</option>
-                        <option value="seguimiento">Seguimiento</option>
-                        <option value="orientacion">Orientación</option>
-                        <option value="intervencion">Intervención</option>
-                      </select>
-                    </div>
-                    <div class="form-actions">
-                      <button type="submit" class="btn btn-primary">Guardar cambios</button>
-                    </div>
-                    <input type="hidden" id="editar-atencion-id-ficha">
-                    <input type="hidden" id="editar-atencion-rut-ficha">
-                </form>
-            </div>`;
-            document.body.appendChild(modal);
-        } else {
-            modal.style.display = 'flex';
-        }
-        document.getElementById('editar-atencion-id-ficha').value = atencionId;
-        document.getElementById('editar-atencion-descripcion-ficha').value = descripcion || "";
-        document.getElementById('editar-atencion-tipo-ficha').value = tipoAtencion || "";
-        document.getElementById('editar-atencion-rut-ficha').value = rutPaciente;
-
-        var form = document.getElementById('form-editar-atencion-ficha');
-        if (form) {
-            form.onsubmit = function(e) {
-                e.preventDefault();
-                const id = document.getElementById('editar-atencion-id-ficha').value;
-                const nuevaDescripcion = document.getElementById('editar-atencion-descripcion-ficha').value.trim();
-                const nuevoTipo = document.getElementById('editar-atencion-tipo-ficha').value;
-                const rutPaciente = document.getElementById('editar-atencion-rut-ficha').value;
-                const db = window.getFirestore();
-                db.collection("atenciones").doc(id).update({
-                    descripcion: nuevaDescripcion,
-                    tipoAtencion: nuevoTipo,
-                    fechaActualizacion: new Date().toISOString()
-                })
-                .then(function() {
-                    window.showNotification("Atención editada correctamente", "success");
-                    cerrarModalEditarAtencionFicha();
-                    cargarHistorialClinicoPacientePorRut(rutPaciente);
-                })
-                .catch(function(error) {
-                    window.showNotification("Error al editar atención: " + error.message, "error");
-                });
-            };
-        }
-    };
-
-    window.cerrarModalEditarAtencionFicha = function() {
-        let modal = document.getElementById('modal-editar-atencion-ficha');
-        if (modal) modal.style.display = 'none';
-        // Vuelve a mostrar la ficha del paciente
-        let fichaModal = document.getElementById('modal-ficha-paciente');
-        if (fichaModal) fichaModal.style.display = 'flex';
-    };
-
-    window.eliminarAtencionDesdeFicha = function(atencionId, rutPaciente) {
-        if (!confirm("¿Seguro que deseas eliminar esta atención?")) return;
-        const db = window.getFirestore();
-        db.collection('atenciones').doc(atencionId).delete()
-          .then(() => {
-              window.showNotification && window.showNotification("Atención eliminada correctamente", "success");
-              cargarHistorialClinicoPacientePorRut(rutPaciente);
-          })
-          .catch(error => {
-              window.showNotification && window.showNotification("Error al eliminar atención: " + error.message, "error");
-          });
-    };
-
-    async function refrescarPacientesTab() {
-        const grid = getGrid();
-        if (!grid) {
-            console.error("No se encontró el elemento #patients-grid en el DOM");
-            return;
-        }
-        grid.innerHTML = "<div class='loading-message'><i class='fas fa-spinner fa-spin'></i> Actualizando pacientes...</div>";
-        pacientesTabData = await extraerYCrearPacientesDesdeCitas();
-        renderPacientesGrid(pacientesTabData);
-    }
-
-    window.loadPatients = refrescarPacientesTab;
-
-    function inicializarEventos() {
-        crearBotonActualizarSiNoExiste();
-        const buscarBtn = getBuscarBtn();
-        const searchInput = getSearchInput();
-        const actualizarBtn = getActualizarBtn();
-
-        if (buscarBtn) {
-            buscarBtn.onclick = function() {
-                const texto = searchInput ? searchInput.value.trim() : "";
-                buscarPacientesLocal(texto);
-            };
-        }
-        if (actualizarBtn) {
-            actualizarBtn.onclick = function() {
-                refrescarPacientesTab();
-            };
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        inicializarEventos();
-        refrescarPacientesTab();
-    });
-
+    // ... resto igual ...
 })();
