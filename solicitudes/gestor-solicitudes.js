@@ -485,13 +485,16 @@ function editarSolicitud(solicitudId) {
 function agendarCitaSolicitud(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
+    // Aseguramos que el campo CESFAM esté presente y lo pasamos al modal
+    const cesfam = solicitud.cesfam || "";
     if (window.abrirModalAgendarCitaProfesional) {
-        window.abrirModalAgendarCitaProfesional(solicitud.id, solicitud.nombre, solicitud.rut);
+        window.abrirModalAgendarCitaProfesional(solicitud.id, solicitud.nombre, solicitud.rut, cesfam);
     } else if (window.abrirModalAgendarCita) {
-        window.abrirModalAgendarCita(solicitud.id, solicitud.nombre, solicitud.rut);
+        window.abrirModalAgendarCita(solicitud.id, solicitud.nombre, solicitud.rut, cesfam);
     } else {
         window.showNotification && window.showNotification("No se puede abrir el modal de agendar cita.", "error");
     }
+}
 }
 
 // Función para eliminar la solicitud
