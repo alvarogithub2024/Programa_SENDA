@@ -1,6 +1,5 @@
 // calendario/agenda.js
 
-
 document.addEventListener("DOMContentLoaded", function() {
   const calendarGrid = document.getElementById('calendar-grid');
   const calendarHeader = document.getElementById('calendar-month-year');
@@ -90,10 +89,8 @@ document.addEventListener("DOMContentLoaded", function() {
               evDiv.className = 'calendar-event';
               // Mostrar SOLO nombre del paciente en el calendario (no profesional)
               if (evt.tipo === "profesional") {
-                // Si es cita entre profesionales, muestra el nombre del paciente si existe, si no, muestra el nombre del profesional principal
                 evDiv.textContent = evt.pacienteNombre || evt.paciente || evt.nombre || evt.profesionalNombre || "Sin nombre";
               } else {
-                // Mostrar paciente (por defecto)
                 evDiv.textContent = evt.pacienteNombre || evt.paciente || evt.nombre || "Sin nombre";
               }
               eventsDiv.appendChild(evDiv);
@@ -111,19 +108,12 @@ document.addEventListener("DOMContentLoaded", function() {
           }
 
           cell.onclick = function() {
-            // Decide según el tipo de cita que quieres abrir:
-            // Si tienes un selector de tipo de cita, úsalo aquí.
-            // Ejemplo simple: abre modal de paciente por defecto
             if (window.abrirModalCitaPaciente) {
               var fechaInput = document.getElementById('pac-cita-fecha');
               if (fechaInput) fechaInput.value = cell.dataset.date;
               window.abrirModalCitaPaciente();
             }
-            // Si quieres abrir el de profesionales, puedes agregar una condición:
-            // else if (window.abrirModalNuevaCitaProfesional) { ... }
-
-            // Mostrar citas del día en el panel inferior
-            mostrarCitasDelDia(cell.dataset.date);
+            window.mostrarCitasDelDia(cell.dataset.date);
           };
           date++;
         }
@@ -222,15 +212,10 @@ document.addEventListener("DOMContentLoaded", function() {
           div.className = "appointment-item";
           let mainName = "";
           let subName = "";
-          // --- MODIFICACIÓN: SIEMPRE PACIENTE PRINCIPAL ---
           if (cita.tipo === "profesional") {
-            // Si es cita entre profesionales, primero intenta mostrar el paciente
-            // Si no hay paciente, muestra el profesional principal
             mainName = cita.pacienteNombre || cita.paciente || cita.nombre || cita.profesionalNombre || "Sin nombre";
-            // Si hay profesional principal, lo muestra debajo (solo si es distinto del paciente)
             subName = (cita.profesionalNombre && cita.profesionalNombre !== mainName) ? cita.profesionalNombre : "";
           } else {
-            // Cita de paciente: primero el paciente, debajo el profesional
             mainName = cita.pacienteNombre || cita.paciente || cita.nombre || "Sin nombre";
             subName = cita.profesionalNombre || "";
           }
@@ -243,6 +228,9 @@ document.addEventListener("DOMContentLoaded", function() {
             <div class="appointment-status">
               <span class="status-badge ${cita.estado || "agendada"}">${cita.estado || "Agendada"}</span>
             </div>
+            <button class="btn btn-danger btn-sm" onclick="eliminarCita('${cita.id}', '${fecha}')">
+                <i class="fas fa-trash"></i> Eliminar
+            </button>
           `;
           appointmentsList.appendChild(div);
         });
@@ -258,5 +246,19 @@ document.addEventListener("DOMContentLoaded", function() {
   const hoy = new Date().toISOString().slice(0, 10);
   mostrarCitasDelDia(hoy);
   window.mostrarCitasDelDia = mostrarCitasDelDia;
+
+  // ====== FUNCIÓN PARA ELIMINAR CITAS DEL DÍA ======
+  window.eliminarCita = function(citaId, fecha) {
+      if (!confirm("¿Seguro que deseas eliminar la cita?")) return;
+      var db = window.getFirestore ? window.getFirestore() : firebase.firestore();
+      db.collection("citas").doc(citaId).delete()
+      .then(function() {
+          window.showNotification && window.showNotification("Cita eliminada correctamente", "success");
+          window.mostrarCitasDelDia(fecha);
+      })
+      .catch(function(error) {
+          window.showNotification && window.showNotification("Error al eliminar cita: " + error.message, "error");
+      });
+  };
 
 });
