@@ -95,7 +95,9 @@ function validarFormularioPaciente(datos) {
     if (!validarTelefono(datos.telefono)) errores.telefono = "Teléfono inválido";
     if (datos.email && !validarEmail(datos.email)) errores.email = "Correo inválido";
     if (!validarEdad(datos.edad)) errores.edad = "Edad fuera de rango";
-    if (!window.CESFAM_PUENTE_ALTO.includes(datos.cesfam)) errores.cesfam = "CESFAM inválido";
+    if (!window.CESFAM_PUENTE_ALTO || !window.CESFAM_PUENTE_ALTO.includes(datos.cesfam)) {
+        errores.cesfam = "CESFAM inválido";
+    }
     
     return { esValido: Object.keys(errores).length === 0, errores };
 }
@@ -116,7 +118,40 @@ function validarFormularioReingreso(datos) {
     
     return { esValido: Object.keys(errores).length === 0, errores };
 }
-// Exportar globalmente
+
+/**
+ * Valida el formulario de login de profesional
+ */
+function validarFormularioLogin(datos) {
+    let errores = {};
+    
+    if (!validarEmail(datos.email)) errores.email = "Correo inválido";
+    if (!validarNoVacio(datos.password)) errores.password = "Contraseña obligatoria";
+    
+    return { esValido: Object.keys(errores).length === 0, errores };
+}
+
+/**
+ * Valida el formulario de registro de profesional
+ */
+function validarFormularioRegistro(datos) {
+    let errores = {};
+    
+    if (!validarNoVacio(datos.nombre)) errores.nombre = "Nombre obligatorio";
+    if (!validarNoVacio(datos.apellidos)) errores.apellidos = "Apellidos obligatorios";
+    if (!validarEmail(datos.email)) errores.email = "Correo inválido";
+    if (!validarPassword(datos.password)) errores.password = "Contraseña mínima 6 caracteres";
+    if (!window.PROFESIONES || !window.PROFESIONES[datos.profesion]) {
+        errores.profesion = "Profesión inválida";
+    }
+    if (!window.CESFAM_PUENTE_ALTO || !window.CESFAM_PUENTE_ALTO.includes(datos.cesfam)) {
+        errores.cesfam = "CESFAM inválido";
+    }
+    
+    return { esValido: Object.keys(errores).length === 0, errores };
+}
+
+// EXPORTAR GLOBALMENTE - LÍNEAS CORREGIDAS
 window.validarRut = validarRut;
 window.validarEmail = validarEmail;
 window.validarTelefono = validarTelefono;
