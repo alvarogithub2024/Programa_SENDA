@@ -82,17 +82,7 @@ function abrirModalCitaPaciente() {
     llenarSelectProfesionesPaciente();
     llenarSelectProfesionalesPaciente();
     autocompletarNombreProfesionalPaciente();
-    showModal('modal-nueva-cita-paciente');
-    setTimeout(function() {
-        var form = document.getElementById('form-nueva-cita-paciente');
-        if (form && !form._onsubmitSet) { // Solo una vez
-            form.onsubmit = function(e) {
-                // ...tu código...
-            };
-            form._onsubmitSet = true;
-        }
-    }, 100);
-}
+
     // Listeners seguros (solo si existen los elementos)
     const selProf = document.getElementById('pac-cita-profession');
     if (selProf) {
@@ -100,14 +90,14 @@ function abrirModalCitaPaciente() {
         llenarSelectProfesionalesPaciente();
         autocompletarNombreProfesionalPaciente();
         // Al cambiar profesión, limpia horarios
-        window.actualizarHorasPaciente && window.actualizarHorasPaciente();
+        if (window.actualizarHorasPaciente) window.actualizarHorasPaciente();
       };
     }
     const selPro = document.getElementById('pac-cita-profesional');
     if (selPro) {
       selPro.onchange = function() {
         autocompletarNombreProfesionalPaciente();
-        window.actualizarHorasPaciente && window.actualizarHorasPaciente();
+        if (window.actualizarHorasPaciente) window.actualizarHorasPaciente();
       };
     }
 
@@ -121,59 +111,70 @@ function abrirModalCitaPaciente() {
     }
 
     showModal('modal-nueva-cita-paciente');
+
+    setTimeout(function() {
+      var form = document.getElementById('form-nueva-cita-paciente');
+      if (form && !form._onsubmitSet) { // Solo una vez
+        form.onsubmit = function(e) {
+          // ...tu código de formulario aquí...
+        };
+        form._onsubmitSet = true;
+      }
+    }, 100);
   });
 }
 
 function guardarCitaPaciente(datosCita, callback) {
-    const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
-    const datos = Object.assign({}, datosCita);
+  const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
+  const datos = Object.assign({}, datosCita);
 
-    // Agrega la fecha/hora de creación si no viene
-    datos.fechaCreacion = datos.fechaCreacion || new Date().toISOString();
+  // Agrega la fecha/hora de creación si no viene
+  datos.fechaCreacion = datos.fechaCreacion || new Date().toISOString();
 
-    db.collection("citas").add(datos)
-        .then(function(docRef) {
-            window.showNotification && window.showNotification("Cita agendada correctamente", "success");
-            if (typeof callback === "function") callback(docRef.id);
-        })
-        .catch(function(error) {
-            window.showNotification && window.showNotification("Error al agendar cita: " + error.message, "error");
-            if (typeof callback === "function") callback(null, error);
-        });
+  db.collection("citas").add(datos)
+    .then(function(docRef) {
+      if (window.showNotification) window.showNotification("Cita agendada correctamente", "success");
+      if (typeof callback === "function") callback(docRef.id);
+    })
+    .catch(function(error) {
+      if (window.showNotification) window.showNotification("Error al agendar cita: " + error.message, "error");
+      if (typeof callback === "function") callback(null, error);
+    });
 }
 
 document.getElementById('form-nueva-cita-paciente').onsubmit = function(e) {
-    e.preventDefault();
+  e.preventDefault();
 
-    const datos = {
-        cesfam: miCesfam,  // Ya lo tienes del usuario logueado
-        estado: "agendada",
-        fechaCreacion: new Date().toISOString(),
-        observaciones: document.getElementById('pac-cita-observaciones')?.value || "",
-        origenSolicitud: "web",
-        pacienteNombre: document.getElementById('pac-cita-paciente-nombre').value.trim(),
-        pacienteRut: document.getElementById('pac-cita-paciente-rut').value.trim(),
-        profesionalId: document.getElementById('pac-cita-profesional').value,
-        profesionalNombre: document.getElementById('pac-cita-profesional-nombre').value,
-        solicitudId: null, // Si la cita está ligada a una solicitud puedes poner el ID aquí
-        tipo: "paciente", // o el tipo que tú manejes
-        tipoProfesional: document.getElementById('pac-cita-profession').value,
-        fecha: document.getElementById('pac-cita-fecha').value,
-        hora: document.getElementById('pac-cita-hora').value
-    };
+  const datos = {
+    cesfam: miCesfam,  // Ya lo tienes del usuario logueado
+    estado: "agendada",
+    fechaCreacion: new Date().toISOString(),
+    observaciones: document.getElementById('pac-cita-observaciones')?.value || "",
+    origenSolicitud: "web",
+    pacienteNombre: document.getElementById('pac-cita-paciente-nombre').value.trim(),
+    pacienteRut: document.getElementById('pac-cita-paciente-rut').value.trim(),
+    profesionalId: document.getElementById('pac-cita-profesional').value,
+    profesionalNombre: document.getElementById('pac-cita-profesional-nombre').value,
+    solicitudId: null, // Si la cita está ligada a una solicitud puedes poner el ID aquí
+    tipo: "paciente", // o el tipo que tú manejes
+    tipoProfesional: document.getElementById('pac-cita-profession').value,
+    fecha: document.getElementById('pac-cita-fecha').value,
+    hora: document.getElementById('pac-cita-hora').value
+  };
 
-    // Validación básica
-    if (!datos.pacienteNombre || !datos.pacienteRut || !datos.profesionalId || !datos.fecha || !datos.hora) {
-        window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
-        return;
+  // Validación básica
+  if (!datos.pacienteNombre || !datos.pacienteRut || !datos.profesionalId || !datos.fecha || !datos.hora) {
+    if (window.showNotification) window.showNotification("Completa todos los campos obligatorios", "warning");
+    return;
+  }
+
+  guardarCitaPaciente(datos, function(idCita, error) {
+    if (!error) {
+      closeModal('modal-nueva-cita-paciente');
+      // Recarga calendario, citas del día, etc. si necesitas
     }
-
-    guardarCitaPaciente(datos, function(idCita, error) {
-        if (!error) {
-            closeModal('modal-nueva-cita-paciente');
-            // Recarga calendario, citas del día, etc. si necesitas
-        }
-    });
+  });
 };
+
 window.abrirModalCitaPaciente = abrirModalCitaPaciente;
 window.guardarCitaPaciente = guardarCitaPaciente;
