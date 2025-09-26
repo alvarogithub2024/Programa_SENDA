@@ -6,7 +6,7 @@
     let pacientesTabData = [];
     let profesionActual = null;
 
-    // Detecta profesión actual (tu código existente)
+    // Detecta profesión actual
     if (window.getCurrentUser && window.getFirestore && typeof firebase !== "undefined") {
         firebase.auth().onAuthStateChanged(function(user) {
             if (user) {
@@ -266,24 +266,30 @@
     function construirEntradaHistorial(docId, atencion, puedeEditar, profesional, rutPaciente) {
         let fechaTexto = '';
         let horaTexto = '';
-        if (atencion.fechaRegistro) {
+        // Controlar undefined
+        if (atencion && atencion.fechaRegistro) {
             let fechaObj;
             if (typeof atencion.fechaRegistro === 'string') {
                 fechaObj = new Date(atencion.fechaRegistro);
-            } else if (atencion.fechaRegistro.seconds) {
+            } else if (atencion.fechaRegistro && atencion.fechaRegistro.seconds) {
                 fechaObj = new Date(atencion.fechaRegistro.seconds * 1000);
             }
-            fechaTexto = fechaObj.toLocaleDateString('es-CL');
-            horaTexto = fechaObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+            if (fechaObj && !isNaN(fechaObj)) {
+                fechaTexto = fechaObj.toLocaleDateString('es-CL');
+                horaTexto = fechaObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+            }
         }
-        const tipoFormateado = formatearTipoAtencion(atencion.tipoAtencion);
-        const clickable = puedeEditar ? `onclick="abrirModalEditarAtencion('${docId}', '${encodeURIComponent(atencion.descripcion || "")}', '${atencion.tipoAtencion || ""}', '${rutPaciente}')"` : "";
+        const tipoFormateado = formatearTipoAtencion(atencion && atencion.tipoAtencion ? atencion.tipoAtencion : "");
+        const descripcion = atencion && atencion.descripcion ? atencion.descripcion : "Sin descripción";
+        const profesionalNombre = atencion && atencion.profesional ? atencion.profesional : "Profesional no especificado";
+        // Solo clickeable si puede editar
+        const clickable = puedeEditar ? `onclick="abrirModalEditarAtencion('${docId}', '${encodeURIComponent(descripcion)}', '${atencion.tipoAtencion || ""}', '${rutPaciente}')"` : "";
 
         return `
             <div class="historial-entry" data-entry-id="${docId}" style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:1rem; margin-bottom:1rem; cursor:${puedeEditar ? 'pointer' : 'default'};" ${clickable}>
-                <div><b>${fechaTexto} ${horaTexto}</b> - ${tipoFormateado}</div>
-                <div><i>${atencion.profesional || ''}</i></div>
-                <div>${atencion.descripcion || 'Sin descripción'}</div>
+                <div><b>${fechaTexto || ''} ${horaTexto || ''}</b> - ${tipoFormateado || ''}</div>
+                <div><i>${profesionalNombre || ''}</i></div>
+                <div>${descripcion}</div>
             </div>
         `;
     }
@@ -530,14 +536,5 @@
         const modal = document.getElementById('modal-ficha-paciente');
         if (modal) modal.style.display = 'none';
     };
-function construirEntradaHistorial(docId, atencion, puedeEditar, profesional, rutPaciente) {
-    // ...
-    const clickable = puedeEditar ? `onclick="testClickHistorial('${docId}')"` : "";
-    // ...
-}
-window.testClickHistorial = function(docId) {
-    console.log("¡Click en atención! ID:", docId);
-    // Si quieres, también puedes llamar a abrirModalEditarAtencion con datos de test
-    // abrirModalEditarAtencion(docId, encodeURIComponent("Descripción de prueba"), "consulta", "RUTTEST");
-};
+
 })();
