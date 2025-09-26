@@ -1,10 +1,10 @@
 // MAIN.JS - SISTEMA SENDA PUENTE ALTO v2.0
 
-// === VARIABLES DE CONTROL ===
+// Variables de control
 var initializationCompleted = false;
 var initializationTimer = null;
 
-// === INICIALIZACIÓN GLOBAL ===
+// Inicialización principal
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('\n🚀 SISTEMA SENDA PUENTE ALTO v2.0');
     console.log('=====================================');
@@ -28,31 +28,21 @@ document.addEventListener('DOMContentLoaded', async function() {
         await waitForFirebaseInitialization();
         console.log('✅ Firebase verificado y listo\n');
 
-        // Paso 2: Configurar autenticación
-        console.log('🔧 Paso 2: Configurando autenticación...');
-        window.setupAuth && window.setupAuth();
-        console.log('✅ Autenticación configurada\n');
-
-        // Paso 3: Configurar navegación
-        console.log('🔧 Paso 3: Configurando navegación...');
+        // Paso 2: Configurar navegación
+        console.log('🔧 Paso 2: Configurando navegación...');
         window.setupTabs && window.setupTabs();
         console.log('✅ Navegación configurada\n');
 
-        // Paso 4: Configurar formularios
-        console.log('🔧 Paso 4: Configurando formularios...');
-        window.setupFormularios && window.setupFormularios();
-        console.log('✅ Formularios configurados\n');
-
-        // Paso 5: Configurar eventos globales
-        console.log('🔧 Paso 5: Configurando eventos globales...');
+        // Paso 3: Configurar eventos globales
+        console.log('🔧 Paso 3: Configurando eventos globales...');
         window.setupEventListeners && window.setupEventListeners();
         console.log('✅ Eventos configurados\n');
 
-        // Paso 6: Inicializar módulos del sistema
-        console.log('🔧 Paso 6: Inicializando módulos del sistema...');
+        // Paso 4: Inicializar módulos del sistema
+        console.log('🔧 Paso 4: Inicializando módulos del sistema...');
         await initializeSystemModules();
 
-        // Paso 7: Configurar funciones globales
+        // Paso 5: Configurar funciones globales
         setupGlobalFunctions();
 
         console.log('\n🎉 ¡SISTEMA SENDA INICIALIZADO CORRECTAMENTE!');
@@ -71,41 +61,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         showInitializationError(error);
         attemptBasicRecovery();
     }
-
-    // === INICIALIZA LISTENERS DE CITAS SOLO SI EXISTEN LOS ELEMENTOS ===
-    // Evita errores de null con listeners seguros
-    const citaProfession = document.getElementById('cita-profession');
-    if (citaProfession) {
-        citaProfession.onchange = function() {
-            const profession = this.value;
-            const selectProf = document.getElementById('cita-profesional');
-            if (!selectProf) return;
-            selectProf.innerHTML = '<option value="">Seleccionar profesional...</option>';
-            // SUPONIENDO que tienes una función que retorna los profesionales activos de esa profesión:
-            if (typeof cargarProfesionalesPorProfesion === "function") {
-                cargarProfesionalesPorProfesion(profession, function(lista) {
-                    lista.forEach(function(p) {
-                        const opt = document.createElement('option');
-                        opt.value = p.uid; // o p.id
-                        opt.textContent = `${p.nombre} ${p.apellidos}`;
-                        selectProf.appendChild(opt);
-                    });
-                });
-            }
-        };
-    }
-
-    const citaProfesional = document.getElementById('cita-profesional');
-    if (citaProfesional) {
-        citaProfesional.onchange = actualizarHoras;
-    }
-    const citaFecha = document.getElementById('cita-fecha');
-    if (citaFecha) {
-        citaFecha.onchange = actualizarHoras;
-    }
 });
 
-// ====== ESPERAR INICIALIZACIÓN DE FIREBASE ======
+// Esperar inicialización de Firebase
 async function waitForFirebaseInitialization(maxRetries) {
     maxRetries = maxRetries || 10;
     for (var i = 0; i < maxRetries; i++) {
@@ -118,7 +76,7 @@ async function waitForFirebaseInitialization(maxRetries) {
     throw new Error('Firebase no se inicializó en el tiempo esperado');
 }
 
-// ====== INICIALIZAR MÓDULOS DEL SISTEMA ======
+// Inicializar módulos del sistema
 async function initializeSystemModules() {
     var modules = [
         {
@@ -177,7 +135,7 @@ async function initializeSystemModules() {
     }
 }
 
-// ====== FUNCIONES GLOBALES ======
+// Configurar funciones globales
 function setupGlobalFunctions() {
     try {
         window.closeModal = window.closeModal || function(modalId) {
@@ -235,7 +193,7 @@ function setupGlobalFunctions() {
     }
 }
 
-// ====== MODAL DE ERROR DE INICIALIZACIÓN ======
+// Modal de error de inicialización
 function showInitializationError(error) {
     var errorMessage = error ? error.message : 'Timeout de inicialización';
     var errorModal = document.getElementById('initialization-error-modal');
@@ -257,25 +215,11 @@ function showInitializationError(error) {
                     <p style="margin-bottom: 24px; color: #6b7280;">
                         ${errorMessage}
                     </p>
-                    <div style="margin-bottom: 24px; padding: 16px; background: #fee2e2; border-radius: 8px;">
-                        <h4 style="margin-bottom: 8px;">Posibles soluciones:</h4>
-                        <ul style="text-align: left; color: #7f1d1d;">
-                            <li>Verifica tu conexión a Internet</li>
-                            <li>Recarga la página (F5)</li>
-                            <li>Limpia el caché del navegador</li>
-                            <li>Contacta al administrador si persiste</li>
-                        </ul>
-                    </div>
                     <div style="display: flex; gap: 12px; justify-content: center;">
                         <button onclick="window.location.reload()" 
                                 style="background: #ef4444; color: white; border: none; 
                                        padding: 12px 24px; border-radius: 6px; cursor: pointer;">
                             🔄 Recargar Página
-                        </button>
-                        <button onclick="window.SENDA_DEBUG?.clearStorage(); window.location.reload()" 
-                                style="background: #6b7280; color: white; border: none; 
-                                       padding: 12px 24px; border-radius: 6px; cursor: pointer;">
-                            🗑️ Limpiar y Recargar
                         </button>
                     </div>
                 </div>
@@ -287,7 +231,7 @@ function showInitializationError(error) {
     }
 }
 
-// ====== INTENTO DE RECUPERACIÓN BÁSICA ======
+// Intento de recuperación básica
 function attemptBasicRecovery() {
     try {
         window.closeModal = function(modalId) {
@@ -310,130 +254,7 @@ function attemptBasicRecovery() {
     }
 }
 
-// ====== LOGIN DE PROFESIONALES CON VERIFICACIÓN EN FIRESTORE ======
-document.addEventListener("DOMContentLoaded", function() {
-    const loginForm = document.getElementById('login-form');
-    if (!loginForm) return;
-
-    loginForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const email = document.getElementById('login-email').value.trim();
-        const password = document.getElementById('login-password').value;
-
-        if (!email || !password) {
-            window.showNotification && window.showNotification("Completa email y contraseña", "warning");
-            return;
-        }
-
-        firebase.auth().signInWithEmailAndPassword(email, password)
-            .then((userCredential) => {
-                const uid = userCredential.user.uid;
-                const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
-
-                // Busca el profesional en la colección y verifica activo
-                return db.collection("profesionales").doc(uid).get();
-            })
-            .then((doc) => {
-                if (!doc.exists) {
-                    window.showNotification && window.showNotification("No tienes permisos de acceso como profesional.", "error");
-                    firebase.auth().signOut();
-                    return;
-                }
-                const profesional = doc.data();
-                if (!profesional.activo) {
-                    window.showNotification && window.showNotification("Tu usuario está inactivo. Contacta al administrador.", "error");
-                    firebase.auth().signOut();
-                    return;
-                }
-
-                // Login exitoso
-                window.showNotification && window.showNotification("Bienvenido, " + profesional.nombre, "success");
-                window.closeModal && window.closeModal('login-modal');
-            })
-            .catch((error) => {
-                window.showNotification && window.showNotification("Error al iniciar sesión: " + error.message, "error");
-            });
-    });
-});
-
-// ====== REGISTRO DE PROFESIONALES EN FIREBASE ======
-document.addEventListener("DOMContentLoaded", function() {
-    const registerForm = document.getElementById('register-form');
-    if (!registerForm) return;
-
-    registerForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        // Tomar los valores del formulario
-        const nombre = document.getElementById('register-nombre').value.trim();
-        const apellidos = document.getElementById('register-apellidos').value.trim();
-        const email = document.getElementById('register-email').value.trim();
-        const password = document.getElementById('register-password').value;
-        const profession = document.getElementById('register-profession').value;
-        const cesfam = document.getElementById('register-cesfam').value;
-
-        // Validación básica
-        if (!nombre || !apellidos || !email || !password || !profession || !cesfam) {
-            window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
-            return;
-        }
-
-        // CREA el usuario en Firebase Auth
-        firebase.auth().createUserWithEmailAndPassword(email, password)
-            .then((userCredential) => {
-                const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
-                const profesional = {
-                    activo: true,
-                    nombre: nombre,
-                    apellidos: apellidos,
-                    cesfam: cesfam,
-                    email: email,
-                    profession: profession,
-                    fechaCreacion: new Date().toISOString()
-                };
-                // Guarda en la colección profesionales (con el UID como doc ID)
-                return db.collection("profesionales").doc(userCredential.user.uid).set(profesional);
-            })
-            .then(() => {
-                window.showNotification && window.showNotification("Registro exitoso. Puedes iniciar sesión.", "success");
-                registerForm.reset();
-                // Opcional: cambia a la pestaña de login automáticamente
-                if (typeof switchLoginTab === 'function') switchLoginTab('login');
-            })
-            .catch((error) => {
-                window.showNotification && window.showNotification("Error al registrar: " + error.message, "error");
-            });
-    });
-});
-
-// ====== FUNCIÓN SEGURA PARA ACTUALIZAR HORAS DISPONIBLES ======
-function actualizarHoras() {
-    var fechaInput = document.getElementById('cita-fecha');
-    var profesionalInput = document.getElementById('cita-profesional');
-    if (!fechaInput || !profesionalInput) {
-        if (window.mostrarHorariosDisponibles) window.mostrarHorariosDisponibles([]);
-        return;
-    }
-    var fecha = fechaInput.value;
-    var profesionalId = profesionalInput.value;
-    if (!fecha || !profesionalId) {
-        if (window.mostrarHorariosDisponibles) window.mostrarHorariosDisponibles([]);
-        return;
-    }
-    if (typeof cargarHorariosDisponibles === "function" && typeof window.mostrarHorariosDisponibles === "function") {
-        cargarHorariosDisponibles(fecha, profesionalId, window.mostrarHorariosDisponibles);
-    }
-}
-
-// ====== DIAGNÓSTICO DEL SISTEMA EN CONSOLA ======
-console.log('🔍 Información del Sistema:');
-console.log('   Navegador:', navigator.userAgent);
-console.log('   Idioma:', navigator.language);
-console.log('   Conexión:', navigator.onLine ? 'Online' : 'Offline');
-console.log('   Local Storage:', typeof Storage !== 'undefined' ? 'Disponible' : 'No disponible');
-console.log('   Service Worker:', 'serviceWorker' in navigator ? 'Disponible' : 'No disponible');
-
+// Event listeners globales
 window.addEventListener('online', function() {
     console.log('🌐 Conexión restaurada');
     window.showNotification && window.showNotification('Conexión a Internet restaurada', 'success');
@@ -453,19 +274,5 @@ window.addEventListener('error', function(event) {
         window.showNotification && window.showNotification('Error del sistema detectado. Si persiste, recarga la página.', 'error');
     }
 });
-
-window.addEventListener('unhandledrejection', function(event) {
-    console.error('❌ Promesa rechazada no capturada:', event.reason);
-    event.preventDefault();
-    if (event.reason && typeof event.reason === 'object' && event.reason.code) {
-        console.warn('Código de error: ' + event.reason.code);
-    }
-});
-
-if (performance.navigation && performance.navigation.type === performance.navigation.TYPE_RELOAD) {
-    console.log('🔄 Página recargada por el usuario');
-} else {
-    console.log('🆕 Primera carga de la página');
-}
 
 console.log('\n📝 Sistema SENDA listo para inicialización...\n');
