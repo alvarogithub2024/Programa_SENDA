@@ -53,5 +53,4 @@ function mostrarCitasDelDia(fecha) {
       if (window.showNotification) window.showNotification("Error cargando citas del día: " + error.message, "error");
     });
 }
-
-});
+);
