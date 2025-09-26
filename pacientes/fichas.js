@@ -1,18 +1,20 @@
 // PACIENTES/FICHAS.JS
-// Sincroniza pacientes desde la colección 'citas' para mostrarlos en la pestaña Pacientes
+// Al cargar la pestaña de Pacientes, sincroniza automáticamente todos los pacientes de la colección 'citas' al CESFAM del usuario actual.
+// Si el paciente de una cita no existe en 'pacientes', lo crea automáticamente.
+// Así, la pestaña Pacientes muestra TODOS los pacientes agendados en citas del CESFAM logueado.
 
 (function() {
     let pacientesTabData = [];
     let pacientesCitas = [];
     let miCesfam = null;
 
-    // Elementos UI
+    // UI helpers
     function getGrid() { return document.getElementById('patients-grid'); }
     function getSearchInput() { return document.getElementById('search-pacientes-rut'); }
     function getBuscarBtn() { return document.getElementById('buscar-paciente-btn'); }
     function getActualizarBtn() { return document.getElementById('actualizar-pacientes-btn'); }
 
-    // Crea el botón Actualizar si no existe
+    // Crear botón Actualizar si no existe
     function crearBotonActualizarSiNoExiste() {
         let actualizarBtn = getActualizarBtn();
         if (!actualizarBtn) {
@@ -38,20 +40,23 @@
         });
     }
 
-    // Extrae pacientes únicos desde la colección 'citas' del CESFAM actual
-    async function cargarPacientesDesdeCitas() {
+    // Extrae pacientes únicos desde citas del CESFAM actual y crea en colección 'pacientes' si no existen
+    async function sincronizarPacientesDesdeCitas() {
         const db = window.getFirestore();
         if (!miCesfam) return [];
-        const snapshot = await db.collection('citas').where('cesfam', '==', miCesfam).get();
+
+        const citasSnap = await db.collection('citas').where('cesfam', '==', miCesfam).get();
         const pacientesMap = {};
-        snapshot.forEach(doc => {
+
+        citasSnap.forEach(doc => {
             const cita = doc.data();
-            // Asegúrate que el campo pacienteRut existe en cada cita
             const rut = cita.pacienteRut || cita.rut || cita.rutPaciente || '';
             if (!rut) return;
-            if (!pacientesMap[rut]) {
-                pacientesMap[rut] = {
-                    rut: rut,
+            const rutLimpio = rut.replace(/[.\-]/g, "").toUpperCase();
+            // Paciente único por RUT
+            if (!pacientesMap[rutLimpio]) {
+                pacientesMap[rutLimpio] = {
+                    rut: rutLimpio,
                     nombre: cita.pacienteNombre || cita.nombre || '',
                     cesfam: miCesfam,
                     telefono: cita.pacienteTelefono || cita.telefono || '',
@@ -61,26 +66,25 @@
                 };
             }
         });
-        pacientesCitas = Object.values(pacientesMap);
-        return pacientesCitas;
-    }
 
-    // Sincroniza pacientes: agrega los que faltan a la colección 'pacientes'
-    async function sincronizarPacientesConColeccion() {
-        const db = window.getFirestore();
-        for (let paciente of pacientesCitas) {
-            const rutLimpio = paciente.rut.replace(/[.\-]/g, "").toUpperCase();
-            const snap = await db.collection('pacientes').where('rut', '==', rutLimpio).limit(1).get();
+        // Sincroniza colección 'pacientes'
+        for (const rut in pacientesMap) {
+            const paciente = pacientesMap[rut];
+            const snap = await db.collection('pacientes').where('rut', '==', rut).limit(1).get();
             if (snap.empty) {
                 await db.collection('pacientes').add(Object.assign({}, paciente, {
-                    rut: rutLimpio,
                     fechaRegistro: new Date().toISOString()
                 }));
             }
         }
+        // Retorna lista de pacientes del CESFAM actual
+        const pacientesSnap = await db.collection('pacientes').where('cesfam', '==', miCesfam).get();
+        const pacientesList = [];
+        pacientesSnap.forEach(doc => pacientesList.push(Object.assign({ id: doc.id }, doc.data())));
+        return pacientesList;
     }
 
-    // Renderiza la lista de pacientes en el grid
+    // Renderiza pacientes en el grid
     function renderPacientesGrid(pacientes) {
         const grid = getGrid();
         if (!grid) {
@@ -109,7 +113,7 @@
         });
     }
 
-    // Busca pacientes usando el input/texto
+    // Buscar pacientes por texto (nombre, rut, etc)
     function buscarPacientesPorTexto(texto) {
         window.buscarPacientesPorTexto(texto, function(resultados) {
             const filtrados = resultados.filter(p => p.cesfam === miCesfam);
@@ -118,7 +122,7 @@
         });
     }
 
-    // Modal ficha paciente
+    // Modal ficha paciente (con observaciones desde atenciones)
     window.verFichaPacienteSenda = function(rut) {
         const db = window.getFirestore();
         const rutLimpio = rut.replace(/[.\-]/g, "").toUpperCase();
@@ -196,6 +200,7 @@
         if (modal) modal.style.display = 'none';
     };
 
+    // Refresca la pestaña: sincroniza pacientes desde citas y los muestra
     async function refrescarPacientesTab() {
         const grid = getGrid();
         if (!grid) {
@@ -204,17 +209,9 @@
         }
         grid.innerHTML = "<div class='loading-message'><i class='fas fa-spinner fa-spin'></i> Actualizando pacientes...</div>";
         await obtenerCesfamActual(async function() {
-            await cargarPacientesDesdeCitas();
-            await sincronizarPacientesConColeccion();
-            const db = window.getFirestore();
-            db.collection('pacientes').where('cesfam', '==', miCesfam).get().then(snapshot => {
-                const lista = [];
-                snapshot.forEach(doc => {
-                    lista.push(Object.assign({ id: doc.id }, doc.data()));
-                });
-                pacientesTabData = lista;
-                renderPacientesGrid(pacientesTabData);
-            });
+            const lista = await sincronizarPacientesDesdeCitas();
+            pacientesTabData = lista;
+            renderPacientesGrid(pacientesTabData);
         });
     }
 
@@ -250,7 +247,7 @@
         }
     });
 
-    // Funciones originales para obtener/actualizar ficha desde otras partes del sistema
+    // Extra: funciones originales para obtener/actualizar ficha desde otros lugares
     window.obtenerFichaPaciente = function(pacienteId, callback) {
         var db = window.getFirestore();
         db.collection("pacientes").doc(pacienteId).get()
