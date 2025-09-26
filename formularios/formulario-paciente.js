@@ -131,9 +131,11 @@ function setupFormularioPaciente() {
         if (!datos.nombre || !datos.apellidos || !datos.rut || !datos.telefono) {
             return window.showNotification("Completa todos los campos obligatorios", "warning");
         }
-        if (!window.validarRut || !window.validarRut(datos.rut)) return window.showNotification("RUT inválido", "warning");
-        if (!validarTelefonoChileno(datos.telefono)) return window.showNotification("Teléfono inválido", "warning");
-        guardarSolicitudAyuda(datos);
+     if (!window.validarRut(datos.rut)) {
+            return window.showNotification("RUT inválido", "warning");
+        }
+        if (!window.validarTelefono(datos.telefono)) {
+            return window.showNotification("Teléfono inválido", "warning")
     };
 
     // Actualiza valor motivación
