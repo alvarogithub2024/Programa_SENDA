@@ -99,6 +99,11 @@ function inicializarFlujoProfesionalesCita() {
   });
 }
 
+function abrirModalCitaProfesional() {
+  inicializarFlujoProfesionalesCita();
+  showModal('modal-cita-profesional');
+}
+
 // Llama a esto AL ABRIR el modal de cita profesional
 function abrirModalCitaProfesional() {
   inicializarFlujoProfesionalesCita();
