@@ -1,6 +1,6 @@
 // SEGUIMIENTO/CITAS-PROXIMAS.JS
 
-// Función para obtener la hora actual en formato "HH:mm"
+// --- Utilidad para obtener hora actual Chile ---
 function getHoraActualChile() {
     let now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" }));
     let h = now.getHours();
@@ -8,13 +8,12 @@ function getHoraActualChile() {
     return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
 }
 
-// Muestra SOLO el paciente de la hora actual en "Pacientes de Hoy"
+// --- Mostrar el paciente de la hora actual en "Pacientes de Hoy" ---
 function mostrarPacienteActualHoy() {
     var db = window.getFirestore();
     var hoy = new Date().toISOString().slice(0, 10);
     var horaActual = getHoraActualChile();
 
-    // Buscamos la cita cuyo "hora" coincida con la hora actual (puedes ajustar a un rango si lo prefieres)
     db.collection("citas")
         .where("fecha", "==", hoy)
         .orderBy("hora", "asc")
@@ -23,13 +22,11 @@ function mostrarPacienteActualHoy() {
             let citaActual = null;
             snapshot.forEach(function(doc) {
                 let cita = doc.data();
-                // Solo mostrar si la hora coincide exactamente
                 if (cita.hora === horaActual) {
                     citaActual = Object.assign({ id: doc.id }, cita);
                 }
             });
 
-            // Render en el grid de pacientes de hoy
             let cont = document.getElementById("patients-timeline");
             if (!cont) return;
             cont.innerHTML = "";
@@ -37,7 +34,6 @@ function mostrarPacienteActualHoy() {
                 cont.innerHTML = `<div class="no-results"><i class="fas fa-user-clock"></i><p>No hay paciente agendado para la hora actual (${horaActual}).</p></div>`;
                 return;
             }
-
             let div = document.createElement("div");
             div.className = "appointment-item";
             div.innerHTML = `
@@ -55,7 +51,52 @@ function mostrarPacienteActualHoy() {
         });
 }
 
-// Función global para abrir el modal de atención
+// --- Mostrar todas las citas restantes del día en "Próximas citas" ---
+function mostrarCitasRestantesHoy() {
+    var db = window.getFirestore();
+    var hoy = new Date().toISOString().slice(0, 10);
+    var horaActual = getHoraActualChile();
+
+    db.collection("citas")
+        .where("fecha", "==", hoy)
+        .orderBy("hora", "asc")
+        .get()
+        .then(function(snapshot) {
+            let citas = [];
+            snapshot.forEach(function(doc) {
+                let cita = doc.data();
+                // Solo mostrar citas con hora mayor a la actual
+                if (cita.hora > horaActual) {
+                    citas.push(Object.assign({ id: doc.id }, cita));
+                }
+            });
+
+            let cont = document.getElementById("upcoming-appointments-grid");
+            if (!cont) return;
+            cont.innerHTML = "";
+            if (!citas.length) {
+                cont.innerHTML = `<div class="no-results"><i class="fas fa-calendar-check"></i><p>No hay próximas citas para hoy después de las ${horaActual}.</p></div>`;
+                return;
+            }
+            citas.forEach(function(cita) {
+                let div = document.createElement("div");
+                div.className = "appointment-item";
+                div.innerHTML = `
+                    <div>
+                      <b>${cita.hora}</b> - <b>${cita.pacienteNombre || cita.nombre || ""}</b> (${cita.tipoProfesional || cita.profesion || ""})<br>
+                      <span>${cita.cesfam || ""}</span>
+                    </div>
+                `;
+                cont.appendChild(div);
+            });
+        })
+        .catch(function(error) {
+            let cont = document.getElementById("upcoming-appointments-grid");
+            if (cont) cont.innerHTML = `<div class="no-results">Error cargando próximas citas: ${error.message}</div>`;
+        });
+}
+
+// --- Función global para abrir el modal de atención ---
 window.abrirModalRegistrarAtencion = function(citaId) {
     var db = window.getFirestore();
     db.collection("citas").doc(citaId).get().then(function(doc) {
@@ -82,6 +123,14 @@ window.abrirModalRegistrarAtencion = function(citaId) {
 
 document.addEventListener("DOMContentLoaded", function() {
     mostrarPacienteActualHoy();
-    // Actualiza cada minuto para mostrar el paciente en tiempo real
-    setInterval(mostrarPacienteActualHoy, 60 * 1000);
+    mostrarCitasRestantesHoy();
+    // Actualiza cada minuto ambas vistas
+    setInterval(function() {
+        mostrarPacienteActualHoy();
+        mostrarCitasRestantesHoy();
+    }, 60 * 1000);
 });
+
+// Exportar globalmente si necesitas
+window.mostrarPacienteActualHoy = mostrarPacienteActualHoy;
+window.mostrarCitasRestantesHoy = mostrarCitasRestantesHoy;
