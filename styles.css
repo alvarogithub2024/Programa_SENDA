@@ -4058,6 +4058,18 @@ input:invalid {
   font-weight: 600;
   color: #222;
 }
+
+#modal-registrar-atencion .modal-content {
+    max-width: 450px;
+    padding: 2rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+}
+#atencion-paciente-info p {
+    margin: 0.2em 0;
+    font-size: 1em;
+}
 /* Responsive para móviles */
 @media (max-width: 600px) {
   .modal-content {
