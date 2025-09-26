@@ -255,7 +255,7 @@ function renderSolicitudesTable() {
 // ------------------- FUNCIONES DE MODALES Y ACCIONES -------------------
 
 // Ver detalles
-window.verDetalleSolicitud = function(solicitudId) {
+function verDetalleSolicitud(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
     document.getElementById('modal-detalle-nombre').innerText = solicitud.nombre || '';
@@ -269,13 +269,13 @@ window.verDetalleSolicitud = function(solicitudId) {
     document.getElementById('modal-detalle-fecha').innerText = solicitud.fecha ? new Date(solicitud.fecha).toLocaleDateString('es-CL') : '';
     document.getElementById('modal-detalle-sustancias').innerText = Array.isArray(solicitud.sustancias) ? solicitud.sustancias.join(', ') : '';
     document.getElementById('modal-detalle').style.display = 'block';
-};
+}
 function cerrarModalDetalle() {
     document.getElementById('modal-detalle').style.display = 'none';
 }
 
 // Editar
-window.editarSolicitud = function(solicitudId) {
+function editarSolicitud(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
     document.getElementById('modal-editar-nombre').value = solicitud.nombre || '';
@@ -302,7 +302,7 @@ function guardarEdicionSolicitud() {
 }
 
 // Agendar cita
-window.agendarCitaSolicitud = function(solicitudId) {
+function agendarCitaSolicitud(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
     document.getElementById('modal-cita-id').value = solicitud.id;
@@ -325,7 +325,7 @@ function guardarCita() {
 }
 
 // Eliminar
-window.eliminarSolicitud = function(solicitudId) {
+function eliminarSolicitud(solicitudId) {
     if (!confirm('¿Estás seguro de que quieres eliminar esta solicitud?')) return;
     const db = window.getFirestore();
     db.collection('solicitudes_ingreso').doc(solicitudId).delete().then(() => {
@@ -334,7 +334,7 @@ window.eliminarSolicitud = function(solicitudId) {
 }
 
 // Responder (solo información)
-window.abrirModalResponder = function(email, nombre, solicitudId) {
+function abrirModalResponder(email, nombre, solicitudId) {
     document.getElementById('modal-responder-email').value = email;
     document.getElementById('modal-responder-nombre').innerText = nombre;
     document.getElementById('modal-responder-id').value = solicitudId;
@@ -359,7 +359,7 @@ function enviarCorreoSenda() {
 }
 
 // Dropdown y helpers igual que tu versión previa
-window.toggleAccionesSolicitud = function(solicitudId) {
+function toggleAccionesSolicitud(solicitudId) {
     try {
         const dropdown = document.getElementById(`acciones-${solicitudId}`);
         if (dropdown) {
@@ -373,7 +373,7 @@ window.toggleAccionesSolicitud = function(solicitudId) {
     } catch (error) {
         console.error('Error toggle acciones:', error);
     }
-};
+}
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.dropdown-acciones')) {
         document.querySelectorAll('.dropdown-menu').forEach(menu => {
@@ -411,6 +411,68 @@ function resetFilters() {
     applyCurrentFilters();
 }
 
-// ... (agrega aquí tus funciones de filtros, stats, etc. igual que siempre)
+/**
+ * Aplica los filtros a las solicitudes y renderiza la tabla.
+ */
+function applyCurrentFilters() {
+    filteredSolicitudesData = solicitudesData.filter(solicitud => {
+        // Filtro por Estado
+        if (currentFilters.estado !== 'todos' && (solicitud.estado || '').toLowerCase() !== currentFilters.estado) {
+            return false;
+        }
+        // Filtro por Prioridad
+        if (currentFilters.prioridad !== 'todos' && (solicitud.prioridad || '').toLowerCase() !== currentFilters.prioridad) {
+            return false;
+        }
+        // Filtro por CESFAM
+        if (currentFilters.cesfam !== 'todos' && (solicitud.cesfam || '') !== currentFilters.cesfam) {
+            return false;
+        }
+        // Filtro por Fecha
+        if (currentFilters.fecha !== 'todos') {
+            const today = new Date();
+            const solicitudDate = solicitud.fecha ? new Date(solicitud.fecha) : null;
+            if (!solicitudDate) return false;
+            switch (currentFilters.fecha) {
+                case 'hoy':
+                    if (!isSameDay(solicitudDate, today)) return false;
+                    break;
+                case 'semana':
+                case 'esta_semana':
+                    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    if (solicitudDate < weekAgo) return false;
+                    break;
+                case 'mes':
+                case 'este_mes':
+                    const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+                    if (solicitudDate < monthAgo) return false;
+                    break;
+            }
+        }
+        // Filtro por Búsqueda
+        if (currentFilters.busqueda) {
+            const rut = (solicitud.rut || '').replace(/\./g, '').toLowerCase();
+            const nombre = (solicitud.nombre || '').toLowerCase();
+            const apellidos = (solicitud.apellidos || '').toLowerCase();
+            const email = (solicitud.email || '').toLowerCase();
+            const q = currentFilters.busqueda.replace(/\./g, '').toLowerCase();
+            if (!rut.includes(q) && !nombre.includes(q) && !apellidos.includes(q) && !email.includes(q)) return false;
+        }
+        return true;
+    });
+    renderSolicitudesTable();
+    updateSolicitudesCounter();
+    updateSolicitudesStats();
+}
+
+/* Utilidades auxiliares */
+function isSameDay(date1, date2) {
+    return date1 && date2 &&
+        date1.getDate() === date2.getDate() &&
+        date1.getMonth() === date2.getMonth() &&
+        date1.getFullYear() === date2.getFullYear();
+}
+
+/* Resto de funciones: setupFilters, setupEvents, setupAutoRefresh, updateSolicitudesCounter y updateSolicitudesStats igual que ya tienes */
 
 console.log('📋 Gestor de solicitudes extendido listo.');
