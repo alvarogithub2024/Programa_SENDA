@@ -24,10 +24,11 @@
     /**
      * Verifica si el profesional actual puede editar historial
      */
-    function puedeEditarHistorial() {
-        const rolesPermitidos = ['medico', 'psicologo', 'terapeuta'];
-        return profesionActual && rolesPermitidos.includes(profesionActual);
-    }
+function puedeEditarHistorial() {
+    console.log('profesionActual:', profesionActual); // Para debug
+    const rolesPermitidos = ['medico', 'psicologo', 'terapeuta'];
+    return profesionActual && rolesPermitidos.includes(profesionActual);
+}
 
     /**
      * Obtiene información del profesional actual
@@ -315,12 +316,12 @@
         }
 
         // Determinar si puede editar esta entrada específica
-        const puedeEditarEsta = puedeEditar && (
-            !profesional || 
-            atencion.profesionalId === profesional.id || 
-            profesional.profession === 'medico' // Los médicos pueden editar todo
-        );
-
+    const puedeEditarEsta = puedeEditar && (
+    !profesional || 
+    atencion.profesionalId === profesional.id || 
+    profesional.profession === 'medico'
+);
+console.log('Debug - puedeEditar:', puedeEditar, 'profesionActual:', profesionActual, 'puedeEditarEsta:', puedeEditarEsta);
         // Botones de acción
         let acciones = '';
         if (puedeEditarEsta) {
