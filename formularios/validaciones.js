@@ -100,6 +100,22 @@ function validarFormularioPaciente(datos) {
     return { esValido: Object.keys(errores).length === 0, errores };
 }
 
+/**
+ * Valida un formulario de reingreso
+ */
+function validarFormularioReingreso(datos) {
+    let errores = {};
+    
+    if (!validarNoVacio(datos.nombre)) errores.nombre = "Nombre obligatorio";
+    if (!validarRut(datos.rut)) errores.rut = "RUT inválido";
+    if (!validarTelefono(datos.telefono)) errores.telefono = "Teléfono inválido";
+    if (!window.CESFAM_PUENTE_ALTO || !window.CESFAM_PUENTE_ALTO.includes(datos.cesfam)) {
+        errores.cesfam = "CESFAM inválido";
+    }
+    if (!validarNoVacio(datos.motivo)) errores.motivo = "Motivo obligatorio";
+    
+    return { esValido: Object.keys(errores).length === 0, errores };
+}
 // Exportar globalmente
 window.validarRut = validarRut;
 window.validarEmail = validarEmail;
