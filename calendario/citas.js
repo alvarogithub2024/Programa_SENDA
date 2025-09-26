@@ -204,9 +204,9 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
   document.getElementById('modal-cita-rut').textContent = rut;
   showModal('modal-cita');
 
-  setTimeout(function() {
+ setTimeout(function() {
     var form = document.getElementById('form-agendar-cita');
-    if (form && !form._onsubmitSet) { // Solo la primera vez
+    if (form && !form._onsubmitSet) {
       form.addEventListener('submit', function(e){
         e.preventDefault();
         const citaId = document.getElementById('modal-cita-id').value;
