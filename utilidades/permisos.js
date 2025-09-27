@@ -1,6 +1,4 @@
-// UTILIDADES/PERMISOS.JS - Sistema de permisos para roles (VERSIÓN CORREGIDA)
 
-// Configuración de permisos por rol
 const PERMISOS_POR_ROL = {
     'medico': {
         editarHistorial: true,
@@ -36,14 +34,10 @@ const PERMISOS_POR_ROL = {
     }
 };
 
-// Variable global para almacenar el rol actual
 let rolActual = null;
 let usuarioActual = null;
 let sistemaInicializado = false;
 
-/**
- * Inicializa el sistema de permisos
- */
 function inicializarSistemaPermisos() {
     console.log('🔐 Inicializando sistema de permisos...');
     
@@ -63,12 +57,11 @@ function inicializarSistemaPermisos() {
                         console.log('🔐 Sistema de permisos inicializado');
                     }
                     
-                    // Aplicar permisos a la UI con delay para asegurar que DOM esté listo
+        
                     setTimeout(() => {
                         aplicarPermisosUI();
                     }, 100);
-                    
-                    // Notificar al sistema global
+        
                     if (window.setCurrentUserData) {
                         window.setCurrentUserData({ profession: rol });
                     }
@@ -91,9 +84,6 @@ function inicializarSistemaPermisos() {
     }
 }
 
-/**
- * Obtiene el rol del usuario desde Firestore con reintentos
- */
 function obtenerRolUsuario(uid) {
     return new Promise((resolve, reject) => {
         if (!window.getFirestore) {
@@ -121,7 +111,6 @@ function obtenerRolUsuario(uid) {
             .catch(error => {
                 console.error('❌ Error consultando Firestore:', error);
                 
-                // Reintentar una vez después de 1 segundo
                 setTimeout(() => {
                     console.log('🔄 Reintentando obtener rol...');
                     db.collection('profesionales').doc(uid).get()
@@ -145,9 +134,6 @@ function obtenerRolUsuario(uid) {
     });
 }
 
-/**
- * Verifica si el usuario actual tiene un permiso específico
- */
 function tienePermiso(permiso) {
     if (!rolActual || !PERMISOS_POR_ROL[rolActual]) {
         console.log(`🚫 Sin permiso "${permiso}" - Rol actual: ${rolActual}`);
@@ -158,9 +144,6 @@ function tienePermiso(permiso) {
     return tiene;
 }
 
-/**
- * Verifica permisos específicos para historial clínico
- */
 function puedeEditarHistorial() {
     return tienePermiso('editarHistorial');
 }
@@ -177,27 +160,16 @@ function puedeGestionarSolicitudes() {
     return tienePermiso('gestionarSolicitudes');
 }
 
-/**
- * Aplica los permisos a la interfaz de usuario
- */
 function aplicarPermisosUI() {
     console.log('🎨 Aplicando permisos a la UI...');
     
-    // Aplicar permisos a elementos del historial clínico
     aplicarPermisosHistorial();
-    
-    // Aplicar permisos a navegación
     aplicarPermisosNavegacion();
-    
-    // Aplicar permisos a botones de acción
     aplicarPermisosBotones();
     
     console.log('✅ Permisos UI aplicados');
 }
 
-/**
- * Aplica permisos específicos al historial clínico
- */
 function aplicarPermisosHistorial() {
     const historialContainer = document.getElementById('historial-clinico');
     if (historialContainer) {
@@ -210,7 +182,6 @@ function aplicarPermisosHistorial() {
         }
     }
     
-    // Ocultar/mostrar botones de agregar atención
     const botonesAgregar = document.querySelectorAll('.btn-add-entry');
     botonesAgregar.forEach(btn => {
         if (puedeCrearAtenciones()) {
@@ -223,11 +194,7 @@ function aplicarPermisosHistorial() {
     console.log(`📝 Encontrados ${botonesAgregar.length} botones de agregar entrada`);
 }
 
-/**
- * Aplica permisos a la navegación
- */
 function aplicarPermisosNavegacion() {
-    // Mostrar/ocultar pestaña de solicitudes
     const tabSolicitudes = document.querySelector('.tab-btn[data-tab="solicitudes"]');
     if (tabSolicitudes) {
         if (puedeGestionarSolicitudes()) {
@@ -240,11 +207,7 @@ function aplicarPermisosNavegacion() {
     }
 }
 
-/**
- * Aplica permisos a botones específicos
- */
 function aplicarPermisosBotones() {
-    // Botones de editar/eliminar en historial
     const botonesEdicion = document.querySelectorAll('.btn-entry-action.edit, .btn-entry-action.delete');
     botonesEdicion.forEach(btn => {
         if (btn.classList.contains('edit') && !puedeEditarHistorial()) {
@@ -258,9 +221,6 @@ function aplicarPermisosBotones() {
     console.log(`🔧 Procesados ${botonesEdicion.length} botones de edición`);
 }
 
-/**
- * Muestra mensaje de permisos insuficientes
- */
 function mostrarMensajePermisos(accion) {
     const rolesPermitidos = obtenerRolesConPermiso(accion);
     const mensaje = `No tienes permisos para ${accion}. Esta función está restringida a: ${rolesPermitidos.join(', ')}`;
@@ -274,9 +234,6 @@ function mostrarMensajePermisos(accion) {
     }
 }
 
-/**
- * Obtiene los roles que tienen un permiso específico
- */
 function obtenerRolesConPermiso(accionOPermiso) {
     const roles = [];
     const traduccionRoles = {
@@ -286,7 +243,6 @@ function obtenerRolesConPermiso(accionOPermiso) {
         'asistente_social': 'Asistentes Sociales'
     };
     
-    // Mapear acciones a permisos
     const mapeoPermisos = {
         'editar atenciones del historial clínico': 'editarHistorial',
         'eliminar atenciones del historial clínico': 'eliminarHistorial',
@@ -305,9 +261,7 @@ function obtenerRolesConPermiso(accionOPermiso) {
     return roles;
 }
 
-/**
- * Wrapper para funciones que requieren permisos
- */
+
 function conPermiso(permiso, funcion, mensajeError) {
     return function(...args) {
         if (tienePermiso(permiso)) {
@@ -319,9 +273,6 @@ function conPermiso(permiso, funcion, mensajeError) {
     };
 }
 
-/**
- * Función para forzar recarga de permisos
- */
 function recargarPermisos() {
     console.log('🔄 Forzando recarga de permisos...');
     if (usuarioActual) {
@@ -333,9 +284,6 @@ function recargarPermisos() {
     }
 }
 
-/**
- * Debug y diagnóstico
- */
 function diagnosticarPermisos() {
     console.log('🔍 DIAGNÓSTICO DEL SISTEMA DE PERMISOS');
     console.log('=====================================');
@@ -358,7 +306,6 @@ function diagnosticarPermisos() {
     }
 }
 
-// Exportar funciones globalmente
 window.inicializarSistemaPermisos = inicializarSistemaPermisos;
 window.tienePermiso = tienePermiso;
 window.puedeEditarHistorial = puedeEditarHistorial;
@@ -370,8 +317,6 @@ window.mostrarMensajePermisos = mostrarMensajePermisos;
 window.recargarPermisos = recargarPermisos;
 window.diagnosticarPermisos = diagnosticarPermisos;
 window.rolActual = function() { return rolActual; };
-
-// Funciones de debug mejoradas
 window.SENDA_PERMISOS_DEBUG = {
     getRol: () => rolActual,
     getUsuario: () => usuarioActual,
@@ -384,12 +329,10 @@ window.SENDA_PERMISOS_DEBUG = {
     }
 };
 
-// Inicializar cuando se carga el DOM
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📄 DOM cargado, inicializando permisos...');
     inicializarSistemaPermisos();
     
-    // Debug automático después de 3 segundos
     setTimeout(() => {
         if (!rolActual && usuarioActual) {
             console.log('⚠️ No se pudo obtener el rol después de 3 segundos, ejecutando diagnóstico...');
