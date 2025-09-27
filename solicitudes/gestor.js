@@ -1,5 +1,5 @@
 /**
- * SOLICITUDES/GESTOR.JS - Gestor de Solicitudes Optimizado
+ * SOLICITUDES/GESTOR.JS - Gestor de Solicitudes con Exportación PDF
  */
 
 // Variables globales
@@ -52,6 +52,7 @@ window.initSolicitudesManager = function() {
             renderSolicitudesTable();
             updateSolicitudesCounter();
             updateSolicitudesStats();
+            agregarBotonExportarTodas(); // Agregar botón PDF
             console.log('✅ Gestor de solicitudes inicializado');
         });
     } catch (error) {
@@ -170,8 +171,8 @@ function renderSolicitudesTable() {
                 <button class="btn-accion btn-editar" onclick="editarSolicitud('${solicitud.id}')" title="Editar">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button class="btn-accion btn-exportar" onclick="exportarSolicitud('${solicitud.id}')" title="Exportar">
-                    <i class="fas fa-download"></i>
+                <button class="btn-accion btn-exportar" onclick="exportarSolicitud('${solicitud.id}')" title="Exportar PDF">
+                    <i class="fas fa-file-pdf"></i>
                 </button>
                 <div class="dropdown-acciones">
                     <button class="btn-accion btn-mas" onclick="toggleAccionesSolicitud('${solicitud.id}')" title="Más acciones">
@@ -186,6 +187,9 @@ function renderSolicitudesTable() {
                         ${solicitud.origen === 'informacion' ? `
                         <button onclick="abrirModalResponder('${solicitud.email}', '${solicitud.nombre || ''}', '${solicitud.id}')">
                             <i class="fas fa-envelope"></i> Responder
+                        </button>
+                        <button onclick="verRespuestasSolicitud('${solicitud.id}')">
+                            <i class="fas fa-history"></i> Ver Respuestas
                         </button>
                         ` : ''}
                         <hr>
@@ -255,6 +259,349 @@ function renderSolicitudesTable() {
         console.error('❌ Error renderizando tabla:', error);
     }
 }
+
+// === FUNCIONES DE EXPORTACIÓN PDF ===
+
+function exportarSolicitud(solicitudId) {
+    try {
+        const solicitud = solicitudesData.find(s => s.id === solicitudId);
+        if (!solicitud) {
+            window.showNotification && window.showNotification('Solicitud no encontrada', 'error');
+            return;
+        }
+        
+        // Generar PDF individual
+        generarPDFSolicitud(solicitud);
+        
+    } catch (error) {
+        console.error('Error exportando solicitud:', error);
+        window.showNotification && window.showNotification('Error al exportar solicitud', 'error');
+    }
+}
+
+function generarPDFSolicitud(solicitud) {
+    // Verificar si jsPDF está disponible
+    if (typeof window.jsPDF === 'undefined') {
+        window.showNotification && window.showNotification('Error: Librería PDF no disponible. Recarga la página.', 'error');
+        return;
+    }
+
+    const { jsPDF } = window.jsPDF;
+    const doc = new jsPDF();
+    
+    // Configuración de colores SENDA
+    const azulSenda = [37, 99, 235]; // #2563eb
+    const grisTexto = [75, 85, 99];  // #4b5563
+    
+    let yPosition = 20;
+    
+    // === HEADER DEL DOCUMENTO ===
+    doc.setFillColor(...azulSenda);
+    doc.rect(0, 0, 210, 25, 'F');
+    
+    // Logo y título
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont(undefined, 'bold');
+    doc.text('PROGRAMA SENDA PUENTE ALTO', 20, 15);
+    
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'normal');
+    doc.text('Ficha de Solicitud de Ingreso', 20, 21);
+    
+    // Fecha de generación
+    doc.setFontSize(10);
+    doc.text(`Generado: ${new Date().toLocaleDateString('es-CL')}`, 150, 21);
+    
+    yPosition = 35;
+    
+    // === INFORMACIÓN DEL PACIENTE ===
+    doc.setTextColor(...grisTexto);
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('INFORMACIÓN DEL PACIENTE', 20, yPosition);
+    
+    yPosition += 10;
+    
+    // Datos personales
+    const datosPersonales = [
+        ['Nombre Completo:', `${solicitud.nombre || ''} ${solicitud.apellidos || ''}`],
+        ['RUT:', solicitud.rut || 'No especificado'],
+        ['Edad:', `${solicitud.edad || 'No especificada'} años`],
+        ['Teléfono:', solicitud.telefono || 'No especificado'],
+        ['Email:', solicitud.email || 'No especificado'],
+        ['Dirección:', solicitud.direccion || 'No especificada'],
+        ['CESFAM:', solicitud.cesfam || 'No especificado']
+    ];
+    
+    doc.setFontSize(11);
+    datosPersonales.forEach(([label, value]) => {
+        doc.setFont(undefined, 'bold');
+        doc.text(label, 20, yPosition);
+        doc.setFont(undefined, 'normal');
+        doc.text(value, 70, yPosition);
+        yPosition += 7;
+    });
+    
+    yPosition += 5;
+    
+    // === INFORMACIÓN CLÍNICA ===
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('INFORMACIÓN CLÍNICA', 20, yPosition);
+    
+    yPosition += 10;
+    
+    // Sustancias
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'bold');
+    doc.text('Sustancias problemáticas:', 20, yPosition);
+    yPosition += 5;
+    
+    doc.setFont(undefined, 'normal');
+    const sustancias = Array.isArray(solicitud.sustancias) && solicitud.sustancias.length 
+        ? solicitud.sustancias.join(', ') 
+        : 'No especificado';
+    
+    // Dividir texto largo en múltiples líneas
+    const sustanciasLines = doc.splitTextToSize(sustancias, 170);
+    doc.text(sustanciasLines, 20, yPosition);
+    yPosition += (sustanciasLines.length * 5) + 5;
+    
+    // Otros datos clínicos
+    const datosClinicOS = [
+        ['Tiempo de consumo:', solicitud.tiempoConsumo || 'No especificado'],
+        ['Nivel de urgencia:', solicitud.urgencia || 'No especificado'],
+        ['Tratamiento previo:', solicitud.tratamientoPrevio === 'si' ? 'Sí' : solicitud.tratamientoPrevio === 'no' ? 'No' : 'No especificado'],
+        ['Motivación (1-10):', solicitud.motivacion || 'No especificado']
+    ];
+    
+    datosClinicOS.forEach(([label, value]) => {
+        doc.setFont(undefined, 'bold');
+        doc.text(label, 20, yPosition);
+        doc.setFont(undefined, 'normal');
+        doc.text(value, 70, yPosition);
+        yPosition += 7;
+    });
+    
+    yPosition += 5;
+    
+    // === DESCRIPCIÓN ADICIONAL ===
+    if (solicitud.descripcion) {
+        doc.setFontSize(14);
+        doc.setFont(undefined, 'bold');
+        doc.text('DESCRIPCIÓN ADICIONAL', 20, yPosition);
+        
+        yPosition += 10;
+        
+        doc.setFontSize(11);
+        doc.setFont(undefined, 'normal');
+        const descripcionLines = doc.splitTextToSize(solicitud.descripcion, 170);
+        doc.text(descripcionLines, 20, yPosition);
+        yPosition += (descripcionLines.length * 5) + 10;
+    }
+    
+    // === INFORMACIÓN ADMINISTRATIVA ===
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('INFORMACIÓN ADMINISTRATIVA', 20, yPosition);
+    
+    yPosition += 10;
+    
+    const datosAdmin = [
+        ['Estado:', solicitud.estado || 'Pendiente'],
+        ['Prioridad:', solicitud.prioridad || 'No asignada'],
+        ['Fecha de solicitud:', solicitud.fecha ? new Date(solicitud.fecha).toLocaleDateString('es-CL') : 'No especificada'],
+        ['Origen:', solicitud.origen || 'Web'],
+        ['ID de solicitud:', solicitud.id || 'No disponible']
+    ];
+    
+    doc.setFontSize(11);
+    datosAdmin.forEach(([label, value]) => {
+        doc.setFont(undefined, 'bold');
+        doc.text(label, 20, yPosition);
+        doc.setFont(undefined, 'normal');
+        doc.text(value, 70, yPosition);
+        yPosition += 7;
+    });
+    
+    // === FOOTER ===
+    doc.setFontSize(8);
+    doc.setTextColor(128, 128, 128);
+    doc.text('Este documento es confidencial y está protegido por la Ley de Protección de Datos Personales.', 20, 280);
+    doc.text('SENDA Puente Alto - Sistema de Gestión de Solicitudes', 20, 285);
+    
+    // Generar nombre del archivo
+    const nombrePaciente = (solicitud.nombre || 'paciente').replace(/\s+/g, '_');
+    const fecha = new Date().toISOString().slice(0, 10);
+    const filename = `solicitud_${nombrePaciente}_${fecha}.pdf`;
+    
+    // Descargar PDF
+    doc.save(filename);
+    
+    window.showNotification && window.showNotification(`PDF generado: ${filename}`, 'success');
+}
+
+function exportarTodasLasSolicitudes() {
+    if (!filteredSolicitudesData.length) {
+        window.showNotification && window.showNotification('No hay solicitudes para exportar', 'warning');
+        return;
+    }
+    
+    if (typeof window.jsPDF === 'undefined') {
+        window.showNotification && window.showNotification('Error: Librería PDF no disponible. Recarga la página.', 'error');
+        return;
+    }
+
+    const { jsPDF } = window.jsPDF;
+    const doc = new jsPDF();
+    
+    const azulSenda = [37, 99, 235];
+    const grisTexto = [75, 85, 99];
+    
+    // === PORTADA ===
+    doc.setFillColor(...azulSenda);
+    doc.rect(0, 0, 210, 297, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont(undefined, 'bold');
+    doc.text('PROGRAMA SENDA', 105, 120, { align: 'center' });
+    doc.text('PUENTE ALTO', 105, 135, { align: 'center' });
+    
+    doc.setFontSize(16);
+    doc.setFont(undefined, 'normal');
+    doc.text('Reporte de Solicitudes de Ingreso', 105, 155, { align: 'center' });
+    
+    doc.setFontSize(12);
+    doc.text(`${filteredSolicitudesData.length} solicitudes`, 105, 170, { align: 'center' });
+    doc.text(`Generado: ${new Date().toLocaleDateString('es-CL')}`, 105, 180, { align: 'center' });
+    
+    // === RESUMEN ESTADÍSTICO ===
+    doc.addPage();
+    let yPos = 20;
+    
+    doc.setTextColor(...grisTexto);
+    doc.setFontSize(18);
+    doc.setFont(undefined, 'bold');
+    doc.text('RESUMEN ESTADÍSTICO', 20, yPos);
+    
+    yPos += 15;
+    
+    // Calcular estadísticas
+    const stats = calcularEstadisticas(filteredSolicitudesData);
+    
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'normal');
+    
+    Object.entries(stats).forEach(([key, value]) => {
+        doc.setFont(undefined, 'bold');
+        doc.text(`${key}:`, 20, yPos);
+        doc.setFont(undefined, 'normal');
+        doc.text(value.toString(), 80, yPos);
+        yPos += 8;
+    });
+    
+    // === LISTADO DE SOLICITUDES ===
+    filteredSolicitudesData.forEach((solicitud, index) => {
+        doc.addPage();
+        
+        // Header de página
+        doc.setFillColor(...azulSenda);
+        doc.rect(0, 0, 210, 20, 'F');
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text(`SOLICITUD ${index + 1} DE ${filteredSolicitudesData.length}`, 20, 12);
+        
+        // Contenido de la solicitud
+        generarContenidoSolicitudEnPDF(doc, solicitud, 25);
+    });
+    
+    // Descargar
+    const fecha = new Date().toISOString().slice(0, 10);
+    const filename = `reporte_solicitudes_senda_${fecha}.pdf`;
+    doc.save(filename);
+    
+    window.showNotification && window.showNotification(`Reporte PDF generado: ${filename}`, 'success');
+}
+
+function calcularEstadisticas(solicitudes) {
+    const total = solicitudes.length;
+    const porEstado = {};
+    const porPrioridad = {};
+    const porCesfam = {};
+    
+    solicitudes.forEach(s => {
+        // Por estado
+        const estado = s.estado || 'sin_estado';
+        porEstado[estado] = (porEstado[estado] || 0) + 1;
+        
+        // Por prioridad
+        const prioridad = s.prioridad || 'sin_prioridad';
+        porPrioridad[prioridad] = (porPrioridad[prioridad] || 0) + 1;
+        
+        // Por CESFAM
+        const cesfam = s.cesfam || 'sin_cesfam';
+        porCesfam[cesfam] = (porCesfam[cesfam] || 0) + 1;
+    });
+    
+    return {
+        'Total de solicitudes': total,
+        'Pendientes': porEstado.pendiente || 0,
+        'En proceso': porEstado.en_proceso || 0,
+        'Agendadas': porEstado.agendada || 0,
+        'Completadas': porEstado.completada || 0,
+        'Prioridad alta': porPrioridad.alta || 0,
+        'Prioridad media': porPrioridad.media || 0,
+        'Prioridad baja': porPrioridad.baja || 0
+    };
+}
+
+function generarContenidoSolicitudEnPDF(doc, solicitud, startY) {
+    const grisTexto = [75, 85, 99];
+    let yPosition = startY;
+    
+    doc.setTextColor(...grisTexto);
+    
+    // Datos básicos
+    const datos = [
+        ['Nombre:', `${solicitud.nombre || ''} ${solicitud.apellidos || ''}`],
+        ['RUT:', solicitud.rut || 'No especificado'],
+        ['CESFAM:', solicitud.cesfam || 'No especificado'],
+        ['Estado:', solicitud.estado || 'Pendiente'],
+        ['Prioridad:', solicitud.prioridad || 'No asignada'],
+        ['Sustancias:', Array.isArray(solicitud.sustancias) ? solicitud.sustancias.join(', ') : 'No especificado']
+    ];
+    
+    doc.setFontSize(10);
+    datos.forEach(([label, value]) => {
+        doc.setFont(undefined, 'bold');
+        doc.text(label, 20, yPosition);
+        doc.setFont(undefined, 'normal');
+        const valueLines = doc.splitTextToSize(value, 120);
+        doc.text(valueLines, 60, yPosition);
+        yPosition += Math.max(5, valueLines.length * 4);
+    });
+}
+
+function agregarBotonExportarTodas() {
+    const sectionActions = document.querySelector('#solicitudes-tab .section-actions');
+    if (sectionActions) {
+        // Verificar si ya existe el botón
+        if (!document.getElementById('export-all-solicitudes')) {
+            const exportButton = document.createElement('button');
+            exportButton.id = 'export-all-solicitudes';
+            exportButton.className = 'btn btn-secondary btn-sm';
+            exportButton.innerHTML = '<i class="fas fa-file-pdf"></i> Exportar PDF';
+            exportButton.onclick = exportarTodasLasSolicitudes;
+            sectionActions.appendChild(exportButton);
+        }
+    }
+}
+
+// === FIN DE FUNCIONES PDF ===
 
 // Funciones de filtros y configuración
 function setupFilters() {
@@ -522,70 +869,6 @@ function toggleAccionesSolicitud(solicitudId) {
     }
 }
 
-function exportarSolicitud(solicitudId) {
-    try {
-        const solicitud = solicitudesData.find(s => s.id === solicitudId);
-        if (!solicitud) {
-            window.showNotification && window.showNotification('Solicitud no encontrada', 'error');
-            return;
-        }
-        
-        const dataToExport = [{
-            'Nombre Completo': `${solicitud.nombre || ''} ${solicitud.apellidos || ''}`,
-            'RUT': solicitud.rut || '',
-            'Edad': solicitud.edad || '',
-            'Teléfono': solicitud.telefono || '',
-            'Email': solicitud.email || '',
-            'CESFAM': solicitud.cesfam || '',
-            'Estado': solicitud.estado || '',
-            'Prioridad': solicitud.prioridad || '',
-            'Sustancias': Array.isArray(solicitud.sustancias) ? solicitud.sustancias.join(', ') : 'No especificado',
-            'Fecha Creación': solicitud.fechaCreacion ? new Date(solicitud.fechaCreacion).toLocaleDateString('es-CL') : '',
-            'Descripción': solicitud.descripcion || 'Sin descripción',
-            'Motivación (1-10)': solicitud.motivacion || '',
-            'Tiempo de Consumo': solicitud.tiempoConsumo || '',
-            'Tratamiento Previo': solicitud.tratamientoPrevio === 'si' ? 'Sí' : 'No'
-        }];
-
-        const csvContent = convertToCSV(dataToExport);
-        const filename = `solicitud_${solicitudId}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`;
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        
-        if (link.download !== undefined) {
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', filename);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-        
-        window.showNotification && window.showNotification(`Solicitud exportada: ${filename}`, 'success');
-    } catch (error) {
-        console.error('Error exportando solicitud:', error);
-        window.showNotification && window.showNotification('Error al exportar solicitud', 'error');
-    }
-}
-
-function convertToCSV(objArray) {
-    const array = typeof objArray !== 'object' ? JSON.parse(objArray) : objArray;
-    let str = '';
-    let headers = Object.keys(array[0]);
-    str += headers.join(',') + '\r\n';
-    
-    for (let i = 0; i < array.length; i++) {
-        let line = '';
-        for (let j = 0; j < headers.length; j++) {
-            if (j > 0) line += ',';
-            line += `"${array[i][headers[j]]}"`;
-        }
-        str += line + '\r\n';
-    }
-    return str;
-}
-
 function guardarEdicionSolicitud() {
     const id = document.getElementById('modal-editar-id').value;
     const nombre = document.getElementById('modal-editar-nombre').value;
@@ -641,5 +924,8 @@ window.cerrarModalResponder = cerrarModalResponder;
 window.guardarEdicionSolicitud = guardarEdicionSolicitud;
 window.cerrarModalEditar = cerrarModalEditar;
 window.exportarSolicitud = exportarSolicitud;
+window.generarPDFSolicitud = generarPDFSolicitud;
+window.exportarTodasLasSolicitudes = exportarTodasLasSolicitudes;
+window.calcularEstadisticas = calcularEstadisticas;
 
-console.log('📋 Gestor de solicitudes listo.');
+console.log('📋 Gestor de solicitudes con PDF listo.');
