@@ -1,16 +1,11 @@
-// ==== CITAS ENTRE PROFESIONALES ====
 
-// Variables para Nueva Cita
 let profesionalesProfesional = [];
 let profesionesProfesional = [];
 let miCesfamProfesional = null;
 
-// Variables para Agendar Cita (Solicitud de Ingreso)
 let profesionalesAgendarProf = [];
 let profesionesAgendarProf = [];
 let miCesfamAgendarProf = null;
-
-// ===== NUEVA CITA ENTRE PROFESIONALES =====
 
 function cargarProfesionalesNuevaCitaProfesional(callback) {
     const user = firebase.auth().currentUser;
@@ -126,7 +121,6 @@ function abrirModalNuevaCitaProfesional() {
         llenarSelectProfesionalesNuevaCitaProfesional();
         autocompletarNombreProfesionalNuevaCitaProfesional();
 
-        // Event listeners
         const selProf = document.getElementById('prof-cita-profession');
         if (selProf) {
             selProf.onchange = function() {
@@ -144,7 +138,6 @@ function abrirModalNuevaCitaProfesional() {
             };
         }
         
-        // Listeners para fecha y profesional
         const fechaInput = document.getElementById('prof-cita-fecha');
         const profSelect = document.getElementById('prof-cita-profesional');
         if (fechaInput && profSelect) {
@@ -154,7 +147,6 @@ function abrirModalNuevaCitaProfesional() {
 
         showModal('modal-nueva-cita-profesional');
 
-        // Form submit
         setTimeout(function() {
             const form = document.getElementById('form-nueva-cita-profesional');
             if (form && !form._onsubmitSet) {
@@ -171,7 +163,6 @@ function abrirModalNuevaCitaProfesional() {
                         tipo: "profesional"
                     };
 
-                    // Validar campos obligatorios
                     if (!cita.profesion || !cita.profesionalId || !cita.fecha || !cita.hora) {
                         window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
                         return;
@@ -192,8 +183,6 @@ function abrirModalNuevaCitaProfesional() {
         }, 100);
     });
 }
-
-// ===== AGENDAR CITA ENTRE PROFESIONALES (Solicitud de Ingreso) =====
 
 function cargarProfesionalesAgendarCitaProfesional(callback) {
     const user = firebase.auth().currentUser;
@@ -309,7 +298,6 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
         llenarSelectProfesionalesAgendarCitaProfesional();
         autocompletarNombreProfesionalAgendarCitaProfesional();
 
-        // Asignar datos del paciente
         const inputIdProf = document.getElementById('modal-cita-id-prof');
         if (inputIdProf) inputIdProf.value = solicitudId;
 
@@ -319,7 +307,6 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
         const rutSpanProf = document.getElementById('modal-cita-rut-prof');
         if (rutSpanProf) rutSpanProf.textContent = rut;
 
-        // Event listeners
         const selProf = document.getElementById('modal-cita-profession-prof');
         if (selProf) {
             selProf.onchange = function() {
@@ -337,7 +324,6 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
             };
         }
         
-        // Listeners para fecha y profesional
         const fechaInput = document.getElementById('modal-cita-fecha-prof');
         const profSelect = document.getElementById('modal-cita-profesional-prof');
         if (fechaInput && profSelect) {
@@ -347,7 +333,7 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
 
         showModal('modal-agendar-cita-profesional');
 
-        // Form submit
+
         setTimeout(function() {
             const form = document.getElementById('form-agendar-cita-profesional');
             if (form && !form._onsubmitSet) {
@@ -377,7 +363,7 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
                         .then(function(docRef) {
                             const solicitudId = cita.solicitudId;
                             
-                            // Actualizar estado en solicitudes_ingreso
+    
                             db.collection("solicitudes_ingreso").doc(solicitudId).update({ estado: "agendada" })
                                 .catch(() => {})
                                 .finally(() => {
@@ -401,7 +387,6 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
     });
 }
 
-// Exportar funciones globales
 window.abrirModalNuevaCitaProfesional = abrirModalNuevaCitaProfesional;
 window.abrirModalAgendarCitaProfesional = abrirModalAgendarCitaProfesional;
 window.cargarProfesionalesAgendarCitaProfesional = cargarProfesionalesAgendarCitaProfesional;
