@@ -1,4 +1,4 @@
-// MAIN.JS - SISTEMA SENDA PUENTE ALTO v2.0
+// MAIN.JS - SISTEMA SENDA PUENTE ALTO v2.0 - CON SISTEMA DE PERMISOS
 
 // Variables de control
 var initializationCompleted = false;
@@ -28,21 +28,28 @@ document.addEventListener('DOMContentLoaded', async function() {
         await waitForFirebaseInitialization();
         console.log('✅ Firebase verificado y listo\n');
 
-        // Paso 2: Configurar navegación
-        console.log('🔧 Paso 2: Configurando navegación...');
+        // Paso 2: Inicializar sistema de permisos
+        console.log('🔧 Paso 2: Inicializando sistema de permisos...');
+        if (window.inicializarSistemaPermisos) {
+            window.inicializarSistemaPermisos();
+        }
+        console.log('✅ Sistema de permisos configurado\n');
+
+        // Paso 3: Configurar navegación
+        console.log('🔧 Paso 3: Configurando navegación...');
         window.setupTabs && window.setupTabs();
         console.log('✅ Navegación configurada\n');
 
-        // Paso 3: Configurar eventos globales
-        console.log('🔧 Paso 3: Configurando eventos globales...');
+        // Paso 4: Configurar eventos globales
+        console.log('🔧 Paso 4: Configurando eventos globales...');
         window.setupEventListeners && window.setupEventListeners();
         console.log('✅ Eventos configurados\n');
 
-        // Paso 4: Inicializar módulos del sistema
-        console.log('🔧 Paso 4: Inicializando módulos del sistema...');
+        // Paso 5: Inicializar módulos del sistema
+        console.log('🔧 Paso 5: Inicializando módulos del sistema...');
         await initializeSystemModules();
 
-        // Paso 5: Configurar funciones globales
+        // Paso 6: Configurar funciones globales
         setupGlobalFunctions();
 
         console.log('\n🎉 ¡SISTEMA SENDA INICIALIZADO CORRECTAMENTE!');
@@ -171,12 +178,44 @@ function setupGlobalFunctions() {
             }
         };
 
+        // Funciones globales con control de permisos para historial clínico
+        window.abrirModalEditarAtencionSeguro = function(atencionId, descripcion, tipo, rutPaciente) {
+            if (window.puedeEditarHistorial && window.puedeEditarHistorial()) {
+                if (window.abrirModalEditarAtencion) {
+                    window.abrirModalEditarAtencion(atencionId, descripcion, tipo, rutPaciente);
+                }
+            } else {
+                window.mostrarMensajePermisos && window.mostrarMensajePermisos('editar atenciones del historial clínico');
+            }
+        };
+
+        window.eliminarAtencionSeguro = function(atencionId, rutPaciente) {
+            if (window.puedeEliminarHistorial && window.puedeEliminarHistorial()) {
+                if (window.eliminarAtencionDesdeModal) {
+                    window.eliminarAtencionDesdeModal(atencionId, rutPaciente);
+                }
+            } else {
+                window.mostrarMensajePermisos && window.mostrarMensajePermisos('eliminar atenciones del historial clínico');
+            }
+        };
+
+        window.crearAtencionSeguro = function(rutPaciente) {
+            if (window.puedeCrearAtenciones && window.puedeCrearAtenciones()) {
+                if (window.mostrarFormularioNuevaAtencion) {
+                    window.mostrarFormularioNuevaAtencion(rutPaciente);
+                }
+            } else {
+                window.mostrarMensajePermisos && window.mostrarMensajePermisos('crear nuevas atenciones');
+            }
+        };
+
         window.SENDA_DEBUG = {
             getSystemInfo: function() {
                 return {
                     version: '2.0',
                     initialized: initializationCompleted,
                     firebase: window.isFirebaseInitialized && window.isFirebaseInitialized(),
+                    permisos: window.rolActual ? window.rolActual() : null,
                     timestamp: new Date().toISOString()
                 };
             },
@@ -186,6 +225,14 @@ function setupGlobalFunctions() {
             clearStorage: function() {
                 localStorage.clear();
                 sessionStorage.clear();
+            },
+            testPermisos: function() {
+                console.log('🔐 Estado de permisos:');
+                console.log('- Rol actual:', window.rolActual ? window.rolActual() : 'Sin rol');
+                console.log('- Puede editar historial:', window.puedeEditarHistorial ? window.puedeEditarHistorial() : false);
+                console.log('- Puede eliminar historial:', window.puedeEliminarHistorial ? window.puedeEliminarHistorial() : false);
+                console.log('- Puede crear atenciones:', window.puedeCrearAtenciones ? window.puedeCrearAtenciones() : false);
+                console.log('- Puede gestionar solicitudes:', window.puedeGestionarSolicitudes ? window.puedeGestionarSolicitudes() : false);
             }
         };
     } catch (error) {
