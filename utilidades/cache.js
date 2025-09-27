@@ -1,10 +1,6 @@
-// UTILIDADES/CACHE.JS
-
-// Simple cache en memoria y localStorage
 
 var memoriaCache = {};
 
-// Guarda un valor en cache (memoria y opcionalmente en localStorage)
 function cacheGuardar(clave, valor, duracionMs) {
     var ahora = Date.now();
     memoriaCache[clave] = { valor: valor, expiracion: duracionMs ? ahora + duracionMs : null };
@@ -12,14 +8,11 @@ function cacheGuardar(clave, valor, duracionMs) {
         var obj = { valor: valor, expiracion: duracionMs ? ahora + duracionMs : null };
         localStorage.setItem("cache_" + clave, JSON.stringify(obj));
     } catch (e) {
-        // Puede fallar por cuotas o modo incógnito
     }
 }
 
-// Obtiene un valor del cache (verifica expiración)
 function cacheObtener(clave) {
     var ahora = Date.now();
-    // Primero memoria
     if (memoriaCache[clave]) {
         var dato = memoriaCache[clave];
         if (!dato.expiracion || dato.expiracion > ahora) {
@@ -28,7 +21,7 @@ function cacheObtener(clave) {
             delete memoriaCache[clave];
         }
     }
-    // Luego localStorage
+    
     try {
         var guardado = localStorage.getItem("cache_" + clave);
         if (guardado) {
@@ -44,13 +37,13 @@ function cacheObtener(clave) {
     return null;
 }
 
-// Elimina un valor del cache
+
 function cacheEliminar(clave) {
     delete memoriaCache[clave];
     try { localStorage.removeItem("cache_" + clave); } catch (e) {}
 }
 
-// Limpia todo el cache
+
 function cacheLimpiarTodo() {
     memoriaCache = {};
     try {
@@ -60,7 +53,7 @@ function cacheLimpiarTodo() {
     } catch (e) {}
 }
 
-// Exportar globalmente
+
 window.cacheGuardar = cacheGuardar;
 window.cacheObtener = cacheObtener;
 window.cacheEliminar = cacheEliminar;
