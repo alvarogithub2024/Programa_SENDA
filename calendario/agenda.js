@@ -1,4 +1,3 @@
-// CALENDARIO/AGENDA.JS - Simplificado
 
 document.addEventListener("DOMContentLoaded", function() {
     const calendarGrid = document.getElementById('calendar-grid');
@@ -14,7 +13,7 @@ document.addEventListener("DOMContentLoaded", function() {
     let citasPorDia = {};
     let profesionActual = null;
 
-    // Obtener profesión al autenticarse
+   
     firebase.auth().onAuthStateChanged(function(user) {
         if (user) {
             window.getFirestore().collection('profesionales').doc(user.uid).get().then(function(doc){
@@ -55,7 +54,7 @@ document.addEventListener("DOMContentLoaded", function() {
         calendarGrid.innerHTML = "";
         calendarHeader.textContent = `${getMonthName(month)} ${year}`;
 
-        // Crear header de días
+      
         let row = document.createElement('div');
         row.className = 'calendar-row calendar-row-header';
         ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].forEach(dia => {
@@ -66,10 +65,10 @@ document.addEventListener("DOMContentLoaded", function() {
         });
         calendarGrid.appendChild(row);
 
-        // Calcular días del mes
+        
         let primerDia = new Date(year, month, 1);
         let ultimoDia = new Date(year, month + 1, 0);
-        let startDay = (primerDia.getDay() + 6) % 7; // Ajustar para que lunes sea 0
+        let startDay = (primerDia.getDay() + 6) % 7; 
         let daysInMonth = ultimoDia.getDate();
 
         let date = 1;
@@ -88,13 +87,13 @@ document.addEventListener("DOMContentLoaded", function() {
                 } else {
                     const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
                     
-                    // Número del día
+                    
                     const dayNumDiv = document.createElement('div');
                     dayNumDiv.className = 'calendar-day-number';
                     dayNumDiv.textContent = date;
                     cell.appendChild(dayNumDiv);
 
-                    // Eventos del día
+                    
                     const eventos = citasPorDia[dateKey] || [];
                     if (eventos.length) {
                         const eventsDiv = document.createElement('div');
@@ -116,7 +115,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
                     cell.dataset.date = dateKey;
                     
-                    // Marcar día actual
+                  
                     if (date === chileNow().getDate() &&
                         month === chileNow().getMonth() &&
                         year === chileNow().getFullYear()) {
@@ -138,7 +137,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-    // Event listeners para navegación
+    
     if (prevMonthBtn) {
         prevMonthBtn.onclick = function() {
             currentMonth--;
@@ -161,7 +160,6 @@ document.addEventListener("DOMContentLoaded", function() {
         };
     }
 
-    // Botones de nueva cita
     if (nuevaCitaBtn) {
         nuevaCitaBtn.onclick = function() {
             if (window.abrirModalCitaPaciente) {
@@ -261,7 +259,7 @@ document.addEventListener("DOMContentLoaded", function() {
             });
     }
 
-    // Función para eliminar citas
+   
     window.eliminarCita = function(citaId, fecha) {
         if (!confirm("¿Seguro que deseas eliminar la cita?")) return;
         
@@ -276,11 +274,11 @@ document.addEventListener("DOMContentLoaded", function() {
             });
     };
 
-    // Mostrar citas del día actual por defecto
+ 
     const hoy = new Date().toISOString().slice(0, 10);
     mostrarCitasDelDia(hoy);
     window.mostrarCitasDelDia = mostrarCitasDelDia;
 
-    // Inicializar calendario
+   
     cargarCitasPorDia(() => renderCalendar(currentMonth, currentYear));
 });
