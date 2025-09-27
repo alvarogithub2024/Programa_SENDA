@@ -1,6 +1,3 @@
-/**
- * NAVEGACION/TABS.JS - VERSIÓN SIN IMPORTS
- */
 
 let currentUserData = null;
 
@@ -20,7 +17,7 @@ window.setupTabs = function() {
                     return;
                 }
 
-                // Cambiar estado activo
+                
                 tabBtns.forEach(b => b.classList.remove('active'));
                 tabPanes.forEach(p => p.classList.remove('active'));
 
@@ -51,7 +48,7 @@ function updateTabVisibility() {
                 btn.style.display = 'none';
                 if (btn.classList.contains('active')) {
                     btn.classList.remove('active');
-                    // Cambiar a tab por defecto
+                 
                     const agendaTab = document.querySelector('.tab-btn[data-tab="agenda"]');
                     const agendaPane = document.getElementById('agenda-tab');
                     if (agendaTab && agendaPane) {
@@ -125,7 +122,7 @@ function hasAccessToSolicitudes() {
     return currentUserData.profession === 'asistente_social';
 }
 
-// ✅ FUNCIONES AGREGADAS
+
 window.loadSeguimientoData = async function() {
     try {
         console.log('📊 Cargando datos de seguimiento...');
@@ -165,7 +162,6 @@ window.setCurrentUserData = function(userData) {
     updateTabVisibility();
 };
 
-// Función para cargar solicitud específica (si se necesita)
 window.loadSolicitudForResponse = function(solicitudId) {
     console.log("loadSolicitudForResponse llamada con", solicitudId);
 };
