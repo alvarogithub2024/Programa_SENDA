@@ -1,4 +1,3 @@
-// UTILIDADES/FORMATO.JS
 
 function formatRUT(rut) {
     if (!rut) return '';
