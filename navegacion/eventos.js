@@ -1,9 +1,5 @@
-// NAVEGACION/EVENTOS.JS
-
-// Centraliza eventos de navegación (ejemplo: botones, menú, etc.)
 
 function setupEventListeners() {
-    // Botón logout global
     var logoutBtn = document.getElementById("logout-professional");
     if (logoutBtn) {
         logoutBtn.addEventListener("click", function(e) {
@@ -14,7 +10,7 @@ function setupEventListeners() {
         });
     }
 
-    // Botones de menú lateral
+
     var menuBtns = document.querySelectorAll(".menu-btn[data-tab]");
     menuBtns.forEach(function(btn) {
         btn.addEventListener("click", function(e) {
@@ -26,7 +22,7 @@ function setupEventListeners() {
     });
     
 }
-    // Acceso directo a tab de inicio al hacer click en logo
+   
     var logo = document.getElementById("logo-senda");
     if (logo) {
         logo.addEventListener("click", function(e) {
@@ -36,5 +32,4 @@ function setupEventListeners() {
         });
     }
 
-// Exportar globalmente
 window.setupEventListeners = setupEventListeners;
