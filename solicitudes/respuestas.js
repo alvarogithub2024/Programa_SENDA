@@ -1,13 +1,11 @@
-// REEMPLAZAR la función enviarCorreoSenda en solicitudes/respuestas.js
 
-// Función para guardar respuesta en Firebase (sin enviar correo)
 function enviarCorreoSenda() {
     const email = document.getElementById('modal-responder-email').value;
     const asunto = document.getElementById('modal-responder-asunto').value;
     const mensaje = document.getElementById('modal-responder-mensaje').value;
     const solicitudId = document.getElementById('modal-responder-id').value;
 
-    // Validar campos obligatorios
+
     if (!email || !asunto || !mensaje) {
         window.showNotification && window.showNotification('Completa todos los campos del correo', 'warning');
         return;
@@ -18,7 +16,6 @@ function enviarCorreoSenda() {
         return;
     }
 
-    // Obtener datos del usuario actual
     const currentUser = firebase.auth().currentUser;
     if (!currentUser) {
         window.showNotification && window.showNotification('Error: Usuario no autenticado', 'error');
@@ -28,7 +25,6 @@ function enviarCorreoSenda() {
     const db = window.getFirestore();
     const ahora = new Date().toISOString();
 
-    // Datos a guardar en la colección respuesta_informacion
     const respuestaData = {
         solicitudId: solicitudId,
         emailDestino: email,
@@ -43,19 +39,16 @@ function enviarCorreoSenda() {
 
     console.log('💾 Guardando respuesta:', respuestaData);
 
-    // Guardar en la colección respuesta_informacion
     db.collection('respuesta_informacion').add(respuestaData)
         .then(function(docRef) {
             console.log('✅ Respuesta guardada con ID:', docRef.id);
             
-            // Actualizar el estado de la solicitud original
             return marcarSolicitudComoRespondida(solicitudId, ahora);
         })
         .then(function() {
             window.showNotification && window.showNotification('Respuesta guardada correctamente en el sistema', 'success');
             cerrarModalResponder();
             
-            // Recargar solicitudes si la función existe
             if (window.reloadSolicitudesFromFirebase) {
                 window.reloadSolicitudesFromFirebase();
             }
@@ -66,7 +59,7 @@ function enviarCorreoSenda() {
         });
 }
 
-// Función para marcar solicitud como respondida
+
 function marcarSolicitudComoRespondida(solicitudId, fechaRespuesta) {
     const db = window.getFirestore();
     const currentUser = firebase.auth().currentUser;
@@ -86,11 +79,11 @@ function marcarSolicitudComoRespondida(solicitudId, fechaRespuesta) {
         })
         .catch(function(error) {
             console.error('❌ Error actualizando estado de solicitud:', error);
-            throw error; // Re-lanzar el error para que se maneje en el catch principal
+            throw error;
         });
 }
 
-// Función para ver todas las respuestas de una solicitud
+
 function verRespuestasSolicitud(solicitudId) {
     const db = window.getFirestore();
     
@@ -115,7 +108,7 @@ function verRespuestasSolicitud(solicitudId) {
         });
 }
 
-// Función para mostrar historial de respuestas (opcional)
+
 function mostrarHistorialRespuestas(respuestas) {
     if (!respuestas.length) {
         window.showNotification && window.showNotification('No hay respuestas registradas para esta solicitud', 'info');
@@ -150,7 +143,6 @@ function mostrarHistorialRespuestas(respuestas) {
     
     html += '</div>';
     
-    // Crear modal para mostrar historial
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.style.display = 'flex';
@@ -164,19 +156,16 @@ function mostrarHistorialRespuestas(respuestas) {
     document.body.appendChild(modal);
 }
 
-// Función para limpiar el formulario de respuesta
 function limpiarFormularioRespuesta() {
     document.getElementById('modal-responder-asunto').value = 'Respuesta a su solicitud de información';
     document.getElementById('modal-responder-mensaje').value = '';
 }
 
-// Función mejorada para abrir modal de responder
 function abrirModalResponder(email, nombre, solicitudId) {
     document.getElementById('modal-responder-email').value = email || '';
     document.getElementById('modal-responder-nombre').textContent = nombre || '';
     document.getElementById('modal-responder-id').value = solicitudId || '';
-    
-    // Llenar mensaje predeterminado
+
     const mensajePredeterminado = `Estimado/a ${nombre || 'Usuario'},
 
 Gracias por contactar al Programa SENDA Puente Alto.
@@ -199,7 +188,6 @@ Equipo SENDA Puente Alto`;
     console.log('📧 Modal de respuesta abierto para:', { email, nombre, solicitudId });
 }
 
-// Exportar funciones globalmente
 window.enviarCorreoSenda = enviarCorreoSenda;
 window.marcarSolicitudComoRespondida = marcarSolicitudComoRespondida;
 window.verRespuestasSolicitud = verRespuestasSolicitud;
@@ -209,15 +197,12 @@ window.abrirModalResponder = abrirModalResponder;
 
 console.log('📧 Sistema de respuestas de información cargado');
 
-// AGREGAR AL FINAL DE solicitudes/respuestas.js
-
-// Función para cargar todas las respuestas (vista administrativa)
 function cargarTodasLasRespuestas() {
     const db = window.getFirestore();
     
     db.collection('respuesta_informacion')
         .orderBy('fechaRespuesta', 'desc')
-        .limit(50) // Limitar a las últimas 50 respuestas
+        .limit(50) 
         .get()
         .then(function(snapshot) {
             const respuestas = [];
@@ -236,7 +221,6 @@ function cargarTodasLasRespuestas() {
         });
 }
 
-// Función para mostrar tabla de respuestas
 function mostrarTablaRespuestas(respuestas) {
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
@@ -303,7 +287,7 @@ function mostrarTablaRespuestas(respuestas) {
     document.body.appendChild(modal);
 }
 
-// Función para ver detalle de una respuesta específica
+
 function verDetalleRespuesta(respuestaId) {
     const db = window.getFirestore();
     
@@ -345,7 +329,6 @@ function verDetalleRespuesta(respuestaId) {
         });
 }
 
-// Función para exportar respuestas a CSV
 function exportarRespuestas() {
     const db = window.getFirestore();
     
@@ -370,7 +353,6 @@ function exportarRespuestas() {
                 return;
             }
             
-            // Convertir a CSV
             const headers = Object.keys(respuestas[0]);
             let csvContent = headers.join(',') + '\n';
             
@@ -379,7 +361,6 @@ function exportarRespuestas() {
                 csvContent += row + '\n';
             });
             
-            // Descargar archivo
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             const filename = `respuestas_senda_${new Date().toISOString().slice(0, 10)}.csv`;
@@ -402,7 +383,7 @@ function exportarRespuestas() {
         });
 }
 
-// Exportar funciones globalmente
+
 window.cargarTodasLasRespuestas = cargarTodasLasRespuestas;
 window.mostrarTablaRespuestas = mostrarTablaRespuestas;
 window.verDetalleRespuesta = verDetalleRespuesta;
