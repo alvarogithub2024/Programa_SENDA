@@ -1,8 +1,4 @@
-// PACIENTES/BUSQUEDA.JS
 
-// Requiere: window.getFirestore, window.showNotification
-
-// Busca pacientes por nombre, apellido o RUT (búsqueda parcial)
 function buscarPacientesPorTexto(texto, callback) {
     var db = window.getFirestore();
     var pacientesRef = db.collection("pacientes");
@@ -10,7 +6,7 @@ function buscarPacientesPorTexto(texto, callback) {
     texto = (texto || "").trim().toUpperCase();
 
     if (!texto) {
-        // Devuelve los primeros N pacientes
+      
         pacientesRef.orderBy("nombre").limit(20).get()
             .then(function(snapshot) {
                 snapshot.forEach(function(doc) {
@@ -25,7 +21,7 @@ function buscarPacientesPorTexto(texto, callback) {
         return;
     }
 
-    // Buscar por RUT exacto si es posible
+    
     var rutLimpio = texto.replace(/[.\-]/g, "");
     if (/^\d{7,8}[0-9K]$/i.test(rutLimpio)) {
         pacientesRef.where("rut", "==", rutLimpio).get()
@@ -42,7 +38,7 @@ function buscarPacientesPorTexto(texto, callback) {
         return;
     }
 
-    // Búsqueda por nombre/apellido (requiere índices compuestos si haces queries avanzadas)
+
     pacientesRef
         .orderBy("nombre")
         .startAt(texto)
@@ -61,5 +57,5 @@ function buscarPacientesPorTexto(texto, callback) {
         });
 }
 
-// Exportar globalmente
+
 window.buscarPacientesPorTexto = buscarPacientesPorTexto;
