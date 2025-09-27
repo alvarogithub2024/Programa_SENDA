@@ -6,7 +6,6 @@ function setupFormularioReingreso() {
     form.addEventListener("submit", function(e) {
         e.preventDefault();
 
-
         const nombre = form.querySelector("#reentry-name").value.trim();
         const rut = form.querySelector("#reentry-rut").value.trim().replace(/[^0-9kK]/g, '').toUpperCase();
         const telefono = limpiarTelefonoChileno(form.querySelector("#reentry-phone").value.trim());
@@ -19,14 +18,12 @@ function setupFormularioReingreso() {
         const tipo = "reingreso";
         const version = 1;
 
- 
         if (!nombre) return window.showNotification("El nombre es obligatorio", "warning");
         if (!rut || !window.validarRut || !window.validarRut(rut)) return window.showNotification("RUT inválido", "warning");
         if (!telefono || !window.validarTelefono || !window.validarTelefono(telefono)) return window.showNotification("Teléfono inválido", "warning");
         if (!cesfam) return window.showNotification("Selecciona un CESFAM", "warning");
         if (!motivo) return window.showNotification("El motivo es obligatorio", "warning");
 
-   
         const data = {
             nombre,
             rut,
@@ -72,6 +69,11 @@ function guardarReingresoEnFirebase(data) {
             .catch(function(error) {
                 window.showNotification && window.showNotification("Reingreso guardado pero no se pudo registrar el ID: "+error.message, "warning");
             });
+
+            // --- SINCRONIZAR PACIENTE ---
+            if (window.sincronizarPaciente) {
+                window.sincronizarPaciente(data); // <-- Llamada a la función de sincronización
+            }
         })
         .catch(function(error) {
             window.showNotification && window.showNotification("Error guardando reingreso: "+error.message, "error");
@@ -114,3 +116,4 @@ window.setupFormularioReingreso = setupFormularioReingreso;
 window.guardarReingresoEnFirebase = guardarReingresoEnFirebase;
 
 document.addEventListener("DOMContentLoaded", setupFormularioReingreso);
+
