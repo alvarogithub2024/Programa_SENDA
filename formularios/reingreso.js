@@ -1,4 +1,3 @@
-// FORMULARIOS/FORMULARIO-REINGRESO.JS
 
 function setupFormularioReingreso() {
     const form = document.getElementById("reentry-form");
@@ -7,27 +6,27 @@ function setupFormularioReingreso() {
     form.addEventListener("submit", function(e) {
         e.preventDefault();
 
-        // Obtener valores
+
         const nombre = form.querySelector("#reentry-name").value.trim();
         const rut = form.querySelector("#reentry-rut").value.trim().replace(/[^0-9kK]/g, '').toUpperCase();
         const telefono = limpiarTelefonoChileno(form.querySelector("#reentry-phone").value.trim());
         const cesfam = form.querySelector("#reentry-cesfam").value;
         const motivo = form.querySelector("#reentry-reason").value.trim();
-        const observaciones = ""; // Si tienes campo observaciones, reemplaza aquí
+        const observaciones = ""; 
         const origen = "web";
-        const prioridad = "media"; // Puedes cambiar a lógica según urgencia del motivo, etc.
+        const prioridad = "media";
         const profesionalAsignado = null;
         const tipo = "reingreso";
         const version = 1;
 
-        // Validaciones mínimas
+ 
         if (!nombre) return window.showNotification("El nombre es obligatorio", "warning");
         if (!rut || !window.validarRut || !window.validarRut(rut)) return window.showNotification("RUT inválido", "warning");
         if (!telefono || !window.validarTelefono || !window.validarTelefono(telefono)) return window.showNotification("Teléfono inválido", "warning");
         if (!cesfam) return window.showNotification("Selecciona un CESFAM", "warning");
         if (!motivo) return window.showNotification("El motivo es obligatorio", "warning");
 
-        // Construir objeto a guardar
+   
         const data = {
             nombre,
             rut,
@@ -50,12 +49,12 @@ function setupFormularioReingreso() {
     });
 }
 
-// Fecha y hora local Chile
+
 function fechaChileISO() {
     return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" })).toISOString();
 }
 
-// Guarda en la colección "reingresos" y añade el id al documento
+
 function guardarReingresoEnFirebase(data) {
     const db = window.getFirestore ? window.getFirestore() : null;
     if (!db) {
@@ -79,7 +78,7 @@ function guardarReingresoEnFirebase(data) {
         });
 }
 
-// Validación RUT (ya deberías tenerla)
+
 function validarRut(rut) {
     if (!rut) return false;
     rut = rut.replace(/[^0-9kK]/g, '').toUpperCase();
@@ -98,7 +97,7 @@ function validarRut(rut) {
 }
 window.validarRut = window.validarRut || validarRut;
 
-// Validación y limpieza teléfono chileno
+
 function limpiarTelefonoChileno(tel) {
     tel = tel.replace(/\D/g, '');
     if (tel.startsWith("56")) tel = tel.slice(2);
