@@ -1,8 +1,4 @@
-// FORMULARIOS/VALIDACIONES.JS - Funciones de validación consolidadas
 
-/**
- * Valida un RUT chileno. Devuelve true si es válido.
- */
 function validarRut(rut) {
     if (!rut) return false;
     rut = rut.replace(/[^0-9kK]/g, '').toUpperCase();
@@ -23,26 +19,18 @@ function validarRut(rut) {
     return dv === dvEsperado;
 }
 
-/**
- * Valida un correo electrónico.
- */
+
 function validarEmail(email) {
     if (!email) return false;
     return /^[\w\.\-]+@([\w\-]+\.)+[a-zA-Z]{2,7}$/.test(email);
 }
 
-/**
- * Valida un teléfono chileno (9 dígitos, comienza con 9).
- */
 function validarTelefono(telefono) {
     if (!telefono) return false;
     telefono = limpiarTelefonoChileno(telefono);
     return telefono.length === 9 && telefono[0] === '9';
 }
 
-/**
- * Limpia un teléfono chileno eliminando caracteres especiales
- */
 function limpiarTelefonoChileno(tel) {
     tel = tel.replace(/\D/g, '');
     if (tel.startsWith("56")) tel = tel.slice(2);
@@ -50,24 +38,16 @@ function limpiarTelefonoChileno(tel) {
     return tel;
 }
 
-/**
- * Valida que un campo de texto no esté vacío.
- */
+
 function validarNoVacio(valor) {
     return typeof valor === "string" ? valor.trim() !== "" : !!valor;
 }
 
-/**
- * Valida la edad (debe ser número entre 12 y 120).
- */
 function validarEdad(edad) {
     edad = parseInt(edad, 10);
     return !isNaN(edad) && edad >= 12 && edad <= 120;
 }
 
-/**
- * Valida fecha en formato YYYY-MM-DD
- */
 function validarFecha(fecha) {
     if (!fecha || typeof fecha !== "string") return false;
     const re = /^\d{4}-\d{2}-\d{2}$/;
@@ -76,16 +56,10 @@ function validarFecha(fecha) {
     return !isNaN(d.getTime());
 }
 
-/**
- * Valida password mínimo 6 caracteres
- */
 function validarPassword(password) {
     return typeof password === "string" && password.length >= 6;
 }
 
-/**
- * Valida un formulario de paciente (devuelve objeto {esValido, errores})
- */
 function validarFormularioPaciente(datos) {
     let errores = {};
     
@@ -102,9 +76,6 @@ function validarFormularioPaciente(datos) {
     return { esValido: Object.keys(errores).length === 0, errores };
 }
 
-/**
- * Valida un formulario de reingreso
- */
 function validarFormularioReingreso(datos) {
     let errores = {};
     
@@ -119,9 +90,6 @@ function validarFormularioReingreso(datos) {
     return { esValido: Object.keys(errores).length === 0, errores };
 }
 
-/**
- * Valida el formulario de login de profesional
- */
 function validarFormularioLogin(datos) {
     let errores = {};
     
@@ -131,9 +99,6 @@ function validarFormularioLogin(datos) {
     return { esValido: Object.keys(errores).length === 0, errores };
 }
 
-/**
- * Valida el formulario de registro de profesional
- */
 function validarFormularioRegistro(datos) {
     let errores = {};
     
@@ -151,7 +116,6 @@ function validarFormularioRegistro(datos) {
     return { esValido: Object.keys(errores).length === 0, errores };
 }
 
-// EXPORTAR GLOBALMENTE - LÍNEAS CORREGIDAS
 window.validarRut = validarRut;
 window.validarEmail = validarEmail;
 window.validarTelefono = validarTelefono;
