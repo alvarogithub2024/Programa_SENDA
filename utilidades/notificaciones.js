@@ -1,4 +1,3 @@
-// UTILIDADES/NOTIFICACIONES.JS
 
 function showNotification(mensaje, tipo, duracion) {
     tipo = tipo || 'info';
