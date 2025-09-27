@@ -17,7 +17,18 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
+     <!-- ========== JSPDF PARA EXPORTACIÓN PDF ========== -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+    if (typeof window.jsPDF !== 'undefined') {
+    console.log('✅ jsPDF cargado correctamente');
+    } else {
+    console.error('❌ Error: jsPDF no se pudo cargar');
+    }
+    });
+    </script>
+    
     <!-- ========== CONFIGURACIÓN BASE ========== -->
     <script src="configuracion/constantes.js"></script>
     <script src="configuracion/firebase.js"></script>
@@ -1115,20 +1126,7 @@
         </form>
     </div>
 </div>
-<!-- =============================================== -->
-<!-- jsPDF Library para exportación PDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-<!-- Verificar que jsPDF se cargó correctamente -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    if (typeof window.jsPDF !== 'undefined') {
-        console.log('✅ jsPDF cargado correctamente');
-    } else {
-        console.error('❌ Error: jsPDF no se pudo cargar');
-    }
-});
-</script>    
+ 
 <!-- =============================================== -->
 <!-- 6. PIE DE PÁGINA -->
 <!-- =============================================== -->
