@@ -1,4 +1,3 @@
-// SEGUIMIENTO/ATENCIONES.JS
 
 document.addEventListener("DOMContentLoaded", function() {
     var form = document.getElementById("form-registrar-atencion");
@@ -44,7 +43,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
             db.collection("atenciones").add(datosAtencion)
             .then(function(docRef) {
-                // Vincular/actualizar paciente en "pacientes"
+    
                 if (datosAtencion.pacienteId || datosAtencion.pacienteRut) {
                     let pacientesRef = db.collection("pacientes");
                     let query;
@@ -85,7 +84,7 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 
-// Exportar globalmente
+
 window.registrarAtencion = function(datosAtencion, callback) {
     var db = window.getFirestore();
     var datos = Object.assign({}, datosAtencion, {
@@ -95,7 +94,7 @@ window.registrarAtencion = function(datosAtencion, callback) {
     db.collection("atenciones")
         .add(datos)
         .then(function(docRef) {
-            // Vincular/actualizar paciente en "pacientes"
+        
             if (datos.pacienteId || datos.pacienteRut) {
                 let pacientesRef = db.collection("pacientes");
                 let query;
@@ -133,9 +132,7 @@ window.registrarAtencion = function(datosAtencion, callback) {
         });
 };
 
-// === AGREGAR FUNCIÓN DE EDICIÓN DE ATENCIÓN ===
 
-// Mostrar modal para editar atención
 window.mostrarModalEditarAtencion = function(atencion) {
     let modal = document.getElementById('modal-editar-atencion');
     if (!modal) {
@@ -213,7 +210,6 @@ window.editarAtencion = function(atencionId, nuevosDatos) {
     });
 };
 
-// === MODIFICAR timeline para agregar botón Editar ===
 window.mostrarTimeline = function(atenciones, contenedorId) {
     var cont = document.getElementById(contenedorId);
     if (!cont) return;
