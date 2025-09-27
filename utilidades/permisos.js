@@ -1,4 +1,4 @@
-// UTILIDADES/PERMISOS.JS - Sistema de permisos para roles
+// UTILIDADES/PERMISOS.JS - Sistema de permisos para roles (VERSIÓN CORREGIDA)
 
 // Configuración de permisos por rol
 const PERMISOS_POR_ROL = {
@@ -38,50 +38,109 @@ const PERMISOS_POR_ROL = {
 
 // Variable global para almacenar el rol actual
 let rolActual = null;
+let usuarioActual = null;
+let sistemaInicializado = false;
 
 /**
  * Inicializa el sistema de permisos
  */
 function inicializarSistemaPermisos() {
+    console.log('🔐 Inicializando sistema de permisos...');
+    
     if (typeof firebase !== 'undefined' && firebase.auth) {
         firebase.auth().onAuthStateChanged(function(user) {
+            usuarioActual = user;
+            console.log('👤 Estado de autenticación cambiado:', user ? 'Logueado' : 'Deslogueado');
+            
             if (user) {
+                console.log('🔍 Obteniendo rol para usuario:', user.uid);
                 obtenerRolUsuario(user.uid).then(rol => {
                     rolActual = rol;
-                    console.log('🔐 Rol detectado:', rol);
-                    // Aplicar permisos a la UI
-                    aplicarPermisosUI();
+                    console.log('🎭 Rol obtenido:', rol);
+                    
+                    if (!sistemaInicializado) {
+                        sistemaInicializado = true;
+                        console.log('🔐 Sistema de permisos inicializado');
+                    }
+                    
+                    // Aplicar permisos a la UI con delay para asegurar que DOM esté listo
+                    setTimeout(() => {
+                        aplicarPermisosUI();
+                    }, 100);
+                    
+                    // Notificar al sistema global
+                    if (window.setCurrentUserData) {
+                        window.setCurrentUserData({ profession: rol });
+                    }
+                }).catch(error => {
+                    console.error('❌ Error obteniendo rol:', error);
+                    rolActual = null;
                 });
             } else {
                 rolActual = null;
+                usuarioActual = null;
+                console.log('🚪 Usuario deslogueado, limpiando permisos');
+                
+                if (window.setCurrentUserData) {
+                    window.setCurrentUserData(null);
+                }
             }
         });
+    } else {
+        console.warn('⚠️ Firebase no está disponible para el sistema de permisos');
     }
 }
 
 /**
- * Obtiene el rol del usuario desde Firestore
+ * Obtiene el rol del usuario desde Firestore con reintentos
  */
 function obtenerRolUsuario(uid) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
         if (!window.getFirestore) {
+            console.error('❌ getFirestore no está disponible');
             resolve(null);
             return;
         }
         
         const db = window.getFirestore();
+        console.log('📊 Consultando Firestore para UID:', uid);
+        
         db.collection('profesionales').doc(uid).get()
             .then(doc => {
                 if (doc.exists) {
                     const profesional = doc.data();
-                    resolve(profesional.profession || null);
+                    const rol = profesional.profession;
+                    console.log('✅ Datos del profesional obtenidos:', profesional);
+                    console.log('🎭 Rol detectado:', rol);
+                    resolve(rol || null);
                 } else {
+                    console.warn('⚠️ No se encontró documento del profesional en Firestore');
                     resolve(null);
                 }
             })
             .catch(error => {
-                console.error('Error obteniendo rol del usuario:', error);
-                resolve(null);
+                console.error('❌ Error consultando Firestore:', error);
+                
+                // Reintentar una vez después de 1 segundo
+                setTimeout(() => {
+                    console.log('🔄 Reintentando obtener rol...');
+                    db.collection('profesionales').doc(uid).get()
+                        .then(doc => {
+                            if (doc.exists) {
+                                const profesional = doc.data();
+                                const rol = profesional.profession;
+                                console.log('✅ Rol obtenido en segundo intento:', rol);
+                                resolve(rol || null);
+                            } else {
+                                console.warn('⚠️ Usuario no encontrado en segundo intento');
+                                resolve(null);
+                            }
+                        })
+                        .catch(error2 => {
+                            console.error('❌ Error en segundo intento:', error2);
+                            resolve(null);
+                        });
+                }, 1000);
             });
     });
 }
@@ -91,9 +150,12 @@ function obtenerRolUsuario(uid) {
  */
 function tienePermiso(permiso) {
     if (!rolActual || !PERMISOS_POR_ROL[rolActual]) {
+        console.log(`🚫 Sin permiso "${permiso}" - Rol actual: ${rolActual}`);
         return false;
     }
-    return PERMISOS_POR_ROL[rolActual][permiso] === true;
+    const tiene = PERMISOS_POR_ROL[rolActual][permiso] === true;
+    console.log(`${tiene ? '✅' : '❌'} Permiso "${permiso}" para rol "${rolActual}": ${tiene}`);
+    return tiene;
 }
 
 /**
@@ -119,6 +181,8 @@ function puedeGestionarSolicitudes() {
  * Aplica los permisos a la interfaz de usuario
  */
 function aplicarPermisosUI() {
+    console.log('🎨 Aplicando permisos a la UI...');
+    
     // Aplicar permisos a elementos del historial clínico
     aplicarPermisosHistorial();
     
@@ -127,6 +191,8 @@ function aplicarPermisosUI() {
     
     // Aplicar permisos a botones de acción
     aplicarPermisosBotones();
+    
+    console.log('✅ Permisos UI aplicados');
 }
 
 /**
@@ -137,8 +203,10 @@ function aplicarPermisosHistorial() {
     if (historialContainer) {
         if (!puedeEditarHistorial()) {
             historialContainer.classList.add('historial-readonly');
+            console.log('🔒 Historial marcado como solo lectura');
         } else {
             historialContainer.classList.remove('historial-readonly');
+            console.log('✏️ Historial marcado como editable');
         }
     }
     
@@ -151,6 +219,8 @@ function aplicarPermisosHistorial() {
             btn.style.display = 'none';
         }
     });
+    
+    console.log(`📝 Encontrados ${botonesAgregar.length} botones de agregar entrada`);
 }
 
 /**
@@ -162,8 +232,10 @@ function aplicarPermisosNavegacion() {
     if (tabSolicitudes) {
         if (puedeGestionarSolicitudes()) {
             tabSolicitudes.style.display = 'flex';
+            console.log('📋 Pestaña solicitudes habilitada');
         } else {
             tabSolicitudes.style.display = 'none';
+            console.log('📋 Pestaña solicitudes oculta');
         }
     }
 }
@@ -182,15 +254,18 @@ function aplicarPermisosBotones() {
             btn.style.display = 'none';
         }
     });
+    
+    console.log(`🔧 Procesados ${botonesEdicion.length} botones de edición`);
 }
 
 /**
  * Muestra mensaje de permisos insuficientes
  */
 function mostrarMensajePermisos(accion) {
-    const mensaje = `No tienes permisos para ${accion}. Esta función está restringida a: ${
-        obtenerRolesConPermiso(accion).join(', ')
-    }`;
+    const rolesPermitidos = obtenerRolesConPermiso(accion);
+    const mensaje = `No tienes permisos para ${accion}. Esta función está restringida a: ${rolesPermitidos.join(', ')}`;
+    
+    console.warn('🚫 Permiso denegado:', mensaje);
     
     if (window.showNotification) {
         window.showNotification(mensaje, 'warning');
@@ -202,7 +277,7 @@ function mostrarMensajePermisos(accion) {
 /**
  * Obtiene los roles que tienen un permiso específico
  */
-function obtenerRolesConPermiso(permiso) {
+function obtenerRolesConPermiso(accionOPermiso) {
     const roles = [];
     const traduccionRoles = {
         'medico': 'Médicos',
@@ -210,6 +285,16 @@ function obtenerRolesConPermiso(permiso) {
         'terapeuta': 'Terapeutas Ocupacionales',
         'asistente_social': 'Asistentes Sociales'
     };
+    
+    // Mapear acciones a permisos
+    const mapeoPermisos = {
+        'editar atenciones del historial clínico': 'editarHistorial',
+        'eliminar atenciones del historial clínico': 'eliminarHistorial',
+        'crear nuevas atenciones': 'crearAtenciones',
+        'gestionar solicitudes': 'gestionarSolicitudes'
+    };
+    
+    const permiso = mapeoPermisos[accionOPermiso] || accionOPermiso;
     
     Object.keys(PERMISOS_POR_ROL).forEach(rol => {
         if (PERMISOS_POR_ROL[rol][permiso]) {
@@ -235,43 +320,43 @@ function conPermiso(permiso, funcion, mensajeError) {
 }
 
 /**
- * Decorador para métodos que requieren permisos específicos
+ * Función para forzar recarga de permisos
  */
-function requierePermiso(permiso, mensajeError) {
-    return function(target, propertyKey, descriptor) {
-        const originalMethod = descriptor.value;
-        
-        descriptor.value = function(...args) {
-            if (tienePermiso(permiso)) {
-                return originalMethod.apply(this, args);
-            } else {
-                mostrarMensajePermisos(mensajeError || permiso);
-                return false;
-            }
-        };
-        
-        return descriptor;
-    };
+function recargarPermisos() {
+    console.log('🔄 Forzando recarga de permisos...');
+    if (usuarioActual) {
+        obtenerRolUsuario(usuarioActual.uid).then(rol => {
+            rolActual = rol;
+            console.log('🔄 Rol recargado:', rol);
+            aplicarPermisosUI();
+        });
+    }
 }
 
-// Funciones wrapper para acciones específicas
-const editarAtencionConPermiso = conPermiso('editarHistorial', function(atencionId, descripcion, tipo, rutPaciente) {
-    if (window.abrirModalEditarAtencion) {
-        window.abrirModalEditarAtencion(atencionId, descripcion, tipo, rutPaciente);
+/**
+ * Debug y diagnóstico
+ */
+function diagnosticarPermisos() {
+    console.log('🔍 DIAGNÓSTICO DEL SISTEMA DE PERMISOS');
+    console.log('=====================================');
+    console.log('Usuario actual:', usuarioActual);
+    console.log('UID:', usuarioActual?.uid || 'Sin UID');
+    console.log('Rol actual:', rolActual);
+    console.log('Sistema inicializado:', sistemaInicializado);
+    console.log('Firebase disponible:', typeof firebase !== 'undefined');
+    console.log('getFirestore disponible:', typeof window.getFirestore !== 'undefined');
+    console.log('Permisos:');
+    console.log('- Editar historial:', puedeEditarHistorial());
+    console.log('- Eliminar historial:', puedeEliminarHistorial());
+    console.log('- Crear atenciones:', puedeCrearAtenciones());
+    console.log('- Gestionar solicitudes:', puedeGestionarSolicitudes());
+    console.log('=====================================');
+    
+    if (usuarioActual && !rolActual) {
+        console.log('🔄 Intentando recargar rol...');
+        recargarPermisos();
     }
-}, 'editar atenciones del historial clínico');
-
-const eliminarAtencionConPermiso = conPermiso('eliminarHistorial', function(atencionId, rutPaciente) {
-    if (window.eliminarAtencionDesdeModal) {
-        window.eliminarAtencionDesdeModal(atencionId, rutPaciente);
-    }
-}, 'eliminar atenciones del historial clínico');
-
-const crearAtencionConPermiso = conPermiso('crearAtenciones', function(rutPaciente) {
-    if (window.mostrarFormularioNuevaAtencion) {
-        window.mostrarFormularioNuevaAtencion(rutPaciente);
-    }
-}, 'crear nuevas atenciones');
+}
 
 // Exportar funciones globalmente
 window.inicializarSistemaPermisos = inicializarSistemaPermisos;
@@ -282,14 +367,35 @@ window.puedeCrearAtenciones = puedeCrearAtenciones;
 window.puedeGestionarSolicitudes = puedeGestionarSolicitudes;
 window.aplicarPermisosUI = aplicarPermisosUI;
 window.mostrarMensajePermisos = mostrarMensajePermisos;
-window.editarAtencionConPermiso = editarAtencionConPermiso;
-window.eliminarAtencionConPermiso = eliminarAtencionConPermiso;
-window.crearAtencionConPermiso = crearAtencionConPermiso;
+window.recargarPermisos = recargarPermisos;
+window.diagnosticarPermisos = diagnosticarPermisos;
 window.rolActual = function() { return rolActual; };
+
+// Funciones de debug mejoradas
+window.SENDA_PERMISOS_DEBUG = {
+    getRol: () => rolActual,
+    getUsuario: () => usuarioActual,
+    isInicializado: () => sistemaInicializado,
+    diagnosticar: diagnosticarPermisos,
+    recargar: recargarPermisos,
+    testPermiso: (permiso) => {
+        console.log(`Testing permiso "${permiso}":`, tienePermiso(permiso));
+        return tienePermiso(permiso);
+    }
+};
 
 // Inicializar cuando se carga el DOM
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 DOM cargado, inicializando permisos...');
     inicializarSistemaPermisos();
+    
+    // Debug automático después de 3 segundos
+    setTimeout(() => {
+        if (!rolActual && usuarioActual) {
+            console.log('⚠️ No se pudo obtener el rol después de 3 segundos, ejecutando diagnóstico...');
+            diagnosticarPermisos();
+        }
+    }, 3000);
 });
 
 console.log('🔐 Sistema de permisos cargado correctamente');
