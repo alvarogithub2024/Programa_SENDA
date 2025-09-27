@@ -1,57 +1,39 @@
 // ===================================================================
-// FICHA DEL PACIENTE CON EDICIÓN MODAL DE ATENCIONES INDIVIDUALES
+// ===================================================================
+// FICHA DEL PACIENTE - VERSIÓN SINCRONIZADA CON SISTEMA DE PERMISOS
 // ===================================================================
 
 (function() {
     let pacientesTabData = [];
-    let profesionActual = null;
 
-    // Detecta profesión actual
-    if (window.getCurrentUser && window.getFirestore && typeof firebase !== "undefined") {
-        firebase.auth().onAuthStateChanged(function(user) {
-            if (user) {
-                window.getFirestore().collection('profesionales').doc(user.uid).get().then(function(doc){
-                    if (doc.exists) {
-                        profesionActual = doc.data().profession || null;
-                        console.log('Profesión actual detectada:', profesionActual);
-                    }
-                });
-            } else {
-                profesionActual = null;
-            }
-        });
-    }
-
-    // ===== FUNCIONES AUXILIARES PARA PERMISOS =====
+    // ===== USAR SISTEMA DE PERMISOS GLOBAL =====
     function puedeEditarHistorial() {
-        const rolesPermitidos = ['medico', 'psicologo', 'terapeuta'];
-        const puede = profesionActual && rolesPermitidos.includes(profesionActual);
-        console.log('¿Puede editar historial?', puede, 'Profesión:', profesionActual);
-        return puede;
+        return window.puedeEditarHistorial ? window.puedeEditarHistorial() : false;
     }
 
     function obtenerProfesionalActual() {
         return new Promise((resolve) => {
-            if (profesionActual && firebase.auth().currentUser) {
-                window.getFirestore()
-                    .collection('profesionales')
-                    .doc(firebase.auth().currentUser.uid)
-                    .get()
-                    .then(doc => {
-                        if (doc.exists) {
-                            resolve({
-                                id: doc.id,
-                                ...doc.data(),
-                                profession: profesionActual
-                            });
-                        } else {
-                            resolve(null);
-                        }
-                    })
-                    .catch(() => resolve(null));
-            } else {
+            const user = firebase.auth().currentUser;
+            if (!user) {
                 resolve(null);
+                return;
             }
+            
+            window.getFirestore()
+                .collection('profesionales')
+                .doc(user.uid)
+                .get()
+                .then(doc => {
+                    if (doc.exists) {
+                        resolve({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    } else {
+                        resolve(null);
+                    }
+                })
+                .catch(() => resolve(null));
         });
     }
 
@@ -193,8 +175,8 @@
                 return;
             }
 
-            const profesional = await obtenerProfesionalActual();
             const puedeEditar = puedeEditarHistorial();
+            console.log('🔍 Verificando permisos para historial - Puede editar:', puedeEditar);
 
             // Crear o mostrar modal
             let modal = document.getElementById('modal-ficha-paciente');
@@ -214,11 +196,11 @@
 
             // Construir HTML de la ficha
             const modalBody = document.getElementById('modal-ficha-paciente-body');
-            const html = construirHTMLFichaMejorada(pacienteData, puedeEditar, profesional);
+            const html = construirHTMLFichaMejorada(pacienteData, puedeEditar);
             modalBody.innerHTML = html;
 
             // Cargar historial clínico
-            await cargarHistorialClinicoMejorado(pacienteData.rut, puedeEditar, profesional);
+            await cargarHistorialClinicoMejorado(pacienteData.rut, puedeEditar);
 
         } catch (error) {
             console.error('Error al mostrar ficha:', error);
@@ -227,7 +209,7 @@
     };
 
     // ===== CONSTRUIR HTML FICHA =====
-    function construirHTMLFichaMejorada(paciente, puedeEditar, profesional) {
+    function construirHTMLFichaMejorada(paciente, puedeEditar) {
         return `
             <h3 style="color: #2563eb; margin-bottom:15px; font-size:1.4rem; font-weight:700;">
                 <i class="fas fa-user-circle"></i> ${paciente.nombre || ''} ${paciente.apellidos || ''}
@@ -248,7 +230,11 @@
                         <button class="btn-add-entry" onclick="mostrarFormularioNuevaAtencion('${paciente.rut}')">
                             <i class="fas fa-plus"></i> Agregar Atención
                         </button>
-                    ` : ''}
+                    ` : `
+                        <span style="color:#6b7280; font-size:0.9rem; font-style:italic;">
+                            <i class="fas fa-eye"></i> Solo lectura
+                        </span>
+                    `}
                 </div>
                 <div id="historial-contenido">
                     <div class="loading-message">
@@ -260,7 +246,7 @@
     }
 
     // ===== HISTORIAL CLÍNICO: CARGA Y ENTRADAS CLICKEABLES =====
-    async function cargarHistorialClinicoMejorado(rutPaciente, puedeEditar, profesional) {
+    async function cargarHistorialClinicoMejorado(rutPaciente, puedeEditar) {
         const cont = document.getElementById('historial-contenido');
         if (!cont) return;
         const db = window.getFirestore();
@@ -282,9 +268,17 @@
             let html = '';
             snapshot.forEach(doc => {
                 const atencion = doc.data();
-                html += construirEntradaHistorial(doc.id, atencion, puedeEditar, profesional, rutLimpio);
+                html += construirEntradaHistorial(doc.id, atencion, puedeEditar, rutLimpio);
             });
             cont.innerHTML = html;
+            
+            // Aplicar permisos después de cargar
+            setTimeout(() => {
+                if (window.aplicarPermisosUI) {
+                    window.aplicarPermisosUI();
+                }
+            }, 100);
+            
         } catch (error) {
             cont.innerHTML = `
                 <div style="background:#fee2e2; border-radius:8px; padding:1rem; color:#dc2626;">
@@ -296,7 +290,7 @@
     }
 
     // ==== ENTRADAS HISTORIAL: CLICKEABLES PARA EDICIÓN INDIVIDUAL ====
-    function construirEntradaHistorial(docId, atencion, puedeEditar, profesional, rutPaciente) {
+    function construirEntradaHistorial(docId, atencion, puedeEditar, rutPaciente) {
         let fechaTexto = '';
         let horaTexto = '';
         // Controlar undefined
@@ -319,7 +313,7 @@
         const profesionalNombre = atencion && atencion.profesional ? atencion.profesional : "Profesional no especificado";
         
         // Solo clickeable si puede editar
-        const clickable = puedeEditar ? `onclick="abrirModalEditarAtencion('${docId}', '${encodeURIComponent(descripcion)}', '${atencion.tipoAtencion || ""}', '${rutPaciente}')"` : "";
+        const clickable = puedeEditar ? `onclick="abrirModalEditarAtencionSeguro('${docId}', '${encodeURIComponent(descripcion)}', '${atencion.tipoAtencion || ""}', '${rutPaciente}')"` : "";
         const cursorStyle = puedeEditar ? 'pointer' : 'default';
 
         return `
@@ -354,7 +348,13 @@
     }
 
     // ===== MODAL DE EDICIÓN/ELIMINACIÓN DE ATENCIÓN INDIVIDUAL =====
-    window.abrirModalEditarAtencion = function(atencionId, descripcionEnc, tipoAtencion, rutPaciente) {
+    window.abrirModalEditarAtencionSeguro = function(atencionId, descripcionEnc, tipoAtencion, rutPaciente) {
+        // Verificar permisos antes de abrir
+        if (!window.puedeEditarHistorial || !window.puedeEditarHistorial()) {
+            window.mostrarMensajePermisos && window.mostrarMensajePermisos('editar atenciones del historial clínico');
+            return;
+        }
+        
         // Oculta la modal de ficha de paciente si está abierta
         var fichaModal = document.getElementById('modal-ficha-paciente');
         if (fichaModal) fichaModal.style.display = 'none';
@@ -388,7 +388,7 @@
                             <textarea id="editar-atencion-descripcion" class="form-textarea" rows="5" required placeholder="Describe la atención realizada..."></textarea>
                         </div>
                         <div class="form-actions" style="display:flex; gap:1rem; justify-content:space-between; margin-top:1.5rem;">
-                            <button type="button" class="btn btn-danger" onclick="eliminarAtencionDesdeModal('${atencionId}', '${rutPaciente}')">
+                            <button type="button" class="btn btn-danger" onclick="eliminarAtencionSeguro('${atencionId}', '${rutPaciente}')">
                                 <i class="fas fa-trash"></i> Eliminar
                             </button>
                             <div style="display:flex; gap:1rem;">
@@ -432,8 +432,7 @@
                 window.showNotification && window.showNotification("Atención editada correctamente", "success");
                 cerrarModalEditarAtencion();
                 // Recargar historial
-                const profesional = await obtenerProfesionalActual();
-                await cargarHistorialClinicoMejorado(rutPaciente, puedeEditarHistorial(), profesional);
+                await cargarHistorialClinicoMejorado(rutPaciente, puedeEditarHistorial());
             } catch (error) {
                 console.error('Error al editar atención:', error);
                 window.showNotification && window.showNotification("Error al editar atención: " + error.message, "error");
@@ -449,7 +448,13 @@
         if (fichaModal) fichaModal.style.display = 'flex';
     };
 
-    window.eliminarAtencionDesdeModal = async function(atencionId, rutPaciente) {
+    window.eliminarAtencionSeguro = async function(atencionId, rutPaciente) {
+        // Verificar permisos antes de eliminar
+        if (!window.puedeEliminarHistorial || !window.puedeEliminarHistorial()) {
+            window.mostrarMensajePermisos && window.mostrarMensajePermisos('eliminar atenciones del historial clínico');
+            return;
+        }
+        
         if (!confirm('¿Seguro que deseas eliminar esta atención? Esta acción no se puede deshacer.')) return;
         try {
             const db = window.getFirestore();
@@ -457,8 +462,7 @@
             window.showNotification && window.showNotification("Atención eliminada correctamente", "success");
             cerrarModalEditarAtencion();
             // Recargar historial
-            const profesional = await obtenerProfesionalActual();
-            await cargarHistorialClinicoMejorado(rutPaciente, puedeEditarHistorial(), profesional);
+            await cargarHistorialClinicoMejorado(rutPaciente, puedeEditarHistorial());
         } catch (error) {
             console.error('Error al eliminar atención:', error);
             window.showNotification && window.showNotification("Error al eliminar atención: " + error.message, "error");
@@ -467,6 +471,12 @@
 
     // ===== NUEVA ATENCIÓN (MANTENIDA) =====
     window.mostrarFormularioNuevaAtencion = function(rutPaciente) {
+        // Verificar permisos antes de mostrar formulario
+        if (!window.puedeCrearAtenciones || !window.puedeCrearAtenciones()) {
+            window.mostrarMensajePermisos && window.mostrarMensajePermisos('crear nuevas atenciones');
+            return;
+        }
+        
         const modalHTML = `
             <div class="modal-overlay" id="modal-nueva-atencion">
                 <div class="modal-content" style="max-width:500px;">
@@ -543,8 +553,7 @@
             window.showNotification && window.showNotification('Atención registrada correctamente', 'success');
             cerrarModalNuevaAtencion();
             // Recargar historial
-            const profesionalActualizado = await obtenerProfesionalActual();
-            await cargarHistorialClinicoMejorado(rutPaciente, puedeEditarHistorial(), profesionalActualizado);
+            await cargarHistorialClinicoMejorado(rutPaciente, puedeEditarHistorial());
         } catch (error) {
             console.error('Error al guardar atención:', error);
             window.showNotification && window.showNotification('Error al guardar la atención: ' + error.message, 'error');
