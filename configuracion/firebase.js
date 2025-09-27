@@ -1,4 +1,3 @@
-// CONFIGURACION/FIREBASE.JS - VERSIÓN ACTUALIZADA
 
 var auth = null, db = null, storage = null, isInitialized = false;
 
@@ -31,12 +30,12 @@ function initializeFirebase() {
         db = firebase.firestore(app);
         storage = firebase.storage ? firebase.storage(app) : null;
 
-        // ✅ PERSISTENCIA ACTUALIZADA - SIN MÉTODOS OBSOLETOS
+      
         configurePersistence();
 
         isInitialized = true;
         
-        // Helpers globales
+    
         window.db = db;
         window.auth = auth;
         window.storage = storage;
@@ -54,12 +53,12 @@ function initializeFirebase() {
     }
 }
 
-// ✅ FUNCIÓN DE PERSISTENCIA ACTUALIZADA
+
 function configurePersistence() {
     if (!db) return;
     
     try {
-        // USAR MÉTODO ACTUAL (no deprecado)
+    
         db.enablePersistence({ synchronizeTabs: false })
             .then(function() {
                 console.log('✅ Persistencia offline habilitada');
@@ -78,7 +77,7 @@ function configurePersistence() {
     }
 }
 
-// Funciones helper
+
 function getFirestore() {
     if (!db) {
         if (!initializeFirebase()) {
@@ -114,7 +113,7 @@ function isFirebaseInitialized() {
     return isInitialized && !!auth && !!db;
 }
 
-// Exportar globalmente
+
 window.initializeFirebase = initializeFirebase;
 window.configurePersistence = configurePersistence;
 window.getAuth = getAuth;
@@ -123,5 +122,4 @@ window.getStorage = getStorage;
 window.getServerTimestamp = getServerTimestamp;
 window.isFirebaseInitialized = isFirebaseInitialized;
 
-// Inicializar automáticamente
 initializeFirebase();
