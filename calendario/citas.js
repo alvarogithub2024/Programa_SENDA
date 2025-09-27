@@ -1,18 +1,12 @@
-// ==== CITAS DE PACIENTES (solo del CESFAM del usuario logueado) ====
 
-// Variables para Nueva Cita (Gestión de Agenda)
 let profesionalesAtencion = [];
 let profesionesAtencion = [];
 let miCesfam = null;
 
-// Variables para Agendar Cita (Solicitud de Ingreso)
 let profesionalesAgendar = [];
 let profesionesAgendar = [];
 let miCesfamAgendar = null;
 
-// ----------- NUEVA CITA (Gestión de Agenda) -----------
-
-// Cargar profesionales y profesiones de CESFAM del usuario logueado
 function cargarProfesionalesAtencionPorCesfam(callback) {
   const user = firebase.auth().currentUser;
   if (!user) {
@@ -89,7 +83,6 @@ function autocompletarNombreProfesionalPaciente() {
   nombreInput.value = selected && selected.dataset.nombre ? selected.dataset.nombre : '';
 }
 
-// Guardar cita en Firebase
 function guardarCitaPaciente(datosCita, callback) {
   const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
   const datos = Object.assign({}, datosCita);
@@ -98,7 +91,7 @@ function guardarCitaPaciente(datosCita, callback) {
   db.collection("citas").add(datos)
     .then(function(docRef) {
       window.showNotification && window.showNotification("Cita agendada correctamente", "success");
-      // --- CREAR O ACTUALIZAR PACIENTE AUTOMÁTICAMENTE ---
+      
       if (datos.pacienteRut && datos.pacienteNombre) {
         const rutLimpio = datos.pacienteRut.replace(/[.\-]/g, "").toUpperCase();
         db.collection("pacientes").where("rut", "==", rutLimpio).limit(1).get()
@@ -113,11 +106,11 @@ function guardarCitaPaciente(datosCita, callback) {
               fechaRegistro: datos.fechaCreacion || new Date().toISOString(),
             };
             if (!snapshot.empty) {
-              // Actualiza paciente existente
+              
               const docId = snapshot.docs[0].id;
               db.collection("pacientes").doc(docId).update(pacienteData);
             } else {
-              // Crea nuevo paciente
+          
               db.collection("pacientes").add(pacienteData);
             }
           });
@@ -130,14 +123,14 @@ function guardarCitaPaciente(datosCita, callback) {
     });
 }
 
-// Modal Nueva Cita (Gestión de Agenda)
+
 function abrirModalCitaPaciente() {
   cargarProfesionalesAtencionPorCesfam(function() {
     llenarSelectProfesionesPaciente();
     llenarSelectProfesionalesPaciente();
     autocompletarNombreProfesionalPaciente();
 
-    // Listeners para selects en el modal de nueva cita
+  
     const selProf = document.getElementById('pac-cita-profession');
     if (selProf) {
       selProf.onchange = function() {
@@ -193,7 +186,6 @@ function abrirModalCitaPaciente() {
   });
 }
 
-// ----------- AGENDAR CITA (Solicitud de Ingreso) -----------
 
 function cargarProfesionalesAgendarCita(callback) {
   const user = firebase.auth().currentUser;
@@ -271,7 +263,6 @@ function autocompletarNombreProfesionalAgendarCita() {
   nombreInput.value = selected && selected.dataset.nombre ? selected.dataset.nombre : '';
 }
 
-// ----------- AGENDAR CITA (Solicitud de Ingreso) + CAMBIA ESTADO -----------
 
 function abrirModalAgendarCita(solicitudId, nombre, rut) {
   cargarProfesionalesAgendarCita(function() {
@@ -279,7 +270,7 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
     llenarSelectProfesionalesAgendarCita();
     autocompletarNombreProfesionalAgendarCita();
 
-  // Asigna los datos solo si el elemento existe
+
 var inputId = document.getElementById('modal-cita-id');
 if (inputId) inputId.value = solicitudId;
 
@@ -296,7 +287,6 @@ if (rutSpan) rutSpan.textContent = rut;
 var rutSpanProf = document.getElementById('modal-cita-rut-prof');
 if (rutSpanProf) rutSpanProf.textContent = rut;
 
-    // Listeners para selects en el modal de agendar cita
     const selProf = document.getElementById('modal-cita-profession');
     if (selProf) {
       selProf.onchange = function() {
@@ -343,7 +333,7 @@ if (rutSpanProf) rutSpanProf.textContent = rut;
             creado: firebase.firestore.FieldValue.serverTimestamp()
           })
           .then(function(docRef) {
-            // Cambia estado en solicitudes_ingreso y reingresos
+       
             db.collection("solicitudes_ingreso").doc(citaId).update({ estado: "agendada" })
               .catch(() => {})
               .finally(() => {
@@ -366,7 +356,6 @@ if (rutSpanProf) rutSpanProf.textContent = rut;
   });
 }
 
-// ----------- EXPORT GLOBAL -----------
 
 window.abrirModalCitaPaciente = abrirModalCitaPaciente;
 window.guardarCitaPaciente = guardarCitaPaciente;
