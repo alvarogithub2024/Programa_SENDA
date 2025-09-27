@@ -1,9 +1,4 @@
-/**
- * CONFIGURACION/CONSTANTES.JS
- * Constantes y configuraciones del sistema SENDA
- */
 
-// Configuración de Firebase
 window.FIREBASE_CONFIG = {
     apiKey: "AIzaSyDEjlDOYhHrnavXOKWjdHO0HXILWQhUXv8",
     authDomain: "senda-6d5c9.firebaseapp.com",
@@ -14,7 +9,6 @@ window.FIREBASE_CONFIG = {
     measurementId: "G-82DCLW5R2W"
 };
 
-// Lista de CESFAM de Puente Alto
 window.CESFAM_PUENTE_ALTO = [
     "CESFAM Alejandro del Río",
     "CESFAM Karol Wojtyla", 
@@ -26,11 +20,10 @@ window.CESFAM_PUENTE_ALTO = [
     "CESFAM Cardenal Raúl Silva Henríquez"
 ];
 
-// Configuración de horarios
+
 window.HORARIOS_CONFIG = {
     semana: {
-        diasSemana: [1, 2, 3, 4, 5], // Lunes a Viernes
-        horaInicio: 8,
+        diasSemana: [1, 2, 3, 4, 5], 
         minutoInicio: 0,
         horaFin: 16,
         minutoFin: 30,
@@ -54,7 +47,7 @@ window.HORARIOS_CONFIG = {
     }
 };
 
-// Profesiones disponibles
+
 window.PROFESIONES = {
     'asistente_social': 'Asistente Social',
     'medico': 'Médico',
@@ -62,7 +55,7 @@ window.PROFESIONES = {
     'terapeuta': 'Terapeuta Ocupacional'
 };
 
-// Rutas de colecciones Firestore
+
 window.COLLECTIONS = {
     PROFESIONALES: "profesionales",
     PACIENTES: "pacientes",
@@ -75,7 +68,7 @@ window.COLLECTIONS = {
     CONFIGURACION: "configuracion"
 };
 
-// Estados de solicitudes
+
 window.ESTADOS_SOLICITUD = [
     "pendiente",
     "aceptada",
@@ -84,7 +77,7 @@ window.ESTADOS_SOLICITUD = [
     "finalizada"
 ];
 
-// Configuración general
+
 window.APP_CONFIG = {
     MAX_RETRY_ATTEMPTS: 3,
     RETRY_DELAY: 1000,
