@@ -1,43 +1,38 @@
-// CALENDARIO/HORARIOS2.JS
 
-// CONFIGURACIÓN DE HORARIOS DE ATENCIÓN
 window.HORARIOS_CONFIG = {
     semana: {
-        diasSemana: [1, 2, 3, 4, 5], // Lunes (1) a Viernes (5)
-        horaInicio: 8,         // 08:00
+        diasSemana: [1, 2, 3, 4, 5], 
+        horaInicio: 8,         
         minutoInicio: 0,
-        horaFin: 16,           // 16:30
+        horaFin: 16,           
         minutoFin: 30,
         intervaloMinutos: 30
     },
     sabado: {
-        diasSemana: [6],       // Sábado (6)
-        horaInicio: 9,         // 09:00
+        diasSemana: [6],     
+        horaInicio: 9,         
         minutoInicio: 0,
-        horaFin: 12,           // 12:30
+        horaFin: 12,           
         minutoFin: 30,
         intervaloMinutos: 30
     },
     domingo: {
-        diasSemana: [0],       // Domingo (0)
-        horaInicio: 9,         // 09:00
+        diasSemana: [0],       
+        horaInicio: 9,         
         minutoInicio: 0,
-        horaFin: 12,           // 12:30
+        horaFin: 12,          
         minutoFin: 30,
         intervaloMinutos: 30
     }
 };
 
-// Requiere: window.getFirestore, window.showNotification, window.HORARIOS_CONFIG
-
-// Carga los horarios disponibles para un día y profesional
 function cargarHorariosDisponibles(fecha, profesionalId, callback) {
     var db = window.getFirestore ? window.getFirestore() : firebase.firestore();
     var horarios = [];
-    var dia = new Date(fecha).getDay(); // 0 = domingo, 6 = sábado
+    var dia = new Date(fecha).getDay(); 
     let cfg = null;
 
-    // Determina la config según el día
+   
     if (window.HORARIOS_CONFIG.semana.diasSemana.includes(dia)) {
         cfg = window.HORARIOS_CONFIG.semana;
     } else if (window.HORARIOS_CONFIG.sabado.diasSemana.includes(dia)) {
@@ -78,7 +73,6 @@ function cargarHorariosDisponibles(fecha, profesionalId, callback) {
         });
 }
 
-// Muestra horarios disponibles en la UI (ejemplo)
 function mostrarHorariosDisponibles(horarios, selectId) {
     var select = document.getElementById(selectId);
     if (!select) return;
@@ -97,7 +91,7 @@ function mostrarHorariosDisponibles(horarios, selectId) {
     });
 }
 
-// Solo debes llamar a estos listeners cuando el modal y sus campos existen en el DOM
+
 function inicializarListenersNuevaCitaPaciente() {
     var fechaInput = document.getElementById('pac-cita-fecha');
     var profSelect = document.getElementById('pac-cita-profesional');
@@ -107,7 +101,7 @@ function inicializarListenersNuevaCitaPaciente() {
     }
 }
 
-// Llama a esta función AL ABRIR el modal de cita paciente
+
 function actualizarHorasPaciente() {
     const fecha = document.getElementById('pac-cita-fecha')?.value;
     const profesionalId = document.getElementById('pac-cita-profesional')?.value;
@@ -132,7 +126,7 @@ function actualizarHorasPaciente() {
     });
 }
 
-// Exportar globalmente
+
 window.cargarHorariosDisponibles = cargarHorariosDisponibles;
 window.mostrarHorariosDisponibles = mostrarHorariosDisponibles;
 window.inicializarListenersNuevaCitaPaciente = inicializarListenersNuevaCitaPaciente;
