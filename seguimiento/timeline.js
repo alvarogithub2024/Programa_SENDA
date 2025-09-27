@@ -1,8 +1,4 @@
-// SEGUIMIENTO/TIMELINE.JS
 
-// Requiere: window.getFirestore, window.showNotification
-
-// Carga el timeline de atenciones para un paciente dado (por ID)
 function cargarTimelinePaciente(pacienteId, callback) {
     var db = window.getFirestore();
     db.collection("atenciones")
@@ -22,7 +18,6 @@ function cargarTimelinePaciente(pacienteId, callback) {
         });
 }
 
-// Renderiza el timeline (puedes personalizar el HTML)
 function mostrarTimeline(atenciones, contenedorId) {
     var cont = document.getElementById(contenedorId);
     if (!cont) return;
@@ -46,6 +41,5 @@ function mostrarTimeline(atenciones, contenedorId) {
     });
 }
 
-// Exportar globalmente
 window.cargarTimelinePaciente = cargarTimelinePaciente;
 window.mostrarTimeline = mostrarTimeline;
