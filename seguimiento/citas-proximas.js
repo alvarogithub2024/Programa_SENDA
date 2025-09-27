@@ -1,4 +1,6 @@
-// SEGUIMIENTO/CITAS-PROXIMAS.JS
+// REEMPLAZAR el contenido de seguimiento/citas-proximas.js
+
+// SEGUIMIENTO/CITAS-PROXIMAS.JS - VERSIÓN CORREGIDA
 
 // --- Utilidad para obtener hora actual Chile ---
 function getHoraActualChile() {
@@ -8,133 +10,281 @@ function getHoraActualChile() {
     return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
 }
 
+// --- Utilidad para obtener fecha actual Chile ---
+function getFechaActualChile() {
+    let now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" }));
+    return now.toISOString().slice(0, 10); // YYYY-MM-DD
+}
+
 // --- Mostrar el paciente de la hora actual en "Pacientes de Hoy" ---
-// MODIFICADO: El paciente permanece en pantalla al menos 7 minutos desde que inicia su cita
 function mostrarPacienteActualHoy() {
+    console.log('🔍 Buscando pacientes para hoy...');
+    
     var db = window.getFirestore();
-    var hoy = new Date().toISOString().slice(0, 10);
+    if (!db) {
+        console.error('❌ No se pudo acceder a Firestore');
+        return;
+    }
+
+    var hoy = getFechaActualChile();
     var horaActual = getHoraActualChile();
+    
+    console.log(`📅 Fecha de hoy: ${hoy}`);
+    console.log(`🕐 Hora actual: ${horaActual}`);
 
     db.collection("citas")
         .where("fecha", "==", hoy)
-        .orderBy("hora", "asc")
         .get()
         .then(function(snapshot) {
+            console.log(`📋 Total de citas encontradas para hoy: ${snapshot.size}`);
+            
             let citaActual = null;
             let nowMinutes = parseInt(horaActual.slice(0,2),10)*60 + parseInt(horaActual.slice(3,5),10);
+            
             snapshot.forEach(function(doc) {
                 let cita = doc.data();
-                let citaMin = parseInt(cita.hora.slice(0,2),10)*60 + parseInt(cita.hora.slice(3,5),10);
-                // Mostrar paciente si la cita comenzó hace <= 7 minutos
-                if (nowMinutes >= citaMin && nowMinutes <= citaMin + 7) {
-                    citaActual = Object.assign({ id: doc.id }, cita);
+                cita.id = doc.id;
+                
+                console.log(`📝 Cita encontrada: ${cita.pacienteNombre || cita.nombre} a las ${cita.hora}`);
+                
+                if (cita.hora) {
+                    let citaMin = parseInt(cita.hora.slice(0,2),10)*60 + parseInt(cita.hora.slice(3,5),10);
+                    // Mostrar paciente si la cita comenzó hace <= 15 minutos
+                    if (nowMinutes >= citaMin && nowMinutes <= citaMin + 15) {
+                        citaActual = cita;
+                        console.log(`✅ Paciente actual encontrado: ${cita.pacienteNombre || cita.nombre}`);
+                    }
                 }
             });
 
             let cont = document.getElementById("patients-timeline");
-            if (!cont) return;
-            cont.innerHTML = "";
-            if (!citaActual) {
-                cont.innerHTML = `<div class="no-results"><i class="fas fa-user-clock"></i><p>No hay paciente agendado para la hora actual (${horaActual}).</p></div>`;
+            if (!cont) {
+                console.error('❌ No se encontró el elemento patients-timeline');
                 return;
             }
+            
+            cont.innerHTML = "";
+            
+            if (!citaActual) {
+                console.log('⏰ No hay paciente agendado para la hora actual');
+                cont.innerHTML = `
+                    <div class="no-results">
+                        <i class="fas fa-user-clock"></i>
+                        <p>No hay paciente agendado para la hora actual (${horaActual}).</p>
+                        <small>Mostrando pacientes con citas en curso o que comenzaron hace máximo 15 minutos</small>
+                    </div>
+                `;
+                return;
+            }
+
             let div = document.createElement("div");
             div.className = "appointment-item";
             div.innerHTML = `
-                <div>
-                  <b>${citaActual.hora}</b> - <b>${citaActual.pacienteNombre || citaActual.nombre || ""}</b> (${citaActual.tipoProfesional || citaActual.profesion || ""})<br>
-                  <span>${citaActual.cesfam || ""}</span>
+                <div class="cita-info">
+                    <b>${citaActual.hora}</b> - <b>${citaActual.pacienteNombre || citaActual.nombre || "Sin nombre"}</b>
+                    <br>
+                    <span>
+                        ${citaActual.tipoProfesional || citaActual.profesion || "Sin profesión"} | 
+                        ${citaActual.cesfam || "Sin CESFAM"}
+                    </span>
+                    ${citaActual.rut ? `<br><span>RUT: ${citaActual.rut}</span>` : ''}
                 </div>
-                <button class="btn btn-outline btn-sm" onclick="abrirModalRegistrarAtencion('${citaActual.id}')">Registrar atención</button>
+                <div class="cita-actions">
+                    <button class="btn btn-primary btn-sm" onclick="abrirModalRegistrarAtencion('${citaActual.id}')">
+                        <i class="fas fa-notes-medical"></i> Registrar atención
+                    </button>
+                </div>
             `;
             cont.appendChild(div);
+            
+            console.log(`✅ Paciente actual mostrado: ${citaActual.pacienteNombre || citaActual.nombre}`);
         })
         .catch(function(error) {
+            console.error('❌ Error cargando paciente de hoy:', error);
             let cont = document.getElementById("patients-timeline");
-            if (cont) cont.innerHTML = `<div class="no-results">Error cargando paciente de hoy: ${error.message}</div>`;
+            if (cont) {
+                cont.innerHTML = `
+                    <div class="no-results">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Error cargando paciente de hoy: ${error.message}</p>
+                    </div>
+                `;
+            }
         });
 }
 
 // --- Mostrar todas las citas restantes del día en "Próximas citas" ---
 function mostrarCitasRestantesHoy() {
+    console.log('🔍 Buscando próximas citas del día...');
+    
     var db = window.getFirestore();
-    var hoy = new Date().toISOString().slice(0, 10);
+    if (!db) {
+        console.error('❌ No se pudo acceder a Firestore');
+        return;
+    }
+
+    var hoy = getFechaActualChile();
     var horaActual = getHoraActualChile();
+    
+    console.log(`📅 Buscando citas para: ${hoy} después de las ${horaActual}`);
 
     db.collection("citas")
         .where("fecha", "==", hoy)
-        .orderBy("hora", "asc")
         .get()
         .then(function(snapshot) {
+            console.log(`📋 Total de citas encontradas para hoy: ${snapshot.size}`);
+            
             let citas = [];
             snapshot.forEach(function(doc) {
                 let cita = doc.data();
+                cita.id = doc.id;
+                
                 // Solo mostrar citas con hora mayor a la actual
-                if (cita.hora > horaActual) {
-                    citas.push(Object.assign({ id: doc.id }, cita));
+                if (cita.hora && cita.hora > horaActual) {
+                    citas.push(cita);
+                    console.log(`⏰ Próxima cita: ${cita.pacienteNombre || cita.nombre} a las ${cita.hora}`);
                 }
             });
 
+            // Ordenar por hora
+            citas.sort((a, b) => a.hora.localeCompare(b.hora));
+
             let cont = document.getElementById("upcoming-appointments-grid");
-            if (!cont) return;
-            cont.innerHTML = "";
-            if (!citas.length) {
-                cont.innerHTML = `<div class="no-results"><i class="fas fa-calendar-check"></i><p>No hay próximas citas para hoy después de las ${horaActual}.</p></div>`;
+            if (!cont) {
+                console.error('❌ No se encontró el elemento upcoming-appointments-grid');
                 return;
             }
+            
+            cont.innerHTML = "";
+            
+            if (!citas.length) {
+                console.log('📭 No hay próximas citas para hoy');
+                cont.innerHTML = `
+                    <div class="no-results">
+                        <i class="fas fa-calendar-check"></i>
+                        <p>No hay próximas citas para hoy después de las ${horaActual}.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            console.log(`✅ Mostrando ${citas.length} próximas citas`);
+            
             citas.forEach(function(cita) {
                 let div = document.createElement("div");
                 div.className = "appointment-item";
                 div.innerHTML = `
-                    <div>
-                      <b>${cita.hora}</b> - <b>${cita.pacienteNombre || cita.nombre || ""}</b> (${cita.tipoProfesional || cita.profesion || ""})<br>
-                      <span>${cita.cesfam || ""}</span>
+                    <div class="cita-info">
+                        <b>${cita.hora}</b> - <b>${cita.pacienteNombre || cita.nombre || "Sin nombre"}</b>
+                        <br>
+                        <span>
+                            ${cita.tipoProfesional || cita.profesion || "Sin profesión"} | 
+                            ${cita.cesfam || "Sin CESFAM"}
+                        </span>
+                        ${cita.rut ? `<br><span>RUT: ${cita.rut}</span>` : ''}
+                    </div>
+                    <div class="cita-actions">
+                        <span class="status-badge programada">
+                            <i class="fas fa-clock"></i> Programada
+                        </span>
                     </div>
                 `;
                 cont.appendChild(div);
             });
         })
         .catch(function(error) {
+            console.error('❌ Error cargando próximas citas:', error);
             let cont = document.getElementById("upcoming-appointments-grid");
-            if (cont) cont.innerHTML = `<div class="no-results">Error cargando próximas citas: ${error.message}</div>`;
+            if (cont) {
+                cont.innerHTML = `
+                    <div class="no-results">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Error cargando próximas citas: ${error.message}</p>
+                    </div>
+                `;
+            }
         });
 }
 
 // --- Función global para abrir el modal de atención ---
 window.abrirModalRegistrarAtencion = function(citaId) {
+    console.log(`🔍 Abriendo modal para cita: ${citaId}`);
+    
     var db = window.getFirestore();
     db.collection("citas").doc(citaId).get().then(function(doc) {
         if (!doc.exists) {
-            window.showNotification("Cita no encontrada", "error");
+            window.showNotification && window.showNotification("Cita no encontrada", "error");
             return;
         }
+        
         var cita = doc.data();
         cita.id = doc.id;
+        
+        console.log('📋 Datos de la cita:', cita);
+        
         var pacienteInfo = `
-            <p><b>Paciente:</b> ${cita.pacienteNombre || cita.nombre || ""}</p>
-            <p><b>RUT:</b> ${cita.pacienteRut || cita.rut || ""}</p>
-            <p><b>CESFAM:</b> ${cita.cesfam || ""}</p>
-            <p><b>Fecha:</b> ${cita.fecha || ""} ${cita.hora || ""}</p>
-            <p><b>Profesional:</b> ${cita.profesionalNombre || ""}</p>
+            <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                <h4 style="color: #2563eb; margin-bottom: 0.5rem;">
+                    <i class="fas fa-user"></i> Información del Paciente
+                </h4>
+                <p><b>Paciente:</b> ${cita.pacienteNombre || cita.nombre || "Sin nombre"}</p>
+                <p><b>RUT:</b> ${cita.pacienteRut || cita.rut || "Sin RUT"}</p>
+                <p><b>CESFAM:</b> ${cita.cesfam || "Sin CESFAM"}</p>
+                <p><b>Fecha y Hora:</b> ${cita.fecha || ""} ${cita.hora || ""}</p>
+                <p><b>Profesional:</b> ${cita.profesionalNombre || "Sin profesional asignado"}</p>
+            </div>
         `;
+        
         document.getElementById("atencion-paciente-info").innerHTML = pacienteInfo;
         document.getElementById("atencion-cita-id").value = cita.id;
         document.getElementById("atencion-paciente-id").value = cita.pacienteId || "";
 
+        // Limpiar formulario
+        document.getElementById("atencion-descripcion").value = "";
+        document.getElementById("atencion-tipo").value = "";
+
         showModal("modal-registrar-atencion");
+    })
+    .catch(function(error) {
+        console.error('❌ Error obteniendo cita:', error);
+        window.showNotification && window.showNotification("Error al cargar datos de la cita", "error");
     });
 };
 
-document.addEventListener("DOMContentLoaded", function() {
+// --- Función para inicializar el módulo ---
+function initUpcomingAppointments() {
+    console.log('🚀 Inicializando seguimiento de citas...');
+    
+    // Cargar inmediatamente
     mostrarPacienteActualHoy();
     mostrarCitasRestantesHoy();
-    // Actualiza cada minuto ambas vistas
-    setInterval(function() {
+    
+    // Actualizar cada minuto
+    const intervalo = setInterval(function() {
+        console.log('🔄 Actualizando citas automáticamente...');
         mostrarPacienteActualHoy();
         mostrarCitasRestantesHoy();
-    }, 60 * 1000);
+    }, 60 * 1000); // 60 segundos
+    
+    console.log('✅ Seguimiento de citas inicializado. Actualizando cada minuto.');
+    
+    // Cleanup function
+    return function cleanup() {
+        clearInterval(intervalo);
+        console.log('🧹 Cleanup del seguimiento de citas completado');
+    };
+}
+
+// Inicialización automática
+document.addEventListener("DOMContentLoaded", function() {
+    // Esperar un poco para asegurar que Firebase esté listo
+    setTimeout(initUpcomingAppointments, 2000);
 });
 
-// Exportar globalmente si necesitas
+// Exportar funciones globalmente
 window.mostrarPacienteActualHoy = mostrarPacienteActualHoy;
 window.mostrarCitasRestantesHoy = mostrarCitasRestantesHoy;
+window.initUpcomingAppointments = initUpcomingAppointments;
+
+// Alias para compatibilidad con seguimiento/timeline.js
+window.initUpcomingAppointmentsFromSeguimiento = initUpcomingAppointments;
