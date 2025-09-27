@@ -1,5 +1,4 @@
 
-
 function setupFormularioPaciente() {
     const form = document.getElementById("patient-form");
     if (!form) return;
@@ -91,7 +90,6 @@ function setupFormularioPaciente() {
         });
     });
 
- 
     const btnSoloInfo = form.querySelector("#enviar-solo-info");
     if (btnSoloInfo) {
         btnSoloInfo.onclick = function(e) {
@@ -107,7 +105,6 @@ function setupFormularioPaciente() {
         };
     }
 
-  
     form.onsubmit = function(e) {
         e.preventDefault();
         const tipo = form.querySelector('input[name="tipoSolicitud"]:checked');
@@ -141,7 +138,6 @@ function setupFormularioPaciente() {
         guardarSolicitudAyuda(datos);
     };
 
-  
     const motivacionRange = form.querySelector("#motivacion-range");
     const motivacionValue = form.querySelector("#motivacion-value");
     if (motivacionRange && motivacionValue) {
@@ -174,6 +170,11 @@ function guardarSolicitudAyuda(datos) {
             .catch(function(error) {
                 window.showNotification && window.showNotification("Solicitud guardada pero no se pudo registrar el ID: "+error.message,"warning");
             });
+
+            // --- SINCRONIZAR PACIENTE ---
+            if (window.sincronizarPaciente) {
+                window.sincronizarPaciente(datos); // <-- Llamada a la función de sincronización
+            }
         })
         .catch(function(error) {
             window.showNotification && window.showNotification("Error guardando solicitud: "+error.message,"error");
@@ -215,8 +216,6 @@ function validarRut(rut) {
     dvEsperado = dvEsperado === 11 ? '0' : dvEsperado === 10 ? 'K' : dvEsperado.toString();
     return dv === dvEsperado;
 }
-
-
 if (!window.validarRut) {
     window.validarRut = validarRut;
 }
@@ -233,8 +232,6 @@ function validarTelefonoChileno(telefono) {
     telefono = limpiarTelefonoChileno(telefono);
     return telefono.length === 9 && telefono[0] === "9";
 }
-
-
 if (!window.validarTelefono) {
     window.validarTelefono = validarTelefonoChileno;
 }
@@ -244,8 +241,6 @@ function validarEmail(email) {
     if (!email) return false;
     return /^[\w\.\-]+@([\w\-]+\.)+[a-zA-Z]{2,7}$/.test(email);
 }
-
-
 if (!window.validarEmail) {
     window.validarEmail = validarEmail;
 }
