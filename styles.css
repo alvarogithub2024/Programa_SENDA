@@ -2642,10 +2642,8 @@ document.addEventListener('DOMContentLoaded', setupModalTabs);
     font-style: italic;
     padding: 2rem 1rem;
 }
-
 /* ===================================================================
-   CSS PARA HISTORIAL CLÍNICO EDITABLE
-   Agregar al final de styles.css
+   CSS PARA HISTORIAL CLÍNICO EDITABLE - AGREGAR AL FINAL DE STYLES.CSS
    =================================================================== */
 
 /* Contenedor del historial clínico */
@@ -2706,47 +2704,36 @@ document.addEventListener('DOMContentLoaded', setupModalTabs);
 
 .historial-entry[onclick] {
     cursor: pointer;
+    position: relative;
 }
 
 .historial-entry[onclick]:hover {
     background: #f1f5f9;
 }
 
-/* Información de fecha y tipo */
-.historial-entry > div:first-child {
-    font-weight: 600;
-    color: var(--primary-blue);
-    margin-bottom: 4px;
-    font-size: 1rem;
+/* Efecto hover para entradas editables */
+.historial-entry-hover:hover {
+    background: #f1f5f9 !important;
+    border-color: #2563eb !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15) !important;
 }
 
-/* Información del profesional */
-.historial-entry > div:nth-child(2) {
-    font-style: italic;
-    color: #6b7280;
-    margin-bottom: 8px;
-    font-size: 0.9rem;
-}
-
-/* Descripción de la atención */
-.historial-entry > div:nth-child(3) {
-    color: #374151;
-    line-height: 1.5;
-    font-size: 0.95rem;
-}
-
-/* Indicador de que es editable */
-.historial-entry > div:last-child {
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid #e5e7eb;
-    font-size: 0.8rem;
-    color: #6b7280;
-    opacity: 0;
+/* Indicador visual más claro para entradas editables */
+.historial-entry[onclick]::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: #2563eb;
+    border-radius: 4px 0 0 4px;
+    opacity: 0.3;
     transition: opacity 0.2s ease;
 }
 
-.historial-entry:hover > div:last-child {
+.historial-entry[onclick]:hover::before {
     opacity: 1;
 }
 
@@ -2854,9 +2841,14 @@ document.addEventListener('DOMContentLoaded', setupModalTabs);
     background: #f8fafc !important;
     transform: none !important;
     box-shadow: none !important;
+    border-color: #e5e7eb !important;
 }
 
 .historial-readonly .historial-entry > div:last-child {
+    display: block !important;
+}
+
+.historial-readonly .historial-entry::before {
     display: none !important;
 }
 
@@ -2905,6 +2897,12 @@ document.addEventListener('DOMContentLoaded', setupModalTabs);
     font-size: 1.5rem;
     color: var(--primary-blue);
     margin-bottom: 0.5rem;
+}
+
+/* Estilos específicos para información del profesional */
+.historial-entry > div:nth-child(2) i {
+    color: var(--health-teal);
+    margin-right: 4px;
 }
 
 /* Responsive */
