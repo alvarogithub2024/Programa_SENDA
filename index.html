@@ -17,18 +17,128 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-     <!-- ========== JSPDF PARA EXPORTACIÓN PDF ========== -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+     
+<!-- ========== JSPDF PARA EXPORTACIÓN PDF  ========== -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNhh/MLGRH7ejB8i8HDZ5Fz7Z7r+OqbD2+9uN9g7Z1E9mDj5lNaqKMVqA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <!-- Script de verificación y configuración de jsPDF -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔍 Verificando carga de jsPDF...');
+    
+    function verificarJsPDF() {
+    const tiposDisponibles = {
+    'window.jsPDF': typeof window.jsPDF,
+    'window.jsPDF.jsPDF': typeof window.jsPDF?.jsPDF,
+    'globalThis.jsPDF': typeof globalThis.jsPDF
+     };
+        
+    console.log('📊 Estado de jsPDF:', tiposDisponibles);
+        
     if (typeof window.jsPDF !== 'undefined') {
     console.log('✅ jsPDF cargado correctamente');
-    } else {
-    console.error('❌ Error: jsPDF no se pudo cargar');
+            
+            // Asegurar compatibilidad
+    if (!window.jsPDF.jsPDF && typeof window.jsPDF === 'function') {
+    window.jsPDF.jsPDF = window.jsPDF;
+    console.log('🔧 Alias jsPDF.jsPDF creado para compatibilidad');
+            }
+            
+            // Prueba rápida
+     try {
+    const testDoc = new (window.jsPDF.jsPDF || window.jsPDF)();
+                testDoc.text('Test', 20, 20);
+                console.log('✅ jsPDF funcionando correctamente');
+                
+                // Notificar al sistema que está listo
+                window.jsPDFReady = true;
+                window.dispatchEvent(new CustomEvent('jsPDFReady'));
+                
+            } catch (error) {
+                console.error('❌ Error en prueba de jsPDF:', error);
+            }
+        } else {
+            console.error('❌ jsPDF no se pudo cargar');
+            
+            // Intentar carga alternativa
+            console.log('🔄 Intentando carga alternativa...');
+            cargarJsPDFAlternativo();
+        }
     }
-    });
-    </script>
     
+    function cargarJsPDFAlternativo() {
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js';
+        script.onload = function() {
+            console.log('✅ jsPDF cargado desde fuente alternativa');
+            setTimeout(verificarJsPDF, 100);
+        };
+        script.onerror = function() {
+            console.error('❌ Error cargando jsPDF desde fuente alternativa');
+            mostrarErrorPDF();
+        };
+        document.head.appendChild(script);
+    }
+    
+    function mostrarErrorPDF() {
+        window.showNotification && window.showNotification(
+            'Error cargando librería PDF. Algunas funciones de exportación no estarán disponibles.',
+            'error',
+            5000
+        );
+    }
+    
+    // Verificar inmediatamente
+    verificarJsPDF();
+    
+    // Verificar nuevamente después de un momento por si hay retraso
+    setTimeout(verificarJsPDF, 1000);
+    setTimeout(verificarJsPDF, 3000);
+});
+
+// Función global para verificar estado de jsPDF
+window.verificarEstadoPDF = function() {
+    const estado = {
+        disponible: typeof window.jsPDF !== 'undefined',
+        version: window.jsPDF?.version || 'desconocida',
+        metodos: {
+            constructor: typeof window.jsPDF,
+            jsPDF: typeof window.jsPDF?.jsPDF,
+            save: typeof window.jsPDF?.prototype?.save
+        }
+    };
+    
+    console.log('📊 Estado actual de jsPDF:', estado);
+    return estado;
+};
+</script>
+
+<!-- Script adicional para asegurar que las funciones PDF esperen a que jsPDF esté listo -->
+<script>
+// Wrapper para funciones PDF que esperan a que jsPDF esté disponible
+window.conJsPDFListo = function(callback) {
+    if (window.jsPDFReady || typeof window.jsPDF !== 'undefined') {
+        callback();
+    } else {
+        // Esperar al evento de carga
+        window.addEventListener('jsPDFReady', callback, { once: true });
+        
+        // Timeout por si no se carga
+        setTimeout(() => {
+            if (typeof window.jsPDF !== 'undefined') {
+                callback();
+            } else {
+                console.error('❌ Timeout esperando jsPDF');
+                window.showNotification && window.showNotification(
+                    'Error: Librería PDF no disponible', 
+                    'error'
+                );
+            }
+        }, 5000);
+    }
+};
+</script>
+
     <!-- ========== CONFIGURACIÓN BASE ========== -->
     <script src="configuracion/constantes.js"></script>
     <script src="configuracion/firebase.js"></script>
