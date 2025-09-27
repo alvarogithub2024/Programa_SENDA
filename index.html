@@ -47,22 +47,22 @@
             // Prueba rápida
      try {
     const testDoc = new (window.jsPDF.jsPDF || window.jsPDF)();
-                testDoc.text('Test', 20, 20);
-                console.log('✅ jsPDF funcionando correctamente');
+    testDoc.text('Test', 20, 20);
+    console.log('✅ jsPDF funcionando correctamente');
                 
-                // Notificar al sistema que está listo
-                window.jsPDFReady = true;
-                window.dispatchEvent(new CustomEvent('jsPDFReady'));
+          // Notificar al sistema que está listo
+     window.jsPDFReady = true;
+     window.dispatchEvent(new CustomEvent('jsPDFReady'));
                 
-            } catch (error) {
-                console.error('❌ Error en prueba de jsPDF:', error);
-            }
-        } else {
-            console.error('❌ jsPDF no se pudo cargar');
+     } catch (error) {
+    console.error('❌ Error en prueba de jsPDF:', error);
+     }
+     } else {
+     console.error('❌ jsPDF no se pudo cargar');
             
             // Intentar carga alternativa
-            console.log('🔄 Intentando carga alternativa...');
-            cargarJsPDFAlternativo();
+     console.log('🔄 Intentando carga alternativa...');
+     cargarJsPDFAlternativo();
         }
     }
     
