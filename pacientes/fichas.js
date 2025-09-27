@@ -1,12 +1,8 @@
-// ===================================================================
-// FICHA DEL PACIENTE - FIX FINAL PARA EVENTOS ONCLICK
-// Reemplaza completamente el archivo pacientes/fichas.js
-// ===================================================================
 
 (function() {
     let pacientesTabData = [];
 
-    // ===== USAR SISTEMA DE PERMISOS GLOBAL =====
+
     function puedeEditarHistorial() {
         return window.puedeEditarHistorial ? window.puedeEditarHistorial() : false;
     }
@@ -37,7 +33,6 @@
         });
     }
 
-    // ===== FUNCIONES EXISTENTES =====
     function getGrid() { return document.getElementById('patients-grid'); }
     function getSearchInput() { return document.getElementById('search-pacientes-rut'); }
     function getBuscarBtn() { return document.getElementById('buscar-paciente-btn'); }
@@ -140,7 +135,6 @@
         renderPacientesGrid(filtrados);
     }
 
-    // ===== FUNCIÓN PRINCIPAL PARA VER FICHA =====
     window.verFichaPacienteSenda = async function(rut) {
         const db = window.getFirestore();
         const rutLimpio = (rut || '').replace(/[.\-]/g, '').trim();
@@ -238,7 +232,7 @@
         `;
     }
 
-    // ===== CARGAR HISTORIAL CON EVENTOS DIRECTOS =====
+
     async function cargarHistorialClinicoMejorado(rutPaciente, puedeEditar) {
         const cont = document.getElementById('historial-contenido');
         if (!cont) return;
@@ -261,10 +255,8 @@
                 return;
             }
             
-            // Limpiar contenedor
             cont.innerHTML = '';
-            
-            // Crear entradas con eventos directos
+         
             snapshot.forEach(doc => {
                 const atencion = doc.data();
                 const entradaElement = crearEntradaHistorialConEventos(doc.id, atencion, puedeEditar, rutLimpio);
@@ -281,9 +273,7 @@
         }
     }
 
-    // ===== CREAR ENTRADA CON EVENTOS DIRECTOS (NO ONCLICK STRING) =====
     function crearEntradaHistorialConEventos(docId, atencion, puedeEditar, rutPaciente) {
-        // Procesar fecha
         let fechaTexto = '';
         let horaTexto = '';
         
@@ -305,8 +295,6 @@
         const tipoFormateado = formatearTipoAtencion(atencion?.tipoAtencion || "");
         const descripcion = atencion?.descripcion || "Sin descripción";
         const profesionalNombre = atencion?.profesional || "Profesional no especificado";
-        
-        // Verificar permisos
         const puedeEditarRealmente = window.puedeEditarHistorial ? window.puedeEditarHistorial() : false;
         
         console.log('🔧 Creando entrada con eventos para:', {
@@ -315,12 +303,11 @@
             rutPaciente
         });
         
-        // Crear elemento DOM
+
         const entradaDiv = document.createElement('div');
         entradaDiv.className = 'historial-entry';
         entradaDiv.dataset.entryId = docId;
-        
-        // Estilos
+    
         entradaDiv.style.cssText = `
             background: #f8fafc;
             border: 1px solid #e5e7eb;
@@ -331,7 +318,7 @@
             transition: all 0.2s ease;
         `;
         
-        // HTML interno
+      
         entradaDiv.innerHTML = `
             <div style="font-weight:600; color:#2563eb; margin-bottom:4px; font-size:1rem;">
                 ${fechaTexto} ${horaTexto} - ${tipoFormateado}
@@ -355,14 +342,14 @@
             `}
         `;
         
-        // Agregar evento click directamente si puede editar
+      
         if (puedeEditarRealmente) {
             entradaDiv.addEventListener('click', function() {
                 console.log('🖱️ Click detectado en entrada:', docId);
                 abrirModalEditarAtencion(docId, descripcion, atencion?.tipoAtencion || "", rutPaciente);
             });
             
-            // Efectos hover
+
             entradaDiv.addEventListener('mouseenter', function() {
                 this.style.background = '#f1f5f9';
                 this.style.borderColor = '#2563eb';
@@ -394,7 +381,7 @@
         return tipos[tipo] || 'Consulta General';
     }
 
-    // ===== FUNCIÓN DE EDICIÓN (SIN WINDOW.) =====
+  
     function abrirModalEditarAtencion(atencionId, descripcion, tipoAtencion, rutPaciente) {
         console.log('🔧 Abriendo modal de edición:', {
             atencionId,
@@ -402,7 +389,7 @@
             rutPaciente
         });
         
-        // Verificar permisos
+      
         if (!window.puedeEditarHistorial || !window.puedeEditarHistorial()) {
             console.warn('🚫 Sin permisos para editar historial');
             if (window.mostrarMensajePermisos) {
@@ -413,19 +400,19 @@
             return;
         }
         
-        // Ocultar ficha de paciente
+       
         const fichaModal = document.getElementById('modal-ficha-paciente');
         if (fichaModal) {
             fichaModal.style.display = 'none';
         }
 
-        // Eliminar modal anterior si existe
+    
         let modal = document.getElementById('modal-editar-atencion');
         if (modal) {
             modal.remove();
         }
         
-        // Crear nuevo modal
+      
         modal = document.createElement('div');
         modal.id = 'modal-editar-atencion';
         modal.className = 'modal-overlay';
@@ -472,7 +459,7 @@
         
         document.body.appendChild(modal);
         
-        // Llenar valores
+      
         document.getElementById('editar-atencion-descripcion').value = descripcion || "";
         document.getElementById('editar-atencion-tipo').value = tipoAtencion || "";
         
@@ -510,7 +497,7 @@
                 
                 cerrarModalEditarAtencion();
                 
-                // Recargar historial
+               
                 await cargarHistorialClinicoMejorado(rutPaciente, window.puedeEditarHistorial());
                 
             } catch (error) {
@@ -523,7 +510,7 @@
             }
         };
         
-        // Evento del botón eliminar
+      
         document.getElementById('btn-eliminar-atencion').onclick = function() {
             eliminarAtencion(atencionId, rutPaciente);
         };
@@ -531,7 +518,6 @@
         console.log('✅ Modal de edición creado y mostrado');
     }
 
-    // ===== FUNCIÓN DE ELIMINACIÓN =====
     async function eliminarAtencion(atencionId, rutPaciente) {
         if (!confirm('¿Seguro que deseas eliminar esta atención? Esta acción no se puede deshacer.')) return;
         
@@ -547,7 +533,6 @@
             
             cerrarModalEditarAtencion();
             
-            // Recargar historial
             await cargarHistorialClinicoMejorado(rutPaciente, window.puedeEditarHistorial());
             
         } catch (error) {
@@ -560,17 +545,15 @@
         }
     }
 
-    // ===== CERRAR MODAL =====
     window.cerrarModalEditarAtencion = function() {
         const modal = document.getElementById('modal-editar-atencion');
         if (modal) modal.remove();
         
-        // Volver a mostrar ficha del paciente
+       
         const fichaModal = document.getElementById('modal-ficha-paciente');
         if (fichaModal) fichaModal.style.display = 'flex';
     };
 
-    // ===== NUEVA ATENCIÓN =====
     window.mostrarFormularioNuevaAtencion = function(rutPaciente) {
         if (!window.puedeCrearAtenciones || !window.puedeCrearAtenciones()) {
             window.mostrarMensajePermisos && window.mostrarMensajePermisos('crear nuevas atenciones');
@@ -658,7 +641,6 @@
             window.showNotification && window.showNotification('Atención registrada correctamente', 'success');
             cerrarModalNuevaAtencion();
             
-            // Recargar historial
             await cargarHistorialClinicoMejorado(rutPaciente, puedeEditarHistorial());
         } catch (error) {
             console.error('Error al guardar atención:', error);
@@ -673,7 +655,6 @@
         }
     };
 
-    // ========== EVENTOS PRINCIPALES ==========
     async function refrescarPacientesTab() {
         const grid = getGrid();
         if (!grid) {
@@ -716,7 +697,6 @@
         if (modal) modal.style.display = 'none';
     };
 
-    // ===== FUNCIÓN DE DEBUG =====
     window.debugHistorialClickeable = function() {
         console.log('🔍 DEBUG: Verificando historial clínico clickeable');
         
@@ -739,7 +719,6 @@
         console.log('- puedeEditarHistorial:', window.puedeEditarHistorial ? window.puedeEditarHistorial() : 'No disponible');
         console.log('- Rol actual:', window.rolActual ? window.rolActual() : 'No disponible');
         
-        // Test de click simulado
         if (entradas.length > 0) {
             console.log('🖱️ Simulando click en primera entrada...');
             try {
