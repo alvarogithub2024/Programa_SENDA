@@ -13,6 +13,7 @@
                 window.getFirestore().collection('profesionales').doc(user.uid).get().then(function(doc){
                     if (doc.exists) {
                         profesionActual = doc.data().profession || null;
+                        console.log('Profesión actual detectada:', profesionActual);
                     }
                 });
             } else {
@@ -24,13 +25,15 @@
     // ===== FUNCIONES AUXILIARES PARA PERMISOS =====
     function puedeEditarHistorial() {
         const rolesPermitidos = ['medico', 'psicologo', 'terapeuta'];
-        return profesionActual && rolesPermitidos.includes(profesionActual);
+        const puede = profesionActual && rolesPermitidos.includes(profesionActual);
+        console.log('¿Puede editar historial?', puede, 'Profesión:', profesionActual);
+        return puede;
     }
 
     function obtenerProfesionalActual() {
         return new Promise((resolve) => {
-            if (profesionActual) {
-                firebase.auth().currentUser && window.getFirestore()
+            if (profesionActual && firebase.auth().currentUser) {
+                window.getFirestore()
                     .collection('profesionales')
                     .doc(firebase.auth().currentUser.uid)
                     .get()
@@ -79,8 +82,8 @@
 
         citasSnap.forEach(doc => {
             const cita = doc.data();
-            const rut = (cita.rut || '').replace(/[.\-]/g, "").trim();
-            const nombre = cita.nombre || '';
+            const rut = (cita.rut || cita.pacienteRut || '').replace(/[.\-]/g, "").trim();
+            const nombre = cita.nombre || cita.pacienteNombre || '';
             const apellidos = cita.apellidos || '';
             if (!rut) return;
             if (!pacientesMap[rut]) {
@@ -89,24 +92,31 @@
                     nombre: nombre,
                     apellidos: apellidos,
                     citaId: doc.id,
-                    profesion: cita.profesion || '',
+                    profesion: cita.profesion || cita.tipoProfesional || '',
                     fecha: cita.fecha || '',
                     telefono: cita.telefono || '',
                     email: cita.email || '',
                     direccion: cita.direccion || '',
                     edad: cita.edad || '',
-                    fechaRegistro: cita.creado || new Date().toISOString(),
+                    cesfam: cita.cesfam || '',
+                    fechaRegistro: cita.creado || cita.fechaCreacion || new Date().toISOString(),
                 };
             }
         });
 
-        for (const rut in pacientesMap) {
-            const paciente = pacientesMap[rut];
-            const snap = await db.collection('pacientes').where('rut', '==', rut).limit(1).get();
-            if (snap.empty) {
-                await db.collection('pacientes').add(paciente);
+        // También obtener pacientes de la colección "pacientes"
+        const pacientesSnap = await db.collection('pacientes').get();
+        pacientesSnap.forEach(doc => {
+            const paciente = doc.data();
+            paciente.id = doc.id;
+            if (paciente.rut) {
+                const rutLimpio = paciente.rut.replace(/[.\-]/g, "").trim();
+                if (!pacientesMap[rutLimpio]) {
+                    pacientesMap[rutLimpio] = paciente;
+                }
             }
-        }
+        });
+
         return Object.values(pacientesMap);
     }
 
@@ -115,7 +125,7 @@
         if (!grid) return;
         grid.innerHTML = '';
         if (!pacientes.length) {
-            grid.innerHTML = "<div class='no-results'>No hay pacientes agendados aún.</div>";
+            grid.innerHTML = "<div class='no-results'>No hay pacientes registrados aún.</div>";
             return;
         }
         pacientes.forEach(p => {
@@ -125,8 +135,8 @@
                 <div style="display:flex; gap:24px; align-items:center;">
                   <div style="font-weight:600; min-width:170px;">${p.nombre} ${p.apellidos || ''}</div>
                   <div>RUT: ${p.rut}</div>
-                  <div>Tel: ${p.telefono || ''}</div>
-                  <div>Email: ${p.email || ''}</div>
+                  <div>Tel: ${p.telefono || 'No disponible'}</div>
+                  <div>Email: ${p.email || 'No disponible'}</div>
                   <button class="btn btn-outline btn-sm" style="margin-left:18px;" onclick="verFichaPacienteSenda('${p.rut}')">
                     <i class="fas fa-file-medical"></i> Ver Ficha
                   </button>
@@ -154,12 +164,35 @@
         const db = window.getFirestore();
         const rutLimpio = (rut || '').replace(/[.\-]/g, '').trim();
         try {
+            // Buscar en pacientes primero
+            let pacienteData = null;
             const snapshot = await db.collection('pacientes').where('rut', '==', rutLimpio).limit(1).get();
-            if (snapshot.empty) {
+            
+            if (!snapshot.empty) {
+                pacienteData = Object.assign({ id: snapshot.docs[0].id }, snapshot.docs[0].data());
+            } else {
+                // Si no está en pacientes, buscar en citas
+                const citasSnap = await db.collection('citas').where('rut', '==', rutLimpio).limit(1).get();
+                if (!citasSnap.empty) {
+                    const cita = citasSnap.docs[0].data();
+                    pacienteData = {
+                        id: 'desde_cita_' + citasSnap.docs[0].id,
+                        rut: rutLimpio,
+                        nombre: cita.nombre || cita.pacienteNombre || '',
+                        apellidos: cita.apellidos || '',
+                        telefono: cita.telefono || '',
+                        email: cita.email || '',
+                        direccion: cita.direccion || '',
+                        cesfam: cita.cesfam || ''
+                    };
+                }
+            }
+
+            if (!pacienteData) {
                 window.showNotification && window.showNotification('Paciente no encontrado', 'warning');
                 return;
             }
-            const pacienteData = Object.assign({ id: snapshot.docs[0].id }, snapshot.docs[0].data());
+
             const profesional = await obtenerProfesionalActual();
             const puedeEditar = puedeEditarHistorial();
 
@@ -170,7 +203,7 @@
                 modal.id = 'modal-ficha-paciente';
                 modal.className = 'modal-overlay';
                 modal.innerHTML = `
-                    <div class="modal-content" style="max-width:600px;">
+                    <div class="modal-content" style="max-width:700px; max-height:90vh; overflow-y:auto;">
                         <span class="close" onclick="cerrarModalFichaPaciente()">&times;</span>
                         <div id="modal-ficha-paciente-body"></div>
                     </div>
@@ -273,6 +306,8 @@
                 fechaObj = new Date(atencion.fechaRegistro);
             } else if (atencion.fechaRegistro && atencion.fechaRegistro.seconds) {
                 fechaObj = new Date(atencion.fechaRegistro.seconds * 1000);
+            } else if (atencion.fechaRegistro && atencion.fechaRegistro.toDate) {
+                fechaObj = atencion.fechaRegistro.toDate();
             }
             if (fechaObj && !isNaN(fechaObj)) {
                 fechaTexto = fechaObj.toLocaleDateString('es-CL');
@@ -282,14 +317,27 @@
         const tipoFormateado = formatearTipoAtencion(atencion && atencion.tipoAtencion ? atencion.tipoAtencion : "");
         const descripcion = atencion && atencion.descripcion ? atencion.descripcion : "Sin descripción";
         const profesionalNombre = atencion && atencion.profesional ? atencion.profesional : "Profesional no especificado";
+        
         // Solo clickeable si puede editar
         const clickable = puedeEditar ? `onclick="abrirModalEditarAtencion('${docId}', '${encodeURIComponent(descripcion)}', '${atencion.tipoAtencion || ""}', '${rutPaciente}')"` : "";
+        const cursorStyle = puedeEditar ? 'pointer' : 'default';
 
         return `
-            <div class="historial-entry" data-entry-id="${docId}" style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:1rem; margin-bottom:1rem; cursor:${puedeEditar ? 'pointer' : 'default'};" ${clickable}>
-                <div><b>${fechaTexto || ''} ${horaTexto || ''}</b> - ${tipoFormateado || ''}</div>
-                <div><i>${profesionalNombre || ''}</i></div>
-                <div>${descripcion}</div>
+            <div class="historial-entry" data-entry-id="${docId}" style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:1rem; margin-bottom:1rem; cursor:${cursorStyle}; transition: all 0.2s ease;" ${clickable}>
+                <div style="font-weight:600; color:#2563eb; margin-bottom:4px;">
+                    ${fechaTexto || ''} ${horaTexto || ''} - ${tipoFormateado || ''}
+                </div>
+                <div style="font-style:italic; color:#6b7280; margin-bottom:8px; font-size:0.9rem;">
+                    ${profesionalNombre || ''}
+                </div>
+                <div style="color:#374151; line-height:1.5;">
+                    ${descripcion}
+                </div>
+                ${puedeEditar ? `
+                    <div style="margin-top:8px; padding-top:8px; border-top:1px solid #e5e7eb; font-size:0.8rem; color:#6b7280;">
+                        <i class="fas fa-edit"></i> Haz clic para editar
+                    </div>
+                ` : ''}
             </div>
         `;
     }
@@ -337,15 +385,20 @@
                         </div>
                         <div class="form-group">
                             <label for="editar-atencion-descripcion">Descripción *</label>
-                            <textarea id="editar-atencion-descripcion" class="form-textarea" rows="5" required></textarea>
+                            <textarea id="editar-atencion-descripcion" class="form-textarea" rows="5" required placeholder="Describe la atención realizada..."></textarea>
                         </div>
-                        <div class="form-actions" style="display:flex; gap:1rem; justify-content:flex-end;">
+                        <div class="form-actions" style="display:flex; gap:1rem; justify-content:space-between; margin-top:1.5rem;">
                             <button type="button" class="btn btn-danger" onclick="eliminarAtencionDesdeModal('${atencionId}', '${rutPaciente}')">
                                 <i class="fas fa-trash"></i> Eliminar
                             </button>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Guardar Cambios
-                            </button>
+                            <div style="display:flex; gap:1rem;">
+                                <button type="button" class="btn btn-outline" onclick="cerrarModalEditarAtencion()">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Guardar
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -356,7 +409,12 @@
         document.getElementById('editar-atencion-descripcion').value = descripcion || "";
         document.getElementById('editar-atencion-tipo').value = tipoAtencion || "";
 
-        document.getElementById('form-editar-atencion').onsubmit = async function(e) {
+        // Configurar el evento de envío del formulario
+        const form = document.getElementById('form-editar-atencion');
+        // Limpiar eventos anteriores
+        form.onsubmit = null;
+        
+        form.onsubmit = async function(e) {
             e.preventDefault();
             const nuevaDescripcion = document.getElementById('editar-atencion-descripcion').value.trim();
             const nuevoTipo = document.getElementById('editar-atencion-tipo').value;
@@ -373,9 +431,11 @@
                 });
                 window.showNotification && window.showNotification("Atención editada correctamente", "success");
                 cerrarModalEditarAtencion();
+                // Recargar historial
                 const profesional = await obtenerProfesionalActual();
                 await cargarHistorialClinicoMejorado(rutPaciente, puedeEditarHistorial(), profesional);
             } catch (error) {
+                console.error('Error al editar atención:', error);
                 window.showNotification && window.showNotification("Error al editar atención: " + error.message, "error");
             }
         };
@@ -390,15 +450,17 @@
     };
 
     window.eliminarAtencionDesdeModal = async function(atencionId, rutPaciente) {
-        if (!confirm('¿Seguro que deseas eliminar esta atención?')) return;
+        if (!confirm('¿Seguro que deseas eliminar esta atención? Esta acción no se puede deshacer.')) return;
         try {
             const db = window.getFirestore();
             await db.collection('atenciones').doc(atencionId).delete();
             window.showNotification && window.showNotification("Atención eliminada correctamente", "success");
             cerrarModalEditarAtencion();
+            // Recargar historial
             const profesional = await obtenerProfesionalActual();
             await cargarHistorialClinicoMejorado(rutPaciente, puedeEditarHistorial(), profesional);
         } catch (error) {
+            console.error('Error al eliminar atención:', error);
             window.showNotification && window.showNotification("Error al eliminar atención: " + error.message, "error");
         }
     };
@@ -480,9 +542,11 @@
             await db.collection('atenciones').add(nuevaAtencion);
             window.showNotification && window.showNotification('Atención registrada correctamente', 'success');
             cerrarModalNuevaAtencion();
+            // Recargar historial
             const profesionalActualizado = await obtenerProfesionalActual();
             await cargarHistorialClinicoMejorado(rutPaciente, puedeEditarHistorial(), profesionalActualizado);
         } catch (error) {
+            console.error('Error al guardar atención:', error);
             window.showNotification && window.showNotification('Error al guardar la atención: ' + error.message, 'error');
         }
     }
