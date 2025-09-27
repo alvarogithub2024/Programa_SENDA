@@ -1,8 +1,4 @@
-/**
- * SOLICITUDES/GESTOR.JS - Gestor de Solicitudes Optimizado
- */
 
-// Variables globales
 let solicitudesData = [];
 let filteredSolicitudesData = [];
 let currentFilters = {
@@ -15,7 +11,6 @@ let currentFilters = {
 let isAutoRefreshEnabled = true;
 let autoRefreshInterval = null;
 
-// Configuración de estados y prioridades
 const ESTADOS_SOLICITUDES = {
     'pendiente': { label: 'Pendiente', color: '#f59e0b', icon: '⏳' },
     'en_proceso': { label: 'En Proceso', color: '#3b82f6', icon: '🔄' },
@@ -31,9 +26,6 @@ const PRIORIDADES_SOLICITUDES = {
     'baja': { label: 'Baja', color: '#10b981', icon: '🟢' }
 };
 
-/**
- * Inicializar gestor de solicitudes
- */
 window.initSolicitudesManager = function() {
     try {
         console.log('📋 Inicializando gestor de solicitudes...');
@@ -62,9 +54,6 @@ window.initSolicitudesManager = function() {
     }
 };
 
-/**
- * Carga todas las solicitudes desde las 3 colecciones
- */
 function loadAllSolicitudes() {
     return new Promise((resolve, reject) => {
         try {
@@ -76,7 +65,6 @@ function loadAllSolicitudes() {
             Promise.all([ingresoPromise, reingresoPromise, infoPromise]).then(([ingresoSnap, reingresoSnap, infoSnap]) => {
                 solicitudesData = [];
                 
-                // Procesar solicitudes de ingreso
                 ingresoSnap.forEach(doc => {
                     let data = doc.data();
                     data.id = doc.id;
@@ -87,7 +75,6 @@ function loadAllSolicitudes() {
                     solicitudesData.push(data);
                 });
                 
-                // Procesar reingresos
                 reingresoSnap.forEach(doc => {
                     let data = doc.data();
                     data.id = doc.id;
@@ -100,7 +87,6 @@ function loadAllSolicitudes() {
                     solicitudesData.push(data);
                 });
                 
-                // Procesar solicitudes de información
                 infoSnap.forEach(doc => {
                     let data = doc.data();
                     data.id = doc.id;
@@ -112,7 +98,6 @@ function loadAllSolicitudes() {
                     solicitudesData.push(data);
                 });
                 
-                // Ordenar por fecha descendente
                 solicitudesData.sort((a, b) => (b.fecha?.getTime?.() || 0) - (a.fecha?.getTime?.() || 0));
                 resolve();
             }).catch(error => {
@@ -129,9 +114,6 @@ function loadAllSolicitudes() {
     });
 }
 
-/**
- * Renderiza la tabla de solicitudes
- */
 function renderSolicitudesTable() {
     try {
         const tableBody = document.getElementById('solicitudes-table-body');
@@ -143,7 +125,6 @@ function renderSolicitudesTable() {
         }
         
         const rows = filteredSolicitudesData.map(solicitud => {
-            // Estado visual
             let estadoHtml;
             if (solicitud.origen === 'informacion') {
                 estadoHtml = `<span class="estado-badge" style="background-color:#4f46e5;color:#fff;border:1px solid #818cf8;">
@@ -162,7 +143,6 @@ function renderSolicitudesTable() {
             
             const prioridadConfig = PRIORIDADES_SOLICITUDES[solicitud.prioridad] || PRIORIDADES_SOLICITUDES['media'];
 
-            // Botones de acción
             let botones = `
                 <button class="btn-accion btn-ver" onclick="verDetalleSolicitud('${solicitud.id}')" title="Ver detalles">
                     <i class="fas fa-eye"></i>
@@ -256,7 +236,6 @@ function renderSolicitudesTable() {
     }
 }
 
-// Funciones de filtros y configuración
 function setupFilters() {
     fillSelectOptions('filtro-estado-solicitudes', ['todos', 'pendiente', 'en_proceso', 'agendada', 'completada'], {
         todos: 'Todos los estados',
@@ -277,7 +256,6 @@ function setupFilters() {
         todos: 'Todos los CESFAM'
     });
 
-    // Event listeners para filtros
     const filters = [
         { id: 'filtro-estado-solicitudes', prop: 'estado' },
         { id: 'filtro-prioridad-solicitudes', prop: 'prioridad' },
@@ -295,7 +273,6 @@ function setupFilters() {
         }
     });
 
-    // Filtro de búsqueda
     const searchInput = document.getElementById('buscar-solicitudes');
     if (searchInput) {
         searchInput.addEventListener('input', function(e) {
@@ -419,10 +396,8 @@ function updateSolicitudesCounter() {
 }
 
 function updateSolicitudesStats() {
-    // Implementa según tus necesidades de estadísticas
 }
 
-// Utilidades auxiliares
 function isSameDay(date1, date2) {
     return date1 && date2 &&
         date1.getDate() === date2.getDate() &&
@@ -430,7 +405,6 @@ function isSameDay(date1, date2) {
         date1.getFullYear() === date2.getFullYear();
 }
 
-// Funciones de acciones sobre solicitudes
 function verDetalleSolicitud(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
@@ -616,7 +590,6 @@ function guardarEdicionSolicitud() {
     });
 }
 
-// Event listeners globales
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.dropdown-acciones')) {
         document.querySelectorAll('.dropdown-menu').forEach(menu => {
@@ -625,12 +598,10 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// Funciones de recarga
 window.reloadSolicitudesFromFirebase = function() {
     loadAllSolicitudes().then(applyCurrentFilters);
 };
 
-// Exportar funciones globalmente
 window.verDetalleSolicitud = verDetalleSolicitud;
 window.editarSolicitud = editarSolicitud;
 window.agendarCitaSolicitud = agendarCitaSolicitud;
