@@ -290,52 +290,88 @@
     }
 
     // ==== ENTRADAS HISTORIAL: CLICKEABLES PARA EDICIÓN INDIVIDUAL ====
-    function construirEntradaHistorial(docId, atencion, puedeEditar, rutPaciente) {
-        let fechaTexto = '';
-        let horaTexto = '';
-        // Controlar undefined
-        if (atencion && atencion.fechaRegistro) {
-            let fechaObj;
-            if (typeof atencion.fechaRegistro === 'string') {
-                fechaObj = new Date(atencion.fechaRegistro);
-            } else if (atencion.fechaRegistro && atencion.fechaRegistro.seconds) {
-                fechaObj = new Date(atencion.fechaRegistro.seconds * 1000);
-            } else if (atencion.fechaRegistro && atencion.fechaRegistro.toDate) {
-                fechaObj = atencion.fechaRegistro.toDate();
-            }
-            if (fechaObj && !isNaN(fechaObj)) {
-                fechaTexto = fechaObj.toLocaleDateString('es-CL');
-                horaTexto = fechaObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
-            }
+   function construirEntradaHistorial(docId, atencion, puedeEditar, rutPaciente) {
+    let fechaTexto = '';
+    let horaTexto = '';
+    
+    // Manejar fecha
+    if (atencion && atencion.fechaRegistro) {
+        let fechaObj;
+        if (typeof atencion.fechaRegistro === 'string') {
+            fechaObj = new Date(atencion.fechaRegistro);
+        } else if (atencion.fechaRegistro && atencion.fechaRegistro.seconds) {
+            fechaObj = new Date(atencion.fechaRegistro.seconds * 1000);
+        } else if (atencion.fechaRegistro && atencion.fechaRegistro.toDate) {
+            fechaObj = atencion.fechaRegistro.toDate();
         }
-        const tipoFormateado = formatearTipoAtencion(atencion && atencion.tipoAtencion ? atencion.tipoAtencion : "");
-        const descripcion = atencion && atencion.descripcion ? atencion.descripcion : "Sin descripción";
-        const profesionalNombre = atencion && atencion.profesional ? atencion.profesional : "Profesional no especificado";
-        
-        // Solo clickeable si puede editar
-        const clickable = puedeEditar ? `onclick="abrirModalEditarAtencionSeguro('${docId}', '${encodeURIComponent(descripcion)}', '${atencion.tipoAtencion || ""}', '${rutPaciente}')"` : "";
-        const cursorStyle = puedeEditar ? 'pointer' : 'default';
-
-        return `
-            <div class="historial-entry" data-entry-id="${docId}" style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:1rem; margin-bottom:1rem; cursor:${cursorStyle}; transition: all 0.2s ease;" ${clickable}>
-                <div style="font-weight:600; color:#2563eb; margin-bottom:4px;">
-                    ${fechaTexto || ''} ${horaTexto || ''} - ${tipoFormateado || ''}
-                </div>
-                <div style="font-style:italic; color:#6b7280; margin-bottom:8px; font-size:0.9rem;">
-                    ${profesionalNombre || ''}
-                </div>
-                <div style="color:#374151; line-height:1.5;">
-                    ${descripcion}
-                </div>
-                ${puedeEditar ? `
-                    <div style="margin-top:8px; padding-top:8px; border-top:1px solid #e5e7eb; font-size:0.8rem; color:#6b7280;">
-                        <i class="fas fa-edit"></i> Haz clic para editar
-                    </div>
-                ` : ''}
-            </div>
-        `;
+        if (fechaObj && !isNaN(fechaObj)) {
+            fechaTexto = fechaObj.toLocaleDateString('es-CL');
+            horaTexto = fechaObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+        }
     }
+    
+    const tipoFormateado = formatearTipoAtencion(atencion?.tipoAtencion || "");
+    const descripcion = atencion?.descripcion || "Sin descripción";
+    const profesionalNombre = atencion?.profesional || "Profesional no especificado";
+    
+    // Escapar comillas en la descripción para el onclick
+    const descripcionEscapada = descripcion.replace(/'/g, "\\'").replace(/"/g, '\\"');
+    const tipoEscapado = (atencion?.tipoAtencion || "").replace(/'/g, "\\'").replace(/"/g, '\\"');
+    
+    // Verificar permisos de edición
+    const puedeEditarRealmente = window.puedeEditarHistorial ? window.puedeEditarHistorial() : false;
+    
+    console.log('🔍 Construyendo entrada historial:', {
+        docId,
+        puedeEditar,
+        puedeEditarRealmente,
+        rutPaciente,
+        descripcion: descripcion.substring(0, 50) + '...'
+    });
+    
+    // Solo hacer clickeable si realmente puede editar
+    const esClickeable = puedeEditarRealmente;
+    const cursorStyle = esClickeable ? 'pointer' : 'default';
+    const hoverEffect = esClickeable ? 'historial-entry-hover' : '';
+    
+    // Función onclick - IMPORTANTE: usar window.abrirModalEditarAtencionSeguro
+    const onclickHandler = esClickeable ? 
+        `onclick="window.abrirModalEditarAtencionSeguro('${docId}', '${encodeURIComponent(descripcion)}', '${atencion?.tipoAtencion || ""}', '${rutPaciente}')"` : 
+        '';
 
+    return `
+        <div class="historial-entry ${hoverEffect}" 
+             data-entry-id="${docId}" 
+             style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:1rem; margin-bottom:1rem; cursor:${cursorStyle}; transition: all 0.2s ease;" 
+             ${onclickHandler}
+             ${esClickeable ? 'title="Haz clic para editar esta atención"' : ''}>
+            
+            <div style="font-weight:600; color:#2563eb; margin-bottom:4px; font-size:1rem;">
+                ${fechaTexto} ${horaTexto} - ${tipoFormateado}
+            </div>
+            
+            <div style="font-style:italic; color:#6b7280; margin-bottom:8px; font-size:0.9rem;">
+                <i class="fas fa-user-md"></i> ${profesionalNombre}
+            </div>
+            
+            <div style="color:#374151; line-height:1.5; margin-bottom:${esClickeable ? '8px' : '0'};">
+                ${descripcion}
+            </div>
+            
+            ${esClickeable ? `
+                <div style="margin-top:8px; padding-top:8px; border-top:1px solid #e5e7eb; font-size:0.8rem; color:#6b7280; display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-edit"></i> 
+                    <span>Haz clic para editar</span>
+                </div>
+            ` : `
+                <div style="margin-top:8px; padding-top:8px; border-top:1px solid #e5e7eb; font-size:0.8rem; color:#9ca3af; display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-eye"></i> 
+                    <span>Solo lectura</span>
+                </div>
+            `}
+        </div>
+    `;
+}
     function formatearTipoAtencion(tipo) {
         const tipos = {
             'consulta': 'Consulta General',
@@ -405,6 +441,7 @@
             `;
             document.body.appendChild(modal);
         }
+        
         modal.style.display = 'flex';
         document.getElementById('editar-atencion-descripcion').value = descripcion || "";
         document.getElementById('editar-atencion-tipo').value = tipoAtencion || "";
