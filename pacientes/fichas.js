@@ -1,6 +1,5 @@
 // ===================================================================
-// ===================================================================
-// FICHA DEL PACIENTE - VERSIÓN SINCRONIZADA CON SISTEMA DE PERMISOS
+// FICHA DEL PACIENTE CON EDICIÓN MODAL DE ATENCIONES INDIVIDUALES
 // ===================================================================
 
 (function() {
@@ -290,88 +289,85 @@
     }
 
     // ==== ENTRADAS HISTORIAL: CLICKEABLES PARA EDICIÓN INDIVIDUAL ====
-   function construirEntradaHistorial(docId, atencion, puedeEditar, rutPaciente) {
-    let fechaTexto = '';
-    let horaTexto = '';
-    
-    // Manejar fecha
-    if (atencion && atencion.fechaRegistro) {
-        let fechaObj;
-        if (typeof atencion.fechaRegistro === 'string') {
-            fechaObj = new Date(atencion.fechaRegistro);
-        } else if (atencion.fechaRegistro && atencion.fechaRegistro.seconds) {
-            fechaObj = new Date(atencion.fechaRegistro.seconds * 1000);
-        } else if (atencion.fechaRegistro && atencion.fechaRegistro.toDate) {
-            fechaObj = atencion.fechaRegistro.toDate();
+    function construirEntradaHistorial(docId, atencion, puedeEditar, rutPaciente) {
+        let fechaTexto = '';
+        let horaTexto = '';
+        
+        // Manejar fecha
+        if (atencion && atencion.fechaRegistro) {
+            let fechaObj;
+            if (typeof atencion.fechaRegistro === 'string') {
+                fechaObj = new Date(atencion.fechaRegistro);
+            } else if (atencion.fechaRegistro && atencion.fechaRegistro.seconds) {
+                fechaObj = new Date(atencion.fechaRegistro.seconds * 1000);
+            } else if (atencion.fechaRegistro && atencion.fechaRegistro.toDate) {
+                fechaObj = atencion.fechaRegistro.toDate();
+            }
+            if (fechaObj && !isNaN(fechaObj)) {
+                fechaTexto = fechaObj.toLocaleDateString('es-CL');
+                horaTexto = fechaObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+            }
         }
-        if (fechaObj && !isNaN(fechaObj)) {
-            fechaTexto = fechaObj.toLocaleDateString('es-CL');
-            horaTexto = fechaObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
-        }
-    }
-    
-    const tipoFormateado = formatearTipoAtencion(atencion?.tipoAtencion || "");
-    const descripcion = atencion?.descripcion || "Sin descripción";
-    const profesionalNombre = atencion?.profesional || "Profesional no especificado";
-    
-    // Escapar comillas en la descripción para el onclick
-    const descripcionEscapada = descripcion.replace(/'/g, "\\'").replace(/"/g, '\\"');
-    const tipoEscapado = (atencion?.tipoAtencion || "").replace(/'/g, "\\'").replace(/"/g, '\\"');
-    
-    // Verificar permisos de edición
-    const puedeEditarRealmente = window.puedeEditarHistorial ? window.puedeEditarHistorial() : false;
-    
-    console.log('🔍 Construyendo entrada historial:', {
-        docId,
-        puedeEditar,
-        puedeEditarRealmente,
-        rutPaciente,
-        descripcion: descripcion.substring(0, 50) + '...'
-    });
-    
-    // Solo hacer clickeable si realmente puede editar
-    const esClickeable = puedeEditarRealmente;
-    const cursorStyle = esClickeable ? 'pointer' : 'default';
-    const hoverEffect = esClickeable ? 'historial-entry-hover' : '';
-    
-    // Función onclick - IMPORTANTE: usar window.abrirModalEditarAtencionSeguro
-    const onclickHandler = esClickeable ? 
-        `onclick="window.abrirModalEditarAtencionSeguro('${docId}', '${encodeURIComponent(descripcion)}', '${atencion?.tipoAtencion || ""}', '${rutPaciente}')"` : 
-        '';
+        
+        const tipoFormateado = formatearTipoAtencion(atencion?.tipoAtencion || "");
+        const descripcion = atencion?.descripcion || "Sin descripción";
+        const profesionalNombre = atencion?.profesional || "Profesional no especificado";
+        
+        // Verificar permisos de edición
+        const puedeEditarRealmente = window.puedeEditarHistorial ? window.puedeEditarHistorial() : false;
+        
+        console.log('🔍 Construyendo entrada historial:', {
+            docId,
+            puedeEditar,
+            puedeEditarRealmente,
+            rutPaciente,
+            descripcion: descripcion.substring(0, 50) + '...'
+        });
+        
+        // Solo hacer clickeable si realmente puede editar
+        const esClickeable = puedeEditarRealmente;
+        const cursorStyle = esClickeable ? 'pointer' : 'default';
+        const hoverEffect = esClickeable ? 'historial-entry-hover' : '';
+        
+        // Función onclick - IMPORTANTE: usar window.abrirModalEditarAtencionSeguro
+        const onclickHandler = esClickeable ? 
+            `onclick="window.abrirModalEditarAtencionSeguro('${docId}', '${encodeURIComponent(descripcion)}', '${atencion?.tipoAtencion || ""}', '${rutPaciente}')"` : 
+            '';
 
-    return `
-        <div class="historial-entry ${hoverEffect}" 
-             data-entry-id="${docId}" 
-             style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:1rem; margin-bottom:1rem; cursor:${cursorStyle}; transition: all 0.2s ease;" 
-             ${onclickHandler}
-             ${esClickeable ? 'title="Haz clic para editar esta atención"' : ''}>
-            
-            <div style="font-weight:600; color:#2563eb; margin-bottom:4px; font-size:1rem;">
-                ${fechaTexto} ${horaTexto} - ${tipoFormateado}
-            </div>
-            
-            <div style="font-style:italic; color:#6b7280; margin-bottom:8px; font-size:0.9rem;">
-                <i class="fas fa-user-md"></i> ${profesionalNombre}
-            </div>
-            
-            <div style="color:#374151; line-height:1.5; margin-bottom:${esClickeable ? '8px' : '0'};">
-                ${descripcion}
-            </div>
-            
-            ${esClickeable ? `
-                <div style="margin-top:8px; padding-top:8px; border-top:1px solid #e5e7eb; font-size:0.8rem; color:#6b7280; display:flex; align-items:center; gap:6px;">
-                    <i class="fas fa-edit"></i> 
-                    <span>Haz clic para editar</span>
+        return `
+            <div class="historial-entry ${hoverEffect}" 
+                 data-entry-id="${docId}" 
+                 style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:1rem; margin-bottom:1rem; cursor:${cursorStyle}; transition: all 0.2s ease;" 
+                 ${onclickHandler}
+                 ${esClickeable ? 'title="Haz clic para editar esta atención"' : ''}>
+                
+                <div style="font-weight:600; color:#2563eb; margin-bottom:4px; font-size:1rem;">
+                    ${fechaTexto} ${horaTexto} - ${tipoFormateado}
                 </div>
-            ` : `
-                <div style="margin-top:8px; padding-top:8px; border-top:1px solid #e5e7eb; font-size:0.8rem; color:#9ca3af; display:flex; align-items:center; gap:6px;">
-                    <i class="fas fa-eye"></i> 
-                    <span>Solo lectura</span>
+                
+                <div style="font-style:italic; color:#6b7280; margin-bottom:8px; font-size:0.9rem;">
+                    <i class="fas fa-user-md"></i> ${profesionalNombre}
                 </div>
-            `}
-        </div>
-    `;
-}
+                
+                <div style="color:#374151; line-height:1.5; margin-bottom:${esClickeable ? '8px' : '0'};">
+                    ${descripcion}
+                </div>
+                
+                ${esClickeable ? `
+                    <div style="margin-top:8px; padding-top:8px; border-top:1px solid #e5e7eb; font-size:0.8rem; color:#6b7280; display:flex; align-items:center; gap:6px;">
+                        <i class="fas fa-edit"></i> 
+                        <span>Haz clic para editar</span>
+                    </div>
+                ` : `
+                    <div style="margin-top:8px; padding-top:8px; border-top:1px solid #e5e7eb; font-size:0.8rem; color:#9ca3af; display:flex; align-items:center; gap:6px;">
+                        <i class="fas fa-eye"></i> 
+                        <span>Solo lectura</span>
+                    </div>
+                `}
+            </div>
+        `;
+    }
+
     function formatearTipoAtencion(tipo) {
         const tipos = {
             'consulta': 'Consulta General',
@@ -385,96 +381,139 @@
 
     // ===== MODAL DE EDICIÓN/ELIMINACIÓN DE ATENCIÓN INDIVIDUAL =====
     window.abrirModalEditarAtencionSeguro = function(atencionId, descripcionEnc, tipoAtencion, rutPaciente) {
+        console.log('🔧 Intentando abrir modal de edición:', {
+            atencionId,
+            tipoAtencion,
+            rutPaciente,
+            puedeEditar: window.puedeEditarHistorial ? window.puedeEditarHistorial() : 'función no disponible'
+        });
+        
         // Verificar permisos antes de abrir
         if (!window.puedeEditarHistorial || !window.puedeEditarHistorial()) {
-            window.mostrarMensajePermisos && window.mostrarMensajePermisos('editar atenciones del historial clínico');
+            console.warn('🚫 Sin permisos para editar historial');
+            if (window.mostrarMensajePermisos) {
+                window.mostrarMensajePermisos('editar atenciones del historial clínico');
+            } else {
+                alert('No tienes permisos para editar el historial clínico');
+            }
             return;
         }
         
-        // Oculta la modal de ficha de paciente si está abierta
-        var fichaModal = document.getElementById('modal-ficha-paciente');
-        if (fichaModal) fichaModal.style.display = 'none';
+        console.log('✅ Permisos verificados, abriendo modal...');
+        
+        // Ocultar la modal de ficha de paciente
+        const fichaModal = document.getElementById('modal-ficha-paciente');
+        if (fichaModal) {
+            fichaModal.style.display = 'none';
+        }
 
         const descripcion = decodeURIComponent(descripcionEnc);
         let modal = document.getElementById('modal-editar-atencion');
-        if (!modal) {
-            modal = document.createElement('div');
-            modal.id = 'modal-editar-atencion';
-            modal.className = 'modal-overlay';
-            modal.innerHTML = `
-                <div class="modal-content" style="max-width:500px;">
-                    <span class="close" onclick="cerrarModalEditarAtencion()">&times;</span>
-                    <h2 style="color:#2563eb;">
-                        <i class="fas fa-edit"></i> Editar Atención
-                    </h2>
-                    <form id="form-editar-atencion">
-                        <div class="form-group">
-                            <label for="editar-atencion-tipo">Tipo de atención *</label>
-                            <select id="editar-atencion-tipo" class="form-select" required>
-                                <option value="">Selecciona tipo...</option>
-                                <option value="consulta">Consulta</option>
-                                <option value="seguimiento">Seguimiento</option>
-                                <option value="orientacion">Orientación</option>
-                                <option value="intervencion">Intervención</option>
-                                <option value="derivacion">Derivación</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="editar-atencion-descripcion">Descripción *</label>
-                            <textarea id="editar-atencion-descripcion" class="form-textarea" rows="5" required placeholder="Describe la atención realizada..."></textarea>
-                        </div>
-                        <div class="form-actions" style="display:flex; gap:1rem; justify-content:space-between; margin-top:1.5rem;">
-                            <button type="button" class="btn btn-danger" onclick="eliminarAtencionSeguro('${atencionId}', '${rutPaciente}')">
-                                <i class="fas fa-trash"></i> Eliminar
-                            </button>
-                            <div style="display:flex; gap:1rem;">
-                                <button type="button" class="btn btn-outline" onclick="cerrarModalEditarAtencion()">
-                                    <i class="fas fa-times"></i> Cancelar
-                                </button>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save"></i> Guardar
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            `;
-            document.body.appendChild(modal);
+        
+        // Eliminar modal existente si hay uno
+        if (modal) {
+            modal.remove();
         }
         
+        // Crear nuevo modal
+        modal = document.createElement('div');
+        modal.id = 'modal-editar-atencion';
+        modal.className = 'modal-overlay';
         modal.style.display = 'flex';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width:500px;">
+                <span class="close" onclick="cerrarModalEditarAtencion()">&times;</span>
+                <h2 style="color:#2563eb; display:flex; align-items:center; gap:8px; margin-bottom:1.5rem;">
+                    <i class="fas fa-edit"></i> Editar Atención
+                </h2>
+                <form id="form-editar-atencion">
+                    <div class="form-group">
+                        <label for="editar-atencion-tipo">Tipo de atención *</label>
+                        <select id="editar-atencion-tipo" class="form-select" required>
+                            <option value="">Selecciona tipo...</option>
+                            <option value="consulta">Consulta</option>
+                            <option value="seguimiento">Seguimiento</option>
+                            <option value="orientacion">Orientación</option>
+                            <option value="intervencion">Intervención</option>
+                            <option value="derivacion">Derivación</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editar-atencion-descripcion">Descripción *</label>
+                        <textarea id="editar-atencion-descripcion" class="form-textarea" rows="5" required 
+                                  placeholder="Describe la atención realizada..."></textarea>
+                    </div>
+                    <div class="form-actions" style="display:flex; gap:1rem; justify-content:space-between; margin-top:1.5rem;">
+                        <button type="button" class="btn btn-danger" onclick="eliminarAtencionSeguro('${atencionId}', '${rutPaciente}')">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                        <div style="display:flex; gap:1rem;">
+                            <button type="button" class="btn btn-outline" onclick="cerrarModalEditarAtencion()">
+                                <i class="fas fa-times"></i> Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Llenar valores
         document.getElementById('editar-atencion-descripcion').value = descripcion || "";
         document.getElementById('editar-atencion-tipo').value = tipoAtencion || "";
-
-        // Configurar el evento de envío del formulario
-        const form = document.getElementById('form-editar-atencion');
-        // Limpiar eventos anteriores
-        form.onsubmit = null;
         
+        // Configurar evento de envío
+        const form = document.getElementById('form-editar-atencion');
         form.onsubmit = async function(e) {
             e.preventDefault();
+            
             const nuevaDescripcion = document.getElementById('editar-atencion-descripcion').value.trim();
             const nuevoTipo = document.getElementById('editar-atencion-tipo').value;
+            
             if (!nuevaDescripcion || !nuevoTipo) {
-                window.showNotification && window.showNotification('Completa todos los campos', 'warning');
+                if (window.showNotification) {
+                    window.showNotification('Completa todos los campos', 'warning');
+                } else {
+                    alert('Completa todos los campos');
+                }
                 return;
             }
+            
             try {
+                console.log('💾 Guardando cambios en atención:', atencionId);
                 const db = window.getFirestore();
                 await db.collection("atenciones").doc(atencionId).update({
                     descripcion: nuevaDescripcion,
                     tipoAtencion: nuevoTipo,
                     fechaActualizacion: new Date().toISOString()
                 });
-                window.showNotification && window.showNotification("Atención editada correctamente", "success");
+                
+                if (window.showNotification) {
+                    window.showNotification("Atención editada correctamente", "success");
+                } else {
+                    alert("Atención editada correctamente");
+                }
+                
                 cerrarModalEditarAtencion();
+                
                 // Recargar historial
-                await cargarHistorialClinicoMejorado(rutPaciente, puedeEditarHistorial());
+                await cargarHistorialClinicoMejorado(rutPaciente, window.puedeEditarHistorial());
+                
             } catch (error) {
-                console.error('Error al editar atención:', error);
-                window.showNotification && window.showNotification("Error al editar atención: " + error.message, "error");
+                console.error('❌ Error al editar atención:', error);
+                if (window.showNotification) {
+                    window.showNotification("Error al editar atención: " + error.message, "error");
+                } else {
+                    alert("Error al editar atención: " + error.message);
+                }
             }
         };
+        
+        console.log('✅ Modal de edición creado y mostrado');
     };
 
     window.cerrarModalEditarAtencion = function() {
@@ -645,6 +684,48 @@
     window.cerrarModalFichaPaciente = function() {
         const modal = document.getElementById('modal-ficha-paciente');
         if (modal) modal.style.display = 'none';
+    };
+
+    // ===== FUNCIÓN DE DEBUG =====
+    window.debugHistorialClickeable = function() {
+        console.log('🔍 DEBUG: Verificando historial clínico clickeable');
+        
+        // Verificar si hay entradas
+        const entradas = document.querySelectorAll('.historial-entry');
+        console.log(`📝 Entradas encontradas: ${entradas.length}`);
+        
+        entradas.forEach((entrada, index) => {
+            const hasOnclick = entrada.hasAttribute('onclick');
+            const onclickValue = entrada.getAttribute('onclick');
+            const cursor = window.getComputedStyle(entrada).cursor;
+            
+            console.log(`Entrada ${index + 1}:`, {
+                hasOnclick,
+                onclick: onclickValue?.substring(0, 50) + '...',
+                cursor,
+                docId: entrada.dataset.entryId
+            });
+        });
+        
+        // Verificar permisos
+        console.log('🔐 Permisos actuales:');
+        console.log('- puedeEditarHistorial:', window.puedeEditarHistorial ? window.puedeEditarHistorial() : 'No disponible');
+        console.log('- Rol actual:', window.rolActual ? window.rolActual() : 'No disponible');
+        
+        // Verificar función global
+        console.log('🌐 Funciones globales:');
+        console.log('- abrirModalEditarAtencionSeguro:', typeof window.abrirModalEditarAtencionSeguro);
+        
+        // Test de click simulado
+        if (entradas.length > 0 && entradas[0].hasAttribute('onclick')) {
+            console.log('🖱️ Simulando click en primera entrada...');
+            try {
+                entradas[0].click();
+                console.log('✅ Click simulado exitoso');
+            } catch (error) {
+                console.error('❌ Error en click simulado:', error);
+            }
+        }
     };
 
 })();
