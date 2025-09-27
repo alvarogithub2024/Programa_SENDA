@@ -2642,7 +2642,301 @@ document.addEventListener('DOMContentLoaded', setupModalTabs);
     font-style: italic;
     padding: 2rem 1rem;
 }
-*/
+
+/* ===================================================================
+   CSS PARA HISTORIAL CLÍNICO EDITABLE
+   Agregar al final de styles.css
+   =================================================================== */
+
+/* Contenedor del historial clínico */
+#historial-clinico {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 2px solid var(--border-color);
+}
+
+#historial-clinico h4 {
+    color: var(--primary-blue);
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Botón para agregar nueva entrada */
+.btn-add-entry {
+    background: var(--success-green);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+}
+
+.btn-add-entry:hover {
+    background: var(--health-green);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Entradas del historial - clickeables */
+.historial-entry {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.historial-entry:hover {
+    border-color: var(--primary-blue) !important;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+    transform: translateY(-1px);
+}
+
+.historial-entry[onclick] {
+    cursor: pointer;
+}
+
+.historial-entry[onclick]:hover {
+    background: #f1f5f9;
+}
+
+/* Información de fecha y tipo */
+.historial-entry > div:first-child {
+    font-weight: 600;
+    color: var(--primary-blue);
+    margin-bottom: 4px;
+    font-size: 1rem;
+}
+
+/* Información del profesional */
+.historial-entry > div:nth-child(2) {
+    font-style: italic;
+    color: #6b7280;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+/* Descripción de la atención */
+.historial-entry > div:nth-child(3) {
+    color: #374151;
+    line-height: 1.5;
+    font-size: 0.95rem;
+}
+
+/* Indicador de que es editable */
+.historial-entry > div:last-child {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #e5e7eb;
+    font-size: 0.8rem;
+    color: #6b7280;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.historial-entry:hover > div:last-child {
+    opacity: 1;
+}
+
+/* Modal específico para editar atención */
+#modal-editar-atencion .modal-content {
+    max-width: 500px;
+    width: 100%;
+}
+
+#modal-editar-atencion h2 {
+    color: var(--primary-blue);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#modal-editar-atencion .form-group {
+    margin-bottom: 1.2rem;
+}
+
+#modal-editar-atencion .form-label {
+    font-weight: 500;
+    color: var(--text-dark);
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+#modal-editar-atencion .form-select,
+#modal-editar-atencion .form-textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    transition: border-color 0.2s ease;
+}
+
+#modal-editar-atencion .form-select:focus,
+#modal-editar-atencion .form-textarea:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+#modal-editar-atencion .form-textarea {
+    resize: vertical;
+    min-height: 120px;
+    font-family: inherit;
+}
+
+/* Acciones del modal de edición */
+#modal-editar-atencion .form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+#modal-editar-atencion .form-actions > div {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Modal para nueva atención */
+#modal-nueva-atencion .modal-content {
+    max-width: 500px;
+    width: 100%;
+}
+
+#modal-nueva-atencion h2 {
+    color: var(--primary-blue);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#modal-nueva-atencion .form-group {
+    margin-bottom: 1.2rem;
+}
+
+#modal-nueva-atencion .form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Estado de solo lectura para asistentes sociales */
+.historial-readonly .btn-add-entry {
+    display: none !important;
+}
+
+.historial-readonly .historial-entry {
+    cursor: default !important;
+}
+
+.historial-readonly .historial-entry:hover {
+    background: #f8fafc !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.historial-readonly .historial-entry > div:last-child {
+    display: none !important;
+}
+
+/* Mensaje cuando no hay historial */
+.no-historial {
+    text-align: center;
+    color: var(--text-medium);
+    font-style: italic;
+    padding: 2rem 1rem;
+    background: #f9fafb;
+    border-radius: 8px;
+    border: 2px dashed #e5e7eb;
+}
+
+.no-historial i {
+    display: block;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: #d1d5db;
+}
+
+/* Animaciones */
+@keyframes slideInFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.historial-entry {
+    animation: slideInFromRight 0.3s ease;
+}
+
+/* Loading state */
+.loading-message {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-medium);
+}
+
+.loading-message i {
+    font-size: 1.5rem;
+    color: var(--primary-blue);
+    margin-bottom: 0.5rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    #modal-editar-atencion .modal-content,
+    #modal-nueva-atencion .modal-content {
+        max-width: 95%;
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+    
+    #modal-editar-atencion .form-actions {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    #modal-editar-atencion .form-actions > div {
+        justify-content: center;
+        width: 100%;
+    }
+    
+    .historial-entry {
+        padding: 0.8rem;
+    }
+    
+    #historial-clinico h4 {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+}
+
 /* ================================
    13. RESPONSIVE DESIGN
    ================================ */
