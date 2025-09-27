@@ -1,8 +1,4 @@
-// REEMPLAZAR el contenido de seguimiento/citas-proximas.js
 
-// SEGUIMIENTO/CITAS-PROXIMAS.JS - VERSIÓN CORREGIDA
-
-// --- Utilidad para obtener hora actual Chile ---
 function getHoraActualChile() {
     let now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" }));
     let h = now.getHours();
@@ -10,13 +6,13 @@ function getHoraActualChile() {
     return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
 }
 
-// --- Utilidad para obtener fecha actual Chile ---
+
 function getFechaActualChile() {
     let now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" }));
-    return now.toISOString().slice(0, 10); // YYYY-MM-DD
+    return now.toISOString().slice(0, 10); 
 }
 
-// --- Mostrar el paciente de la hora actual en "Pacientes de Hoy" ---
+
 function mostrarPacienteActualHoy() {
     console.log('🔍 Buscando pacientes para hoy...');
     
@@ -49,7 +45,7 @@ function mostrarPacienteActualHoy() {
                 
                 if (cita.hora) {
                     let citaMin = parseInt(cita.hora.slice(0,2),10)*60 + parseInt(cita.hora.slice(3,5),10);
-                    // Mostrar paciente si la cita comenzó hace <= 15 minutos
+                  
                     if (nowMinutes >= citaMin && nowMinutes <= citaMin + 15) {
                         citaActual = cita;
                         console.log(`✅ Paciente actual encontrado: ${cita.pacienteNombre || cita.nombre}`);
@@ -113,7 +109,6 @@ function mostrarPacienteActualHoy() {
         });
 }
 
-// --- Mostrar todas las citas restantes del día en "Próximas citas" ---
 function mostrarCitasRestantesHoy() {
     console.log('🔍 Buscando próximas citas del día...');
     
@@ -139,14 +134,13 @@ function mostrarCitasRestantesHoy() {
                 let cita = doc.data();
                 cita.id = doc.id;
                 
-                // Solo mostrar citas con hora mayor a la actual
                 if (cita.hora && cita.hora > horaActual) {
                     citas.push(cita);
                     console.log(`⏰ Próxima cita: ${cita.pacienteNombre || cita.nombre} a las ${cita.hora}`);
                 }
             });
 
-            // Ordenar por hora
+ 
             citas.sort((a, b) => a.hora.localeCompare(b.hora));
 
             let cont = document.getElementById("upcoming-appointments-grid");
@@ -206,7 +200,7 @@ function mostrarCitasRestantesHoy() {
         });
 }
 
-// --- Función global para abrir el modal de atención ---
+
 window.abrirModalRegistrarAtencion = function(citaId) {
     console.log(`🔍 Abriendo modal para cita: ${citaId}`);
     
@@ -239,7 +233,7 @@ window.abrirModalRegistrarAtencion = function(citaId) {
         document.getElementById("atencion-cita-id").value = cita.id;
         document.getElementById("atencion-paciente-id").value = cita.pacienteId || "";
 
-        // Limpiar formulario
+
         document.getElementById("atencion-descripcion").value = "";
         document.getElementById("atencion-tipo").value = "";
 
@@ -251,40 +245,36 @@ window.abrirModalRegistrarAtencion = function(citaId) {
     });
 };
 
-// --- Función para inicializar el módulo ---
 function initUpcomingAppointments() {
     console.log('🚀 Inicializando seguimiento de citas...');
     
-    // Cargar inmediatamente
+
     mostrarPacienteActualHoy();
     mostrarCitasRestantesHoy();
     
-    // Actualizar cada minuto
+ 
     const intervalo = setInterval(function() {
         console.log('🔄 Actualizando citas automáticamente...');
         mostrarPacienteActualHoy();
         mostrarCitasRestantesHoy();
-    }, 60 * 1000); // 60 segundos
+    }, 60 * 1000); 
     
     console.log('✅ Seguimiento de citas inicializado. Actualizando cada minuto.');
     
-    // Cleanup function
+
     return function cleanup() {
         clearInterval(intervalo);
         console.log('🧹 Cleanup del seguimiento de citas completado');
     };
 }
 
-// Inicialización automática
+
 document.addEventListener("DOMContentLoaded", function() {
-    // Esperar un poco para asegurar que Firebase esté listo
     setTimeout(initUpcomingAppointments, 2000);
 });
 
-// Exportar funciones globalmente
+
 window.mostrarPacienteActualHoy = mostrarPacienteActualHoy;
 window.mostrarCitasRestantesHoy = mostrarCitasRestantesHoy;
 window.initUpcomingAppointments = initUpcomingAppointments;
-
-// Alias para compatibilidad con seguimiento/timeline.js
 window.initUpcomingAppointmentsFromSeguimiento = initUpcomingAppointments;
