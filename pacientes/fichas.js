@@ -463,7 +463,6 @@
         document.getElementById('editar-atencion-descripcion').value = descripcion || "";
         document.getElementById('editar-atencion-tipo').value = tipoAtencion || "";
         
-        // Eventos del formulario
         const form = document.getElementById('form-editar-atencion');
         form.onsubmit = async function(e) {
             e.preventDefault();
