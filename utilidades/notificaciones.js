@@ -1,4 +1,3 @@
-
 function showNotification(mensaje, tipo, duracion) {
     tipo = tipo || 'info';
     duracion = duracion || 3000;
@@ -88,9 +87,7 @@ function showNotificationSafe(mensaje, tipo, duracion) {
     }
 }
 
-
 initializeLogger();
-
 
 window.showNotificationSafe = showNotificationSafe;
 window.initializeLogger = initializeLogger;
