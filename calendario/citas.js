@@ -82,6 +82,7 @@ function autocompletarNombreProfesionalPaciente() {
   const selected = selProfesional.options[selProfesional.selectedIndex];
   nombreInput.value = selected && selected.dataset.nombre ? selected.dataset.nombre : '';
 }
+
 function guardarCitaPaciente(datosCita, callback) {
   const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
   const datos = Object.assign({}, datosCita);
@@ -99,18 +100,32 @@ function guardarCitaPaciente(datosCita, callback) {
   db.collection("pacientes").where("rut", "==", rutLimpio).limit(1).get()
     .then(function(snapshot) {
       let pacienteId;
+      // Estructura completa del paciente, incluyendo profesionalDescripcion
       const pacienteData = {
-        nombre: datos.pacienteNombre,
-        rut: rutLimpio,
+        apellidos: datos.pacienteApellidos || "",
         cesfam: datos.cesfam,
-        telefono: datos.telefono || "",
-        email: datos.email || "",
+        descripcion: datos.descripcion || "",
         direccion: datos.direccion || "",
-        fechaRegistro: datos.fechaCreacion || new Date().toISOString(),
+        edad: datos.edad || "",
+        email: datos.email || "",
+        estado: datos.estado || "agendada",
+        fecha: datos.fechaCreacion,
+        motivacion: datos.motivacion || "",
+        nombre: datos.pacienteNombre,
+        paraMi: datos.paraMi || "",
+        rut: rutLimpio,
+        sustancias: datos.sustancias || [],
+        telefono: datos.telefono || "",
+        tiempoConsumo: datos.tiempoConsumo || "",
+        tipo: datos.tipo || "",
+        tratamientoPrevio: datos.tratamientoPrevio || "",
+        urgencia: datos.urgencia || "",
+        profesionalDescripcion: datos.profesionalDescripcion || "", // ESTE CAMPO es para contexto profesional, observaciones, etc.
       };
       if (!snapshot.empty) {
-        // Paciente existe
+        // Paciente existe: actualizar y setear el campo id
         pacienteId = snapshot.docs[0].id;
+        pacienteData.id = pacienteId; // el campo id ES el id de Firestore
         db.collection("pacientes").doc(pacienteId).set(pacienteData, { merge: true })
           .then(() => {
             datos.pacienteId = pacienteId;
@@ -124,6 +139,8 @@ function guardarCitaPaciente(datosCita, callback) {
         db.collection("pacientes").add(pacienteData)
           .then(function(docRef) {
             pacienteId = docRef.id;
+            pacienteData.id = pacienteId;
+            db.collection("pacientes").doc(pacienteId).set(pacienteData, { merge: true }); // agrega el campo id
             datos.pacienteId = pacienteId;
             crearCitaConPacienteId(db, datos, callback);
           })
@@ -137,7 +154,7 @@ function guardarCitaPaciente(datosCita, callback) {
       console.error("Error buscando paciente:", error);
       window.showNotification && window.showNotification("Error buscando paciente: "+error.message, "error");
     });
-}
+} 
 
 function crearCitaConPacienteId(db, datos, callback) {
   db.collection("citas").add(datos)
