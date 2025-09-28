@@ -406,26 +406,6 @@ function isSameDay(date1, date2) {
         date1.getMonth() === date2.getMonth() &&
         date1.getFullYear() === date2.getFullYear();
 }
-function calculateSolicitudesStats() {
-    let pendientes = 0, altaPrioridad = 0, completadas = 0, hoy = 0;
-    const hoyStr = (window.getFechaActualChile ? window.getFechaActualChile() : (new Date().toISOString().slice(0, 10)));
-
-    solicitudesData.forEach(solicitud => {
-        if ((solicitud.estado || '').toLowerCase() === 'pendiente') pendientes++;
-        if ((solicitud.prioridad || '').toLowerCase() === 'alta') altaPrioridad++;
-        if ((solicitud.estado || '').toLowerCase() === 'completada') completadas++;
-        // Chequea si la fecha es hoy (asegúrate de comparar en formato YYYY-MM-DD)
-        let fecha = '';
-        if (solicitud.fecha instanceof Date) {
-            fecha = solicitud.fecha.getFullYear() + '-' + String(solicitud.fecha.getMonth() + 1).padStart(2, '0') + '-' + String(solicitud.fecha.getDate()).padStart(2, '0');
-        } else if (typeof solicitud.fecha === 'string') {
-            fecha = solicitud.fecha.slice(0, 10);
-        }
-        if (fecha === hoyStr) hoy++;
-    });
-
-    return { pendientes, altaPrioridad, completadas, hoy };
-}
 
 function verDetalleSolicitud(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
