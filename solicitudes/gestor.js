@@ -118,12 +118,12 @@ function renderSolicitudesTable() {
     try {
         const tableBody = document.getElementById('solicitudes-table-body');
         if (!tableBody) return;
-
+        
         if (filteredSolicitudesData.length === 0) {
             tableBody.innerHTML = `<tr><td colspan="8" class="text-center" style="padding:48px;">No hay solicitudes</td></tr>`;
             return;
         }
-
+        
         const rows = filteredSolicitudesData.map(solicitud => {
             let estadoHtml;
             if (solicitud.origen === 'informacion') {
@@ -184,7 +184,7 @@ function renderSolicitudesTable() {
                                 ${solicitud.nombre || ""} ${solicitud.apellidos || ""}
                             </div>
                             <div class="paciente-detalles">
-                                RUT: ${window.formatRUT ? window.formatRUT(solicitud.rut) : (solicitud.rut || "")}<br>
+                                RUT: ${solicitud.rut || ""}<br>
                                 Edad: ${solicitud.edad || ""} años
                             </div>
                         </div>
@@ -229,7 +229,7 @@ function renderSolicitudesTable() {
                 </tr>
             `;
         }).join('');
-
+        
         tableBody.innerHTML = rows;
     } catch (error) {
         console.error('❌ Error renderizando tabla:', error);
@@ -346,16 +346,14 @@ function applyCurrentFilters() {
                     break;
             }
         }
-       if (currentFilters.busqueda) {
-   
-        const rut = (solicitud.rut || '').replace(/[.\-]/g, '').toLowerCase();
-        const nombre = (solicitud.nombre || '').toLowerCase();
-        const apellidos = (solicitud.apellidos || '').toLowerCase();
-        const email = (solicitud.email || '').toLowerCase();
-        const q = currentFilters.busqueda.replace(/[.\-]/g, '').toLowerCase();
-
-        if (!rut.includes(q) && !nombre.includes(q) && !apellidos.includes(q) && !email.includes(q)) return false;
-            }
+        if (currentFilters.busqueda) {
+            const rut = (solicitud.rut || '').replace(/\./g, '').toLowerCase();
+            const nombre = (solicitud.nombre || '').toLowerCase();
+            const apellidos = (solicitud.apellidos || '').toLowerCase();
+            const email = (solicitud.email || '').toLowerCase();
+            const q = currentFilters.busqueda.replace(/\./g, '').toLowerCase();
+            if (!rut.includes(q) && !nombre.includes(q) && !apellidos.includes(q) && !email.includes(q)) return false;
+        }
         return true;
     });
     
@@ -410,18 +408,21 @@ function isSameDay(date1, date2) {
 function verDetalleSolicitud(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
-    document.getElementById('modal-detalle-nombre').textContent = 
-        (solicitud.nombre || '') + (solicitud.apellidos ? ' ' + solicitud.apellidos : '');
-    document.getElementById('modal-detalle-rut').textContent = window.formatRUT ? window.formatRUT(solicitud.rut) : (solicitud.rut || '');
+    
+    document.getElementById('modal-detalle-nombre').textContent = solicitud.nombre || '';
+    document.getElementById('modal-detalle-rut').textContent = solicitud.rut || '';
     document.getElementById('modal-detalle-telefono').textContent = solicitud.telefono || '';
     document.getElementById('modal-detalle-email').textContent = solicitud.email || '';
-    document.getElementById('modal-detalle-motivo').textContent = solicitud.descripcion || '';
+    document.getElementById('modal-detalle-motivo').textContent = solicitud.descripcion || ''; // Motivo de atención (corregido)
     document.getElementById('modal-detalle-cesfam').textContent = solicitud.cesfam || '';
+    document.getElementById('modal-detalle-prioridad').textContent = solicitud.prioridad || '';
+    document.getElementById('modal-detalle-estado').textContent = solicitud.estado || '';
     document.getElementById('modal-detalle-fecha').textContent = solicitud.fecha ? new Date(solicitud.fecha).toLocaleDateString('es-CL') : '';
     document.getElementById('modal-detalle-sustancias').textContent = Array.isArray(solicitud.sustancias) ? solicitud.sustancias.join(', ') : '';
-
+    
     document.getElementById('modal-detalle').style.display = 'flex';
 }
+
 function editarSolicitud(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
