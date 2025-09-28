@@ -82,46 +82,44 @@ function autocompletarNombreProfesionalPaciente() {
   const selected = selProfesional.options[selProfesional.selectedIndex];
   nombreInput.value = selected && selected.dataset.nombre ? selected.dataset.nombre : '';
 }
-
 function guardarCitaPaciente(datosCita, callback) {
   const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
   const datos = Object.assign({}, datosCita);
   datos.fechaCreacion = datos.fechaCreacion || new Date().toISOString();
 
-  // 1. Limpiar rut para búsqueda
   const rutLimpio = datos.pacienteRut.replace(/[.\-]/g, "").toUpperCase();
 
-  // 2. Buscar paciente por rut
+  if (!rutLimpio) {
+    window.showNotification && window.showNotification("Error: El paciente no tiene RUT, no se puede crear en la colección pacientes.", "error");
+    if (typeof callback === "function") callback(null, "RUT vacío");
+    return;
+  }
+
   db.collection("pacientes").where("rut", "==", rutLimpio).limit(1).get()
     .then(function(snapshot) {
       let pacienteId;
+      const pacienteData = {
+        nombre: datos.pacienteNombre,
+        rut: rutLimpio,
+        cesfam: datos.cesfam,
+        telefono: datos.telefono || "",
+        email: datos.email || "",
+        direccion: datos.direccion || "",
+        fechaRegistro: datos.fechaCreacion || new Date().toISOString(),
+      };
       if (!snapshot.empty) {
-        // Paciente existe, usar su id Firestore
+        // Paciente existe
         pacienteId = snapshot.docs[0].id;
-        // Actualizar datos del paciente si corresponde
-        const pacienteData = {
-          nombre: datos.pacienteNombre,
-          rut: rutLimpio,
-          cesfam: datos.cesfam,
-          telefono: datos.telefono || "",
-          email: datos.email || "",
-          direccion: datos.direccion || "",
-          fechaRegistro: datos.fechaCreacion || new Date().toISOString(),
-        };
-        db.collection("pacientes").doc(pacienteId).set(pacienteData, { merge: true });
-        datos.pacienteId = pacienteId;
-        crearCitaConPacienteId(db, datos, callback);
+        db.collection("pacientes").doc(pacienteId).set(pacienteData, { merge: true })
+          .then(() => {
+            datos.pacienteId = pacienteId;
+            crearCitaConPacienteId(db, datos, callback);
+          }).catch(function(error) {
+            console.error("Error actualizando paciente:", error);
+            window.showNotification && window.showNotification("Error actualizando paciente: "+error.message, "error");
+          });
       } else {
-        // Paciente nuevo, crearlo y usar el id generado
-        const pacienteData = {
-          nombre: datos.pacienteNombre,
-          rut: rutLimpio,
-          cesfam: datos.cesfam,
-          telefono: datos.telefono || "",
-          email: datos.email || "",
-          direccion: datos.direccion || "",
-          fechaRegistro: datos.fechaCreacion || new Date().toISOString(),
-        };
+        // Paciente nuevo
         db.collection("pacientes").add(pacienteData)
           .then(function(docRef) {
             pacienteId = docRef.id;
@@ -129,13 +127,25 @@ function guardarCitaPaciente(datosCita, callback) {
             crearCitaConPacienteId(db, datos, callback);
           })
           .catch(function(error) {
-            window.showNotification && window.showNotification("Error creando paciente: " + error.message, "error");
-            if (typeof callback === "function") callback(null, error);
+            console.error("Error creando paciente:", error);
+            window.showNotification && window.showNotification("Error creando paciente: "+error.message, "error");
           });
       }
     })
     .catch(function(error) {
-      window.showNotification && window.showNotification("Error buscando paciente: " + error.message, "error");
+      console.error("Error buscando paciente:", error);
+      window.showNotification && window.showNotification("Error buscando paciente: "+error.message, "error");
+    });
+}
+
+function crearCitaConPacienteId(db, datos, callback) {
+  db.collection("citas").add(datos)
+    .then(function(docRef) {
+      window.showNotification && window.showNotification("Cita agendada correctamente", "success");
+      if (typeof callback === "function") callback(docRef.id);
+    })
+    .catch(function(error) {
+      window.showNotification && window.showNotification("Error al agendar cita: " + error.message, "error");
       if (typeof callback === "function") callback(null, error);
     });
 }
