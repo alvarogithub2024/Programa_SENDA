@@ -6,7 +6,6 @@ document.addEventListener("DOMContentLoaded", function() {
     const nuevaCitaBtn = document.getElementById('nueva-cita-btn');
     const nuevaCitaProfesionalBtn = document.getElementById('nueva-cita-profesional-btn');
 
-    // Función para obtener la fecha actual en Chile
     function chileNow() {
         return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" }));
     }
@@ -62,11 +61,11 @@ document.addEventListener("DOMContentLoaded", function() {
         });
         calendarGrid.appendChild(row);
 
-        // CALCULO CORREGIDO: para semanas que empiezan en lunes
+        // ¡ESTE ES EL CÁLCULO CLAVE!
+        // startDay: 0=lunes, 1=martes, ..., 6=domingo
         let primerDia = new Date(year, month, 1);
         let ultimoDia = new Date(year, month + 1, 0);
-        // Corregido: 0 (domingo) a la columna 6, 1 (lunes) a la columna 0, etc.
-        let startDay = primerDia.getDay() === 0 ? 6 : primerDia.getDay() - 1;
+        let startDay = (primerDia.getDay() + 6) % 7;
         let daysInMonth = ultimoDia.getDate();
 
         let date = 1;
@@ -107,171 +106,3 @@ document.addEventListener("DOMContentLoaded", function() {
                         });
 
                         cell.appendChild(eventsDiv);
-                    }
-
-                    cell.dataset.date = dateKey;
-
-                    let nowChile = chileNow();
-                    if (date === nowChile.getDate() &&
-                        month === nowChile.getMonth() &&
-                        year === nowChile.getFullYear()) {
-                        cell.classList.add('calendar-today');
-                    }
-
-                    cell.onclick = function() {
-                        window.mostrarCitasDelDia(cell.dataset.date);
-                    };
-
-                    date++;
-                }
-
-                weekRow.appendChild(cell);
-            }
-
-            calendarGrid.appendChild(weekRow);
-            if (date > daysInMonth) break;
-        }
-    }
-
-    if (prevMonthBtn) {
-        prevMonthBtn.onclick = function() {
-            currentMonth--;
-            if (currentMonth < 0) {
-                currentMonth = 11;
-                currentYear--;
-            }
-            cargarCitasPorDia(() => renderCalendar(currentMonth, currentYear));
-        };
-    }
-
-    if (nextMonthBtn) {
-        nextMonthBtn.onclick = function() {
-            currentMonth++;
-            if (currentMonth > 11) {
-                currentMonth = 0;
-                currentYear++;
-            }
-            cargarCitasPorDia(() => renderCalendar(currentMonth, currentYear));
-        };
-    }
-
-    if (nuevaCitaBtn) {
-        nuevaCitaBtn.onclick = function() {
-            if (window.abrirModalCitaPaciente) {
-                window.abrirModalCitaPaciente();
-                setTimeout(function() {
-                    const fechaInput = document.getElementById('pac-cita-fecha');
-                    if (fechaInput) {
-                        const chileDate = chileNow();
-                        fechaInput.value = chileDate.toISOString().slice(0, 10);
-                    }
-                }, 100);
-            }
-        };
-    }
-
-    if (nuevaCitaProfesionalBtn && window.abrirModalNuevaCitaProfesional) {
-        nuevaCitaProfesionalBtn.onclick = function() {
-            window.abrirModalNuevaCitaProfesional();
-            setTimeout(function() {
-                const fechaInput = document.getElementById('prof-cita-fecha');
-                if (fechaInput) {
-                    const chileDate = chileNow();
-                    fechaInput.value = chileDate.toISOString().slice(0, 10);
-                }
-            }, 100);
-        };
-    }
-
-    function mostrarCitasDelDia(fecha) {
-        const appointmentsList = document.getElementById('appointments-list');
-        if (!appointmentsList) return;
-
-        appointmentsList.innerHTML = `<div class="loading-message"><i class="fas fa-spinner fa-spin"></i> Cargando citas...</div>`;
-        const db = window.getFirestore();
-
-        db.collection("citas")
-            .where("fecha", "==", fecha)
-            .orderBy("hora", "asc")
-            .get()
-            .then(function(snapshot) {
-                const citas = [];
-                snapshot.forEach(function(doc) {
-                    const cita = doc.data();
-                    cita.id = doc.id;
-                    citas.push(cita);
-                });
-
-                appointmentsList.innerHTML = "";
-
-                if (!citas.length) {
-                    appointmentsList.innerHTML = "<div class='no-results'>No hay citas agendadas para este día.</div>";
-                    return;
-                }
-
-                citas.forEach(function(cita) {
-                    const div = document.createElement("div");
-                    div.className = "appointment-item";
-
-                    let mainName = "";
-                    let subName = "";
-
-                    if (cita.tipo === "profesional") {
-                        mainName = cita.pacienteNombre || cita.paciente || cita.nombre || cita.profesionalNombre || "Sin nombre";
-                        subName = (cita.profesionalNombre && cita.profesionalNombre !== mainName) ? cita.profesionalNombre : "";
-                    } else {
-                        mainName = cita.pacienteNombre || cita.paciente || cita.nombre || "Sin nombre";
-                        subName = cita.profesionalNombre || "";
-                    }
-
-                    div.innerHTML = `
-                        <div class="appointment-time">${cita.hora || ""}</div>
-                        <div class="appointment-details">
-                            <div class="appointment-patient"><strong>${mainName}</strong></div>
-                            ${subName ? `<div class="appointment-professional">${subName}</div>` : ""}
-                        </div>
-                        <div class="appointment-status">
-                            <span class="status-badge ${cita.estado || "agendada"}">${cita.estado || "Agendada"}</span>
-                        </div>
-                        ${profesionActual && profesionActual !== 'asistente_social'
-                            ? `<button class="btn btn-danger btn-sm" onclick="eliminarCita('${cita.id}', '${fecha}')">
-                                <i class="fas fa-trash"></i> Eliminar
-                              </button>`
-                            : ''
-                        }
-                    `;
-
-                    appointmentsList.appendChild(div);
-                });
-
-                window.citasDelDia = citas;
-            })
-            .catch(function(error) {
-                appointmentsList.innerHTML = "<div class='no-results'>Error cargando citas.</div>";
-                if (window.showNotification) {
-                    window.showNotification("Error cargando citas del día: " + error.message, "error");
-                }
-            });
-    }
-
-    window.eliminarCita = function(citaId, fecha) {
-        if (!confirm("¿Seguro que deseas eliminar la cita?")) return;
-
-        const db = window.getFirestore();
-        db.collection("citas").doc(citaId).delete()
-            .then(function() {
-                window.showNotification && window.showNotification("Cita eliminada correctamente", "success");
-                window.mostrarCitasDelDia(fecha);
-            })
-            .catch(function(error) {
-                window.showNotification && window.showNotification("Error al eliminar cita: " + error.message, "error");
-            });
-    };
-
-    // Usa chileNow() para el día actual en mostrarCitasDelDia
-    const hoy = chileNow().toISOString().slice(0, 10);
-    mostrarCitasDelDia(hoy);
-    window.mostrarCitasDelDia = mostrarCitasDelDia;
-
-    cargarCitasPorDia(() => renderCalendar(currentMonth, currentYear));
-});
