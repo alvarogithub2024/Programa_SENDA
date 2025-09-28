@@ -1,5 +1,4 @@
 
-
 let solicitudesData = [];
 let filteredSolicitudesData = [];
 let currentFilters = {
@@ -114,6 +113,7 @@ function loadAllSolicitudes() {
         }
     });
 }
+
 function renderSolicitudesTable() {
     try {
         const tableBody = document.getElementById('solicitudes-table-body');
@@ -236,7 +236,6 @@ function renderSolicitudesTable() {
     }
 }
 
-
 function setupFilters() {
     fillSelectOptions('filtro-estado-solicitudes', ['todos', 'pendiente', 'en_proceso', 'agendada', 'completada'], {
         todos: 'Todos los estados',
@@ -347,17 +346,16 @@ function applyCurrentFilters() {
                     break;
             }
         }
-      if (currentFilters.busqueda) {
-    // Limpiar rut y búsqueda para comparar sin puntos ni guion
-    const rut = (solicitud.rut || '').replace(/[.\-]/g, '').toLowerCase();
-    const nombre = (solicitud.nombre || '').toLowerCase();
-    const apellidos = (solicitud.apellidos || '').toLowerCase();
-    const email = (solicitud.email || '').toLowerCase();
-    const q = currentFilters.busqueda.replace(/[.\-]/g, '').toLowerCase();
+       if (currentFilters.busqueda) {
+   
+        const rut = (solicitud.rut || '').replace(/[.\-]/g, '').toLowerCase();
+        const nombre = (solicitud.nombre || '').toLowerCase();
+        const apellidos = (solicitud.apellidos || '').toLowerCase();
+        const email = (solicitud.email || '').toLowerCase();
+        const q = currentFilters.busqueda.replace(/[.\-]/g, '').toLowerCase();
 
-    // Buscar por RUT "crudo" (sin puntos ni guion), nombre, apellidos o email
-    if (!rut.includes(q) && !nombre.includes(q) && !apellidos.includes(q) && !email.includes(q)) return false;
-}
+        if (!rut.includes(q) && !nombre.includes(q) && !apellidos.includes(q) && !email.includes(q)) return false;
+            }
         return true;
     });
     
