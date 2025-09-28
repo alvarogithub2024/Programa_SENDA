@@ -2896,7 +2896,7 @@ document.addEventListener('DOMContentLoaded', setupModalTabs);
     font-size: 1.1rem; 
   }
 
---------------------------
+/* */
    .modal-container {
   background: #fff;
   border-radius: 18px;
