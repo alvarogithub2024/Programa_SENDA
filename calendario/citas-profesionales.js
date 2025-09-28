@@ -3,10 +3,6 @@ let profesionalesProfesional = [];
 let profesionesProfesional = [];
 let miCesfamProfesional = null;
 
-let profesionalesAgendarProf = [];
-let profesionesAgendarProf = [];
-let miCesfamAgendarProf = null;
-
 // ========== UTILS ==========
 function capitalizarProfesion(str) {
     if (!str) return "";
@@ -35,33 +31,6 @@ function cargarProfesionalesNuevaCitaProfesional(callback) {
                     profesionalesProfesional.push(p);
                     if (p.profession && !profesionesProfesional.includes(p.profession)) {
                         profesionesProfesional.push(p.profession);
-                    }
-                });
-                if (typeof callback === 'function') callback();
-            });
-    });
-}
-
-function cargarProfesionalesAgendarCitaProfesional(callback) {
-    const user = firebase.auth().currentUser;
-    if (!user) return;
-    const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
-    db.collection('profesionales').doc(user.uid).get().then(doc => {
-        if (!doc.exists) return;
-        miCesfamAgendarProf = doc.data().cesfam;
-        db.collection('profesionales')
-            .where('activo', '==', true)
-            .where('cesfam', '==', miCesfamAgendarProf)
-            .get()
-            .then(snapshot => {
-                profesionalesAgendarProf = [];
-                profesionesAgendarProf = [];
-                snapshot.forEach(docu => {
-                    const p = docu.data();
-                    p.uid = docu.id;
-                    profesionalesAgendarProf.push(p);
-                    if (p.profession && !profesionesAgendarProf.includes(p.profession)) {
-                        profesionesAgendarProf.push(p.profession);
                     }
                 });
                 if (typeof callback === 'function') callback();
