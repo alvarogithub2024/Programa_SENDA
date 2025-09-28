@@ -59,5 +59,39 @@ function showNotification(mensaje, tipo, duracion) {
         }
     }, duracion);
 }
+// Agregar al inicio de utilidades/notificaciones.js para evitar errores de logger
+function initializeLogger() {
+    // Evitar errores de logger si no está disponible
+    if (typeof logger === 'undefined') {
+        window.logger = {
+            info: function(msg) { console.log('ℹ️', msg); },
+            warn: function(msg) { console.warn('⚠️', msg); },
+            error: function(msg) { console.error('❌', msg); },
+            debug: function(msg) { console.log('🐛', msg); }
+        };
+    }
+}
 
+// Función mejorada de notificaciones que no depende de logger externo
+function showNotificationSafe(mensaje, tipo, duracion) {
+    try {
+        if (window.showNotification) {
+            window.showNotification(mensaje, tipo, duracion);
+        } else {
+            // Fallback si showNotification no está disponible
+            console.log(`${tipo?.toUpperCase() || 'INFO'}: ${mensaje}`);
+            alert(mensaje);
+        }
+    } catch (error) {
+        console.error('Error mostrando notificación:', error);
+        alert(mensaje);
+    }
+}
+
+
+initializeLogger();
+
+
+window.showNotificationSafe = showNotificationSafe;
+window.initializeLogger = initializeLogger;
 window.showNotification = showNotification;
