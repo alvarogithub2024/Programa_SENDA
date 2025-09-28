@@ -1217,11 +1217,14 @@ body {
   margin-top: 1.8rem;
   padding: 2.5rem 2rem 2rem 2rem;
   overflow-x: auto;
-  max-width: 98vw;          /* Para que casi ocupe todo el ancho de la ventana */
-  width: 100%;
-  min-width: 900px;         /* Para que no se vea apretado en pantallas grandes */
-  max-height: 650px;        /* Puedes ajustar el alto máximo */
-  overflow-y: auto;         /* Scroll vertical si hay muchas filas */
+  width: 100vw;         
+  max-width: none;      
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  box-sizing: border-box;
 }
 
 /* Tabla de solicitudes */
