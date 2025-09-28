@@ -88,48 +88,10 @@ function guardarCitaPaciente(datosCita, callback) {
   const datos = Object.assign({}, datosCita);
   datos.fechaCreacion = datos.fechaCreacion || new Date().toISOString();
 
-  // Busca paciente por RUT para obtener todos los datos antes de crear la cita
-  const rutLimpio = datos.pacienteRut.replace(/[.\-]/g, "").toUpperCase();
-  db.collection("pacientes").where("rut", "==", rutLimpio).limit(1).get()
-    .then(function(snapshot) {
-      let pacienteInfo = {};
-      if (!snapshot.empty) {
-        const paciente = snapshot.docs[0].data();
-        pacienteInfo = {
-          pacienteNombre: paciente.nombre,
-          pacienteRut: paciente.rut,
-          pacienteTelefono: paciente.telefono,
-          pacienteEmail: paciente.email,
-          pacienteDireccion: paciente.direccion,
-          pacienteCesfam: paciente.cesfam,
-          // ... agrega más campos si quieres ...
-        };
-      } else {
-       
-        pacienteInfo = {
-          pacienteNombre: datos.pacienteNombre,
-          pacienteRut: datos.pacienteRut,
-          pacienteTelefono: datos.telefono,
-          pacienteEmail: datos.email,
-          pacienteDireccion: datos.direccion,
-          pacienteCesfam: datos.cesfam,
-        };
-      }
-
-      Object.assign(datos, pacienteInfo);
-
+  db.collection("citas").add(datos)
+    .then(function(docRef) {
+      window.showNotification && window.showNotification("Cita agendada correctamente", "success");
       
-      db.collection("citas").add(datos)
-        .then(function(docRef) {
-          window.showNotification && window.showNotification("Cita agendada correctamente", "success");
-          if (typeof callback === "function") callback(docRef.id);
-        })
-        .catch(function(error) {
-          window.showNotification && window.showNotification("Error al agendar cita: " + error.message, "error");
-          if (typeof callback === "function") callback(null, error);
-        });
-    });
-}
       if (datos.pacienteRut && datos.pacienteNombre) {
         const rutLimpio = datos.pacienteRut.replace(/[.\-]/g, "").toUpperCase();
         db.collection("pacientes").where("rut", "==", rutLimpio).limit(1).get()
