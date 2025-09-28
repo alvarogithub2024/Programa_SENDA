@@ -171,7 +171,6 @@ function abrirModalCitaPaciente() {
   tipoProfesional: document.getElementById('pac-cita-profession').value,
   fecha: document.getElementById('pac-cita-fecha').value,
   hora: document.getElementById('pac-cita-hora').value,
-  // NUEVOS CAMPOS:
   email: document.getElementById('pac-cita-paciente-email')?.value.trim() || "",
   telefono: document.getElementById('pac-cita-paciente-telefono')?.value.trim() || "",
   direccion: document.getElementById('pac-cita-paciente-direccion')?.value.trim() || "",
