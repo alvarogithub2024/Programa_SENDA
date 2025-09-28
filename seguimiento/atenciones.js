@@ -1,4 +1,3 @@
-
 document.addEventListener("DOMContentLoaded", function() {
     var form = document.getElementById("form-registrar-atencion");
     if (!form) return;
@@ -7,12 +6,18 @@ document.addEventListener("DOMContentLoaded", function() {
         e.preventDefault();
 
         var citaId = document.getElementById("atencion-cita-id").value;
-        var pacienteId = document.getElementById("atencion-paciente-id").value;
+        var pacienteId = document.getElementById("atencion-paciente-id").value; // Este valor debe ser el id Firestore del paciente
         var descripcion = document.getElementById("atencion-descripcion").value.trim();
         var tipoAtencion = document.getElementById("atencion-tipo").value;
 
         if (!descripcion || !tipoAtencion) {
             window.showNotification("Completa los campos obligatorios", "warning");
+            return;
+        }
+
+        // PREVENCIÓN: pacienteId nunca puede ser undefined ni vacío
+        if (!pacienteId) {
+            window.showNotification("Error: No se encontró el ID del paciente para esta atención", "error");
             return;
         }
 
@@ -26,56 +31,30 @@ document.addEventListener("DOMContentLoaded", function() {
             }
             var cita = doc.data();
 
-            // Ejemplo al registrar atención:
-var datosAtencion = {
-    pacienteId: cita.pacienteId, // Usa el id del paciente
-    pacienteNombre: cita.pacienteNombre || cita.nombre || "",
-    pacienteRut: cita.pacienteRut || cita.rut || "",
-    cesfam: cita.cesfam || "",
-    fecha: cita.fecha || "",
-    hora: cita.hora || "",
-    descripcion: descripcion,
-    tipoAtencion: tipoAtencion,
-    profesional: cita.profesionalNombre || (user ? user.email : ""),
-    profesionalId: cita.profesionalId || (user ? user.uid : ""),
-    fechaRegistro: new Date().toISOString(),
-    citaId: citaId
-};
-db.collection("atenciones").add(datosAtencion)
-  .then(function(docRef) {
-    // etc...
-  });
+            // Si la cita no tiene pacienteId, también evita el guardado
+            if (!cita.pacienteId) {
+                window.showNotification("Error: La cita no tiene vinculado un pacienteId. Corrige el flujo de citación.", "error");
+                return;
+            }
+
+            var datosAtencion = {
+                pacienteId: pacienteId, // SIEMPRE presente y válido
+                pacienteNombre: cita.pacienteNombre || cita.nombre || "",
+                pacienteRut: cita.pacienteRut || cita.rut || "",
+                cesfam: cita.cesfam || "",
+                fecha: cita.fecha || "",
+                hora: cita.hora || "",
+                descripcion: descripcion,
+                tipoAtencion: tipoAtencion,
+                profesional: cita.profesionalNombre || (user ? user.email : ""),
+                profesionalId: cita.profesionalId || (user ? user.uid : ""),
+                fechaRegistro: new Date().toISOString(),
+                citaId: citaId
+            };
+
             db.collection("atenciones").add(datosAtencion)
             .then(function(docRef) {
-    
-                if (datosAtencion.pacienteId || datosAtencion.pacienteRut) {
-                    let pacientesRef = db.collection("pacientes");
-                    let query;
-                    if (datosAtencion.pacienteId) {
-                        query = pacientesRef.doc(datosAtencion.pacienteId).get();
-                    } else if (datosAtencion.pacienteRut) {
-                        query = pacientesRef.where("rut", "==", datosAtencion.pacienteRut).limit(1).get();
-                    }
-                    Promise.resolve(query)
-                    .then(function(snap) {
-                        let pacienteData = {
-                            nombre: datosAtencion.pacienteNombre || "",
-                            rut: datosAtencion.pacienteRut || "",
-                            cesfam: datosAtencion.cesfam || "",
-                            telefono: cita.telefono || "",
-                            email: cita.email || "",
-                            direccion: cita.direccion || "",
-                            fechaRegistro: datosAtencion.fechaRegistro || new Date().toISOString(),
-                        };
-                        if (snap && snap.exists) {
-                            pacientesRef.doc(snap.id || datosAtencion.pacienteId).set(pacienteData, { merge: true });
-                        } else if (snap && snap.docs && snap.docs.length) {
-                            pacientesRef.doc(snap.docs[0].id).set(pacienteData, { merge: true });
-                        } else {
-                            pacientesRef.add(pacienteData);
-                        }
-                    });
-                }
+                // Puedes actualizar datos del paciente aquí si lo necesitas
                 window.showNotification("Atención registrada correctamente", "success");
                 closeModal("modal-registrar-atencion");
                 if (window.mostrarPacienteActualHoy) window.mostrarPacienteActualHoy();
@@ -89,8 +68,14 @@ db.collection("atenciones").add(datosAtencion)
 });
 
 
+// Si tienes una función para registrar atenciones manualmente desde JS:
 window.registrarAtencion = function(datosAtencion, callback) {
     var db = window.getFirestore();
+    if (!datosAtencion.pacienteId) {
+        window.showNotification("Error: Faltó el pacienteId al guardar la atención.", "error");
+        if (typeof callback === "function") callback(false, null);
+        return;
+    }
     var datos = Object.assign({}, datosAtencion, {
         fechaRegistro: new Date().toISOString()
     });
@@ -98,35 +83,6 @@ window.registrarAtencion = function(datosAtencion, callback) {
     db.collection("atenciones")
         .add(datos)
         .then(function(docRef) {
-        
-            if (datos.pacienteId || datos.pacienteRut) {
-                let pacientesRef = db.collection("pacientes");
-                let query;
-                if (datos.pacienteId) {
-                    query = pacientesRef.doc(datos.pacienteId).get();
-                } else if (datos.pacienteRut) {
-                    query = pacientesRef.where("rut", "==", datos.pacienteRut).limit(1).get();
-                }
-                Promise.resolve(query)
-                .then(function(snap) {
-                    let pacienteData = {
-                        nombre: datos.pacienteNombre || "",
-                        rut: datos.pacienteRut || "",
-                        cesfam: datos.cesfam || "",
-                        telefono: datos.telefono || "",
-                        email: datos.email || "",
-                        direccion: datos.direccion || "",
-                        fechaRegistro: datos.fechaRegistro || new Date().toISOString(),
-                    };
-                    if (snap && snap.exists) {
-                        pacientesRef.doc(snap.id || datos.pacienteId).set(pacienteData, { merge: true });
-                    } else if (snap && snap.docs && snap.docs.length) {
-                        pacientesRef.doc(snap.docs[0].id).set(pacienteData, { merge: true });
-                    } else {
-                        pacientesRef.add(pacienteData);
-                    }
-                });
-            }
             window.showNotification("Atención registrada correctamente", "success");
             if (typeof callback === "function") callback(true, docRef.id);
         })
@@ -135,7 +91,6 @@ window.registrarAtencion = function(datosAtencion, callback) {
             if (typeof callback === "function") callback(false, null);
         });
 };
-
 
 window.mostrarModalEditarAtencion = function(atencion) {
     let modal = document.getElementById('modal-editar-atencion');
