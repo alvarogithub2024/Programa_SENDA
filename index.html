@@ -110,7 +110,7 @@
 <!-- CONTENIDO PRINCIPAL -->
     
 <main class="main-content">
-    
+
     <!-- ========== CONTENIDO PÚBLICO ========== -->
     <div id="public-content">
         <!-- Tarjeta principal con información del programa -->
@@ -836,7 +836,8 @@
     </div>
 </div>
 
-<!-- ========== MODAL: EDITAR SOLICITUD ========== -->
+<!-- ========== MODALES ADICIONALES ========== -->
+<!-- Modal: Editar Solicitud -->
 <div class="modal-overlay" id="modal-editar" style="display:none;">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('modal-editar')">&times;</button>
@@ -868,8 +869,7 @@
   </div>
 </div>
 
-<!-- ========== MODAL: RESPONDER SOLICITUD ========== -->
-<!-- ========== MODAL: RESPONDER SOLICITUD ========== -->
+<!-- Modal: Responder Solicitud -->
 <div class="modal-overlay" id="modal-responder" style="display:none;">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('modal-responder')">&times;</button>
@@ -893,7 +893,8 @@
     </form>
   </div>
 </div>
-<!-- ========== MODAL: DETALLES DEL PACIENTE ========== -->
+
+<!-- Modal: Detalles del Paciente -->
 <div class="modal-overlay" id="modal-detalle" style="display:none;">
     <div class="modal-content">
         <span class="close" onclick="cerrarModalDetalle()">&times;</span>
@@ -904,15 +905,15 @@
             <p><b>Teléfono:</b> <span id="modal-detalle-telefono"></span></p>
             <p><b>Email:</b> <span id="modal-detalle-email"></span></p>
             <p><b>CESFAM:</b> <span id="modal-detalle-cesfam"></span></p>
-             <p><b>Estado:</b> <span id="modal-detalle-estado"></span></p>
+            <p><b>Estado:</b> <span id="modal-detalle-estado"></span></p>
             <p><b>Fecha:</b> <span id="modal-detalle-fecha"></span></p>
-             <p><b>Motivo de atención:</b> <span id="modal-detalle-motivo"></span></p>
+            <p><b>Motivo de atención:</b> <span id="modal-detalle-motivo"></span></p>
             <p><b>Sustancias:</b> <span id="modal-detalle-sustancias"></span></p>
         </div>
     </div>
 </div>
 
-<!-- ========== MODAL: FICHA DEL PACIENTE ========== -->
+<!-- Modal: Ficha del Paciente -->
 <div class="modal-overlay" id="modal-ficha-paciente" style="display:none;">
     <div class="modal-content">
         <span class="close" onclick="cerrarModalFichaPaciente()">&times;</span>
@@ -921,7 +922,7 @@
     </div>
 </div>
 
-<!-- ========== MODAL: REGISTRAR ATENCIÓN ========== -->
+<!-- Modal: Registrar Atención -->
 <div class="modal-overlay" id="modal-registrar-atencion" style="display:none;">
     <div class="modal-content">
         <span class="close" onclick="closeModal('modal-registrar-atencion')">&times;</span>
@@ -951,7 +952,7 @@
     </div>
 </div>
 
-<!-- ========== MODAL: AGENDAR CITA (DESDE SOLICITUD) ========== -->
+<!-- Modal: Agendar Cita (desde solicitud) -->
 <div class="modal-overlay" id="modal-agendar-cita-profesional" style="display:none;">
     <div class="modal-content large-modal">
         <button class="close" onclick="closeModal('modal-agendar-cita-profesional')">
@@ -959,7 +960,6 @@
         </button>
         <h2 class="modal-title-main"><i class="fas fa-calendar-plus"></i> Agendar Cita</h2>
         <form id="form-agendar-cita-profesional" class="cita-form">
-            <!-- Datos del paciente -->
             <div class="form-group">
                 <label class="form-label">Nombre completo del paciente:</label>
                 <span id="modal-cita-nombre-prof"></span>
@@ -968,8 +968,6 @@
                 <label class="form-label">RUT:</label>
                 <span id="modal-cita-rut-prof"></span>
             </div>
-
-            <!-- Campos de la cita -->
             <div class="form-group">
                 <label class="form-label" for="modal-cita-profession-prof">Profesión *</label>
                 <select class="form-select" id="modal-cita-profession-prof" required>
@@ -993,8 +991,6 @@
                     <option value="">Selecciona hora...</option>
                 </select>
             </div>
-
-            <!-- Acciones -->
             <div class="form-actions form-actions-row">
                 <button type="button" class="btn btn-outline" onclick="closeModal('modal-agendar-cita-profesional')">
                     Cancelar
@@ -1006,7 +1002,7 @@
     </div>
 </div>
 
-<!-- ========== MODAL: NUEVA CITA PACIENTE ========== -->
+<!-- Modal: Nueva Cita Paciente -->
 <div class="modal-overlay" id="modal-nueva-cita-paciente" style="display:none;">
     <div class="modal large-modal">
         <button class="modal-close" onclick="closeModal('modal-nueva-cita-paciente')">
@@ -1055,7 +1051,7 @@
     </div>
 </div>
 
-<!-- ========== MODAL: NUEVA CITA ENTRE PROFESIONALES ========== -->
+<!-- Modal: Nueva Cita entre Profesionales -->
 <div class="modal-overlay" id="modal-nueva-cita-profesional" style="display:none;">
     <div class="modal-content large-modal">
         <button class="close" onclick="closeModal('modal-nueva-cita-profesional')">
@@ -1096,38 +1092,37 @@
     </div>
 </div>
 
-    <!-- ========== MODAL: EDITAR SOLICITUD ========== -->
-<div class="modal-overlay" id="modal-editar" style="display:none;">
-    <div class="modal-content">
-        <span class="close" onclick="closeModal('modal-editar')">&times;</span>
-        <h2>Editar solicitud</h2>
-        <form class="modal-form">
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="modal-editar-nombre">Nombre:</label>
-                    <input type="text" id="modal-editar-nombre" name="nombre">
-                </div>
-                <div class="form-group">
-                    <label for="modal-editar-rut">RUT:</label>
-                    <input type="text" id="modal-editar-rut" name="rut">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="modal-editar-telefono">Teléfono:</label>
-                    <input type="text" id="modal-editar-telefono" name="telefono">
-                </div>
-            </div>
-            <div class="form-actions">
-                <button type="button" onclick="guardarEdicionSolicitud()" class="btn btn-primary">
-                    Guardar cambios
-                </button>
-            </div>
-            <input type="hidden" id="modal-editar-id" name="id">
-        </form>
-    </div>
-</div>
+<!-- PIE DE PÁGINA -->
+<footer class="footer">
+    <div class="footer-content">
+        <p>&copy; 2024 SENDA Puente Alto. Todos los derechos reservados.</p>
+        <p>Desarrollado para el bienestar de nuestra comunidad</p>
+        <a href="https://www.senda.gob.cl" target="_blank" class="footer-link">
+            <i class="fas fa-external-link-alt"></i> Sitio oficial SENDA
+        </a>
+    </div>  
+</footer>
 
+<!-- ========== INICIALIZACIÓN SISTEMA UNIFICADO ========== -->
+<script>
+// Script de inicialización después de que todo esté cargado
+document.addEventListener("DOMContentLoaded", function() {
+    // Esperar a que Firebase esté listo
+    setTimeout(function() {
+        if (window.isFirebaseInitialized && window.isFirebaseInitialized()) {
+            if (window.inicializarSistemaUnificado) {
+                window.inicializarSistemaUnificado();
+            }
+        } else {
+            // Reintentar en 2 segundos
+            setTimeout(function() {
+                if (window.inicializarSistemaUnificado) {
+                    window.inicializarSistemaUnificado();
+                }
+            }, 2000);
+        }
+    }, 1000);
+});
 
 // Función de depuración para verificar el sistema
 window.debugSistemaUnificado = function() {
@@ -1153,24 +1148,8 @@ window.migrarDatos = function() {
     }
 };
 </script>
-                    
-<!-- PIE DE PÁGINA -->
-    
-<footer class="footer">
-    <div class="footer-content">
-        <p>&copy; 2024 SENDA Puente Alto. Todos los derechos reservados.</p>
-        <p>Desarrollado para el bienestar de nuestra comunidad</p>
-        <a href="https://www.senda.gob.cl" target="_blank" class="footer-link">
-            <i class="fas fa-external-link-alt"></i> Sitio oficial SENDA
-        </a>
-    </div>  
-</footer>
 
-
-                    
-<!-- SCRIPTS JAVASCRIPT -->
-    
-<!-- ========== SCRIPT: MODAL SOBRE EL PROGRAMA ========== -->
+<!-- ========== SCRIPTS ADICIONALES ========== -->
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     var btnSobre = document.getElementById("about-program");
@@ -1184,12 +1163,7 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 });
-</script>
 
-<!-- ========== SCRIPT: CAMBIO DE PESTAÑAS EN LOGIN ========== -->
-
-    
-<script>
 function switchLoginTab(tab){
     const loginTab = document.querySelector('.modal-tab[onclick*="login"]');
     const registerTab = document.querySelector('.modal-tab[onclick*="register"]');
