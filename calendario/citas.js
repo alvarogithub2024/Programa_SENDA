@@ -282,10 +282,10 @@ if (nombreSpan) nombreSpan.textContent = nombre;
 var nombreSpanProf = document.getElementById('modal-cita-nombre-prof');
 if (nombreSpanProf) nombreSpanProf.textContent = nombre;
 
-var rutSpan = document.getElementById('modal-cita-rut').textContent = window.formatRUT ? 
-  window.formatRUT(rut) : rut;
-var rutSpanProf = document.getElementById('modal-cita-rut-prof').textContent = window.formatRUT ? 
-  window.formatRUT(rut) : rut;
+var rutSpan = document.getElementById('modal-cita-rut');
+if (rutSpan) rutSpan.textContent = window.formatRUT ? window.formatRUT(rut) : rut;
+const rutSpanProf = document.getElementById('modal-cita-rut-prof');
+if (rutSpanProf) rutSpanProf.textContent = window.formatRUT ? window.formatRUT(rut) : rut;
 
     const selProf = document.getElementById('modal-cita-profession');
     if (selProf) {
