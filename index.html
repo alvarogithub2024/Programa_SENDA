@@ -26,7 +26,7 @@
     <script src="utilidades/notificaciones.js"></script>
     <script src="utilidades/modales.js"></script>
     <script src="utilidades/permisos.js"></script>
-    
+
     <!-- ========== FORMULARIOS Y VALIDACIONES ========== -->
     <script src="formularios/validaciones.js"></script>
     <script src="formularios/autoguardado.js"></script>
@@ -36,7 +36,8 @@
     <!-- ========== AUTENTICACIÓN ========== -->
     <script src="autenticacion/sesion.js"></script>
     <script src="autenticacion/login.js"></script>
-   
+    <script src="autenticacion/registro.js"></script>
+
     <!-- ========== NAVEGACIÓN ========== -->
     <script src="navegacion/tabs.js"></script>
     <script src="navegacion/eventos.js"></script>
@@ -247,7 +248,15 @@
                     <input type="text" id="buscar-solicitudes" placeholder="Nombre, RUT, email...">
                 </div>
             </div>
-                
+            
+            <!-- Estadísticas de solicitudes -->
+            <div id="solicitudes-stats" class="stats-container"></div>
+            
+            <!-- Contador de resultados -->
+            <div class="counter-info">
+                Mostrando <span id="solicitudes-counter">0</span> de <span id="solicitudes-total-counter">0</span> solicitudes
+            </div>
+            
             <!-- Tabla de solicitudes -->
             <div id="solicitudes-table-container">
                 <table class="solicitudes-table">
@@ -836,64 +845,67 @@
     </div>
 </div>
 
+<!-- ========== MODAL: EDITAR SOLICITUD ========== -->
 <div class="modal-overlay" id="modal-editar" style="display:none;">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('modal-editar')">&times;</button>
-    <h2>Editar solicitud</h2>
-    <form class="modal-form">
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="modal-editar-nombre">Nombre:</label>
-          <input class="form-input" type="text" id="modal-editar-nombre" name="nombre">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="modal-editar-rut">RUT:</label>
-          <input class="form-input" type="text" id="modal-editar-rut" name="rut">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="modal-editar-telefono">Teléfono:</label>
-          <input class="form-input" type="text" id="modal-editar-telefono" name="telefono">
-        </div>
-      </div>
-      <div class="form-actions">
-        <button type="button" onclick="guardarEdicionSolicitud()" class="btn btn-primary">
-          Guardar cambios
-        </button>
-      </div>
-      <input type="hidden" id="modal-editar-id" name="id">
-    </form>
-  </div>
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('modal-editar')">&times;</span>
+        <h2>Editar solicitud</h2>
+        <form class="modal-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="modal-editar-nombre">Nombre:</label>
+                    <input type="text" id="modal-editar-nombre" name="nombre">
+                </div>
+                <div class="form-group">
+                    <label for="modal-editar-rut">RUT:</label>
+                    <input type="text" id="modal-editar-rut" name="rut">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="modal-editar-telefono">Teléfono:</label>
+                    <input type="text" id="modal-editar-telefono" name="telefono">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" onclick="guardarEdicionSolicitud()" class="btn btn-primary">
+                    Guardar cambios
+                </button>
+            </div>
+            <input type="hidden" id="modal-editar-id" name="id">
+        </form>
+    </div>
 </div>
 
 <!-- ========== MODAL: RESPONDER SOLICITUD ========== -->
-<!-- ========== MODAL: RESPONDER SOLICITUD ========== -->
 <div class="modal-overlay" id="modal-responder" style="display:none;">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('modal-responder')">&times;</button>
-    <h2>Responder solicitud de información</h2>
-    <form class="modal-form">
-      <div class="form-group">
-        <label class="form-label" for="modal-responder-asunto">Asunto:</label>
-        <input class="form-input" type="text" id="modal-responder-asunto" value="Respuesta a su solicitud de información">
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="modal-responder-mensaje">Mensaje:</label>
-        <textarea class="form-textarea" id="modal-responder-mensaje" rows="5"></textarea>
-      </div>
-      <div class="form-actions">
-        <button type="button" onclick="enviarCorreoSenda()" class="btn btn-primary">
-          Enviar correo
-        </button>
-      </div>
-      <input type="hidden" id="modal-responder-email">
-      <input type="hidden" id="modal-responder-id">
-    </form>
-  </div>
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('modal-responder')">&times;</span>
+        <h2>Responder solicitud de información</h2>
+        <form class="modal-form">
+            <div class="form-group">
+                <label><b>Nombre:</b></label>
+                <span id="modal-responder-nombre"></span>
+            </div>
+            <div class="form-group">
+                <label for="modal-responder-asunto">Asunto:</label>
+                <input type="text" id="modal-responder-asunto" value="Respuesta a su solicitud de información">
+            </div>
+            <div class="form-group">
+                <label for="modal-responder-mensaje">Mensaje:</label>
+                <textarea id="modal-responder-mensaje" rows="5"></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="button" onclick="enviarCorreoSenda()" class="btn btn-primary">
+                    Enviar correo
+                </button>
+            </div>
+            <input type="hidden" id="modal-responder-email">
+            <input type="hidden" id="modal-responder-id">
+        </form>
+    </div>
 </div>
-</div>
-    
+
 <!-- ========== MODAL: DETALLES DEL PACIENTE ========== -->
 <div class="modal-overlay" id="modal-detalle" style="display:none;">
     <div class="modal-content">
@@ -904,9 +916,11 @@
             <p><b>RUT:</b> <span id="modal-detalle-rut"></span></p>
             <p><b>Teléfono:</b> <span id="modal-detalle-telefono"></span></p>
             <p><b>Email:</b> <span id="modal-detalle-email"></span></p>
+            <p><b>Motivo de atención:</b> <span id="modal-detalle-motivo"></span></p>
             <p><b>CESFAM:</b> <span id="modal-detalle-cesfam"></span></p>
+            <p><b>Prioridad:</b> <span id="modal-detalle-prioridad"></span></p>
+            <p><b>Estado:</b> <span id="modal-detalle-estado"></span></p>
             <p><b>Fecha:</b> <span id="modal-detalle-fecha"></span></p>
-             <p><b>Motivo de atención:</b> <span id="modal-detalle-motivo"></span></p>
             <p><b>Sustancias:</b> <span id="modal-detalle-sustancias"></span></p>
         </div>
     </div>
@@ -968,6 +982,7 @@
                 <label class="form-label">RUT:</label>
                 <span id="modal-cita-rut-prof"></span>
             </div>
+
             <!-- Campos de la cita -->
             <div class="form-group">
                 <label class="form-label" for="modal-cita-profession-prof">Profesión *</label>
@@ -1021,24 +1036,6 @@
                 <label class="form-label" for="pac-cita-paciente-rut">RUT del paciente *</label>
                 <input type="text" class="form-input" id="pac-cita-paciente-rut" required autocomplete="off">
             </div>
-            
-            <!-- Nuevos campos de contacto -->
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label" for="pac-cita-paciente-telefono">Teléfono</label>
-                    <input type="tel" class="form-input" id="pac-cita-paciente-telefono" placeholder="9 1234 5678" autocomplete="off">
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="pac-cita-paciente-email">Email</label>
-                    <input type="email" class="form-input" id="pac-cita-paciente-email" placeholder="paciente@email.com" autocomplete="off">
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="pac-cita-paciente-direccion">Dirección</label>
-                <input type="text" class="form-input" id="pac-cita-paciente-direccion" placeholder="Calle, número, comuna" autocomplete="off">
-            </div>
-            
             <div class="form-group">
                 <label class="form-label" for="pac-cita-profession">Profesión *</label>
                 <select class="form-select" id="pac-cita-profession" required>
@@ -1062,13 +1059,6 @@
                     <option value="">Selecciona hora...</option>
                 </select>
             </div>
-            
-            <!-- Campo adicional para observaciones -->
-            <div class="form-group">
-                <label class="form-label" for="pac-cita-observaciones">Observaciones</label>
-                <textarea class="form-textarea" id="pac-cita-observaciones" rows="2" placeholder="Observaciones adicionales (opcional)"></textarea>
-            </div>
-            
             <div class="form-actions form-actions-row">
                 <button type="button" class="btn btn-outline" onclick="closeModal('modal-nueva-cita-paciente')">
                     Cancelar
@@ -1080,7 +1070,6 @@
 </div>
 
 <!-- ========== MODAL: NUEVA CITA ENTRE PROFESIONALES ========== -->
-<!-- ========== MODAL: NUEVA CITA ENTRE PROFESIONALES ========== -->
 <div class="modal-overlay" id="modal-nueva-cita-profesional" style="display:none;">
     <div class="modal-content large-modal">
         <button class="close" onclick="closeModal('modal-nueva-cita-profesional')">
@@ -1088,28 +1077,6 @@
         </button>
         <h2 class="modal-title-main"><i class="fas fa-calendar-plus"></i> Nueva Cita entre Profesionales</h2>
         <form id="form-nueva-cita-profesional" class="cita-form">
-            <!-- Información del paciente (opcional para citas entre profesionales) -->
-            <div class="form-group">
-                <label class="form-label" for="prof-cita-paciente-nombre">Nombre del paciente (opcional)</label>
-                <input type="text" class="form-input" id="prof-cita-paciente-nombre" placeholder="Nombre del paciente relacionado" autocomplete="off">
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label" for="prof-cita-paciente-telefono">Teléfono paciente</label>
-                    <input type="tel" class="form-input" id="prof-cita-paciente-telefono" placeholder="9 1234 5678" autocomplete="off">
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="prof-cita-paciente-email">Email paciente</label>
-                    <input type="email" class="form-input" id="prof-cita-paciente-email" placeholder="paciente@email.com" autocomplete="off">
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="prof-cita-paciente-direccion">Dirección paciente</label>
-                <input type="text" class="form-input" id="prof-cita-paciente-direccion" placeholder="Calle, número, comuna" autocomplete="off">
-            </div>
-            
             <div class="form-group">
                 <label class="form-label" for="prof-cita-profession">Profesión *</label>
                 <select class="form-select" id="prof-cita-profession" required>
@@ -1133,12 +1100,6 @@
                     <option value="">Selecciona hora...</option>
                 </select>
             </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="prof-cita-motivo">Motivo de la cita</label>
-                <textarea class="form-textarea" id="prof-cita-motivo" rows="2" placeholder="Motivo o descripción de la cita entre profesionales"></textarea>
-            </div>
-            
             <div class="form-actions form-actions-row">
                 <button type="button" class="btn btn-outline" onclick="closeModal('modal-nueva-cita-profesional')">
                     Cancelar
@@ -1148,6 +1109,8 @@
         </form>
     </div>
 </div>
+ 
+
 <!-- PIE DE PÁGINA -->
     
 <footer class="footer">
