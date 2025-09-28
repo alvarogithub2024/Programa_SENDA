@@ -1,4 +1,4 @@
-
+// ========== calendario/citas.js - CORREGIDO SIN ERRORES ==========
 
 let profesionalesAtencion = [];
 let profesionesAtencion = [];
@@ -265,7 +265,7 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
     const selProf = document.getElementById('modal-cita-profession');
     if (selProf) {
       selProf.onchange = function() {
-        llenarSelectProfesionalesAgendarCita();
+        llenarSelectProfesionesAgendarCita();
         autocompletarNombreProfesionalAgendarCita();
       };
     }
@@ -310,6 +310,11 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
           };
 
           // Usar sistema unificado
+          if (!window.SISTEMA_ID_UNIFICADO) {
+            window.showNotification && window.showNotification("Sistema no inicializado", "error");
+            return;
+          }
+
           window.SISTEMA_ID_UNIFICADO.crearCitaUnificada(datosCita)
             .then(function(resultado) {
               const db = window.getFirestore();
@@ -333,6 +338,7 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
   });
 }
 
+// Exports
 window.abrirModalCitaPaciente = abrirModalCitaPaciente;
 window.guardarCitaPaciente = guardarCitaPaciente;
 window.llenarSelectProfesionesPaciente = llenarSelectProfesionesPaciente;
