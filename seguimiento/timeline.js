@@ -1,4 +1,3 @@
-
 function cargarTimelinePaciente(pacienteId, callback) {
     var db = window.getFirestore();
     db.collection("atenciones")
