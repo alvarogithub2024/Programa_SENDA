@@ -1,3 +1,4 @@
+
 function formatRUT(rut) {
     if (!rut) return '';
     rut = rut.replace(/[^0-9kK]/g, '').toUpperCase();
