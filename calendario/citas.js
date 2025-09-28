@@ -319,7 +319,7 @@ if (rutSpanProf) rutSpanProf.textContent = rut;
           const hora = document.getElementById('modal-cita-hora').value;
           const email = document.getElementById('pac-cita-paciente-email')?.value?.trim() || "";
            const telefono = document.getElementById('pac-cita-paciente-telefono')?.value.trim() || "";
-         const direccion = document.getElementById('pac-cita-paciente-direccion')?.value?.trim() || "",
+         const direccion = document.getElementById('pac-cita-paciente-direccion')?.value?.trim() || "";
 };
           if (!nombre || !rut || !profesion || !profesional || !fecha || !hora) {
             window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
