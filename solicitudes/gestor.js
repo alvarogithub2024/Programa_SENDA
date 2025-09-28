@@ -118,7 +118,7 @@ function renderSolicitudesTable() {
     try {
         const tableBody = document.getElementById('solicitudes-table-body');
         if (!tableBody) return;
-        
+
         if (filteredSolicitudesData.length === 0) {
             tableBody.innerHTML = `<tr><td colspan="8" class="text-center" style="padding:48px;">No hay solicitudes</td></tr>`;
             return;
@@ -176,6 +176,8 @@ function renderSolicitudesTable() {
                 </div>
             `;
 
+      const rows = filteredSolicitudesData.map(solicitud => {
+            // ... (restante igual arriba)
             return `
                 <tr class="solicitud-row" data-solicitud-id="${solicitud.id}">
                     <td>
@@ -184,7 +186,7 @@ function renderSolicitudesTable() {
                                 ${solicitud.nombre || ""} ${solicitud.apellidos || ""}
                             </div>
                             <div class="paciente-detalles">
-                                RUT: ${window.formatRUT ? window.formatRUT(solicitud.rut) : (solicitud.rut || "")}
+                                RUT: ${window.formatRUT ? window.formatRUT(solicitud.rut) : (solicitud.rut || "")}<br>
                                 Edad: ${solicitud.edad || ""} años
                             </div>
                         </div>
@@ -229,7 +231,7 @@ function renderSolicitudesTable() {
                 </tr>
             `;
         }).join('');
-        
+
         tableBody.innerHTML = rows;
     } catch (error) {
         console.error('❌ Error renderizando tabla:', error);
@@ -408,10 +410,9 @@ function isSameDay(date1, date2) {
 function verDetalleSolicitud(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
-
     document.getElementById('modal-detalle-nombre').textContent = 
         (solicitud.nombre || '') + (solicitud.apellidos ? ' ' + solicitud.apellidos : '');
-    document.getElementById('modal-detalle-rut').textContent = solicitud.rut || '';
+    document.getElementById('modal-detalle-rut').textContent = window.formatRUT ? window.formatRUT(solicitud.rut) : (solicitud.rut || '');
     document.getElementById('modal-detalle-telefono').textContent = solicitud.telefono || '';
     document.getElementById('modal-detalle-email').textContent = solicitud.email || '';
     document.getElementById('modal-detalle-motivo').textContent = solicitud.descripcion || '';
@@ -421,7 +422,6 @@ function verDetalleSolicitud(solicitudId) {
 
     document.getElementById('modal-detalle').style.display = 'flex';
 }
-
 function editarSolicitud(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
