@@ -92,20 +92,20 @@ function guardarCitaPaciente(datosCita, callback) {
     .then(function(docRef) {
       window.showNotification && window.showNotification("Cita agendada correctamente", "success");
       
-      if (datos.pacienteRut && datos.pacienteNombre) {
-        const rutLimpio = datos.pacienteRut.replace(/[.\-]/g, "").toUpperCase();
-        db.collection("pacientes").where("rut", "==", rutLimpio).limit(1).get()
-          .then(function(snapshot) {
-            const pacienteData = {
-              nombre: datos.pacienteNombre,
-              rut: rutLimpio,
-              cesfam: datos.cesfam,
-              telefono: datos.telefono || "",
-              email: datos.email || "",
-              direccion: datos.direccion || "",
-              fechaRegistro: datos.fechaCreacion || new Date().toISOString(),
-            };
-            if (!snapshot.empty) {
+    // Dentro de guardarCitaPaciente en calendario/citas.js
+if (datos.pacienteRut && datos.pacienteNombre) {
+    const rutLimpio = datos.pacienteRut.replace(/[.\-]/g, "").toUpperCase();
+    const pacienteData = {
+      nombre: datos.pacienteNombre,
+      rut: rutLimpio,
+      cesfam: datos.cesfam,
+      telefono: datos.telefono || "",
+      email: datos.email || "",
+      direccion: datos.direccion || "",
+      fechaRegistro: datos.fechaCreacion || new Date().toISOString(),
+    };
+    db.collection("pacientes").doc(rutLimpio).set(pacienteData, { merge: true });
+}
               
               const docId = snapshot.docs[0].id;
               db.collection("pacientes").doc(docId).update(pacienteData);
