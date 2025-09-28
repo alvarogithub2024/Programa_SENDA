@@ -159,8 +159,11 @@ function abrirModalNuevaCitaProfesional() {
                         profesionalNombre: document.getElementById('prof-cita-profesional-nombre').value,
                         fecha: document.getElementById('prof-cita-fecha').value,
                         hora: document.getElementById('prof-cita-hora').value,
+                        tipo: "profesional",
+                        email: document.getElementById('prof-cita-paciente-email')?.value,
+                        telefono: document.getElementById('prof-cita-paciente-telefono')?.value,
+                        direccion: document.getElementById('prof-cita-paciente-direccion')?.value,
                         creado: new Date().toISOString(),
-                        tipo: "profesional"
                     };
 
                     if (!cita.profesion || !cita.profesionalId || !cita.fecha || !cita.hora) {
