@@ -304,8 +304,8 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
         const nombreSpanProf = document.getElementById('modal-cita-nombre-prof');
         if (nombreSpanProf) nombreSpanProf.textContent = nombre;
 
-        const rutSpanProf = document.getElementById('modal-cita-rut-prof');
-        if (rutSpanProf) rutSpanProf.textContent = rut;
+       const rutSpanProf = document.getElementById('modal-cita-rut-prof');
+if (rutSpanProf) rutSpanProf.textContent = window.formatRUT ? window.formatRUT(rut) : rut;
 
         const selProf = document.getElementById('modal-cita-profession-prof');
         if (selProf) {
