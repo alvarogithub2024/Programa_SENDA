@@ -169,16 +169,16 @@ function renderSolicitudesTable() {
             return `
                 <tr class="solicitud-row" data-solicitud-id="${solicitud.id}">
                     <td>
-                        <div class="paciente-info">
-                            <div class="paciente-nombre">
-                                ${solicitud.nombre || ""} ${solicitud.apellidos || ""}
+                <div class="paciente-info">
+                        <div class="paciente-nombre">
+                             ${solicitud.nombre || ""} ${solicitud.apellidos || ""}
                             </div>
                             <div class="paciente-detalles">
-                               RUT: ${window.formatRUT ? window.formatRUT(solicitud.rut || "") : (solicitud.rut || "")}
-                                Edad: ${solicitud.edad || ""} años
+                            RUT: ${window.formatRUT ? window.formatRUT(solicitud.rut || "") : (solicitud.rut || "")}<br>
+                            Edad: ${solicitud.edad || ""} años
                             </div>
-                        </div>
-                    </td>
+                            </div>
+                        </td>
                     <td>
                         <div class="contacto-info">
                             <div><i class="fas fa-phone"></i> ${solicitud.telefono || ""}</div>
