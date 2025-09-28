@@ -3040,13 +3040,16 @@ document.addEventListener('DOMContentLoaded', setupModalTabs);
     width: 100%;
     margin-bottom: 18px;
 }
-.motivacion-slider-labels {
+
+
+   .motivacion-numero-centro {
   width: 100%;
   display: flex;
   justify-content: center;
-  margin-top: 8px;
+  margin-top: 10px;
   margin-bottom: 2px;
 }
+
 .motivacion-bubble {
   display: inline-block;
   background: #2563eb;
@@ -3061,6 +3064,7 @@ document.addEventListener('DOMContentLoaded', setupModalTabs);
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.10);
   transition: background 0.2s;
 }
+
 .motivacion-minmax-labels {
   display: flex;
   justify-content: space-between;
