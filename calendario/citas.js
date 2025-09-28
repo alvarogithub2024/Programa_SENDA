@@ -424,12 +424,15 @@ if (rutSpanProf) rutSpanProf.textContent = rut;
     }, 100);
   });
 }
-// Función centralizada para ambos flujos: Nueva Cita y Agendar Cita
+// =======================
+// Centralizar el flujo de crear/actualizar paciente + agendar cita
+// =======================
+
 function upsertPacienteYAgendarCita(datosCita, callback) {
     const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
     const datos = Object.assign({}, datosCita);
     datos.fechaCreacion = datos.fechaCreacion || new Date().toISOString();
-    const rutLimpio = datos.pacienteRut.replace(/[.\-]/g, "").toUpperCase();
+    const rutLimpio = datos.pacienteRut ? datos.pacienteRut.replace(/[.\-]/g, "").toUpperCase() : "";
 
     if (!rutLimpio) {
         window.showNotification && window.showNotification("Error: El paciente no tiene RUT, no se puede crear en la colección pacientes.", "error");
@@ -464,6 +467,10 @@ function upsertPacienteYAgendarCita(datosCita, callback) {
             };
             if (!snapshot.empty) {
                 pacienteId = snapshot.docs[0].id;
+                if (!pacienteId) {
+                    window.showNotification && window.showNotification("Error: No se pudo determinar el id del paciente.", "error");
+                    return;
+                }
                 pacienteData.id = pacienteId;
                 db.collection("pacientes").doc(pacienteId).set(pacienteData, { merge: true })
                     .then(() => {
@@ -476,6 +483,10 @@ function upsertPacienteYAgendarCita(datosCita, callback) {
                 db.collection("pacientes").add(pacienteData)
                     .then(function(docRef) {
                         pacienteId = docRef.id;
+                        if (!pacienteId) {
+                            window.showNotification && window.showNotification("Error: Paciente creado sin id.", "error");
+                            return;
+                        }
                         pacienteData.id = pacienteId;
                         db.collection("pacientes").doc(pacienteId).set(pacienteData, { merge: true });
                         datos.pacienteId = pacienteId;
@@ -495,6 +506,11 @@ function upsertPacienteYAgendarCita(datosCita, callback) {
  * Crea la cita vinculada al pacienteId.
  */
 function crearCitaConPacienteId(db, datos, callback) {
+    if (!datos.pacienteId) {
+        window.showNotification && window.showNotification("Error: No se pudo vincular la cita a un paciente válido.", "error");
+        if (typeof callback === "function") callback(null, "pacienteId vacío");
+        return;
+    }
     db.collection("citas").add(datos)
         .then(function(docRef) {
             window.showNotification && window.showNotification("Cita agendada correctamente", "success");
@@ -505,6 +521,54 @@ function crearCitaConPacienteId(db, datos, callback) {
             if (typeof callback === "function") callback(null, error);
         });
 }
+
+// ===========
+// INTEGRACIÓN EN FORMULARIOS NUEVA CITA Y AGENDAR CITA
+// ===========
+
+// Ejemplo para el submit del formulario de nueva cita
+document.addEventListener("DOMContentLoaded", function() {
+    var formNuevaCita = document.getElementById('form-nueva-cita-paciente');
+    if (formNuevaCita) {
+        formNuevaCita.onsubmit = function(e) {
+            e.preventDefault();
+            // Recolectar todos los datos del formulario:
+            const datos = {
+                pacienteNombre: document.getElementById('pac-cita-paciente-nombre')?.value.trim(),
+                pacienteApellidos: document.getElementById('pac-cita-paciente-apellidos')?.value.trim() || "",
+                pacienteRut: document.getElementById('pac-cita-paciente-rut')?.value.trim(),
+                cesfam: document.getElementById('pac-cita-cesfam')?.value,
+                edad: document.getElementById('pac-cita-edad')?.value || "",
+                telefono: document.getElementById('pac-cita-telefono')?.value || "",
+                email: document.getElementById('pac-cita-email')?.value || "",
+                direccion: document.getElementById('pac-cita-direccion')?.value || "",
+                sustancias: Array.from(document.querySelectorAll('[name="pac-cita-sustancias"]:checked')).map(x=>x.value),
+                tiempoConsumo: document.getElementById('pac-cita-tiempo-consumo')?.value || "",
+                urgencia: document.querySelector('[name="pac-cita-urgencia"]:checked')?.value || "",
+                tratamientoPrevio: document.querySelector('[name="pac-cita-tratamiento-previo"]:checked')?.value || "",
+                descripcion: document.getElementById('pac-cita-descripcion')?.value || "",
+                motivacion: document.getElementById('pac-cita-motivacion')?.value || "",
+                paraMi: document.querySelector('[name="pac-cita-para-mi"]:checked')?.value || "",
+                estado: "agendada",
+                fecha: document.getElementById('pac-cita-fecha')?.value,
+                hora: document.getElementById('pac-cita-hora')?.value,
+                profesionalId: document.getElementById('pac-cita-profesional')?.value,
+                profesionalNombre: document.getElementById('pac-cita-profesional-nombre')?.value,
+                tipo: "paciente",
+                tipoProfesional: document.getElementById('pac-cita-profession')?.value,
+                profesionalDescripcion: document.getElementById('pac-cita-profesional-descripcion')?.value || ""
+            };
+            if (!datos.pacienteNombre || !datos.pacienteRut || !datos.profesionalId || !datos.fecha || !datos.hora) {
+                window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
+                return;
+            }
+            upsertPacienteYAgendarCita(datos, function(idCita, error) {
+                if (!error) closeModal('modal-nueva-cita-paciente');
+            });
+        };
+    }
+    // Puedes hacer un submit similar para el formulario de agendar cita, usando los mismos campos y lógica.
+});
 window.abrirModalCitaPaciente = abrirModalCitaPaciente;
 window.guardarCitaPaciente = guardarCitaPaciente;
 window.llenarSelectProfesionesPaciente = llenarSelectProfesionesPaciente;
