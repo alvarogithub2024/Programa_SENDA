@@ -549,6 +549,9 @@
         }
         if (actualizarBtn) {
             actualizarBtn.onclick = function() {
+                // Limpiar el campo de búsqueda al actualizar
+                const searchInput = getSearchInput();
+                if (searchInput) searchInput.value = "";
                 refrescarPacientesTab();
             };
         }
