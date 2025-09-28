@@ -406,7 +406,6 @@ function verDetalleSolicitud(solicitudId) {
     document.getElementById('modal-detalle-motivo').textContent = solicitud.descripcion || ''; // Motivo de atención (corregido)
     document.getElementById('modal-detalle-cesfam').textContent = solicitud.cesfam || '';
     document.getElementById('modal-detalle-estado').textContent = solicitud.estado || '';
-    document.getElementById('modal-detalle-fecha').textContent = solicitud.fecha ? new Date(solicitud.fecha).toLocaleDateString('es-CL') : '';
     document.getElementById('modal-detalle-sustancias').textContent = Array.isArray(solicitud.sustancias) ? solicitud.sustancias.join(', ') : '';
     
     document.getElementById('modal-detalle').style.display = 'flex';
