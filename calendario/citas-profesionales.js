@@ -1,4 +1,3 @@
-
 let profesionalesProfesional = [];
 let profesionesProfesional = [];
 let miCesfamProfesional = null;
@@ -160,10 +159,19 @@ function abrirModalNuevaCitaProfesional() {
                         fecha: document.getElementById('prof-cita-fecha').value,
                         hora: document.getElementById('prof-cita-hora').value,
                         tipo: "profesional",
-                        email: document.getElementById('prof-cita-paciente-email')?.value,
-                        telefono: document.getElementById('prof-cita-paciente-telefono')?.value,
-                        direccion: document.getElementById('prof-cita-paciente-direccion')?.value,
+                        
+                        // Campos de paciente (opcionales para citas entre profesionales)
+                        pacienteNombre: document.getElementById('prof-cita-paciente-nombre')?.value || "",
+                        telefono: document.getElementById('prof-cita-paciente-telefono')?.value || "",
+                        email: document.getElementById('prof-cita-paciente-email')?.value || "",
+                        direccion: document.getElementById('prof-cita-paciente-direccion')?.value || "",
+                        
+                        // Campo adicional para motivo
+                        motivo: document.getElementById('prof-cita-motivo')?.value || "",
+                        observaciones: document.getElementById('prof-cita-motivo')?.value || "",
+                        
                         creado: new Date().toISOString(),
+                        cesfam: miCesfamProfesional
                     };
 
                     if (!cita.profesion || !cita.profesionalId || !cita.fecha || !cita.hora) {
@@ -171,11 +179,25 @@ function abrirModalNuevaCitaProfesional() {
                         return;
                     }
                     
+                    // Validar email si se proporciona
+                    if (cita.email && !validarEmail(cita.email)) {
+                        window.showNotification && window.showNotification("Email inválido", "warning");
+                        return;
+                    }
+                    
+                    // Limpiar teléfono
+                    if (cita.telefono) {
+                        cita.telefono = limpiarTelefonoChileno(cita.telefono);
+                    }
+                    
                     const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
                     db.collection("citas").add(cita)
                         .then(function(docRef) {
                             window.showNotification && window.showNotification("Cita agendada correctamente", "success");
                             closeModal('modal-nueva-cita-profesional');
+                            
+                            // Limpiar formulario
+                            form.reset();
                         })
                         .catch(function(error) {
                             window.showNotification && window.showNotification("Error al guardar la cita: " + error, "error");
@@ -307,7 +329,7 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
         const nombreSpanProf = document.getElementById('modal-cita-nombre-prof');
         if (nombreSpanProf) nombreSpanProf.textContent = nombre;
 
-       const rutSpanProf = document.getElementById('modal-cita-rut-prof');
+        const rutSpanProf = document.getElementById('modal-cita-rut-prof');
         if (rutSpanProf) rutSpanProf.textContent = window.formatRUT ? window.formatRUT(rut) : rut;
 
         const selProf = document.getElementById('modal-cita-profession-prof');
@@ -336,7 +358,6 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
 
         showModal('modal-agendar-cita-profesional');
 
-
         setTimeout(function() {
             const form = document.getElementById('form-agendar-cita-profesional');
             if (form && !form._onsubmitSet) {
@@ -346,14 +367,22 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
                     const cita = {
                         solicitudId: document.getElementById('modal-cita-id-prof').value,
                         nombre: document.getElementById('modal-cita-nombre-prof').textContent,
+                        pacienteNombre: document.getElementById('modal-cita-nombre-prof').textContent,
                         rut: document.getElementById('modal-cita-rut-prof').textContent,
+                        pacienteRut: document.getElementById('modal-cita-rut-prof').textContent,
                         profesion: document.getElementById('modal-cita-profession-prof').value,
                         profesionalId: document.getElementById('modal-cita-profesional-prof').value,
                         profesionalNombre: document.getElementById('modal-cita-profesional-nombre-prof').value,
                         fecha: document.getElementById('modal-cita-fecha-prof').value,
                         hora: document.getElementById('modal-cita-hora-prof').value,
                         creado: new Date().toISOString(),
-                        tipo: "profesional"
+                        tipo: "profesional",
+                        cesfam: miCesfamAgendarProf,
+                        
+                        // Campos de contacto por defecto vacíos
+                        telefono: "",
+                        email: "",
+                        direccion: ""
                     };
 
                     if (!cita.nombre || !cita.rut || !cita.profesion || !cita.profesionalId || !cita.fecha || !cita.hora) {
@@ -366,7 +395,7 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
                         .then(function(docRef) {
                             const solicitudId = cita.solicitudId;
                             
-    
+                            // Actualizar estado en solicitudes_ingreso
                             db.collection("solicitudes_ingreso").doc(solicitudId).update({ estado: "agendada" })
                                 .catch(() => {})
                                 .finally(() => {
@@ -390,6 +419,21 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
     });
 }
 
+// Funciones de utilidad
+function limpiarTelefonoChileno(tel) {
+    if (!tel) return "";
+    tel = tel.replace(/\D/g, '');
+    if (tel.startsWith("56")) tel = tel.slice(2);
+    if (tel.length === 11 && tel.startsWith("569")) tel = tel.slice(2);
+    return tel;
+}
+
+function validarEmail(email) {
+    if (!email) return true; // Email es opcional
+    return /^[\w\.\-]+@([\w\-]+\.)+[a-zA-Z]{2,7}$/.test(email);
+}
+
+// Exportar funciones
 window.abrirModalNuevaCitaProfesional = abrirModalNuevaCitaProfesional;
 window.abrirModalAgendarCitaProfesional = abrirModalAgendarCitaProfesional;
 window.cargarProfesionalesAgendarCitaProfesional = cargarProfesionalesAgendarCitaProfesional;
