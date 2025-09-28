@@ -2986,3 +2986,53 @@ document.addEventListener('DOMContentLoaded', setupModalTabs);
   background: linear-gradient(90deg, #1d62c0 80%, #3585e4 100%);
   box-shadow: 0 4px 16px #247cff35;
 }
+/* Contenedor principal de tabla */
+#solicitudes-table-container {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.09);
+  margin-top: 1.8rem;
+  padding: 2.5rem 2rem 2rem 2rem;
+  overflow-x: auto;
+  width: 100vw;         /* Ocupa todo el ancho de la ventana */
+  max-width: none;      /* Elimina el límite de ancho */
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  box-sizing: border-box;
+}
+
+/* Tabla de solicitudes */
+.solicitudes-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 1.17rem;       /* Más grande */
+}
+
+.solicitudes-table thead th {
+  background: #e8f0fe;
+  color: #2666df;
+  font-weight: 700;
+  padding: 1.2rem 1rem;     /* Más alto y espacioso */
+  text-align: left;
+  border-bottom: 2.5px solid #dbeafe;
+  font-size: 1.13rem;       /* Más grande */
+  letter-spacing: 0.012em;
+}
+
+.solicitudes-table tbody tr {
+  border-bottom: 1.5px solid #f0f1f4;
+  transition: background 0.16s;
+}
+
+.solicitudes-table tbody tr:hover {
+  background: #f0f6ff;
+}
+
+.solicitudes-table td {
+  padding: 1.1rem 1rem;     /* Más espacio en celdas */
+  vertical-align: top;
+}
