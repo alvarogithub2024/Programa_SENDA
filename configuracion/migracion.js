@@ -1,5 +1,3 @@
-// ==================== SCRIPT DE MIGRACIÓN DE DATOS ====================
-// Ejecutar este script para arreglar datos existentes en Firebase
 
 class MigracionDatos {
     constructor() {
@@ -14,22 +12,19 @@ class MigracionDatos {
         console.log('=====================================');
         
         try {
-            // 1. Obtener todos los RUTs únicos
+
             const rutsUnicos = await this.obtenerTodosLosRuts();
             console.log(`📋 Total de RUTs únicos encontrados: ${rutsUnicos.size}`);
-            
-            // 2. Procesar cada RUT
+
             let contador = 0;
             for (let rut of rutsUnicos) {
                 contador++;
                 console.log(`\n🔄 Procesando ${contador}/${rutsUnicos.size}: ${rut}`);
                 await this.migrarDatosPorRut(rut);
-                
-                // Pausa pequeña para no sobrecargar Firebase
+
                 await this.pausa(100);
             }
-            
-            // 3. Mostrar resumen
+
             this.mostrarResumen();
             
         } catch (error) {
@@ -42,7 +37,7 @@ class MigracionDatos {
         const ruts = new Set();
         
         try {
-            // Colecciones a revisar
+
             const colecciones = [
                 'pacientes',
                 'solicitudes_ingreso', 
@@ -88,8 +83,7 @@ class MigracionDatos {
                 console.log(`⏭️ ${rut} ya procesado, saltando...`);
                 return;
             }
-            
-            // 1. Recopilar todos los datos del RUT
+
             const datosCompletos = await this.recopilarDatosCompletos(rut);
             
             if (!datosCompletos || Object.keys(datosCompletos).length === 0) {
@@ -97,10 +91,7 @@ class MigracionDatos {
                 return;
             }
             
-            // 2. Crear/actualizar paciente maestro
             await this.crearActualizarPacienteMaestro(rut, datosCompletos);
-            
-            // 3. Actualizar todas las colecciones relacionadas
             await this.actualizarColeccionesRelacionadas(rut, datosCompletos);
             
             this.procesados.add(rut);
@@ -117,28 +108,24 @@ class MigracionDatos {
         const datos = {};
         
         try {
-            // Paciente actual
             const pacienteQuery = await this.db.collection("pacientes")
                 .where("rut", "==", rut).limit(1).get();
             if (!pacienteQuery.empty) {
                 Object.assign(datos, pacienteQuery.docs[0].data());
             }
 
-            // Solicitudes de ingreso
             const solicitudesQuery = await this.db.collection("solicitudes_ingreso")
                 .where("rut", "==", rut).get();
             solicitudesQuery.forEach(doc => {
                 this.fusionarDatos(datos, doc.data());
             });
 
-            // Reingresos
             const reingresosQuery = await this.db.collection("reingresos")
                 .where("rut", "==", rut).get();
             reingresosQuery.forEach(doc => {
                 this.fusionarDatos(datos, doc.data());
             });
 
-            // Citas (buscar por ambos campos)
             const citasQuery1 = await this.db.collection("citas")
                 .where("pacienteRut", "==", rut).get();
             const citasQuery2 = await this.db.collection("citas")
@@ -150,14 +137,12 @@ class MigracionDatos {
                 });
             });
 
-            // Atenciones
             const atencionesQuery = await this.db.collection("atenciones")
                 .where("pacienteRut", "==", rut).get();
             atencionesQuery.forEach(doc => {
                 this.fusionarDatos(datos, doc.data());
             });
 
-            // Asegurar RUT limpio
             datos.rut = rut;
             datos.fechaUltimaActualizacion = new Date().toISOString();
             datos.origenUltimaActualizacion = 'migracion_completa';
@@ -175,15 +160,12 @@ class MigracionDatos {
             const valorOrigen = origen[key];
             const valorDestino = destino[key];
 
-            // Solo agregar si tiene contenido y no existe o está vacío en destino
             if (this.tieneContenido(valorOrigen)) {
                 if (!this.tieneContenido(valorDestino)) {
                     destino[key] = valorOrigen;
                 } else if (Array.isArray(valorOrigen) && Array.isArray(valorDestino)) {
-                    // Fusionar arrays únicos
                     destino[key] = [...new Set([...valorDestino, ...valorOrigen])];
                 } else if (typeof valorOrigen === 'string' && valorOrigen.length > (valorDestino?.length || 0)) {
-                    // Tomar la string más larga si es significativamente mayor
                     destino[key] = valorOrigen;
                 }
             }
@@ -199,19 +181,16 @@ class MigracionDatos {
 
     async crearActualizarPacienteMaestro(rut, datosCompletos) {
         try {
-            // Limpiar datos para paciente
             const datosPaciente = this.limpiarDatosParaPaciente(datosCompletos);
             
             const pacienteQuery = await this.db.collection("pacientes")
                 .where("rut", "==", rut).limit(1).get();
 
             if (!pacienteQuery.empty) {
-                // Actualizar paciente existente
                 const docId = pacienteQuery.docs[0].id;
                 await this.db.collection("pacientes").doc(docId).update(datosPaciente);
                 console.log(`  📝 Paciente actualizado: ${docId}`);
             } else {
-                // Crear nuevo paciente
                 const docRef = await this.db.collection("pacientes").add(datosPaciente);
                 console.log(`  ➕ Nuevo paciente creado: ${docRef.id}`);
             }
@@ -236,7 +215,6 @@ class MigracionDatos {
             }
         });
 
-        // Asegurar fecha de registro
         if (!datosLimpios.fechaRegistro) {
             datosLimpios.fechaRegistro = new Date().toISOString();
         }
@@ -246,10 +224,7 @@ class MigracionDatos {
 
     async actualizarColeccionesRelacionadas(rut, datosCompletos) {
         try {
-            // Actualizar citas
             await this.actualizarCitas(rut, datosCompletos);
-            
-            // Actualizar atenciones
             await this.actualizarAtenciones(rut, datosCompletos);
             
         } catch (error) {
@@ -356,7 +331,6 @@ class MigracionDatos {
     }
 }
 
-// ==================== FUNCIONES PÚBLICAS ====================
 
 window.ejecutarMigracionCompleta = async function() {
     const migracion = new MigracionDatos();
@@ -375,7 +349,6 @@ window.verificarConsistenciaDatos = async function() {
     const inconsistencias = [];
     
     try {
-        // Verificar pacientes sin datos de contacto
         const pacientesQuery = await db.collection("pacientes").get();
         
         pacientesQuery.forEach(doc => {
