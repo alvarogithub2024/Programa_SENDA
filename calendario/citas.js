@@ -283,7 +283,7 @@ var nombreSpanProf = document.getElementById('modal-cita-nombre-prof');
 if (nombreSpanProf) nombreSpanProf.textContent = nombre;
 
 var rutSpan = document.getElementById('modal-cita-rut');
-if (rutSpan) rutSpan.textContent = window.formatRUT ? window.formatRUT(rut) : rut;
+if (rutSpan) rutSpan.textContent = rut;
 var rutSpanProf = document.getElementById('modal-cita-rut-prof');
 if (rutSpanProf) rutSpanProf.textContent = rut;
 
