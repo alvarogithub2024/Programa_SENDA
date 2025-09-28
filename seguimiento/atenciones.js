@@ -53,6 +53,14 @@ document.addEventListener("DOMContentLoaded", function() {
                     citaId: citaId
                 };
 
+                // LOG para depuración
+                console.log(">>> Guardando atención con datos:", datosAtencion);
+
+                if (!datosAtencion.pacienteId) {
+                    window.showNotification("Error: El campo pacienteId está vacío al guardar la atención.", "error");
+                    return;
+                }
+
                 db.collection("atenciones").add(datosAtencion)
                 .then(function(docRef) {
                     window.showNotification("Atención registrada correctamente", "success");
@@ -67,7 +75,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 });
-
 // Si tienes una función para registrar atenciones manualmente desde JS:
 window.registrarAtencion = function(datosAtencion, callback) {
     var db = window.getFirestore();
