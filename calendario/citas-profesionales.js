@@ -393,8 +393,3 @@ document.addEventListener("DOMContentLoaded", function() {
         };
     }
 });
-
-// ...tus window. asignaciones/exportaciones
-window.abrirModalNuevaCitaProfesional = abrirModalNuevaCitaProfesional;
-window.abrirModalAgendarCitaProfesional = abrirModalAgendarCitaProfesional;
-window.cargarProfesionalesAgendarCitaProfesional = cargarProfesionalesAgendarCitaProfesional;
