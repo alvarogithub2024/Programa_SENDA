@@ -1,9 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 
-<!-- =============================================== -->
-<!-- 1. CONFIGURACIÓN DEL DOCUMENTO Y METADATOS -->
-<!-- =============================================== -->
+<!-- CONFIGURACIÓN DEL DOCUMENTO Y METADATOS -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,6 +26,7 @@
     <script src="utilidades/notificaciones.js"></script>
     <script src="utilidades/modales.js"></script>
     <script src="utilidades/permisos.js"></script>
+    <script src="utilidades/sincronizacion.js"></script>
 
     <!-- ========== FORMULARIOS Y VALIDACIONES ========== -->
     <script src="formularios/validaciones.js"></script>
@@ -70,9 +69,8 @@
 
 <body>
 
-<!-- =============================================== -->
-<!-- 2. ENCABEZADO PÚBLICO -->
-<!-- =============================================== -->
+<!--ENCABEZADO PÚBLICO -->
+
 <header class="header">
     <div class="header-content">
         <div class="logo">
@@ -88,9 +86,8 @@
     </div>
 </header>
 
-<!-- =============================================== -->
-<!-- 3. ENCABEZADO PROFESIONAL (OCULTO POR DEFECTO) -->
-<!-- =============================================== -->
+<!-- ENCABEZADO PROFESIONAL  -->
+    
 <div class="professional-header" id="professional-header" style="display: none;">
     <div class="header-content">
         <div class="professional-info">
@@ -110,9 +107,8 @@
     </div>
 </div>
 
-<!-- =============================================== -->
-<!-- 4. CONTENIDO PRINCIPAL -->
-<!-- =============================================== -->
+<!-- CONTENIDO PRINCIPAL -->
+    
 <main class="main-content">
 
     <!-- ========== CONTENIDO PÚBLICO ========== -->
@@ -185,7 +181,7 @@
         </div>
     </div>
 
-    <!-- ========== CONTENIDO PROFESIONAL (OCULTO POR DEFECTO) ========== -->
+    <!-- ========== CONTENIDO PROFESIONAL ========== -->
     <div id="professional-content" style="display: none;">
         
         <!-- Navegación por pestañas -->
@@ -370,9 +366,8 @@
     </div>
 </main>
 
-<!-- =============================================== -->
-<!-- 5. MODALES DEL SISTEMA -->
-<!-- =============================================== -->
+
+<!-- MODALES DEL SISTEMA -->
 
 <!-- ========== MODAL: LOGIN Y REGISTRO ========== -->
 <div class="modal-overlay" id="login-modal" style="display:none;">
@@ -852,25 +847,36 @@
 </div>
 
 <!-- ========== MODAL: EDITAR SOLICITUD ========== -->
-<form class="modal-form">
-  <div class="form-row">
-    <div class="form-group">
-      <label for="modal-editar-nombre">Nombre:</label>
-      <input type="text" id="modal-editar-nombre" name="nombre">
+<div class="modal-overlay" id="modal-editar" style="display:none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('modal-editar')">&times;</span>
+        <h2>Editar solicitud</h2>
+        <form class="modal-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="modal-editar-nombre">Nombre:</label>
+                    <input type="text" id="modal-editar-nombre" name="nombre">
+                </div>
+                <div class="form-group">
+                    <label for="modal-editar-rut">RUT:</label>
+                    <input type="text" id="modal-editar-rut" name="rut">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="modal-editar-telefono">Teléfono:</label>
+                    <input type="text" id="modal-editar-telefono" name="telefono">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" onclick="guardarEdicionSolicitud()" class="btn btn-primary">
+                    Guardar cambios
+                </button>
+            </div>
+            <input type="hidden" id="modal-editar-id" name="id">
+        </form>
     </div>
-    <div class="form-group">
-      <label for="modal-editar-rut">RUT:</label>
-      <input type="text" id="modal-editar-rut" name="rut">
-    </div>
-  </div>
-  <div class="form-group">
-    <label for="modal-editar-telefono">Teléfono:</label>
-    <input type="text" id="modal-editar-telefono" name="telefono">
-  </div>
-  <div class="form-actions">
-    <button type="button" class="btn btn-primary">Guardar cambios</button>
-  </div>
-</form>
+</div>
 
 <!-- ========== MODAL: RESPONDER SOLICITUD ========== -->
 <div class="modal-overlay" id="modal-responder" style="display:none;">
@@ -1105,9 +1111,9 @@
     </div>
 </div>
  
-<!-- =============================================== -->
-<!-- 6. PIE DE PÁGINA -->
-<!-- =============================================== -->
+
+<!-- PIE DE PÁGINA -->
+    
 <footer class="footer">
     <div class="footer-content">
         <p>&copy; 2024 SENDA Puente Alto. Todos los derechos reservados.</p>
@@ -1118,10 +1124,9 @@
     </div>  
 </footer>
 
-<!-- =============================================== -->
-<!-- 7. SCRIPTS JAVASCRIPT -->
-<!-- =============================================== -->
 
+<!-- SCRIPTS JAVASCRIPT -->
+    
 <!-- ========== SCRIPT: MODAL SOBRE EL PROGRAMA ========== -->
 <script>
 document.addEventListener("DOMContentLoaded", function() {
@@ -1159,6 +1164,5 @@ function switchLoginTab(tab){
     }
 }
 </script>
-
 </body>
 </html>
