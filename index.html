@@ -252,30 +252,24 @@
             <!-- Estadísticas de solicitudes -->
             <div id="solicitudes-stats" class="stats-container"></div>
             
-            <!-- Contador de resultados -->
-            <div class="counter-info">
-                Mostrando <span id="solicitudes-counter">0</span> de <span id="solicitudes-total-counter">0</span> solicitudes
-            </div>
-            
-            <!-- Tabla de solicitudes -->
-            <div id="solicitudes-table-container">
-                <table class="solicitudes-table">
-                    <thead>
-                        <tr>
-                            <th>Paciente</th>
-                            <th>Contacto</th>
-                            <th>CESFAM</th>
-                            <th>Estado</th>
-                            <th>Prioridad</th>
-                            <th>Fecha</th>
-                            <th>Sustancias</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="solicitudes-table-body"></tbody>
-                </table>
-            </div>
-        </div>
+  <!-- Tabla de solicitudes en recuadro expandido -->
+<div id="solicitudes-table-container" style="width: 100vw; max-width: none; position: relative; left: 50%; right: 50%; margin-left: -50vw; margin-right: -50vw; box-sizing: border-box; background: #fff; border-radius: 18px; box-shadow: 0 8px 32px rgba(0,0,0,0.09); margin-top: 1.8rem; padding: 2.5rem 2rem 2rem 2rem; overflow-x: auto;">
+    <table class="solicitudes-table">
+        <thead>
+            <tr>
+                <th>Paciente</th>
+                <th>Contacto</th>
+                <th>CESFAM</th>
+                <th>Estado</th>
+                <th>Prioridad</th>
+                <th>Fecha</th>
+                <th>Sustancias</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="solicitudes-table-body"></tbody>
+    </table>
+</div>
 
         <!-- ==================== PESTAÑA: AGENDA ==================== -->
         <div class="tab-pane active" id="agenda-tab">
@@ -913,10 +907,10 @@
             <p><b>Email:</b> <span id="modal-detalle-email"></span></p>
             <p><b>Motivo de atención:</b> <span id="modal-detalle-motivo"></span></p>
             <p><b>CESFAM:</b> <span id="modal-detalle-cesfam"></span></p>
-            <p><b>Prioridad:</b> <span id="modal-detalle-prioridad"></span></p>
             <p><b>Estado:</b> <span id="modal-detalle-estado"></span></p>
             <p><b>Fecha:</b> <span id="modal-detalle-fecha"></span></p>
             <p><b>Sustancias:</b> <span id="modal-detalle-sustancias"></span></p>
+             <p><b>Fecha:</b> <span id="modal-detalle-fecha"></span></p>
         </div>
     </div>
 </div>
