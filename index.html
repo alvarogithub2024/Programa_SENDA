@@ -848,34 +848,34 @@
 
 <!-- ========== MODAL: EDITAR SOLICITUD ========== -->
 <div class="modal-overlay" id="modal-editar" style="display:none;">
-    <div class="modal-content">
-        <span class="close" onclick="closeModal('modal-editar')">&times;</span>
-        <h2>Editar solicitud</h2>
-        <form class="modal-form">
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="modal-editar-nombre">Nombre:</label>
-                    <input type="text" id="modal-editar-nombre" name="nombre">
-                </div>
-                <div class="form-group">
-                    <label for="modal-editar-rut">RUT:</label>
-                    <input type="text" id="modal-editar-rut" name="rut">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="modal-editar-telefono">Teléfono:</label>
-                    <input type="text" id="modal-editar-telefono" name="telefono">
-                </div>
-            </div>
-            <div class="form-actions">
-                <button type="button" onclick="guardarEdicionSolicitud()" class="btn btn-primary">
-                    Guardar cambios
-                </button>
-            </div>
-            <input type="hidden" id="modal-editar-id" name="id">
-        </form>
-    </div>
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-editar')">&times;</button>
+    <h2>Editar solicitud</h2>
+    <form class="modal-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="modal-editar-nombre">Nombre:</label>
+          <input class="form-input" type="text" id="modal-editar-nombre" name="nombre">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="modal-editar-rut">RUT:</label>
+          <input class="form-input" type="text" id="modal-editar-rut" name="rut">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="modal-editar-telefono">Teléfono:</label>
+          <input class="form-input" type="text" id="modal-editar-telefono" name="telefono">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" onclick="guardarEdicionSolicitud()" class="btn btn-primary">
+          Guardar cambios
+        </button>
+      </div>
+      <input type="hidden" id="modal-editar-id" name="id">
+    </form>
+  </div>
 </div>
 
 <!-- ========== MODAL: RESPONDER SOLICITUD ========== -->
