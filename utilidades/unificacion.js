@@ -282,7 +282,52 @@ function migrarDatosExistentes() {
         });
     });
 }
+function unificarSesionUsuario(userData) {
+    if (!userData) return null;
+    
+    const sesionUnificada = {
+        uid: userData.uid || userData.id,
+        email: userData.email || '',
+        nombre: userData.nombre || '',
+        apellidos: userData.apellidos || '',
+        profession: userData.profession || '',
+        cesfam: userData.cesfam || '',
+        activo: userData.activo !== false,
+        fechaLogin: new Date().toISOString()
+    };
+    
+    // Guardar en sessionStorage para persistencia
+    try {
+        sessionStorage.setItem('senda_sesion_unificada', JSON.stringify(sesionUnificada));
+    } catch (error) {
+        console.warn('No se pudo guardar sesión unificada:', error);
+    }
+    
+    return sesionUnificada;
+}
 
+function obtenerSesionUnificada() {
+    try {
+        const sesion = sessionStorage.getItem('senda_sesion_unificada');
+        return sesion ? JSON.parse(sesion) : null;
+    } catch (error) {
+        console.warn('Error obteniendo sesión unificada:', error);
+        return null;
+    }
+}
+
+function limpiarSesionUnificada() {
+    try {
+        sessionStorage.removeItem('senda_sesion_unificada');
+    } catch (error) {
+        console.warn('Error limpiando sesión unificada:', error);
+    }
+}
+
+
+window.unificarSesionUsuario = unificarSesionUsuario;
+window.obtenerSesionUnificada = obtenerSesionUnificada;
+window.limpiarSesionUnificada = limpiarSesionUnificada;
 window.generarIdPaciente = generarIdPaciente;
 window.extraerRutDeId = extraerRutDeId;
 window.crearOActualizarPaciente = crearOActualizarPaciente;
@@ -293,3 +338,4 @@ window.crearAtencionConId = crearAtencionConId;
 window.crearReingresoConId = crearReingresoConId;
 window.obtenerHistorialCompletoPaciente = obtenerHistorialCompletoPaciente;
 window.migrarDatosExistentes = migrarDatosExistentes;
+console.log('✅ Sistema de unificación de sesión cargado');
