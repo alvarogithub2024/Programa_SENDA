@@ -525,14 +525,14 @@ const motivacionRange = document.getElementById('motivacion-range');
         estado: 'pendiente',
         origen: 'ingreso'
       };
-      if (window.SISTEMA_ID_UNIFICADO) {
-        window.SISTEMA_ID_UNIFICADO.crearSolicitudIngreso(datos)
-        .then(() => {
-          window.showNotification && window.showNotification("Solicitud enviada correctamente", "success");
-          closeModal('patient-modal');
-        }).catch((error) => {
-          window.showNotification && window.showNotification("Error al guardar solicitud: " + error.message, "error");
-        });
+     if (window.SISTEMA_ID_UNIFICADO) {
+  window.SISTEMA_ID_UNIFICADO.crearSolicitudIngreso(datos)
+  .then(() => {
+    window.showNotification && window.showNotification("Solicitud enviada correctamente", "success");
+    closeModal('patient-modal');
+  }).catch((error) => {
+    window.showNotification && window.showNotification("Error al guardar solicitud: " + error.message, "error");
+  });
       } else {
         window.showNotification && window.showNotification("Sistema no inicializado", "error");
       }
