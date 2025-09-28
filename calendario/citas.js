@@ -90,8 +90,9 @@ function guardarCitaPaciente(datosCita, callback) {
 
   db.collection("citas").add(datos)
     .then(function(docRef) {
-      window.showNotification && window.showNotification("Cita agendada correctamente", "success");
-      
+   
+    });
+}
       if (datos.pacienteRut && datos.pacienteNombre) {
         const rutLimpio = datos.pacienteRut.replace(/[.\-]/g, "").toUpperCase();
         db.collection("pacientes").where("rut", "==", rutLimpio).limit(1).get()
