@@ -26,6 +26,7 @@
     <script src="utilidades/notificaciones.js"></script>
     <script src="utilidades/modales.js"></script>
     <script src="utilidades/permisos.js"></script>
+    <script src="utilidades/sistema-id-unificado.js"></script>
 
     <!-- ========== FORMULARIOS Y VALIDACIONES ========== -->
     <script src="formularios/validaciones.js"></script>
@@ -109,6 +110,26 @@
 <!-- CONTENIDO PRINCIPAL -->
     
 <main class="main-content">
+    <!-- ========== ACTUALIZACIONES PARA SISTEMA UNIFICADO ========== -->
+<script>
+// Script de inicialización después de que todo esté cargado
+document.addEventListener("DOMContentLoaded", function() {
+    // Esperar a que Firebase esté listo
+    setTimeout(function() {
+        if (window.isFirebaseInitialized && window.isFirebaseInitialized()) {
+            if (window.inicializarSistemaUnificado) {
+                window.inicializarSistemaUnificado();
+            }
+        } else {
+            // Reintentar en 2 segundos
+            setTimeout(function() {
+                if (window.inicializarSistemaUnificado) {
+                    window.inicializarSistemaUnificado();
+                }
+            }, 2000);
+        }
+    }, 1000);
+});
 
     <!-- ========== CONTENIDO PÚBLICO ========== -->
     <div id="public-content">
@@ -1127,6 +1148,32 @@
     </div>
 </div>
 
+
+// Función de depuración para verificar el sistema
+window.debugSistemaUnificado = function() {
+    console.log('=== DEBUG SISTEMA UNIFICADO ===');
+    console.log('Firebase inicializado:', window.isFirebaseInitialized ? window.isFirebaseInitialized() : 'No disponible');
+    console.log('Sistema ID disponible:', !!window.SISTEMA_ID_UNIFICADO);
+    console.log('Funciones disponibles:', {
+        obtenerIdPaciente: !!window.obtenerIdPaciente,
+        crearSolicitudIngreso: !!window.crearSolicitudIngreso,
+        crearCitaUnificada: !!window.crearCitaUnificada,
+        crearAtencionUnificada: !!window.crearAtencionUnificada,
+        obtenerHistorialCompleto: !!window.obtenerHistorialCompletoPaciente
+    });
+    console.log('===============================');
+};
+
+// Función para migrar datos (usar solo una vez)
+window.migrarDatos = function() {
+    if (window.ejecutarMigracion) {
+        window.ejecutarMigracion();
+    } else {
+        console.error('Función de migración no disponible');
+    }
+};
+</script>
+                    
 <!-- PIE DE PÁGINA -->
     
 <footer class="footer">
@@ -1139,6 +1186,8 @@
     </div>  
 </footer>
 
+
+                    
 <!-- SCRIPTS JAVASCRIPT -->
     
 <!-- ========== SCRIPT: MODAL SOBRE EL PROGRAMA ========== -->
@@ -1158,6 +1207,8 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>
 
 <!-- ========== SCRIPT: CAMBIO DE PESTAÑAS EN LOGIN ========== -->
+
+    
 <script>
 function switchLoginTab(tab){
     const loginTab = document.querySelector('.modal-tab[onclick*="login"]');
