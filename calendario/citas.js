@@ -1,4 +1,4 @@
-let profesionalesAtencion = [];
+const datosSanitizados = sanitizeCitlet profesionalesAtencion = [];
 let profesionesAtencion = [];
 let miCesfam = null;
 
@@ -105,10 +105,7 @@ function validarEmail(email) {
 }
 
 function guardarCitaPaciente(datosCita, callback) {
-  const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
   const datos = Object.assign({}, datosCita);
-  datos.fechaCreacion = datos.fechaCreacion || new Date().toISOString();
-
   datos.telefono = limpiarTelefonoChileno(datos.telefono || "");
   datos.email = datos.email ? datos.email.trim() : "";
   datos.direccion = datos.direccion ? datos.direccion.trim() : "";
@@ -119,39 +116,23 @@ function guardarCitaPaciente(datosCita, callback) {
     return;
   }
 
-  const datosSanitizados = sanitizeCitaData(datos);
+  if (!window.crearCitaConId) {
+    window.showNotification && window.showNotification("Sistema de ID no disponible", "error");
+    if (typeof callback === "function") callback(null, new Error("Sistema no disponible"));
+    return;
+  }
 
-  db.collection("citas").add(datosSanitizados)
-    .then(function(docRef) {
-      window.showNotification && window.showNotification("Cita agendada correctamente", "success");
-      
-      if (datos.pacienteRut && datos.pacienteNombre) {
-        const rutLimpio = datos.pacienteRut.replace(/[.\-]/g, "").toUpperCase();
-        db.collection("pacientes").where("rut", "==", rutLimpio).limit(1).get()
-          .then(function(snapshot) {
-            const pacienteData = {
-              nombre: datos.pacienteNombre,
-              rut: rutLimpio,
-              cesfam: datos.cesfam,
-              telefono: datos.telefono,
-              email: datos.email,
-              direccion: datos.direccion,
-              fechaRegistro: datos.fechaCreacion || new Date().toISOString(),
-            };
-            if (!snapshot.empty) {
-              const docId = snapshot.docs[0].id;
-              db.collection("pacientes").doc(docId).update(pacienteData);
-            } else {
-              db.collection("pacientes").add(pacienteData);
-            }
-          });
-      }
-      if (typeof callback === "function") callback(docRef.id);
-    })
-    .catch(function(error) {
+  window.crearCitaConId(datos, function(citaId, idPaciente, error) {
+    if (error) {
       window.showNotification && window.showNotification("Error al agendar cita: " + error.message, "error");
       if (typeof callback === "function") callback(null, error);
-    });
+      return;
+    }
+    
+    console.log(`✅ Cita creada: ${citaId}, Paciente: ${idPaciente}`);
+    window.showNotification && window.showNotification("Cita agendada correctamente", "success");
+    if (typeof callback === "function") callback(citaId);
+  });
 }
 
 function abrirModalCitaPaciente() {
@@ -421,25 +402,30 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
               fechaCreacion: new Date().toISOString()
             };
 
-            const datosSanitizados = sanitizeCitaData(citaConDatosSolicitud);
+            if (!window.crearCitaConId) {
+              window.showNotification && window.showNotification("Sistema de ID no disponible", "error");
+              return;
+            }
 
-            const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
-            db.collection("citas").add(datosSanitizados)
-            .then(function(docRef) {
+            window.crearCitaConId(citaConDatosSolicitud, function(citaId, idPaciente, error) {
+              if (error) {
+                window.showNotification && window.showNotification("Error al guardar la cita: " + error, "error");
+                return;
+              }
+
+              const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
               db.collection("solicitudes_ingreso").doc(citaId).update({ estado: "agendada" })
                 .catch(() => {})
                 .finally(() => {
                   db.collection("reingresos").doc(citaId).update({ estado: "agendada" })
                     .catch(() => {})
                     .finally(() => {
+                      console.log(`✅ Cita agendada: ${citaId}, Paciente: ${idPaciente}`);
                       window.showNotification && window.showNotification("Cita agendada correctamente", "success");
                       closeModal('modal-cita');
                       if (window.reloadSolicitudesFromFirebase) window.reloadSolicitudesFromFirebase();
                     });
                 });
-            })
-            .catch(function(error) {
-              window.showNotification && window.showNotification("Error al guardar la cita: " + error, "error");
             });
           });
           form._onsubmitSet = true;
