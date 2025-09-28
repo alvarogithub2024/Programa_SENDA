@@ -415,8 +415,7 @@ function editarSolicitud(solicitudId, origen) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
     document.getElementById('modal-editar-nombre').value = solicitud.nombre || '';
-    document.getElementById('modal-editar-rut').value = solicitud.rut || '';
-    document.getElementById('modal-editar-telefono').value = solicitud.telefono || '';
+document.getElementById('modal-detalle-rut').textContent = window.formatRUT ? window.formatRUT(solicitud.rut || '') : (solicitud.rut || '');    document.getElementById('modal-editar-telefono').value = solicitud.telefono || '';
     document.getElementById('modal-editar-id').value = solicitud.id || '';
     document.getElementById('modal-editar').dataset.origen = origen || solicitud.origen || 'ingreso';
     document.getElementById('modal-editar').style.display = 'flex';
