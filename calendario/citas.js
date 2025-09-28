@@ -442,7 +442,7 @@ function upsertPacienteYAgendarCita(datosCita, callback) {
             let pacienteId;
             // Estructura completa del paciente, como en tu imagen
             const pacienteData = {
-                apellidos: datos.pacienteApellidos || "",
+                apellidos: datos.pacienteApellidos || datos.apellidos || "",
                 cesfam: datos.cesfam,
                 descripcion: datos.descripcion || "",
                 direccion: datos.direccion || "",
@@ -451,7 +451,7 @@ function upsertPacienteYAgendarCita(datosCita, callback) {
                 estado: datos.estado || "agendada",
                 fecha: datos.fechaCreacion,
                 motivacion: datos.motivacion || "",
-                nombre: datos.pacienteNombre,
+                nombre: datos.pacienteNombre || datos.nombre || "",
                 paraMi: datos.paraMi || "",
                 rut: rutLimpio,
                 sustancias: datos.sustancias || [],
@@ -491,6 +491,9 @@ function upsertPacienteYAgendarCita(datosCita, callback) {
         });
 }
 
+/**
+ * Crea la cita vinculada al pacienteId.
+ */
 function crearCitaConPacienteId(db, datos, callback) {
     db.collection("citas").add(datos)
         .then(function(docRef) {
@@ -502,7 +505,6 @@ function crearCitaConPacienteId(db, datos, callback) {
             if (typeof callback === "function") callback(null, error);
         });
 }
-
 window.abrirModalCitaPaciente = abrirModalCitaPaciente;
 window.guardarCitaPaciente = guardarCitaPaciente;
 window.llenarSelectProfesionesPaciente = llenarSelectProfesionesPaciente;
