@@ -124,40 +124,39 @@ document.addEventListener("DOMContentLoaded", function() {
         };
     }
 
-    // --- AGENDAR CITA (desde solicitud) ---
+    /document.addEventListener("DOMContentLoaded", function() {
     var formAgendarCita = document.getElementById('form-agendar-cita');
     if (formAgendarCita) {
         formAgendarCita.onsubmit = function(e) {
             e.preventDefault();
+
+            // TOMA LOS DATOS DESDE EL MODAL AGENDAR (NO desde pac-cita-*)
             const datos = {
-                  pacienteNombre: document.getElementById('pac-cita-paciente-nombre')?.value.trim(),
-                pacienteApellidos: document.getElementById('pac-cita-paciente-apellidos')?.value.trim() || "",
-                pacienteRut: document.getElementById('pac-cita-paciente-rut')?.value.trim(),
-                cesfam: document.getElementById('pac-cita-cesfam')?.value,
-                edad: document.getElementById('pac-cita-edad')?.value || "",
-                telefono: document.getElementById('pac-cita-telefono')?.value || "",
-                email: document.getElementById('pac-cita-email')?.value || "",
-                direccion: document.getElementById('pac-cita-direccion')?.value || "",
-                sustancias: Array.from(document.querySelectorAll('[name="pac-cita-sustancias"]:checked')).map(x=>x.value),
-                tiempoConsumo: document.getElementById('pac-cita-tiempo-consumo')?.value || "",
-                urgencia: document.querySelector('[name="pac-cita-urgencia"]:checked')?.value || "",
-                tratamientoPrevio: document.querySelector('[name="pac-cita-tratamiento-previo"]:checked')?.value || "",
-                descripcion: document.getElementById('pac-cita-descripcion')?.value || "",
-                motivacion: document.getElementById('pac-cita-motivacion')?.value || "",
-                paraMi: document.querySelector('[name="pac-cita-para-mi"]:checked')?.value || "",
+                pacienteNombre: document.getElementById('modal-cita-nombre')?.textContent.trim(),
+                pacienteApellidos: document.getElementById('modal-cita-apellidos')?.textContent.trim() || "",
+                pacienteRut: document.getElementById('modal-cita-rut')?.textContent.trim(),
+                cesfam: document.getElementById('modal-cita-cesfam')?.textContent.trim() || "",
+                edad: document.getElementById('modal-cita-edad')?.textContent.trim() || "",
+                telefono: document.getElementById('modal-cita-telefono')?.textContent.trim() || "",
+                email: document.getElementById('modal-cita-email')?.textContent.trim() || "",
+                direccion: document.getElementById('modal-cita-direccion')?.textContent.trim() || "",
+                // ...otros campos si los tienes en el modal...
                 estado: "agendada",
-                fecha: document.getElementById('pac-cita-fecha')?.value,
-                hora: document.getElementById('pac-cita-hora')?.value,
-                profesionalId: document.getElementById('pac-cita-profesional')?.value,
-                profesionalNombre: document.getElementById('pac-cita-profesional-nombre')?.value,
-                tipo: "paciente",
-                tipoProfesional: document.getElementById('pac-cita-profession')?.value,
-                profesionalDescripcion: document.getElementById('pac-cita-profesional-descripcion')?.value || ""
+                fecha: document.getElementById('modal-cita-fecha')?.value,
+                hora: document.getElementById('modal-cita-hora')?.value,
+                profesionalId: document.getElementById('modal-cita-profesional')?.value,
+                profesionalNombre: document.getElementById('modal-cita-profesional-nombre')?.value,
+                tipo: "profesional",
+                tipoProfesional: document.getElementById('modal-cita-profession')?.value,
+                solicitudId: document.getElementById('modal-cita-id')?.value
             };
+
+            // Validación mínima
             if (!datos.pacienteNombre || !datos.pacienteRut || !datos.profesionalId || !datos.fecha || !datos.hora) {
                 window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
                 return;
             }
+
             upsertPacienteYAgendarCita(datos, function(idCita, error) {
                 if (!error) closeModal('modal-cita');
             });
