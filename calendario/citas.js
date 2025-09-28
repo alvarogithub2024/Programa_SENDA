@@ -1,3 +1,4 @@
+// ========== calendario/citas.js - COMPLETO CON SISTEMA UNIFICADO ==========
 
 let profesionalesAtencion = [];
 let profesionesAtencion = [];
@@ -83,46 +84,24 @@ function autocompletarNombreProfesionalPaciente() {
   nombreInput.value = selected && selected.dataset.nombre ? selected.dataset.nombre : '';
 }
 
+// ========== FUNCIÓN ACTUALIZADA CON SISTEMA UNIFICADO ==========
 function guardarCitaPaciente(datosCita, callback) {
-  const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
-  const datos = Object.assign({}, datosCita);
-  datos.fechaCreacion = datos.fechaCreacion || new Date().toISOString();
-
-  db.collection("citas").add(datos)
-    .then(function(docRef) {
-      window.showNotification && window.showNotification("Cita agendada correctamente", "success");
-      
-      if (datos.pacienteRut && datos.pacienteNombre) {
-        const rutLimpio = datos.pacienteRut.replace(/[.\-]/g, "").toUpperCase();
-        db.collection("pacientes").where("rut", "==", rutLimpio).limit(1).get()
-          .then(function(snapshot) {
-            const pacienteData = {
-              nombre: datos.pacienteNombre,
-              rut: rutLimpio,
-              cesfam: datos.cesfam,
-              telefono: datos.telefono || "",
-              email: datos.email || "",
-              direccion: datos.direccion || "",
-              fechaRegistro: datos.fechaCreacion || new Date().toISOString(),
-            };
-            if (!snapshot.empty) {
-              
-              const docId = snapshot.docs[0].id;
-              db.collection("pacientes").doc(docId).update(pacienteData);
-            } else {
-          
-              db.collection("pacientes").add(pacienteData);
-            }
-          });
-      }
-      if (typeof callback === "function") callback(docRef.id);
-    })
-    .catch(function(error) {
-      window.showNotification && window.showNotification("Error al agendar cita: " + error.message, "error");
-      if (typeof callback === "function") callback(null, error);
-    });
+    if (!window.SISTEMA_ID_UNIFICADO) {
+        window.showNotification && window.showNotification("Sistema no inicializado", "error");
+        if (typeof callback === "function") callback(null, new Error("Sistema no inicializado"));
+        return;
+    }
+    
+    window.SISTEMA_ID_UNIFICADO.crearCitaUnificada(datosCita)
+        .then(function(resultado) {
+            window.showNotification && window.showNotification("Cita agendada correctamente", "success");
+            if (typeof callback === "function") callback(resultado.citaId, resultado.pacienteId);
+        })
+        .catch(function(error) {
+            window.showNotification && window.showNotification("Error al agendar cita: " + error.message, "error");
+            if (typeof callback === "function") callback(null, null, error);
+        });
 }
-
 
 function abrirModalCitaPaciente() {
   cargarProfesionalesAtencionPorCesfam(function() {
@@ -130,7 +109,6 @@ function abrirModalCitaPaciente() {
     llenarSelectProfesionalesPaciente();
     autocompletarNombreProfesionalPaciente();
 
-  
     const selProf = document.getElementById('pac-cita-profession');
     if (selProf) {
       selProf.onchange = function() {
@@ -176,7 +154,7 @@ function abrirModalCitaPaciente() {
             window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
             return;
           }
-          guardarCitaPaciente(datos, function(idCita, error) {
+          guardarCitaPaciente(datos, function(idCita, idPaciente, error) {
             if (!error) closeModal('modal-nueva-cita-paciente');
           });
         };
@@ -185,7 +163,6 @@ function abrirModalCitaPaciente() {
     }, 100);
   });
 }
-
 
 function cargarProfesionalesAgendarCita(callback) {
   const user = firebase.auth().currentUser;
@@ -263,29 +240,27 @@ function autocompletarNombreProfesionalAgendarCita() {
   nombreInput.value = selected && selected.dataset.nombre ? selected.dataset.nombre : '';
 }
 
-
 function abrirModalAgendarCita(solicitudId, nombre, rut) {
   cargarProfesionalesAgendarCita(function() {
     llenarSelectProfesionesAgendarCita();
     llenarSelectProfesionalesAgendarCita();
     autocompletarNombreProfesionalAgendarCita();
 
+    var inputId = document.getElementById('modal-cita-id');
+    if (inputId) inputId.value = solicitudId;
 
-var inputId = document.getElementById('modal-cita-id');
-if (inputId) inputId.value = solicitudId;
+    var inputIdProf = document.getElementById('modal-cita-id-prof');
+    if (inputIdProf) inputIdProf.value = solicitudId;
 
-var inputIdProf = document.getElementById('modal-cita-id-prof');
-if (inputIdProf) inputIdProf.value = solicitudId;
+    var nombreSpan = document.getElementById('modal-cita-nombre');
+    if (nombreSpan) nombreSpan.textContent = nombre;
+    var nombreSpanProf = document.getElementById('modal-cita-nombre-prof');
+    if (nombreSpanProf) nombreSpanProf.textContent = nombre;
 
-var nombreSpan = document.getElementById('modal-cita-nombre');
-if (nombreSpan) nombreSpan.textContent = nombre;
-var nombreSpanProf = document.getElementById('modal-cita-nombre-prof');
-if (nombreSpanProf) nombreSpanProf.textContent = nombre;
-
-var rutSpan = document.getElementById('modal-cita-rut');
-if (rutSpan) rutSpan.textContent = rut;
-var rutSpanProf = document.getElementById('modal-cita-rut-prof');
-if (rutSpanProf) rutSpanProf.textContent = rut;
+    var rutSpan = document.getElementById('modal-cita-rut');
+    if (rutSpan) rutSpan.textContent = rut;
+    var rutSpanProf = document.getElementById('modal-cita-rut-prof');
+    if (rutSpanProf) rutSpanProf.textContent = rut;
 
     const selProf = document.getElementById('modal-cita-profession');
     if (selProf) {
@@ -320,42 +295,43 @@ if (rutSpanProf) rutSpanProf.textContent = rut;
             return;
           }
 
-          const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
-          db.collection("citas").add({
+          const datosCita = {
             solicitudId: citaId,
-            nombre: nombre,
-            rut: rut,
+            pacienteNombre: nombre,
+            pacienteRut: rut,
             profesion: profesion,
-            profesional: profesional,
+            profesionalId: profesional,
             profesionalNombre: profesionalNombre,
             fecha: fecha,
             hora: hora,
-            creado: firebase.firestore.FieldValue.serverTimestamp()
-          })
-          .then(function(docRef) {
-       
-            db.collection("solicitudes_ingreso").doc(citaId).update({ estado: "agendada" })
-              .catch(() => {})
-              .finally(() => {
-                db.collection("reingresos").doc(citaId).update({ estado: "agendada" })
-                  .catch(() => {})
-                  .finally(() => {
-                    window.showNotification && window.showNotification("Cita agendada correctamente", "success");
-                    closeModal('modal-cita');
-                    if (window.reloadSolicitudesFromFirebase) window.reloadSolicitudesFromFirebase();
-                  });
-              });
-          })
-          .catch(function(error) {
-            window.showNotification && window.showNotification("Error al guardar la cita: " + error, "error");
-          });
+            tipo: "paciente",
+            estado: "agendada",
+            fechaCreacion: new Date().toISOString()
+          };
+
+          // Usar sistema unificado
+          window.SISTEMA_ID_UNIFICADO.crearCitaUnificada(datosCita)
+            .then(function(resultado) {
+              const db = window.getFirestore();
+              return Promise.all([
+                db.collection("solicitudes_ingreso").doc(citaId).update({ estado: "agendada" }).catch(() => {}),
+                db.collection("reingresos").doc(citaId).update({ estado: "agendada" }).catch(() => {})
+              ]);
+            })
+            .then(function() {
+              window.showNotification && window.showNotification("Cita agendada correctamente", "success");
+              closeModal('modal-cita');
+              if (window.reloadSolicitudesFromFirebase) window.reloadSolicitudesFromFirebase();
+            })
+            .catch(function(error) {
+              window.showNotification && window.showNotification("Error al guardar la cita: " + error.message, "error");
+            });
         });
         form._onsubmitSet = true;
       }
     }, 100);
   });
 }
-
 
 window.abrirModalCitaPaciente = abrirModalCitaPaciente;
 window.guardarCitaPaciente = guardarCitaPaciente;
