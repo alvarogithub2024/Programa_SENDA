@@ -54,7 +54,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
             db.collection("atenciones").add(datosAtencion)
             .then(function(docRef) {
-                // Puedes actualizar datos del paciente aquí si lo necesitas
                 window.showNotification("Atención registrada correctamente", "success");
                 closeModal("modal-registrar-atencion");
                 if (window.mostrarPacienteActualHoy) window.mostrarPacienteActualHoy();
@@ -66,8 +65,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 });
-
-
 // Si tienes una función para registrar atenciones manualmente desde JS:
 window.registrarAtencion = function(datosAtencion, callback) {
     var db = window.getFirestore();
