@@ -160,13 +160,11 @@ function abrirModalNuevaCitaProfesional() {
                         hora: document.getElementById('prof-cita-hora').value,
                         tipo: "profesional",
                         
-                        // Campos de paciente (opcionales para citas entre profesionales)
+                  
                         pacienteNombre: document.getElementById('prof-cita-paciente-nombre')?.value || "",
                         telefono: document.getElementById('prof-cita-paciente-telefono')?.value || "",
                         email: document.getElementById('prof-cita-paciente-email')?.value || "",
                         direccion: document.getElementById('prof-cita-paciente-direccion')?.value || "",
-                        
-                        // Campo adicional para motivo
                         motivo: document.getElementById('prof-cita-motivo')?.value || "",
                         observaciones: document.getElementById('prof-cita-motivo')?.value || "",
                         
@@ -179,13 +177,11 @@ function abrirModalNuevaCitaProfesional() {
                         return;
                     }
                     
-                    // Validar email si se proporciona
                     if (cita.email && !validarEmail(cita.email)) {
                         window.showNotification && window.showNotification("Email inválido", "warning");
                         return;
                     }
                     
-                    // Limpiar teléfono
                     if (cita.telefono) {
                         cita.telefono = limpiarTelefonoChileno(cita.telefono);
                     }
@@ -195,8 +191,6 @@ function abrirModalNuevaCitaProfesional() {
                         .then(function(docRef) {
                             window.showNotification && window.showNotification("Cita agendada correctamente", "success");
                             closeModal('modal-nueva-cita-profesional');
-                            
-                            // Limpiar formulario
                             form.reset();
                         })
                         .catch(function(error) {
@@ -378,8 +372,6 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
                         creado: new Date().toISOString(),
                         tipo: "profesional",
                         cesfam: miCesfamAgendarProf,
-                        
-                        // Campos de contacto por defecto vacíos
                         telefono: "",
                         email: "",
                         direccion: ""
@@ -394,12 +386,10 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
                     db.collection("citas").add(cita)
                         .then(function(docRef) {
                             const solicitudId = cita.solicitudId;
-                            
-                            // Actualizar estado en solicitudes_ingreso
+       
                             db.collection("solicitudes_ingreso").doc(solicitudId).update({ estado: "agendada" })
                                 .catch(() => {})
                                 .finally(() => {
-                                    // Actualizar estado en reingresos
                                     db.collection("reingresos").doc(solicitudId).update({ estado: "agendada" })
                                         .catch(() => {})
                                         .finally(() => {
@@ -419,7 +409,7 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
     });
 }
 
-// Funciones de utilidad
+
 function limpiarTelefonoChileno(tel) {
     if (!tel) return "";
     tel = tel.replace(/\D/g, '');
@@ -429,11 +419,11 @@ function limpiarTelefonoChileno(tel) {
 }
 
 function validarEmail(email) {
-    if (!email) return true; // Email es opcional
+    if (!email) return true; 
     return /^[\w\.\-]+@([\w\-]+\.)+[a-zA-Z]{2,7}$/.test(email);
 }
 
-// Exportar funciones
+
 window.abrirModalNuevaCitaProfesional = abrirModalNuevaCitaProfesional;
 window.abrirModalAgendarCitaProfesional = abrirModalAgendarCitaProfesional;
 window.cargarProfesionalesAgendarCitaProfesional = cargarProfesionalesAgendarCitaProfesional;
