@@ -1,3 +1,17 @@
+// ========== GESTOR DE SOLICITUDES (RUT FORMATEADO) ==========
+
+// ------ FUNCIÓN GLOBAL PARA FORMATEAR RUT ------
+window.formatRUT = function(rut) {
+  rut = rut ? rut.toString().replace(/[^0-9kK]/g, '').toUpperCase() : '';
+  if (rut.length < 2) return rut;
+  let cuerpo = rut.slice(0, -1);
+  let dv = rut.slice(-1);
+  // Poner puntos cada 3 dígitos
+  cuerpo = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `${cuerpo}-${dv}`;
+};
+// -----------------------------------------------
+
 let solicitudesData = [];
 let filteredSolicitudesData = [];
 let currentFilters = {
@@ -67,9 +81,7 @@ function loadAllSolicitudes() {
                     let data = doc.data();
                     data.id = doc.id;
                     data.origen = 'ingreso';
-                    if (data.fecha && !(data.fecha instanceof Date)) {
-                        data.fecha = new Date(data.fecha);
-                    }
+                    data.fechaMostrar = data.fechaCreacion || data.fecha || "";
                     solicitudesData.push(data);
                 });
                 
@@ -77,11 +89,7 @@ function loadAllSolicitudes() {
                     let data = doc.data();
                     data.id = doc.id;
                     data.origen = 'reingreso';
-                    if (data.fechaCreacion && !(data.fechaCreacion instanceof Date)) {
-                        data.fecha = new Date(data.fechaCreacion);
-                    } else if (data.fecha && !(data.fecha instanceof Date)) {
-                        data.fecha = new Date(data.fecha);
-                    }
+                    data.fechaMostrar = data.fechaCreacion || data.fecha || "";
                     solicitudesData.push(data);
                 });
                 
@@ -90,13 +98,11 @@ function loadAllSolicitudes() {
                     data.id = doc.id;
                     data.origen = 'informacion';
                     data.tipo = 'informacion';
-                    if (data.fecha && !(data.fecha instanceof Date)) {
-                        data.fecha = new Date(data.fecha);
-                    }
+                    data.fechaMostrar = data.fechaCreacion || data.fecha || "";
                     solicitudesData.push(data);
                 });
                 
-                solicitudesData.sort((a, b) => (b.fecha?.getTime?.() || 0) - (a.fecha?.getTime?.() || 0));
+                solicitudesData.sort((a, b) => (b.fechaMostrar ? new Date(b.fechaMostrar).getTime() : 0) - (a.fechaMostrar ? new Date(a.fechaMostrar).getTime() : 0));
                 resolve();
             }).catch(error => {
                 console.error('Error cargando solicitudes Firebase:', error);
@@ -192,7 +198,7 @@ function renderSolicitudesTable() {
                                 ${solicitud.nombre || ""} ${solicitud.apellidos || ""}
                             </div>
                             <div class="paciente-detalles">
-                                RUT: ${solicitud.rut || ""}<br>
+                                RUT: ${window.formatRUT(solicitud.rut || "")}<br>
                                 Edad: ${solicitud.edad || ""} años
                             </div>
                         </div>
@@ -215,7 +221,7 @@ function renderSolicitudesTable() {
                     <td>
                         <div class="fecha-info">
                             <div class="fecha-principal">
-                                ${solicitud.fecha ? new Date(solicitud.fecha).toLocaleDateString('es-CL') : ""}
+                                ${solicitud.fechaMostrar ? new Date(solicitud.fechaMostrar).toLocaleDateString('es-CL') : ""}
                             </div>
                         </div>
                     </td>
@@ -417,13 +423,13 @@ function verDetalleSolicitud(solicitudId) {
     if (!solicitud) return;
     
     document.getElementById('modal-detalle-nombre').textContent = solicitud.nombre || '';
-    document.getElementById('modal-detalle-rut').textContent = solicitud.rut || '';
+    document.getElementById('modal-detalle-rut').textContent = window.formatRUT(solicitud.rut || '');
     document.getElementById('modal-detalle-telefono').textContent = solicitud.telefono || '';
     document.getElementById('modal-detalle-email').textContent = solicitud.email || '';
     document.getElementById('modal-detalle-motivo').textContent = solicitud.descripcion || '';
     document.getElementById('modal-detalle-cesfam').textContent = solicitud.cesfam || '';
     document.getElementById('modal-detalle-estado').textContent = solicitud.estado || '';
-    document.getElementById('modal-detalle-fecha').textContent = solicitud.fecha ? new Date(solicitud.fecha).toLocaleDateString('es-CL') : '';
+    document.getElementById('modal-detalle-fecha').textContent = solicitud.fechaMostrar ? new Date(solicitud.fechaMostrar).toLocaleDateString('es-CL') : '';
     document.getElementById('modal-detalle-sustancias').textContent = Array.isArray(solicitud.sustancias) ? solicitud.sustancias.join(', ') : '';
     
     document.getElementById('modal-detalle').style.display = 'flex';
@@ -433,7 +439,7 @@ function editarSolicitud(solicitudId, origen) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
     document.getElementById('modal-editar-nombre').value = solicitud.nombre || '';
-    document.getElementById('modal-editar-rut').value = solicitud.rut || '';
+    document.getElementById('modal-editar-rut').value = window.formatRUT(solicitud.rut || '');
     document.getElementById('modal-editar-telefono').value = solicitud.telefono || '';
     document.getElementById('modal-editar-id').value = solicitud.id || '';
     document.getElementById('modal-editar').dataset.origen = origen || solicitud.origen || 'ingreso';
@@ -514,7 +520,7 @@ function exportarSolicitud(solicitudId) {
         }
         const dataToExport = [{
             'Nombre Completo': `${solicitud.nombre || ''} ${solicitud.apellidos || ''}`,
-            'RUT': solicitud.rut || '',
+            'RUT': window.formatRUT(solicitud.rut || ''),
             'Edad': solicitud.edad || '',
             'Teléfono': solicitud.telefono || '',
             'Email': solicitud.email || '',
@@ -567,7 +573,7 @@ function convertToCSV(objArray) {
 function guardarEdicionSolicitud() {
     const id = document.getElementById('modal-editar-id').value;
     const nombre = document.getElementById('modal-editar-nombre').value;
-    const rut = document.getElementById('modal-editar-rut').value;
+    const rut = document.getElementById('modal-editar-rut').value.replace(/\./g, '').replace('-', '');
     const telefono = document.getElementById('modal-editar-telefono').value;
     const origen = document.getElementById('modal-editar').dataset.origen || 'ingreso';
 
