@@ -1,119 +1,222 @@
-
-function setupFormularioReingreso() {
-    const form = document.getElementById("reentry-form");
+document.addEventListener("DOMContentLoaded", function() {
+    var form = document.getElementById("form-registrar-atencion");
     if (!form) return;
 
     form.addEventListener("submit", function(e) {
         e.preventDefault();
 
-        const nombre = form.querySelector("#reentry-name").value.trim();
-        const rut = form.querySelector("#reentry-rut").value.trim().replace(/[^0-9kK]/g, '').toUpperCase();
-        const telefono = limpiarTelefonoChileno(form.querySelector("#reentry-phone").value.trim());
-        const cesfam = form.querySelector("#reentry-cesfam").value;
-        const motivo = form.querySelector("#reentry-reason").value.trim();
-        const observaciones = ""; 
-        const origen = "web";
-        const prioridad = "media";
-        const profesionalAsignado = null;
-        const tipo = "reingreso";
-        const version = 1;
+        var citaId = document.getElementById("atencion-cita-id").value;
+        var pacienteId = document.getElementById("atencion-paciente-id").value;
+        var descripcion = document.getElementById("atencion-descripcion").value.trim();
+        var tipoAtencion = document.getElementById("atencion-tipo").value;
 
-        if (!nombre) return window.showNotification("El nombre es obligatorio", "warning");
-        if (!rut || !window.validarRut || !window.validarRut(rut)) return window.showNotification("RUT inválido", "warning");
-        if (!telefono || !window.validarTelefono || !window.validarTelefono(telefono)) return window.showNotification("Teléfono inválido", "warning");
-        if (!cesfam) return window.showNotification("Selecciona un CESFAM", "warning");
-        if (!motivo) return window.showNotification("El motivo es obligatorio", "warning");
+        if (!descripcion || !tipoAtencion) {
+            window.showNotification("Completa los campos obligatorios", "warning");
+            return;
+        }
 
-        const data = {
-            nombre,
-            rut,
-            telefono,
-            cesfam,
-            motivo,
-            observaciones,
-            origen,
-            prioridad,
-            profesionalAsignado,
-            tipo,
-            version,
-            estado: "pendiente",
-            fechaCreacion: fechaChileISO(),
-            fechaRespuesta: null,
-            fechaUltimaActualizacion: fechaChileISO()
-        };
+        var db = window.getFirestore();
+        var user = firebase.auth().currentUser;
 
-        guardarReingresoEnFirebase(data);
+        db.collection("citas").doc(citaId).get().then(function(doc) {
+            if (!doc.exists) {
+                window.showNotification("Cita no encontrada", "error");
+                return;
+            }
+            var cita = doc.data();
+
+            // Obtener el idPaciente desde la cita o generarlo desde el RUT
+            const rutPaciente = cita.pacienteRut || cita.rut || "";
+            const idPaciente = cita.idPaciente || window.generarIdPaciente(rutPaciente);
+
+            var datosAtencion = {
+                idPaciente: idPaciente,
+                pacienteId: pacienteId,
+                pacienteNombre: cita.pacienteNombre || cita.nombre || "",
+                pacienteRut: rutPaciente.replace(/[.\-]/g, '').toUpperCase(),
+                cesfam: cita.cesfam || "",
+                fecha: cita.fecha || "",
+                hora: cita.hora || "",
+                descripcion: descripcion,
+                tipoAtencion: tipoAtencion,
+                profesional: cita.profesionalNombre || (user ? user.email : ""),
+                profesionalId: cita.profesionalId || (user ? user.uid : ""),
+                fechaRegistro: new Date(),
+                fechaCreacion: new Date().toISOString(),
+                citaId: citaId
+            };
+
+            if (!window.crearAtencionConId) {
+                // Fallback al método anterior si no está disponible
+                db.collection("atenciones").add(datosAtencion)
+                .then(function(docRef) {
+                    console.log(`✅ Atención creada (método fallback): ${docRef.id}`);
+                    window.showNotification("Atención registrada correctamente", "success");
+                    closeModal("modal-registrar-atencion");
+                    if (window.mostrarPacienteActualHoy) window.mostrarPacienteActualHoy();
+                    if (window.mostrarCitasRestantesHoy) window.mostrarCitasRestantesHoy();
+                });
+                return;
+            }
+
+            // Usar el sistema unificado
+            window.crearAtencionConId(datosAtencion, function(atencionId, pacienteIdResult, error) {
+                if (error) {
+                    window.showNotification("Error guardando atención: " + error.message, "error");
+                    return;
+                }
+                
+                console.log(`✅ Atención creada: ${atencionId}, Paciente: ${pacienteIdResult}`);
+                window.showNotification("Atención registrada correctamente", "success");
+                closeModal("modal-registrar-atencion");
+                if (window.mostrarPacienteActualHoy) window.mostrarPacienteActualHoy();
+                if (window.mostrarCitasRestantesHoy) window.mostrarCitasRestantesHoy();
+            });
+        });
     });
-}
+});
 
+window.registrarAtencion = function(datosAtencion, callback) {
+    // Generar idPaciente si no existe
+    const rutPaciente = datosAtencion.pacienteRut || datosAtencion.rut || "";
+    const idPaciente = datosAtencion.idPaciente || window.generarIdPaciente(rutPaciente);
+    
+    var datos = Object.assign({}, datosAtencion, {
+        idPaciente: idPaciente,
+        fechaRegistro: new Date(),
+        fechaCreacion: new Date().toISOString()
+    });
 
-function fechaChileISO() {
-    return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" })).toISOString();
-}
-
-
-function guardarReingresoEnFirebase(data) {
-    const db = window.getFirestore ? window.getFirestore() : null;
-    if (!db) {
-        window.showNotification && window.showNotification("No se pudo acceder a la base de datos", "error");
-        return;
-    }
-    db.collection("reingresos").add(data)
-        .then(function(docRef) {
-            db.collection("reingresos").doc(docRef.id).set({ id: docRef.id }, { merge: true })
-            .then(function() {
-                window.showNotification && window.showNotification("Solicitud de reingreso enviada correctamente", "success");
-                document.getElementById("reentry-form").reset();
-                document.getElementById("reentry-modal").style.display = "none";
+    if (!window.crearAtencionConId) {
+        // Fallback al método anterior
+        var db = window.getFirestore();
+        db.collection("atenciones").add(datos)
+            .then(function(docRef) {
+                window.showNotification("Atención registrada correctamente", "success");
+                if (typeof callback === "function") callback(true, docRef.id);
             })
             .catch(function(error) {
-                window.showNotification && window.showNotification("Reingreso guardado pero no se pudo registrar el ID: "+error.message, "warning");
+                window.showNotification("Error al registrar atención: " + error.message, "error");
+                if (typeof callback === "function") callback(false, null);
             });
-
-            // --- SINCRONIZAR PACIENTE ---
-            if (window.sincronizarPaciente) {
-                window.sincronizarPaciente(data); // <-- Llamada a la función de sincronización
-            }
-        })
-        .catch(function(error) {
-            window.showNotification && window.showNotification("Error guardando reingreso: "+error.message, "error");
-        });
-}
-
-
-function validarRut(rut) {
-    if (!rut) return false;
-    rut = rut.replace(/[^0-9kK]/g, '').toUpperCase();
-    if (rut.length < 8 || rut.length > 9) return false;
-    let cuerpo = rut.slice(0, -1);
-    let dv = rut.slice(-1);
-    let suma = 0;
-    let multiplo = 2;
-    for (let i = cuerpo.length - 1; i >= 0; i--) {
-        suma += parseInt(cuerpo[i]) * multiplo;
-        multiplo = multiplo === 7 ? 2 : multiplo + 1;
+        return;
     }
-    let dvEsperado = 11 - (suma % 11);
-    dvEsperado = dvEsperado === 11 ? '0' : dvEsperado === 10 ? 'K' : dvEsperado.toString();
-    return dv === dvEsperado;
-}
-window.validarRut = window.validarRut || validarRut;
 
+    // Usar sistema unificado
+    window.crearAtencionConId(datos, function(atencionId, pacienteId, error) {
+        if (error) {
+            window.showNotification("Error al registrar atención: " + error.message, "error");
+            if (typeof callback === "function") callback(false, null);
+            return;
+        }
+        
+        console.log(`✅ Atención registrada: ${atencionId}, Paciente: ${pacienteId}`);
+        window.showNotification("Atención registrada correctamente", "success");
+        if (typeof callback === "function") callback(true, atencionId);
+    });
+};
 
-function limpiarTelefonoChileno(tel) {
-    tel = tel.replace(/\D/g, '');
-    if (tel.startsWith("56")) tel = tel.slice(2);
-    if (tel.length === 11 && tel.startsWith("569")) tel = tel.slice(2);
-    return tel;
-}
-function validarTelefonoChileno(telefono) {
-    telefono = limpiarTelefonoChileno(telefono);
-    return telefono.length === 9 && telefono[0] === "9";
-}
-window.validarTelefono = window.validarTelefono || validarTelefonoChileno;
+window.mostrarModalEditarAtencion = function(atencion) {
+    let modal = document.getElementById('modal-editar-atencion');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modal-editar-atencion';
+        modal.className = 'modal-overlay';
+        modal.style.display = 'flex';
+        modal.innerHTML = `<div class="modal-content" style="max-width:400px;">
+            <span class="close" onclick="cerrarModalEditarAtencion()">&times;</span>
+            <h2>Editar atención</h2>
+            <form id="form-editar-atencion">
+                <div class="form-group">
+                  <label for="editar-atencion-descripcion">Descripción</label>
+                  <textarea id="editar-atencion-descripcion" class="form-textarea" required></textarea>
+                </div>
+                <div class="form-group">
+                  <label for="editar-atencion-tipo">Tipo de atención</label>
+                  <select id="editar-atencion-tipo" class="form-select" required>
+                    <option value="">Selecciona tipo...</option>
+                    <option value="consulta">Consulta</option>
+                    <option value="seguimiento">Seguimiento</option>
+                    <option value="orientacion">Orientación</option>
+                    <option value="intervencion">Intervención</option>
+                  </select>
+                </div>
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                </div>
+                <input type="hidden" id="editar-atencion-id">
+            </form>
+        </div>`;
+        document.body.appendChild(modal);
+    } else {
+        modal.style.display = 'flex';
+    }
+    document.getElementById('editar-atencion-id').value = atencion.id;
+    document.getElementById('editar-atencion-descripcion').value = atencion.descripcion || '';
+    document.getElementById('editar-atencion-tipo').value = atencion.tipoAtencion || '';
 
-window.setupFormularioReingreso = setupFormularioReingreso;
-window.guardarReingresoEnFirebase = guardarReingresoEnFirebase;
+    var form = document.getElementById('form-editar-atencion');
+    if (form) {
+        form.onsubmit = function(e) {
+            e.preventDefault();
+            window.editarAtencion(
+                document.getElementById('editar-atencion-id').value,
+                {
+                    descripcion: document.getElementById('editar-atencion-descripcion').value.trim(),
+                    tipoAtencion: document.getElementById('editar-atencion-tipo').value
+                }
+            );
+        };
+    }
+};
 
-document.addEventListener("DOMContentLoaded", setupFormularioReingreso);
+window.cerrarModalEditarAtencion = function() {
+    let modal = document.getElementById('modal-editar-atencion');
+    if (modal) modal.style.display = 'none';
+};
 
+window.editarAtencion = function(atencionId, nuevosDatos) {
+    var db = window.getFirestore();
+    db.collection("atenciones").doc(atencionId).update({
+        descripcion: nuevosDatos.descripcion,
+        tipoAtencion: nuevosDatos.tipoAtencion,
+        fechaActualizacion: new Date().toISOString()
+    })
+    .then(function() {
+        window.showNotification("Atención editada correctamente", "success");
+        window.cerrarModalEditarAtencion();
+        if (window.mostrarPacienteActualHoy) window.mostrarPacienteActualHoy();
+        if (window.mostrarTimeline) window.mostrarTimeline();
+    })
+    .catch(function(error) {
+        window.showNotification("Error al editar atención: " + error.message, "error");
+    });
+};
+
+window.mostrarTimeline = function(atenciones, contenedorId) {
+    var cont = document.getElementById(contenedorId);
+    if (!cont) return;
+    cont.innerHTML = "";
+    if (!atenciones.length) {
+        cont.innerHTML = "<p>No hay atenciones registradas.</p>";
+        return;
+    }
+    atenciones.forEach(function(a) {
+        var div = document.createElement("div");
+        div.className = "timeline-item";
+        div.innerHTML = `
+            <div class="timeline-fecha">${window.formatFecha ? window.formatFecha(a.fecha) : a.fecha}</div>
+            <div class="timeline-detalle">
+                <strong>${a.tipoAtencion || "Atención"}</strong>
+                <p>${a.descripcion || ""}</p>
+                <small>${a.profesional || ""}</small>
+                <div>
+                    <button class="btn btn-outline btn-sm" onclick="window.mostrarModalEditarAtencion(${JSON.stringify(a)})">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                </div>
+            </div>
+        `;
+        cont.appendChild(div);
+    });
+};
