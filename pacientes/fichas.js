@@ -730,3 +730,5 @@
     };
 
 })();
+
+RUT: ${window.formatRUT ? window.formatRUT(solicitud.rut) : (solicitud.rut || "")}
