@@ -110,9 +110,9 @@ function guardarCitaPaciente(datosCita, callback) {
               nombre: datos.pacienteNombre,
               rut: rutLimpio,
               cesfam: datos.cesfam,
-              telefono: datos.telefono || "",
-              email: datos.email || "",
-              direccion: datos.direccion || "",
+              telefono: datos.telefono,
+              email: datos.email,
+              direccion: datos.direccion,
               fechaRegistro: datos.fechaCreacion || new Date().toISOString(),
             };
             if (!snapshot.empty) {
@@ -178,9 +178,9 @@ function abrirModalCitaPaciente() {
             tipoProfesional: document.getElementById('pac-cita-profession').value,
             fecha: document.getElementById('pac-cita-fecha').value,
             hora: document.getElementById('pac-cita-hora').value,
-            email: document.getElementById('pac-cita-paciente-email')?.value?.trim() || "",
-            telefono: document.getElementById('pac-cita-paciente-telefono')?.value?.trim() || "",
-            direccion: document.getElementById('pac-cita-paciente-direccion')?.value?.trim() || "",
+            email: document.getElementById('pac-cita-paciente-email').value,
+            telefono: document.getElementById('pac-cita-paciente-telefono').value,
+            direccion: document.getElementById('pac-cita-paciente-direccion').value,
           };
           if (!datos.pacienteNombre || !datos.pacienteRut || !datos.profesionalId || !datos.fecha || !datos.hora) {
             window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
@@ -324,18 +324,15 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
           const profesionalNombre = document.getElementById('modal-cita-profesional-nombre').value;
           const fecha = document.getElementById('modal-cita-fecha').value;
           const hora = document.getElementById('modal-cita-hora').value;
-
-          // Intenta primero obtener los campos del formulario paciente (si existen)
-          const email = document.getElementById('pac-cita-paciente-email')?.value?.trim() || "";
-          const telefono = document.getElementById('pac-cita-paciente-telefono')?.value?.trim() || "";
-          const direccion = document.getElementById('pac-cita-paciente-direccion')?.value?.trim() || "";
+          const email = document.getElementById('pac-cita-paciente-email').value;
+          const direccion = document.getElementById('pac-cita-paciente-direccion').value;
 
           if (!nombre || !rut || !profesion || !profesional || !fecha || !hora) {
             window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
             return;
           }
 
-          // Sanea antes de guardar
+        
           const datosSanitizados = sanitizeCitaData({
             solicitudId: citaId,
             nombre: nombre,
