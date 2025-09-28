@@ -226,12 +226,10 @@ window.abrirModalRegistrarAtencion = function(citaId) {
             </div>
         `;
         
-        document.getElementById("atencion-paciente-info").innerHTML = pacienteInfo;
-       document.getElementById("atencion-paciente-id").value = cita.pacienteId || "";
-
-
-        document.getElementById("atencion-descripcion").value = "";
-        document.getElementById("atencion-tipo").value = "";
+       document.getElementById("atencion-cita-id").value = cita.id || "";
+document.getElementById("atencion-paciente-id").value = cita.pacienteId || "";
+document.getElementById("atencion-descripcion").value = "";
+document.getElementById("atencion-tipo").value = "";
 
         showModal("modal-registrar-atencion");
     })
