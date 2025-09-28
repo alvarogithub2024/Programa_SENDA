@@ -410,7 +410,7 @@ function verDetalleSolicitud(solicitudId) {
     if (!solicitud) return;
     
     document.getElementById('modal-detalle-nombre').textContent = solicitud.nombre || '';
-    document.getElementById('modal-detalle-rut').textContent = solicitud.rut || '';
+    document.getElementById('modal-detalle-rut').textContent = window.formatRUT ? window.formatRUT(solicitud.rut) : (solicitud.rut || '');
     document.getElementById('modal-detalle-cesfam').textContent = solicitud.cesfam || '';
     document.getElementById('modal-detalle-estado').textContent = solicitud.estado || '';
     document.getElementById('modal-detalle-prioridad').textContent = solicitud.prioridad || '';
