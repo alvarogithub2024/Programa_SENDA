@@ -1209,36 +1209,51 @@ body {
   overflow-x: auto;
 }
 
+/* Contenedor principal de tabla */
+#solicitudes-table-container {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.09);
+  margin-top: 1.8rem;
+  padding: 2.5rem 2rem 2rem 2rem;
+  overflow-x: auto;
+  max-width: 98vw;          /* Para que casi ocupe todo el ancho de la ventana */
+  width: 100%;
+  min-width: 900px;         /* Para que no se vea apretado en pantallas grandes */
+  max-height: 650px;        /* Puedes ajustar el alto máximo */
+  overflow-y: auto;         /* Scroll vertical si hay muchas filas */
+}
+
 /* Tabla de solicitudes */
 .solicitudes-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 1.08rem;
+  font-size: 1.17rem;       /* Más grande */
 }
 
 .solicitudes-table thead th {
   background: #e8f0fe;
   color: #2666df;
   font-weight: 700;
-  padding: 0.9rem 0.7rem;
+  padding: 1.2rem 1rem;     /* Más alto y espacioso */
   text-align: left;
-  border-bottom: 2px solid #dbeafe;
-  font-size: 1.06rem;
-  letter-spacing: 0.01em;
+  border-bottom: 2.5px solid #dbeafe;
+  font-size: 1.13rem;       /* Más grande */
+  letter-spacing: 0.012em;
 }
 
 .solicitudes-table tbody tr {
-  border-bottom: 1px solid #f0f1f4;
+  border-bottom: 1.5px solid #f0f1f4;
   transition: background 0.16s;
 }
 
 .solicitudes-table tbody tr:hover {
-  background: #f6f8fa;
+  background: #f0f6ff;
 }
 
 .solicitudes-table td {
-  padding: 0.85rem 0.7rem;
+  padding: 1.1rem 1rem;     /* Más espacio en celdas */
   vertical-align: top;
 }
 
