@@ -119,3 +119,4 @@ function obtenerPacientePorId(pacienteId, callback) {
 window.guardarPaciente = guardarPaciente;
 window.buscarPacientes = buscarPacientes;
 window.obtenerPacientePorId = obtenerPacientePorId;
+
