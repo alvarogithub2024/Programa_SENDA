@@ -538,4 +538,31 @@ const motivacionRange = document.getElementById('motivacion-range');
       }
     };
   }
+  document.addEventListener("DOMContentLoaded", function() {
+  const range = document.getElementById('motivacion-range');
+  const bubble = document.getElementById('motivacion-bubble');
+  if (range && bubble) {
+    function setBubble() {
+      const min = parseInt(range.min) || 0;
+      const max = parseInt(range.max) || 10;
+      const val = parseInt(range.value);
+
+      // Calcula el porcentaje
+      const percent = (val - min) / (max - min);
+
+      // Calcula el ancho usable del slider
+      const sliderWidth = range.offsetWidth;
+      // Ajuste para burbuja en el centro del pulgar
+      const bubbleLeft = percent * sliderWidth;
+
+      bubble.style.left = `${bubbleLeft}px`;
+      bubble.textContent = val;
+    }
+
+    setBubble();
+
+    range.addEventListener('input', setBubble);
+    window.addEventListener('resize', setBubble); // Por si cambia el tamaño
+  }
+});
 });
