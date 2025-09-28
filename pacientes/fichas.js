@@ -122,18 +122,23 @@
         });
     }
 
-    function buscarPacientesLocal(texto) {
-        texto = (texto || '').trim().toUpperCase();
-        if (!texto) {
-            renderPacientesGrid(pacientesTabData);
-            return;
-        }
-        const filtrados = pacientesTabData.filter(p =>
-            (p.rut && p.rut.includes(texto)) ||
-            ((p.nombre + ' ' + (p.apellidos || '')).toUpperCase().includes(texto))
-        );
-        renderPacientesGrid(filtrados);
+   function buscarPacientesLocal(texto) {
+    texto = (texto || '').trim().toUpperCase();
+    if (!texto) {
+        renderPacientesGrid(pacientesTabData);
+        return;
     }
+    const textoSinPuntosGuion = texto.replace(/[.\-]/g, '');
+    const filtrados = pacientesTabData.filter(p => {
+        const rutLimpio = (p.rut || '').replace(/[.\-]/g, '').toUpperCase();
+        const nombreCompleto = (p.nombre + ' ' + (p.apellidos || '')).toUpperCase();
+        return (
+            (rutLimpio && rutLimpio.includes(textoSinPuntosGuion)) ||
+            nombreCompleto.includes(texto)
+        );
+    });
+    renderPacientesGrid(filtrados);
+}
 
     window.verFichaPacienteSenda = async function(rut) {
         const db = window.getFirestore();
