@@ -93,7 +93,9 @@
                     esTemporalDesdeCita: true,
                     profesionalOrigenId: cita.profesionalId, // UID del profesional que generó la cita
                     profesionalOrigenNombre: cita.profesionalNombre,
-                    profesionOrigen: cita.profesion || cita.tipoProfesional
+                    profesionOrigen: cita.profesion || cita.tipoProfesional,
+                    // CORRECCIÓN: Tomar la prioridad de la cita si existe, si no dejar "media"
+                    prioridad: cita.prioridad || 'media'
                 };
             } else if (rut && pacientesMap[rut]) {
                 const pacienteExistente = pacientesMap[rut];
@@ -101,7 +103,9 @@
                     ...pacienteExistente,
                     telefono: pacienteExistente.telefono || cita.telefono || '',
                     email: pacienteExistente.email || cita.email || '',
-                    cesfam: pacienteExistente.cesfam || cita.cesfam || ''
+                    cesfam: pacienteExistente.cesfam || cita.cesfam || '',
+                    // Si el paciente no tiene prioridad, agregarla desde la cita
+                    prioridad: pacienteExistente.prioridad || cita.prioridad || 'media'
                 };
             }
         });
@@ -128,6 +132,17 @@
                 ? `<a href="mailto:${p.email}" style="color:inherit;text-decoration:underline;">${p.email}</a>`
                 : 'No disponible';
 
+            // CORRECCIÓN: Mostrar la prioridad del paciente (alta, media, baja)
+            let prioridadHtml = '';
+            if (p.prioridad) {
+                let color = "#f59e0b", texto = "Media";
+                if (p.prioridad === "alta") { color = "#dc2626"; texto = "Alta"; }
+                else if (p.prioridad === "baja") { color = "#10b981"; texto = "Baja"; }
+                prioridadHtml = `<span style="margin-left:12px; font-size:0.95rem; font-weight:600; color:${color}; border:1.5px solid ${color}70; border-radius:7px; padding:2px 10px 2px 7px; background:${color}10;">
+                    <i class="fas fa-exclamation-triangle"></i> ${texto}
+                </span>`;
+            }
+
             const pacienteIdParaFicha = p.id || p.pacienteId;
             div.innerHTML = `
                 <div style="display:flex; gap:24px; align-items:center;">
@@ -135,6 +150,7 @@
                     <div>RUT: ${window.formatRUT ? window.formatRUT(p.rut) : (p.rut || '')}</div>
                     <div>Tel: ${telefonoHtml}</div>
                     <div>Email: ${emailHtml}</div>
+                    ${prioridadHtml}
                     <button class="btn btn-outline btn-sm" style="margin-left:18px;" onclick="verFichaPacienteUnificada('${pacienteIdParaFicha}')">
                         <i class="fas fa-file-medical"></i> Ver Ficha
                     </button>
