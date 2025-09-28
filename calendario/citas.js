@@ -1,4 +1,4 @@
-const datosSanitizados = sanitizeCitlet profesionalesAtencion = [];
+let profesionalesAtencion = [];
 let profesionesAtencion = [];
 let miCesfam = null;
 
