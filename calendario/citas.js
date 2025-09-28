@@ -1,4 +1,3 @@
-
 let profesionalesAtencion = [];
 let profesionesAtencion = [];
 let miCesfam = null;
@@ -6,6 +5,16 @@ let miCesfam = null;
 let profesionalesAgendar = [];
 let profesionesAgendar = [];
 let miCesfamAgendar = null;
+
+// Sanea los campos nuevos para que nunca sean undefined antes de guardar en Firestore
+function sanitizeCitaData(obj) {
+  return {
+    ...obj,
+    email: (obj.email !== undefined && obj.email !== null) ? obj.email : "",
+    telefono: (obj.telefono !== undefined && obj.telefono !== null) ? obj.telefono : "",
+    direccion: (obj.direccion !== undefined && obj.direccion !== null) ? obj.direccion : ""
+  };
+}
 
 function cargarProfesionalesAtencionPorCesfam(callback) {
   const user = firebase.auth().currentUser;
@@ -88,7 +97,10 @@ function guardarCitaPaciente(datosCita, callback) {
   const datos = Object.assign({}, datosCita);
   datos.fechaCreacion = datos.fechaCreacion || new Date().toISOString();
 
-  db.collection("citas").add(datos)
+  // Sanea los datos antes de guardar
+  const datosSanitizados = sanitizeCitaData(datos);
+
+  db.collection("citas").add(datosSanitizados)
     .then(function(docRef) {
       window.showNotification && window.showNotification("Cita agendada correctamente", "success");
       
@@ -106,11 +118,9 @@ function guardarCitaPaciente(datosCita, callback) {
               fechaRegistro: datos.fechaCreacion || new Date().toISOString(),
             };
             if (!snapshot.empty) {
-              
               const docId = snapshot.docs[0].id;
               db.collection("pacientes").doc(docId).update(pacienteData);
             } else {
-          
               db.collection("pacientes").add(pacienteData);
             }
           });
@@ -130,7 +140,6 @@ function abrirModalCitaPaciente() {
     llenarSelectProfesionalesPaciente();
     autocompletarNombreProfesionalPaciente();
 
-  
     const selProf = document.getElementById('pac-cita-profession');
     if (selProf) {
       selProf.onchange = function() {
@@ -157,24 +166,24 @@ function abrirModalCitaPaciente() {
         form.onsubmit = function(e) {
           e.preventDefault();
           const datos = {
-  cesfam: miCesfam,
-  estado: "agendada",
-  fechaCreacion: new Date().toISOString(),
-  observaciones: document.getElementById('pac-cita-observaciones')?.value || "",
-  origenSolicitud: "web",
-  pacienteNombre: document.getElementById('pac-cita-paciente-nombre').value.trim(),
-  pacienteRut: document.getElementById('pac-cita-paciente-rut').value.trim(),
-  profesionalId: document.getElementById('pac-cita-profesional').value,
-  profesionalNombre: document.getElementById('pac-cita-profesional-nombre').value,
-  solicitudId: null,
-  tipo: "paciente",
-  tipoProfesional: document.getElementById('pac-cita-profession').value,
-  fecha: document.getElementById('pac-cita-fecha').value,
-  hora: document.getElementById('pac-cita-hora').value,
-  email: document.getElementById('pac-cita-paciente-email')?.value.trim() || "",
-  telefono: document.getElementById('pac-cita-paciente-telefono')?.value.trim() || "",
-  direccion: document.getElementById('pac-cita-paciente-direccion')?.value.trim() || "",
-};
+            cesfam: miCesfam,
+            estado: "agendada",
+            fechaCreacion: new Date().toISOString(),
+            observaciones: document.getElementById('pac-cita-observaciones')?.value || "",
+            origenSolicitud: "web",
+            pacienteNombre: document.getElementById('pac-cita-paciente-nombre').value.trim(),
+            pacienteRut: document.getElementById('pac-cita-paciente-rut').value.trim(),
+            profesionalId: document.getElementById('pac-cita-profesional').value,
+            profesionalNombre: document.getElementById('pac-cita-profesional-nombre').value,
+            solicitudId: null,
+            tipo: "paciente",
+            tipoProfesional: document.getElementById('pac-cita-profession').value,
+            fecha: document.getElementById('pac-cita-fecha').value,
+            hora: document.getElementById('pac-cita-hora').value,
+            email: document.getElementById('pac-cita-paciente-email')?.value?.trim() || "",
+            telefono: document.getElementById('pac-cita-paciente-telefono')?.value?.trim() || "",
+            direccion: document.getElementById('pac-cita-paciente-direccion')?.value?.trim() || "",
+          };
           if (!datos.pacienteNombre || !datos.pacienteRut || !datos.profesionalId || !datos.fecha || !datos.hora) {
             window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
             return;
@@ -273,22 +282,21 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
     llenarSelectProfesionalesAgendarCita();
     autocompletarNombreProfesionalAgendarCita();
 
+    var inputId = document.getElementById('modal-cita-id');
+    if (inputId) inputId.value = solicitudId;
 
-var inputId = document.getElementById('modal-cita-id');
-if (inputId) inputId.value = solicitudId;
+    var inputIdProf = document.getElementById('modal-cita-id-prof');
+    if (inputIdProf) inputIdProf.value = solicitudId;
 
-var inputIdProf = document.getElementById('modal-cita-id-prof');
-if (inputIdProf) inputIdProf.value = solicitudId;
+    var nombreSpan = document.getElementById('modal-cita-nombre');
+    if (nombreSpan) nombreSpan.textContent = nombre;
+    var nombreSpanProf = document.getElementById('modal-cita-nombre-prof');
+    if (nombreSpanProf) nombreSpanProf.textContent = nombre;
 
-var nombreSpan = document.getElementById('modal-cita-nombre');
-if (nombreSpan) nombreSpan.textContent = nombre;
-var nombreSpanProf = document.getElementById('modal-cita-nombre-prof');
-if (nombreSpanProf) nombreSpanProf.textContent = nombre;
-
-var rutSpan = document.getElementById('modal-cita-rut');
-if (rutSpan) rutSpan.textContent = window.formatRUT ? window.formatRUT(rut) : rut;
-var rutSpanProf = document.getElementById('modal-cita-rut-prof');
-if (rutSpanProf) rutSpanProf.textContent = rut;
+    var rutSpan = document.getElementById('modal-cita-rut');
+    if (rutSpan) rutSpan.textContent = window.formatRUT ? window.formatRUT(rut) : rut;
+    var rutSpanProf = document.getElementById('modal-cita-rut-prof');
+    if (rutSpanProf) rutSpanProf.textContent = rut;
 
     const selProf = document.getElementById('modal-cita-profession');
     if (selProf) {
@@ -307,57 +315,62 @@ if (rutSpanProf) rutSpanProf.textContent = rut;
     setTimeout(function() {
       var form = document.getElementById('form-agendar-cita');
       if (form && !form._onsubmitSet) {
-     form.addEventListener('submit', function(e){
-  e.preventDefault();
-  const citaId = document.getElementById('modal-cita-id').value;
-  const nombre = document.getElementById('modal-cita-nombre').textContent;
-  const rut = document.getElementById('modal-cita-rut').textContent;
-  const profesion = document.getElementById('modal-cita-profession').value;
-  const profesional = document.getElementById('modal-cita-profesional').value;
-  const profesionalNombre = document.getElementById('modal-cita-profesional-nombre').value;
-  const fecha = document.getElementById('modal-cita-fecha').value;
-  const hora = document.getElementById('modal-cita-hora').value;
-  const email = document.getElementById('pac-cita-paciente-email')?.value?.trim() || "";
-  const telefono = document.getElementById('pac-cita-paciente-telefono')?.value?.trim() || "";
-  const direccion = document.getElementById('pac-cita-paciente-direccion')?.value?.trim() || "";
+        form.addEventListener('submit', function(e){
+          e.preventDefault();
+          const citaId = document.getElementById('modal-cita-id').value;
+          const nombre = document.getElementById('modal-cita-nombre').textContent;
+          const rut = document.getElementById('modal-cita-rut').textContent;
+          const profesion = document.getElementById('modal-cita-profession').value;
+          const profesional = document.getElementById('modal-cita-profesional').value;
+          const profesionalNombre = document.getElementById('modal-cita-profesional-nombre').value;
+          const fecha = document.getElementById('modal-cita-fecha').value;
+          const hora = document.getElementById('modal-cita-hora').value;
 
-  if (!nombre || !rut || !profesion || !profesional || !fecha || !hora) {
-    window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
-    return;
-  }
+          // Intenta primero obtener los campos del formulario paciente (si existen)
+          const email = document.getElementById('pac-cita-paciente-email')?.value?.trim() || "";
+          const telefono = document.getElementById('pac-cita-paciente-telefono')?.value?.trim() || "";
+          const direccion = document.getElementById('pac-cita-paciente-direccion')?.value?.trim() || "";
 
-  const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
-  db.collection("citas").add({
-    solicitudId: citaId,
-    nombre: nombre,
-    rut: rut,
-    profesion: profesion,
-    profesional: profesional,
-    profesionalNombre: profesionalNombre,
-    fecha: fecha,
-    hora: hora,
-    email: email,
-    telefono: telefono,
-    direccion: direccion,
-    creado: firebase.firestore.FieldValue.serverTimestamp()
-  })
-  .then(function(docRef) {
-    db.collection("solicitudes_ingreso").doc(citaId).update({ estado: "agendada" })
-      .catch(() => {})
-      .finally(() => {
-        db.collection("reingresos").doc(citaId).update({ estado: "agendada" })
-          .catch(() => {})
-          .finally(() => {
-            window.showNotification && window.showNotification("Cita agendada correctamente", "success");
-            closeModal('modal-cita');
-            if (window.reloadSolicitudesFromFirebase) window.reloadSolicitudesFromFirebase();
+          if (!nombre || !rut || !profesion || !profesional || !fecha || !hora) {
+            window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
+            return;
+          }
+
+          // Sanea antes de guardar
+          const datosSanitizados = sanitizeCitaData({
+            solicitudId: citaId,
+            nombre: nombre,
+            rut: rut,
+            profesion: profesion,
+            profesional: profesional,
+            profesionalNombre: profesionalNombre,
+            fecha: fecha,
+            hora: hora,
+            email: email,
+            telefono: telefono,
+            direccion: direccion,
+            creado: firebase.firestore.FieldValue.serverTimestamp()
           });
-      });
-  })
-  .catch(function(error) {
-    window.showNotification && window.showNotification("Error al guardar la cita: " + error, "error");
-  });
-});
+
+          const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
+          db.collection("citas").add(datosSanitizados)
+          .then(function(docRef) {
+            db.collection("solicitudes_ingreso").doc(citaId).update({ estado: "agendada" })
+              .catch(() => {})
+              .finally(() => {
+                db.collection("reingresos").doc(citaId).update({ estado: "agendada" })
+                  .catch(() => {})
+                  .finally(() => {
+                    window.showNotification && window.showNotification("Cita agendada correctamente", "success");
+                    closeModal('modal-cita');
+                    if (window.reloadSolicitudesFromFirebase) window.reloadSolicitudesFromFirebase();
+                  });
+              });
+          })
+          .catch(function(error) {
+            window.showNotification && window.showNotification("Error al guardar la cita: " + error, "error");
+          });
+        });
         form._onsubmitSet = true;
       }
     }, 100);
