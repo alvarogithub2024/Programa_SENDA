@@ -87,6 +87,7 @@ function guardarCitaPaciente(datosCita, callback) {
   const datos = Object.assign({}, datosCita);
   datos.fechaCreacion = datos.fechaCreacion || new Date().toISOString();
 
+  // Limpiar rut para búsqueda
   const rutLimpio = datos.pacienteRut.replace(/[.\-]/g, "").toUpperCase();
 
   if (!rutLimpio) {
@@ -135,6 +136,18 @@ function guardarCitaPaciente(datosCita, callback) {
     .catch(function(error) {
       console.error("Error buscando paciente:", error);
       window.showNotification && window.showNotification("Error buscando paciente: "+error.message, "error");
+    });
+}
+
+function crearCitaConPacienteId(db, datos, callback) {
+  db.collection("citas").add(datos)
+    .then(function(docRef) {
+      window.showNotification && window.showNotification("Cita agendada correctamente", "success");
+      if (typeof callback === "function") callback(docRef.id);
+    })
+    .catch(function(error) {
+      window.showNotification && window.showNotification("Error al agendar cita: " + error.message, "error");
+      if (typeof callback === "function") callback(null, error);
     });
 }
 
