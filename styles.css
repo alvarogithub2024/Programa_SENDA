@@ -3042,7 +3042,7 @@ document.addEventListener('DOMContentLoaded', setupModalTabs);
 }
 
 
-   .motivacion-numero-centro {
+.motivacion-numero-centro {
   width: 100%;
   display: flex;
   justify-content: center;
