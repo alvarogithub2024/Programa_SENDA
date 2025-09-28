@@ -412,7 +412,7 @@ function verDetalleSolicitud(solicitudId) {
     if (!solicitud) return;
     document.getElementById('modal-detalle-nombre').textContent = 
         (solicitud.nombre || '') + (solicitud.apellidos ? ' ' + solicitud.apellidos : '');
-    document.getElementById('modal-detalle-rut').textContent = window.formatRUT ? window.formatRUT(solicitud.rut) : (solicitud.rut || '');
+document.getElementById('modal-detalle-rut').textContent = window.formatRUT ? window.formatRUT(solicitud.rut) : (solicitud.rut || '');
     document.getElementById('modal-detalle-telefono').textContent = solicitud.telefono || '';
     document.getElementById('modal-detalle-email').textContent = solicitud.email || '';
     document.getElementById('modal-detalle-motivo').textContent = solicitud.descripcion || '';
