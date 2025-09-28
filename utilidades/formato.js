@@ -46,7 +46,7 @@ function siglaCentro(nombre) {
     var palabras = nombre.split(' ');
     return palabras.map(function(p) { return p[0]; }).join('').toUpperCase();
 }
-
+window.formatRUT ? window.formatRUT(rut) : rut
 window.formatRUT = formatRUT;
 window.formatPhoneNumber = formatPhoneNumber;
 window.capitalizeWords = capitalizeWords;
