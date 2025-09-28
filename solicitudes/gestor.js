@@ -406,6 +406,54 @@ function isSameDay(date1, date2) {
         date1.getMonth() === date2.getMonth() &&
         date1.getFullYear() === date2.getFullYear();
 }
+function updateSolicitudesStats() {
+    try {
+        const stats = calculateSolicitudesStats();
+        const statsContainer = document.getElementById('solicitudes-stats');
+        if (statsContainer) {
+            statsContainer.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-icon" style="background-color: #f59e0b20; color: #f59e0b;">
+                        ⏳
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number">${stats.pendientes}</div>
+                        <div class="stat-label">Pendientes</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background-color: #dc262620; color: #dc2626;">
+                        🔴
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number">${stats.altaPrioridad}</div>
+                        <div class="stat-label">Alta Prioridad</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background-color: #10b98120; color: #10b981;">
+                        ✅
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number">${stats.completadas}</div>
+                        <div class="stat-label">Completadas</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background-color: #3b82f620; color: #3b82f6;">
+                        📅
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number">${stats.hoy}</div>
+                        <div class="stat-label">Hoy</div>
+                    </div>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('❌ Error actualizando estadísticas:', error);
+    }
+}
 
 function verDetalleSolicitud(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
