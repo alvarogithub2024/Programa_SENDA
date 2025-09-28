@@ -238,17 +238,15 @@ function construirHTMLFichaMejorada(paciente, puedeEditar) {
  
 
 
-    async function cargarHistorialClinicoMejorado(rutPaciente, puedeEditar) {
-        const cont = document.getElementById('historial-contenido');
-        if (!cont) return;
-        const db = window.getFirestore();
-        const rutLimpio = (rutPaciente || '').replace(/[.\-]/g, '').trim();
-        
-        try {
-            const snapshot = await db.collection('atenciones')
-                .where('pacienteRut', '==', rutLimpio)
-                .orderBy('fechaRegistro', 'desc')
-                .get();
+    async function cargarHistorialClinicoMejorado(pacienteId, puedeEditar) {
+    const cont = document.getElementById('historial-contenido');
+    if (!cont) return;
+    const db = window.getFirestore();
+    try {
+        const snapshot = await db.collection('atenciones')
+            .where('pacienteId', '==', pacienteId) 
+            .orderBy('fechaRegistro', 'desc')
+            .get();
                 
             if (snapshot.empty) {
                 cont.innerHTML = `
