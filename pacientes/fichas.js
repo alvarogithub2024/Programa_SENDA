@@ -1,4 +1,4 @@
-// ========== pacientes/fichas.js - CORREGIDO PARA USAR ID DE PACIENTE ==========
+// ========== pacientes/fichas.js - CORREGIDO: PROFESIONAL Y PROFESIÓN NO SE MEZCLAN EN FICHAS TEMPORALES ==========
 
 (function() {
     let pacientesTabData = [];
@@ -14,7 +14,6 @@
                 resolve(null);
                 return;
             }
-            
             window.getFirestore()
                 .collection('profesionales')
                 .doc(user.uid)
@@ -63,12 +62,10 @@
         pacientesSnap.forEach(doc => {
             const paciente = doc.data();
             const pacienteConId = {
-                id: doc.id, // ID del documento como pacienteId
-                pacienteId: doc.id, // Alias para compatibilidad
+                id: doc.id,
+                pacienteId: doc.id,
                 ...paciente
             };
-            
-            // Usar el RUT como clave para evitar duplicados
             const rutLimpio = (paciente.rut || '').replace(/[.\-]/g, "").trim();
             if (rutLimpio) {
                 pacientesMap[rutLimpio] = pacienteConId;
@@ -80,9 +77,7 @@
         citasSnap.forEach(doc => {
             const cita = doc.data();
             const rut = (cita.rut || cita.pacienteRut || '').replace(/[.\-]/g, "").trim();
-            
             if (rut && !pacientesMap[rut]) {
-                // Si no existe el paciente, crearlo temporalmente desde los datos de la cita
                 pacientesMap[rut] = {
                     id: cita.pacienteId || doc.id,
                     pacienteId: cita.pacienteId || doc.id,
@@ -95,10 +90,12 @@
                     edad: cita.edad || '',
                     cesfam: cita.cesfam || '',
                     fechaRegistro: cita.creado || cita.fechaCreacion || new Date().toISOString(),
-                    esTemporalDesdeCita: true
+                    esTemporalDesdeCita: true,
+                    profesionalOrigenId: cita.profesionalId, // UID del profesional que generó la cita
+                    profesionalOrigenNombre: cita.profesionalNombre,
+                    profesionOrigen: cita.profesion || cita.tipoProfesional
                 };
             } else if (rut && pacientesMap[rut]) {
-                // Actualizar datos faltantes desde la cita
                 const pacienteExistente = pacientesMap[rut];
                 pacientesMap[rut] = {
                     ...pacienteExistente,
@@ -112,7 +109,6 @@
         return Object.values(pacientesMap);
     }
 
-    // Render grid actualizado para usar ID del paciente
     function renderPacientesGrid(pacientes) {
         const grid = getGrid();
         if (!grid) return;
@@ -121,11 +117,9 @@
             grid.innerHTML = "<div class='no-results'>No hay pacientes registrados aún.</div>";
             return;
         }
-        
         pacientes.forEach(p => {
             const div = document.createElement('div');
             div.className = 'patient-card';
-            
             let telefonoHtml = p.telefono
                 ? `<a href="tel:${p.telefono}" style="color:inherit;text-decoration:underline;">${p.telefono}</a>`
                 : 'No disponible';
@@ -134,9 +128,7 @@
                 ? `<a href="mailto:${p.email}" style="color:inherit;text-decoration:underline;">${p.email}</a>`
                 : 'No disponible';
 
-            // USAR EL ID DEL PACIENTE, NO EL RUT
             const pacienteIdParaFicha = p.id || p.pacienteId;
-            
             div.innerHTML = `
                 <div style="display:flex; gap:24px; align-items:center;">
                     <div style="font-weight:600; min-width:170px;">${p.nombre} ${p.apellidos || ''}</div>
@@ -171,38 +163,28 @@
         renderPacientesGrid(filtrados);
     }
 
-    // FUNCIÓN PRINCIPAL CORREGIDA
     window.verFichaPacienteUnificada = async function(pacienteId) {
         try {
-            console.log('Abriendo ficha para pacienteId:', pacienteId);
-            
-            if (!pacienteId) {
-                window.showNotification && window.showNotification('ID de paciente no válido', 'warning');
-                return;
-            }
-            
-            // Obtener datos del paciente directamente por ID
             const db = window.getFirestore();
             const doc = await db.collection('pacientes').doc(pacienteId).get();
-            
-            if (!doc.exists) {
-                window.showNotification && window.showNotification('Paciente no encontrado en la base de datos', 'warning');
-                return;
+            if (doc.exists) {
+                const pacienteData = { id: doc.id, ...doc.data() };
+                mostrarModalFichaCompleta(pacienteData, pacienteId, false);
+            } else {
+                // Buscar en los datos locales temporales
+                const pacienteTemp = pacientesTabData.find(p => (p.id === pacienteId || p.pacienteId === pacienteId));
+                if (pacienteTemp) {
+                    mostrarModalFichaCompleta(pacienteTemp, pacienteId, true);
+                } else {
+                    window.showNotification && window.showNotification('Paciente no encontrado en la base de datos', 'warning');
+                }
             }
-            
-            const pacienteData = { id: doc.id, ...doc.data() };
-            console.log('Datos del paciente encontrado:', pacienteData);
-            
-            // Mostrar modal con ficha completa
-            mostrarModalFichaCompleta(pacienteData, pacienteId);
-            
         } catch (error) {
-            console.error('Error al mostrar ficha:', error);
             window.showNotification && window.showNotification('Error al cargar ficha del paciente: ' + error.message, 'error');
         }
     };
 
-    function mostrarModalFichaCompleta(paciente, pacienteId) {
+    function mostrarModalFichaCompleta(paciente, pacienteId, esTemporal) {
         let modal = document.getElementById('modal-ficha-paciente-completa');
         if (!modal) {
             modal = document.createElement('div');
@@ -219,8 +201,40 @@
         modal.style.display = 'flex';
 
         const modalBody = document.getElementById('modal-ficha-completa-body');
-        modalBody.innerHTML = construirHTMLFichaCompleta(paciente, pacienteId);
-        
+        let fichaHtml = construirHTMLFichaCompleta(paciente, pacienteId);
+
+        // Si es temporal, mostrar restricción de profesional y profesión
+        let restriccion = '';
+        if (esTemporal && paciente.profesionalOrigenId) {
+            const user = firebase.auth().currentUser;
+            if (!user || paciente.profesionalOrigenId !== user.uid) {
+                restriccion = `
+                    <div style="color:#dc2626; margin-bottom:12px;">
+                        <i class="fas fa-lock"></i>
+                        Solo el profesional original <b>${paciente.profesionalOrigenNombre || paciente.profesionOrigen || "profesional asignado"}</b>
+                        puede completar o editar esta ficha.
+                    </div>
+                `;
+                fichaHtml = restriccion + fichaHtml;
+                // Además, deshabilitamos la función de agregar atención
+                window.puedeCrearAtenciones = function() { return false; };
+            } else {
+                restriccion = `
+                    <div style="color:#16a34a; margin-bottom:12px;">
+                        <i class="fas fa-user-check"></i>
+                        Eres el profesional original (<b>${paciente.profesionalOrigenNombre || paciente.profesionOrigen}</b>) y puedes completar la ficha.
+                    </div>
+                `;
+                fichaHtml = restriccion + fichaHtml;
+                window.puedeCrearAtenciones = function() { return true; };
+            }
+        } else {
+            // Si es ficha real o no hay restricción, el comportamiento por defecto
+            window.puedeCrearAtenciones = undefined;
+        }
+
+        modalBody.innerHTML = fichaHtml;
+
         // Cargar historial clínico automáticamente
         cargarHistorialClinicoUnificado(pacienteId, puedeEditarHistorial());
     }
@@ -231,8 +245,6 @@
                 <i class="fas fa-user-circle"></i> ${paciente.nombre || ''} ${paciente.apellidos || ''}
                 <span style="font-size:0.8rem; color:#6b7280; font-weight:normal;">ID: ${pacienteId}</span>
             </h3>
-            
-            <!-- Datos del Paciente -->
             <div style="background:#f8fafc; padding:1rem; border-radius:8px; margin-bottom:1.5rem;">
                 <h4 style="color:#1f2937; margin-bottom:1rem;"><i class="fas fa-user"></i> Información Personal</h4>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
@@ -244,15 +256,14 @@
                     <p><i class="fas fa-calendar" style="color:#06b6d4; margin-right:8px;"></i><b>Edad:</b> ${paciente.edad || 'No disponible'}</p>
                 </div>
             </div>
-
-            <!-- Historial Clínico -->
             <div id="historial-clinico" class="${puedeEditarHistorial() ? '' : 'historial-readonly'}" data-paciente-id="${pacienteId}">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                     <h4 style="color:#2563eb; margin:0; font-size:1.2rem; font-weight:600;">
                         <i class="fas fa-clipboard-list"></i> Historial Clínico de Atenciones
                     </h4>
                     ${puedeEditarHistorial() ? `
-                        <button class="btn-add-entry" onclick="mostrarFormularioNuevaAtencionUnificada('${pacienteId}')">
+                        <button class="btn-add-entry" onclick="mostrarFormularioNuevaAtencionUnificada('${pacienteId}')"
+                        ${window.puedeCrearAtenciones && !window.puedeCrearAtenciones() ? 'disabled title="Solo el profesional original puede registrar atenciones."' : ''}>
                             <i class="fas fa-plus"></i> Agregar Atención
                         </button>
                     ` : `
@@ -270,23 +281,15 @@
         `;
     }
 
-    // FUNCIÓN PARA CARGAR HISTORIAL USANDO PACIENTE ID
     async function cargarHistorialClinicoUnificado(pacienteId, puedeEditar) {
         const cont = document.getElementById('historial-contenido');
         if (!cont) return;
-        
-        console.log('Cargando historial para pacienteId:', pacienteId);
-        
         const db = window.getFirestore();
         try {
-            // Buscar atenciones usando el pacienteId
             const snapshot = await db.collection('atenciones')
                 .where('pacienteId', '==', pacienteId)
                 .orderBy('fechaRegistro', 'desc')
                 .get();
-
-            console.log(`Encontradas ${snapshot.size} atenciones para el paciente`);
-
             if (snapshot.empty) {
                 cont.innerHTML = `
                     <div class="no-historial" style="text-align:center; padding:2rem; color:#6b7280;">
@@ -297,29 +300,24 @@
                 `;
                 return;
             }
-
             cont.innerHTML = '';
             snapshot.forEach(doc => {
                 const atencion = doc.data();
-                console.log('Atención encontrada:', atencion);
                 const entradaElement = crearEntradaHistorialConEventos(doc.id, atencion, puedeEditar, pacienteId);
                 cont.appendChild(entradaElement);
             });
-
         } catch (error) {
             cont.innerHTML = `
                 <div style="background:#fee2e2; border-radius:8px; padding:1rem; color:#dc2626;">
                     <p><i class="fas fa-exclamation-circle"></i> Error al cargar historial clínico: ${error.message}</p>
                 </div>
             `;
-            console.error("Error cargando historial:", error);
         }
     }
 
     function crearEntradaHistorialConEventos(docId, atencion, puedeEditar, pacienteId) {
         let fechaTexto = '';
         let horaTexto = '';
-
         if (atencion && atencion.fechaRegistro) {
             let fechaObj;
             if (typeof atencion.fechaRegistro === 'string') {
@@ -334,16 +332,13 @@
                 horaTexto = fechaObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
             }
         }
-
         const tipoFormateado = formatearTipoAtencion(atencion?.tipoAtencion || "");
         const descripcion = atencion?.descripcion || "Sin descripción";
         const profesionalNombre = atencion?.profesional || "Profesional no especificado";
         const puedeEditarRealmente = window.puedeEditarHistorial ? window.puedeEditarHistorial() : false;
-
         const entradaDiv = document.createElement('div');
         entradaDiv.className = 'historial-entry';
         entradaDiv.dataset.entryId = docId;
-
         entradaDiv.style.cssText = `
             background: #f8fafc;
             border: 1px solid #e5e7eb;
@@ -353,7 +348,6 @@
             cursor: ${puedeEditarRealmente ? 'pointer' : 'default'};
             transition: all 0.2s ease;
         `;
-
         entradaDiv.innerHTML = `
             <div style="font-weight:600; color:#2563eb; margin-bottom:4px; font-size:1rem;">
                 ${fechaTexto} ${horaTexto} - ${tipoFormateado}
@@ -376,29 +370,24 @@
                 </div>
             `}
         `;
-
         if (puedeEditarRealmente) {
             entradaDiv.addEventListener('click', function() {
                 abrirModalEditarAtencion(docId, descripcion, atencion?.tipoAtencion || "", pacienteId);
             });
-
             entradaDiv.addEventListener('mouseenter', function() {
                 this.style.background = '#f1f5f9';
                 this.style.borderColor = '#2563eb';
                 this.style.transform = 'translateY(-1px)';
                 this.style.boxShadow = '0 2px 8px rgba(37, 99, 235, 0.15)';
             });
-
             entradaDiv.addEventListener('mouseleave', function() {
                 this.style.background = '#f8fafc';
                 this.style.borderColor = '#e5e7eb';
                 this.style.transform = 'translateY(0)';
                 this.style.boxShadow = 'none';
             });
-
             entradaDiv.title = 'Haz clic para editar esta atención';
         }
-
         return entradaDiv;
     }
 
@@ -422,17 +411,14 @@
             }
             return;
         }
-
         const fichaModal = document.getElementById('modal-ficha-paciente-completa');
         if (fichaModal) {
             fichaModal.style.display = 'none';
         }
-
         let modal = document.getElementById('modal-editar-atencion');
         if (modal) {
             modal.remove();
         }
-
         modal = document.createElement('div');
         modal.id = 'modal-editar-atencion';
         modal.className = 'modal-overlay';
@@ -476,19 +462,14 @@
                 </form>
             </div>
         `;
-
         document.body.appendChild(modal);
-
         document.getElementById('editar-atencion-descripcion').value = descripcion || "";
         document.getElementById('editar-atencion-tipo').value = tipoAtencion || "";
-
         const form = document.getElementById('form-editar-atencion');
         form.onsubmit = async function(e) {
             e.preventDefault();
-
             const nuevaDescripcion = document.getElementById('editar-atencion-descripcion').value.trim();
             const nuevoTipo = document.getElementById('editar-atencion-tipo').value;
-
             if (!nuevaDescripcion || !nuevoTipo) {
                 if (window.showNotification) {
                     window.showNotification('Completa todos los campos', 'warning');
@@ -497,7 +478,6 @@
                 }
                 return;
             }
-
             try {
                 const db = window.getFirestore();
                 await db.collection("atenciones").doc(atencionId).update({
@@ -505,16 +485,13 @@
                     tipoAtencion: nuevoTipo,
                     fechaActualizacion: new Date().toISOString()
                 });
-
                 if (window.showNotification) {
                     window.showNotification("Atención editada correctamente", "success");
                 } else {
                     alert("Atención editada correctamente");
                 }
-
                 cerrarModalEditarAtencion();
                 await cargarHistorialClinicoUnificado(pacienteId, window.puedeEditarHistorial());
-
             } catch (error) {
                 if (window.showNotification) {
                     window.showNotification("Error al editar atención: " + error.message, "error");
@@ -523,7 +500,6 @@
                 }
             }
         };
-
         document.getElementById('btn-eliminar-atencion').onclick = function() {
             eliminarAtencion(atencionId, pacienteId);
         };
@@ -531,20 +507,16 @@
 
     async function eliminarAtencion(atencionId, pacienteId) {
         if (!confirm('¿Seguro que deseas eliminar esta atención? Esta acción no se puede deshacer.')) return;
-
         try {
             const db = window.getFirestore();
             await db.collection('atenciones').doc(atencionId).delete();
-
             if (window.showNotification) {
                 window.showNotification("Atención eliminada correctamente", "success");
             } else {
                 alert("Atención eliminada correctamente");
             }
-
             cerrarModalEditarAtencion();
             await cargarHistorialClinicoUnificado(pacienteId, window.puedeEditarHistorial());
-
         } catch (error) {
             if (window.showNotification) {
                 window.showNotification("Error al eliminar atención: " + error.message, "error");
@@ -557,18 +529,19 @@
     window.cerrarModalEditarAtencion = function() {
         const modal = document.getElementById('modal-editar-atencion');
         if (modal) modal.remove();
-
         const fichaModal = document.getElementById('modal-ficha-paciente-completa');
         if (fichaModal) fichaModal.style.display = 'flex';
     };
 
-    // FUNCIÓN PARA AGREGAR NUEVA ATENCIÓN
     window.mostrarFormularioNuevaAtencionUnificada = function(pacienteId) {
+        if (window.puedeCrearAtenciones && !window.puedeCrearAtenciones()) {
+            window.showNotification && window.showNotification('Solo el profesional original puede crear atenciones para esta ficha.', 'warning');
+            return;
+        }
         if (!window.puedeCrearAtenciones || !window.puedeCrearAtenciones()) {
             window.mostrarMensajePermisos && window.mostrarMensajePermisos('crear nuevas atenciones');
             return;
         }
-
         const modalHTML = `
             <div class="modal-overlay" id="modal-nueva-atencion">
                 <div class="modal-content" style="max-width:500px;">
@@ -606,7 +579,6 @@
                 </div>
             </div>
         `;
-
         let modalElement = document.getElementById('modal-nueva-atencion');
         if (modalElement) {
             modalElement.remove();
@@ -622,24 +594,20 @@
         const tipo = document.getElementById('nueva-atencion-tipo').value;
         const descripcion = document.getElementById('nueva-atencion-descripcion').value.trim();
         const pacienteId = document.getElementById('nueva-atencion-paciente-id').value;
-
         if (!tipo || !descripcion) {
             window.showNotification && window.showNotification('Completa todos los campos obligatorios', 'warning');
             return;
         }
-
         try {
             const profesional = await obtenerProfesionalActual();
             if (!profesional) {
                 window.showNotification && window.showNotification('Error: No se pudo obtener información del profesional', 'error');
                 return;
             }
-
             // Obtener datos básicos del paciente
             const db = window.getFirestore();
             const pacienteDoc = await db.collection('pacientes').doc(pacienteId).get();
             const pacienteData = pacienteDoc.exists ? pacienteDoc.data() : {};
-
             const nuevaAtencion = {
                 pacienteId: pacienteId,
                 pacienteNombre: pacienteData.nombre || '',
@@ -652,19 +620,14 @@
                 fechaCreacion: new Date().toISOString(),
                 cesfam: pacienteData.cesfam || profesional.cesfam || ''
             };
-
-            // Usar el sistema unificado si está presente
             if (window.SISTEMA_ID_UNIFICADO && window.SISTEMA_ID_UNIFICADO.crearAtencionUnificada) {
                 const resultado = await window.SISTEMA_ID_UNIFICADO.crearAtencionUnificada(nuevaAtencion);
                 console.log('Atención creada con ID:', resultado.atencionId);
             } else {
-                // Fallback directo
                 await db.collection('atenciones').add(nuevaAtencion);
             }
-
             window.showNotification && window.showNotification('Atención registrada correctamente', 'success');
             cerrarModalNuevaAtencion();
-
             await cargarHistorialClinicoUnificado(pacienteId, window.puedeEditarHistorial());
         } catch (error) {
             console.error('Error guardando atención:', error);
@@ -697,7 +660,6 @@
         const buscarBtn = getBuscarBtn();
         const searchInput = getSearchInput();
         const actualizarBtn = getActualizarBtn();
-
         if (buscarBtn) {
             buscarBtn.onclick = function() {
                 const texto = searchInput ? searchInput.value.trim() : "";
@@ -721,11 +683,8 @@
         if (modal) modal.style.display = 'none';
     };
 
-    // Mantener funciones legacy para compatibilidad
     window.verFichaPacienteSenda = window.verFichaPacienteUnificada;
     window.cerrarModalFichaPaciente = window.cerrarModalFichaCompleta;
-
-    // Debug function
     window.debugHistorialClickeable = function() {
         const entradas = document.querySelectorAll('.historial-entry');
         entradas.forEach((entrada, index) => {
@@ -747,7 +706,6 @@
         }
     };
 
-    // HACER GLOBAL la función para evitar ReferenceError
     window.crearBotonActualizarSiNoExiste = crearBotonActualizarSiNoExiste;
 
     console.log('✅ Sistema de fichas unificado cargado correctamente');
