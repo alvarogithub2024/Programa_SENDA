@@ -1,4 +1,3 @@
-
 const PERMISOS_POR_ROL = {
     'medico': {
         editarHistorial: true,
@@ -25,7 +24,7 @@ const PERMISOS_POR_ROL = {
         gestionarSolicitudes: false
     },
     'asistente_social': {
-        editarHistorial: false,
+        editarHistorial: false,      // <--- NO puede editar historial clínico
         eliminarHistorial: false,
         crearAtenciones: false,
         verPacientes: true,
@@ -57,7 +56,6 @@ function inicializarSistemaPermisos() {
                         console.log('🔐 Sistema de permisos inicializado');
                     }
                     
-        
                     setTimeout(() => {
                         aplicarPermisosUI();
                     }, 100);
@@ -260,7 +258,6 @@ function obtenerRolesConPermiso(accionOPermiso) {
     
     return roles;
 }
-
 
 function conPermiso(permiso, funcion, mensajeError) {
     return function(...args) {
