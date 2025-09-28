@@ -386,6 +386,8 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
         }, 100);
     });
 }
+// ...tus helpers y funciones arriba...
+
 function upsertPacienteYAgendarCita(datosCita, callback) {
     const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
     const datos = Object.assign({}, datosCita);
@@ -410,7 +412,7 @@ function upsertPacienteYAgendarCita(datosCita, callback) {
                 email: datos.email || "",
                 direccion: datos.direccion || "",
                 edad: datos.edad || "",
-                // ...otros campos...
+                // puedes agregar otros campos aquí si lo requieres
             };
             if (!snapshot.empty) {
                 pacienteId = snapshot.docs[0].id;
@@ -448,6 +450,8 @@ function crearCitaConPacienteId(db, datos, callback) {
         });
 }
 
+// ...tus helpers y funciones para selects, llenar selects, etc...
+
 document.addEventListener("DOMContentLoaded", function() {
     var formAgendarCitaProf = document.getElementById('form-agendar-cita-profesional');
     if (formAgendarCitaProf) {
@@ -484,6 +488,8 @@ document.addEventListener("DOMContentLoaded", function() {
         };
     }
 });
+
+// ...tus window. asignaciones/exportaciones
 window.abrirModalNuevaCitaProfesional = abrirModalNuevaCitaProfesional;
 window.abrirModalAgendarCitaProfesional = abrirModalAgendarCitaProfesional;
 window.cargarProfesionalesAgendarCitaProfesional = cargarProfesionalesAgendarCitaProfesional;
