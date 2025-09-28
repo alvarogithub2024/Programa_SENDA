@@ -342,4 +342,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 console.log('🔐 Sistema de permisos cargado correctamente');
-window.formatRUT ? window.formatRUT(rut) : rut
