@@ -308,7 +308,7 @@ if (rutSpanProf) rutSpanProf.textContent = rut;
           e.preventDefault();
           const citaId = document.getElementById('modal-cita-id').value;
           const nombre = document.getElementById('modal-cita-nombre').textContent;
-          const rut = document.getElementById('modal-cita-rut').textContent;
+          const rut = document.getElementById('modal-cita-rut').textContent = window.formatRUT ? window.formatRUT(rut) : rut;
           const profesion = document.getElementById('modal-cita-profession').value;
           const profesional = document.getElementById('modal-cita-profesional').value;
           const profesionalNombre = document.getElementById('modal-cita-profesional-nombre').value;
