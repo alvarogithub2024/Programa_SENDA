@@ -160,7 +160,10 @@ function abrirModalNuevaCitaProfesional() {
                         fecha: document.getElementById('prof-cita-fecha').value,
                         hora: document.getElementById('prof-cita-hora').value,
                         creado: new Date().toISOString(),
-                        tipo: "profesional"
+                        tipo: "profesional",
+                        email: document.getElementById('prof-cita-paciente-email')?.value.trim() || "",
+                        telefono: document.getElementById('prof-cita-paciente-telefono')?.value.trim(),
+                        direccion: document.getElementById('prof-cita-paciente-direccion')?.value.trim() || "",
                     };
 
                     if (!cita.profesion || !cita.profesionalId || !cita.fecha || !cita.hora) {
@@ -350,7 +353,10 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
                         fecha: document.getElementById('modal-cita-fecha-prof').value,
                         hora: document.getElementById('modal-cita-hora-prof').value,
                         creado: new Date().toISOString(),
-                        tipo: "profesional"
+                        tipo: "profesional",
+                        email: document.getElementById('prof-cita-paciente-email')?.value.trim() || "",
+                        telefono: document.getElementById('prof-cita-paciente-telefono')?.value.trim(),
+                        direccion: document.getElementById('prof-cita-paciente-direccion')?.value.trim() || "",
                     };
 
                     if (!cita.nombre || !cita.rut || !cita.profesion || !cita.profesionalId || !cita.fecha || !cita.hora) {
