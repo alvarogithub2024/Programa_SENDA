@@ -110,27 +110,7 @@
 <!-- CONTENIDO PRINCIPAL -->
     
 <main class="main-content">
-    <!-- ========== ACTUALIZACIONES PARA SISTEMA UNIFICADO ========== -->
-<script>
-// Script de inicialización después de que todo esté cargado
-document.addEventListener("DOMContentLoaded", function() {
-    // Esperar a que Firebase esté listo
-    setTimeout(function() {
-        if (window.isFirebaseInitialized && window.isFirebaseInitialized()) {
-            if (window.inicializarSistemaUnificado) {
-                window.inicializarSistemaUnificado();
-            }
-        } else {
-            // Reintentar en 2 segundos
-            setTimeout(function() {
-                if (window.inicializarSistemaUnificado) {
-                    window.inicializarSistemaUnificado();
-                }
-            }, 2000);
-        }
-    }, 1000);
-});
-
+    
     <!-- ========== CONTENIDO PÚBLICO ========== -->
     <div id="public-content">
         <!-- Tarjeta principal con información del programa -->
