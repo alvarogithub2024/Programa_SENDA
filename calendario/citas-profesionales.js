@@ -1,3 +1,4 @@
+
 let profesionalesProfesional = [];
 let profesionesProfesional = [];
 let miCesfamProfesional = null;
@@ -158,18 +159,8 @@ function abrirModalNuevaCitaProfesional() {
                         profesionalNombre: document.getElementById('prof-cita-profesional-nombre').value,
                         fecha: document.getElementById('prof-cita-fecha').value,
                         hora: document.getElementById('prof-cita-hora').value,
-                        tipo: "profesional",
-                        
-                  
-                        pacienteNombre: document.getElementById('prof-cita-paciente-nombre')?.value || "",
-                        telefono: document.getElementById('prof-cita-paciente-telefono')?.value || "",
-                        email: document.getElementById('prof-cita-paciente-email')?.value || "",
-                        direccion: document.getElementById('prof-cita-paciente-direccion')?.value || "",
-                        motivo: document.getElementById('prof-cita-motivo')?.value || "",
-                        observaciones: document.getElementById('prof-cita-motivo')?.value || "",
-                        
                         creado: new Date().toISOString(),
-                        cesfam: miCesfamProfesional
+                        tipo: "profesional"
                     };
 
                     if (!cita.profesion || !cita.profesionalId || !cita.fecha || !cita.hora) {
@@ -177,21 +168,11 @@ function abrirModalNuevaCitaProfesional() {
                         return;
                     }
                     
-                    if (cita.email && !validarEmail(cita.email)) {
-                        window.showNotification && window.showNotification("Email inválido", "warning");
-                        return;
-                    }
-                    
-                    if (cita.telefono) {
-                        cita.telefono = limpiarTelefonoChileno(cita.telefono);
-                    }
-                    
                     const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
                     db.collection("citas").add(cita)
                         .then(function(docRef) {
                             window.showNotification && window.showNotification("Cita agendada correctamente", "success");
                             closeModal('modal-nueva-cita-profesional');
-                            form.reset();
                         })
                         .catch(function(error) {
                             window.showNotification && window.showNotification("Error al guardar la cita: " + error, "error");
@@ -324,7 +305,7 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
         if (nombreSpanProf) nombreSpanProf.textContent = nombre;
 
         const rutSpanProf = document.getElementById('modal-cita-rut-prof');
-        if (rutSpanProf) rutSpanProf.textContent = window.formatRUT ? window.formatRUT(rut) : rut;
+        if (rutSpanProf) rutSpanProf.textContent = rut;
 
         const selProf = document.getElementById('modal-cita-profession-prof');
         if (selProf) {
@@ -352,6 +333,7 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
 
         showModal('modal-agendar-cita-profesional');
 
+
         setTimeout(function() {
             const form = document.getElementById('form-agendar-cita-profesional');
             if (form && !form._onsubmitSet) {
@@ -361,20 +343,14 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
                     const cita = {
                         solicitudId: document.getElementById('modal-cita-id-prof').value,
                         nombre: document.getElementById('modal-cita-nombre-prof').textContent,
-                        pacienteNombre: document.getElementById('modal-cita-nombre-prof').textContent,
                         rut: document.getElementById('modal-cita-rut-prof').textContent,
-                        pacienteRut: document.getElementById('modal-cita-rut-prof').textContent,
                         profesion: document.getElementById('modal-cita-profession-prof').value,
                         profesionalId: document.getElementById('modal-cita-profesional-prof').value,
                         profesionalNombre: document.getElementById('modal-cita-profesional-nombre-prof').value,
                         fecha: document.getElementById('modal-cita-fecha-prof').value,
                         hora: document.getElementById('modal-cita-hora-prof').value,
                         creado: new Date().toISOString(),
-                        tipo: "profesional",
-                        cesfam: miCesfamAgendarProf,
-                        telefono: "",
-                        email: "",
-                        direccion: ""
+                        tipo: "profesional"
                     };
 
                     if (!cita.nombre || !cita.rut || !cita.profesion || !cita.profesionalId || !cita.fecha || !cita.hora) {
@@ -386,10 +362,12 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
                     db.collection("citas").add(cita)
                         .then(function(docRef) {
                             const solicitudId = cita.solicitudId;
-       
+                            
+    
                             db.collection("solicitudes_ingreso").doc(solicitudId).update({ estado: "agendada" })
                                 .catch(() => {})
                                 .finally(() => {
+                                    // Actualizar estado en reingresos
                                     db.collection("reingresos").doc(solicitudId).update({ estado: "agendada" })
                                         .catch(() => {})
                                         .finally(() => {
@@ -408,21 +386,6 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
         }, 100);
     });
 }
-
-
-function limpiarTelefonoChileno(tel) {
-    if (!tel) return "";
-    tel = tel.replace(/\D/g, '');
-    if (tel.startsWith("56")) tel = tel.slice(2);
-    if (tel.length === 11 && tel.startsWith("569")) tel = tel.slice(2);
-    return tel;
-}
-
-function validarEmail(email) {
-    if (!email) return true; 
-    return /^[\w\.\-]+@([\w\-]+\.)+[a-zA-Z]{2,7}$/.test(email);
-}
-
 
 window.abrirModalNuevaCitaProfesional = abrirModalNuevaCitaProfesional;
 window.abrirModalAgendarCitaProfesional = abrirModalAgendarCitaProfesional;
