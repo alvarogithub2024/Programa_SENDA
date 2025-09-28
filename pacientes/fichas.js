@@ -33,7 +33,7 @@
         });
     }
 
-    function getGrid() { return document.getElementById('patients-grid'); }
+    function getGrid() {return document.getElementById('pacientesGrid');
     function getSearchInput() { return document.getElementById('search-pacientes-rut'); }
     function getBuscarBtn() { return document.getElementById('buscar-paciente-btn'); }
     function getActualizarBtn() { return document.getElementById('actualizar-pacientes-btn'); }
@@ -96,31 +96,57 @@
         return Object.values(pacientesMap);
     }
 
-    function renderPacientesGrid(pacientes) {
-        const grid = getGrid();
-        if (!grid) return;
-        grid.innerHTML = '';
-        if (!pacientes.length) {
-            grid.innerHTML = "<div class='no-results'>No hay pacientes registrados aún.</div>";
-            return;
-        }
-        pacientes.forEach(p => {
-            const div = document.createElement('div');
-            div.className = 'patient-card';
-            div.innerHTML = `
-                <div style="display:flex; gap:24px; align-items:center;">
-                  <div style="font-weight:600; min-width:170px;">${p.nombre} ${p.apellidos || ''}</div>
-                  <div>RUT: ${window.formatRUT ? window.formatRUT(p.rut) : (p.rut || '')}</div>
-                  <div>Tel: ${p.telefono || 'No disponible'}</div>
-                  <div>Email: ${p.email || 'No disponible'}</div>
-                  <button class="btn btn-outline btn-sm" style="margin-left:18px;" onclick="verFichaPacienteSenda('${p.rut}')">
-                    <i class="fas fa-file-medical"></i> Ver Ficha
-                  </button>
-                </div>
-            `;
-            grid.appendChild(div);
-        });
+ // Función para obtener el contenedor de la grilla
+function getGrid() {
+    return document.getElementById('pacientesGrid');
+}
+
+// Función para renderizar la grilla de pacientes
+function renderPacientesGrid(pacientes) {
+    const grid = getGrid();
+    if (!grid) return;
+    grid.innerHTML = '';
+    if (!pacientes.length) {
+        grid.innerHTML = "<div class='no-results'>No hay pacientes registrados aún.</div>";
+        return;
     }
+    pacientes.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'patient-card';
+        // Teléfono y email enlazables
+        let telefonoHtml = p.telefono
+            ? `<a href="tel:${p.telefono}" style="color:inherit;text-decoration:underline;">${p.telefono}</a>`
+            : 'No disponible';
+
+        let emailHtml = p.email
+            ? `<a href="mailto:${p.email}" style="color:inherit;text-decoration:underline;">${p.email}</a>`
+            : 'No disponible';
+
+        div.innerHTML = `
+            <div style="display:flex; gap:24px; align-items:center;">
+                <div style="font-weight:600; min-width:170px;">${p.nombre} ${p.apellidos || ''}</div>
+                <div>RUT: ${window.formatRUT ? window.formatRUT(p.rut) : (p.rut || '')}</div>
+                <div>Tel: ${telefonoHtml}</div>
+                <div>Email: ${emailHtml}</div>
+                <button class="btn btn-outline btn-sm" style="margin-left:18px;" onclick="verFichaPacienteSenda('${p.rut}')">
+                    <i class="fas fa-file-medical"></i> Ver Ficha
+                </button>
+            </div>
+        `;
+        grid.appendChild(div);
+    });
+}
+
+// Suscripción en tiempo real a la colección de pacientes de Firestore
+function escucharPacientes() {
+    firebase.firestore().collection('pacientes').onSnapshot(snapshot => {
+        const pacientes = snapshot.docs.map(doc => doc.data());
+        renderPacientesGrid(pacientes);
+    });
+}
+
+// Llama a esta función una sola vez cuando cargues la página
+escucharPacientes();
 
    function buscarPacientesLocal(texto) {
     texto = (texto || '').trim().toUpperCase();
