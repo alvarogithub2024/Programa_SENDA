@@ -67,8 +67,9 @@ function loadAllSolicitudes() {
                     let data = doc.data();
                     data.id = doc.id;
                     data.origen = 'ingreso';
-                    // FECHA REAL DEL REGISTRO
-                    data.fechaMostrar = data.fechaCreacion || data.fecha || "";
+                    if (data.fecha && !(data.fecha instanceof Date)) {
+                        data.fecha = new Date(data.fecha);
+                    }
                     solicitudesData.push(data);
                 });
                 
@@ -76,7 +77,11 @@ function loadAllSolicitudes() {
                     let data = doc.data();
                     data.id = doc.id;
                     data.origen = 'reingreso';
-                    data.fechaMostrar = data.fechaCreacion || data.fecha || "";
+                    if (data.fechaCreacion && !(data.fechaCreacion instanceof Date)) {
+                        data.fecha = new Date(data.fechaCreacion);
+                    } else if (data.fecha && !(data.fecha instanceof Date)) {
+                        data.fecha = new Date(data.fecha);
+                    }
                     solicitudesData.push(data);
                 });
                 
@@ -85,11 +90,13 @@ function loadAllSolicitudes() {
                     data.id = doc.id;
                     data.origen = 'informacion';
                     data.tipo = 'informacion';
-                    data.fechaMostrar = data.fechaCreacion || data.fecha || "";
+                    if (data.fecha && !(data.fecha instanceof Date)) {
+                        data.fecha = new Date(data.fecha);
+                    }
                     solicitudesData.push(data);
                 });
                 
-                solicitudesData.sort((a, b) => (b.fechaMostrar ? new Date(b.fechaMostrar).getTime() : 0) - (a.fechaMostrar ? new Date(a.fechaMostrar).getTime() : 0));
+                solicitudesData.sort((a, b) => (b.fecha?.getTime?.() || 0) - (a.fecha?.getTime?.() || 0));
                 resolve();
             }).catch(error => {
                 console.error('Error cargando solicitudes Firebase:', error);
@@ -152,6 +159,17 @@ function renderSolicitudesTable() {
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
                     <div class="dropdown-menu" id="acciones-${solicitud.id}">
+                        ${solicitud.origen !== 'informacion' ? `
+                        <button onclick="agendarCitaSolicitud('${solicitud.id}')">
+                            <i class="fas fa-calendar-plus"></i> Agendar cita
+                        </button>
+                        ` : ''}
+                        ${solicitud.origen === 'informacion' ? `
+                        <button onclick="abrirModalResponder('${solicitud.email}', '${solicitud.nombre || ''}', '${solicitud.id}')">
+                            <i class="fas fa-envelope"></i> Responder
+                        </button>
+                        ` : ''}
+                        <hr>
                         <button onclick="eliminarSolicitud('${solicitud.id}', '${solicitud.origen}')" class="accion-peligro">
                             <i class="fas fa-trash"></i> Eliminar
                         </button>
@@ -169,16 +187,16 @@ function renderSolicitudesTable() {
             return `
                 <tr class="solicitud-row" data-solicitud-id="${solicitud.id}">
                     <td>
-                <div class="paciente-info">
-                        <div class="paciente-nombre">
-                             ${solicitud.nombre || ""} ${solicitud.apellidos || ""}
+                        <div class="paciente-info">
+                            <div class="paciente-nombre">
+                                ${solicitud.nombre || ""} ${solicitud.apellidos || ""}
                             </div>
                             <div class="paciente-detalles">
-                            RUT: ${window.formatRUT ? window.formatRUT(solicitud.rut || "") : (solicitud.rut || "")}<br>
-                            Edad: ${solicitud.edad || ""} años
+                                RUT: ${solicitud.rut || ""}<br>
+                                Edad: ${solicitud.edad || ""} años
                             </div>
-                            </div>
-                        </td>
+                        </div>
+                    </td>
                     <td>
                         <div class="contacto-info">
                             <div><i class="fas fa-phone"></i> ${solicitud.telefono || ""}</div>
@@ -197,7 +215,7 @@ function renderSolicitudesTable() {
                     <td>
                         <div class="fecha-info">
                             <div class="fecha-principal">
-                                ${solicitud.fechaMostrar ? new Date(solicitud.fechaMostrar).toLocaleDateString('es-CL') : ""}
+                                ${solicitud.fecha ? new Date(solicitud.fecha).toLocaleDateString('es-CL') : ""}
                             </div>
                         </div>
                     </td>
@@ -385,8 +403,7 @@ function updateSolicitudesCounter() {
     if (totalCounter) totalCounter.textContent = solicitudesData.length;
 }
 
-function updateSolicitudesStats() {
-}
+function updateSolicitudesStats() {}
 
 function isSameDay(date1, date2) {
     return date1 && date2 &&
@@ -400,12 +417,13 @@ function verDetalleSolicitud(solicitudId) {
     if (!solicitud) return;
     
     document.getElementById('modal-detalle-nombre').textContent = solicitud.nombre || '';
-    document.getElementById('modal-detalle-rut').textContent = window.formatRUT ? window.formatRUT(solicitud.rut || '') : (solicitud.rut || '');
+    document.getElementById('modal-detalle-rut').textContent = solicitud.rut || '';
     document.getElementById('modal-detalle-telefono').textContent = solicitud.telefono || '';
     document.getElementById('modal-detalle-email').textContent = solicitud.email || '';
-    document.getElementById('modal-detalle-motivo').textContent = solicitud.descripcion || ''; // Motivo de atención (corregido)
+    document.getElementById('modal-detalle-motivo').textContent = solicitud.descripcion || '';
     document.getElementById('modal-detalle-cesfam').textContent = solicitud.cesfam || '';
     document.getElementById('modal-detalle-estado').textContent = solicitud.estado || '';
+    document.getElementById('modal-detalle-fecha').textContent = solicitud.fecha ? new Date(solicitud.fecha).toLocaleDateString('es-CL') : '';
     document.getElementById('modal-detalle-sustancias').textContent = Array.isArray(solicitud.sustancias) ? solicitud.sustancias.join(', ') : '';
     
     document.getElementById('modal-detalle').style.display = 'flex';
@@ -415,20 +433,18 @@ function editarSolicitud(solicitudId, origen) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
     document.getElementById('modal-editar-nombre').value = solicitud.nombre || '';
-document.getElementById('modal-detalle-rut').textContent = window.formatRUT ? window.formatRUT(solicitud.rut || '') : (solicitud.rut || '');    document.getElementById('modal-editar-telefono').value = solicitud.telefono || '';
+    document.getElementById('modal-editar-rut').value = solicitud.rut || '';
+    document.getElementById('modal-editar-telefono').value = solicitud.telefono || '';
     document.getElementById('modal-editar-id').value = solicitud.id || '';
     document.getElementById('modal-editar').dataset.origen = origen || solicitud.origen || 'ingreso';
     document.getElementById('modal-editar').style.display = 'flex';
 }
 
-
 function agendarCitaSolicitud(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
-    
     const nombreCompleto = (solicitud.nombre || "") + " " + (solicitud.apellidos || "");
     const cesfam = solicitud.cesfam || "";
-    
     if (window.abrirModalAgendarCitaProfesional) {
         window.abrirModalAgendarCitaProfesional(solicitud.id, nombreCompleto, solicitud.rut, cesfam);
     } else if (window.abrirModalAgendarCita) {
@@ -496,7 +512,6 @@ function exportarSolicitud(solicitudId) {
             window.showNotification && window.showNotification('Solicitud no encontrada', 'error');
             return;
         }
-        
         const dataToExport = [{
             'Nombre Completo': `${solicitud.nombre || ''} ${solicitud.apellidos || ''}`,
             'RUT': solicitud.rut || '',
@@ -513,12 +528,10 @@ function exportarSolicitud(solicitudId) {
             'Tiempo de Consumo': solicitud.tiempoConsumo || '',
             'Tratamiento Previo': solicitud.tratamientoPrevio === 'si' ? 'Sí' : 'No'
         }];
-
         const csvContent = convertToCSV(dataToExport);
         const filename = `solicitud_${solicitudId}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`;
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
-        
         if (link.download !== undefined) {
             const url = URL.createObjectURL(blob);
             link.setAttribute('href', url);
@@ -528,7 +541,6 @@ function exportarSolicitud(solicitudId) {
             link.click();
             document.body.removeChild(link);
         }
-        
         window.showNotification && window.showNotification(`Solicitud exportada: ${filename}`, 'success');
     } catch (error) {
         console.error('Error exportando solicitud:', error);
@@ -541,7 +553,6 @@ function convertToCSV(objArray) {
     let str = '';
     let headers = Object.keys(array[0]);
     str += headers.join(',') + '\r\n';
-    
     for (let i = 0; i < array.length; i++) {
         let line = '';
         for (let j = 0; j < headers.length; j++) {
@@ -586,7 +597,6 @@ function guardarEdicionSolicitud() {
         console.error('Error actualizando datos:', error);
     });
 }
-
 
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.dropdown-acciones')) {
