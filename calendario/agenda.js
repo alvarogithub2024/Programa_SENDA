@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const nuevaCitaBtn = document.getElementById('nueva-cita-btn');
     const nuevaCitaProfesionalBtn = document.getElementById('nueva-cita-profesional-btn');
 
-    // CAMBIO: Usa chileNow() para la fecha inicial
+    // Función para obtener la fecha actual en Chile
     function chileNow() {
         return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" }));
     }
@@ -62,10 +62,11 @@ document.addEventListener("DOMContentLoaded", function() {
         });
         calendarGrid.appendChild(row);
 
-        // CAMBIO: Usa chileNow() para primerDia (para que getDay sea Chile)
+        // CALCULO CORREGIDO: para semanas que empiezan en lunes
         let primerDia = new Date(year, month, 1);
         let ultimoDia = new Date(year, month + 1, 0);
-        let startDay = (primerDia.getDay() + 6) % 7; 
+        // Corregido: 0 (domingo) a la columna 6, 1 (lunes) a la columna 0, etc.
+        let startDay = primerDia.getDay() === 0 ? 6 : primerDia.getDay() - 1;
         let daysInMonth = ultimoDia.getDate();
 
         let date = 1;
@@ -110,7 +111,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
                     cell.dataset.date = dateKey;
 
-                    // CAMBIO: Usa chileNow() para el día actual (hoy)
                     let nowChile = chileNow();
                     if (date === nowChile.getDate() &&
                         month === nowChile.getMonth() &&
@@ -268,7 +268,7 @@ document.addEventListener("DOMContentLoaded", function() {
             });
     };
 
-    // CAMBIO: Usa chileNow() para el día actual en mostrarCitasDelDia
+    // Usa chileNow() para el día actual en mostrarCitasDelDia
     const hoy = chileNow().toISOString().slice(0, 10);
     mostrarCitasDelDia(hoy);
     window.mostrarCitasDelDia = mostrarCitasDelDia;
