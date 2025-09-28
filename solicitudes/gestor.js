@@ -112,6 +112,7 @@ function loadAllSolicitudes() {
     });
 }
 
+// ... (todo el código igual hasta renderSolicitudesTable)
 function renderSolicitudesTable() {
     try {
         const tableBody = document.getElementById('solicitudes-table-body');
@@ -159,6 +160,17 @@ function renderSolicitudesTable() {
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
                     <div class="dropdown-menu" id="acciones-${solicitud.id}">
+                        ${solicitud.origen !== 'informacion' ? `
+                        <button onclick="agendarCitaSolicitud('${solicitud.id}')">
+                            <i class="fas fa-calendar-plus"></i> Agendar cita
+                        </button>
+                        ` : ''}
+                        ${solicitud.origen === 'informacion' ? `
+                        <button onclick="abrirModalResponder('${solicitud.email}', '${solicitud.nombre || ''}', '${solicitud.id}')">
+                            <i class="fas fa-envelope"></i> Responder
+                        </button>
+                        ` : ''}
+                        <hr>
                         <button onclick="eliminarSolicitud('${solicitud.id}', '${solicitud.origen}')" class="accion-peligro">
                             <i class="fas fa-trash"></i> Eliminar
                         </button>
@@ -232,6 +244,7 @@ function renderSolicitudesTable() {
         console.error('❌ Error renderizando tabla:', error);
     }
 }
+// ... (resto del archivo igual)
 
 function setupFilters() {
     fillSelectOptions('filtro-estado-solicitudes', ['todos', 'pendiente', 'en_proceso', 'agendada', 'completada'], {
