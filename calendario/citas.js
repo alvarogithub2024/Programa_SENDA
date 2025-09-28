@@ -424,7 +424,84 @@ if (rutSpanProf) rutSpanProf.textContent = rut;
     }, 100);
   });
 }
+// Función centralizada para ambos flujos: Nueva Cita y Agendar Cita
+function upsertPacienteYAgendarCita(datosCita, callback) {
+    const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
+    const datos = Object.assign({}, datosCita);
+    datos.fechaCreacion = datos.fechaCreacion || new Date().toISOString();
+    const rutLimpio = datos.pacienteRut.replace(/[.\-]/g, "").toUpperCase();
 
+    if (!rutLimpio) {
+        window.showNotification && window.showNotification("Error: El paciente no tiene RUT, no se puede crear en la colección pacientes.", "error");
+        if (typeof callback === "function") callback(null, "RUT vacío");
+        return;
+    }
+
+    db.collection("pacientes").where("rut", "==", rutLimpio).limit(1).get()
+        .then(function(snapshot) {
+            let pacienteId;
+            // Estructura completa del paciente, como en tu imagen
+            const pacienteData = {
+                apellidos: datos.pacienteApellidos || "",
+                cesfam: datos.cesfam,
+                descripcion: datos.descripcion || "",
+                direccion: datos.direccion || "",
+                edad: datos.edad || "",
+                email: datos.email || "",
+                estado: datos.estado || "agendada",
+                fecha: datos.fechaCreacion,
+                motivacion: datos.motivacion || "",
+                nombre: datos.pacienteNombre,
+                paraMi: datos.paraMi || "",
+                rut: rutLimpio,
+                sustancias: datos.sustancias || [],
+                telefono: datos.telefono || "",
+                tiempoConsumo: datos.tiempoConsumo || "",
+                tipo: datos.tipo || "",
+                tratamientoPrevio: datos.tratamientoPrevio || "",
+                urgencia: datos.urgencia || "",
+                profesionalDescripcion: datos.profesionalDescripcion || "",
+            };
+            if (!snapshot.empty) {
+                pacienteId = snapshot.docs[0].id;
+                pacienteData.id = pacienteId;
+                db.collection("pacientes").doc(pacienteId).set(pacienteData, { merge: true })
+                    .then(() => {
+                        datos.pacienteId = pacienteId;
+                        crearCitaConPacienteId(db, datos, callback);
+                    }).catch(function(error) {
+                        window.showNotification && window.showNotification("Error actualizando paciente: "+error.message, "error");
+                    });
+            } else {
+                db.collection("pacientes").add(pacienteData)
+                    .then(function(docRef) {
+                        pacienteId = docRef.id;
+                        pacienteData.id = pacienteId;
+                        db.collection("pacientes").doc(pacienteId).set(pacienteData, { merge: true });
+                        datos.pacienteId = pacienteId;
+                        crearCitaConPacienteId(db, datos, callback);
+                    })
+                    .catch(function(error) {
+                        window.showNotification && window.showNotification("Error creando paciente: "+error.message, "error");
+                    });
+            }
+        })
+        .catch(function(error) {
+            window.showNotification && window.showNotification("Error buscando paciente: "+error.message, "error");
+        });
+}
+
+function crearCitaConPacienteId(db, datos, callback) {
+    db.collection("citas").add(datos)
+        .then(function(docRef) {
+            window.showNotification && window.showNotification("Cita agendada correctamente", "success");
+            if (typeof callback === "function") callback(docRef.id);
+        })
+        .catch(function(error) {
+            window.showNotification && window.showNotification("Error al agendar cita: " + error.message, "error");
+            if (typeof callback === "function") callback(null, error);
+        });
+}
 
 window.abrirModalCitaPaciente = abrirModalCitaPaciente;
 window.guardarCitaPaciente = guardarCitaPaciente;
