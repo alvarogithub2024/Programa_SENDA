@@ -447,11 +447,14 @@ function agendarCitaSolicitud(solicitudId) {
     }
 }
 
-function eliminarSolicitud(solicitudId) {
+function eliminarSolicitud(solicitudId, origen) {
     if (!confirm('¿Estás seguro de que quieres eliminar esta solicitud?')) return;
-    
     const db = window.getFirestore();
-    db.collection('solicitudes_ingreso').doc(solicitudId).delete().then(() => {
+    let coleccion = 'solicitudes_ingreso';
+    if (origen === 'reingreso') coleccion = 'reingresos';
+    if (origen === 'informacion') coleccion = 'solicitudes_informacion';
+
+    db.collection(coleccion).doc(solicitudId).delete().then(() => {
         window.reloadSolicitudesFromFirebase && window.reloadSolicitudesFromFirebase();
         window.showNotification && window.showNotification('Solicitud eliminada correctamente', 'success');
     }).catch((error) => {
@@ -459,6 +462,7 @@ function eliminarSolicitud(solicitudId) {
         console.error('Error eliminando solicitud:', error);
     });
 }
+window.eliminarSolicitud = eliminarSolicitud;
 
 function abrirModalResponder(email, nombre, solicitudId) {
     document.getElementById('modal-responder-email').value = email || '';
