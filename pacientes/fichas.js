@@ -1,4 +1,4 @@
-// ========== pacientes/fichas.js - CORREGIDO: PROFESIONAL Y PROFESIÓN NO SE MEZCLAN EN FICHAS TEMPORALES ==========
+// ========== pacientes/fichas.js - SIN BOTÓN AGREGAR ATENCIÓN ==========
 
 (function() {
     let pacientesTabData = [];
@@ -216,7 +216,6 @@
                     </div>
                 `;
                 fichaHtml = restriccion + fichaHtml;
-                // Además, deshabilitamos la función de agregar atención
                 window.puedeCrearAtenciones = function() { return false; };
             } else {
                 restriccion = `
@@ -229,7 +228,6 @@
                 window.puedeCrearAtenciones = function() { return true; };
             }
         } else {
-            // Si es ficha real o no hay restricción, el comportamiento por defecto
             window.puedeCrearAtenciones = undefined;
         }
 
@@ -261,16 +259,7 @@
                     <h4 style="color:#2563eb; margin:0; font-size:1.2rem; font-weight:600;">
                         <i class="fas fa-clipboard-list"></i> Historial Clínico de Atenciones
                     </h4>
-                    ${puedeEditarHistorial() ? `
-                        <button class="btn-add-entry" onclick="mostrarFormularioNuevaAtencionUnificada('${pacienteId}')"
-                        ${window.puedeCrearAtenciones && !window.puedeCrearAtenciones() ? 'disabled title="Solo el profesional original puede registrar atenciones."' : ''}>
-                            <i class="fas fa-plus"></i> Agregar Atención
-                        </button>
-                    ` : `
-                        <span style="color:#6b7280; font-size:0.9rem; font-style:italic;">
-                            <i class="fas fa-eye"></i> Solo lectura
-                        </span>
-                    `}
+                    <!-- Botón Agregar Atención eliminado -->
                 </div>
                 <div id="historial-contenido">
                     <div class="loading-message">
@@ -295,7 +284,6 @@
                     <div class="no-historial" style="text-align:center; padding:2rem; color:#6b7280;">
                         <i class="fas fa-clipboard" style="font-size:2rem; margin-bottom:1rem; color:#d1d5db;"></i>
                         <p>No hay atenciones registradas en el historial clínico</p>
-                        ${puedeEditar ? '<p style="font-size:0.9rem;">Usa el botón "Agregar Atención" para registrar la primera atención.</p>' : ''}
                     </div>
                 `;
                 return;
@@ -533,114 +521,7 @@
         if (fichaModal) fichaModal.style.display = 'flex';
     };
 
-    window.mostrarFormularioNuevaAtencionUnificada = function(pacienteId) {
-        if (window.puedeCrearAtenciones && !window.puedeCrearAtenciones()) {
-            window.showNotification && window.showNotification('Solo el profesional original puede crear atenciones para esta ficha.', 'warning');
-            return;
-        }
-        if (!window.puedeCrearAtenciones || !window.puedeCrearAtenciones()) {
-            window.mostrarMensajePermisos && window.mostrarMensajePermisos('crear nuevas atenciones');
-            return;
-        }
-        const modalHTML = `
-            <div class="modal-overlay" id="modal-nueva-atencion">
-                <div class="modal-content" style="max-width:500px;">
-                    <span class="close" onclick="cerrarModalNuevaAtencion()">&times;</span>
-                    <h2 style="color:#2563eb; margin-bottom:1.5rem;">
-                        <i class="fas fa-plus-circle"></i> Nueva Atención
-                    </h2>
-                    <form id="form-nueva-atencion">
-                        <div class="form-group">
-                            <label for="nueva-atencion-tipo">Tipo de atención *</label>
-                            <select id="nueva-atencion-tipo" class="form-select" required>
-                                <option value="">Selecciona tipo...</option>
-                                <option value="consulta">Consulta</option>
-                                <option value="seguimiento">Seguimiento</option>
-                                <option value="orientacion">Orientación</option>
-                                <option value="intervencion">Intervención</option>
-                                <option value="derivacion">Derivación</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="nueva-atencion-descripcion">Descripción de la atención *</label>
-                            <textarea id="nueva-atencion-descripcion" class="form-textarea" rows="5" 
-                                      placeholder="Describe la atención realizada, observaciones, recomendaciones..." required></textarea>
-                        </div>
-                        <div class="form-actions" style="display:flex; gap:1rem; justify-content:flex-end;">
-                            <button type="button" class="btn btn-outline" onclick="cerrarModalNuevaAtencion()">
-                                <i class="fas fa-times"></i> Cancelar
-                            </button>
-                            <button type="submit" class="btn btn-success">
-                                <i class="fas fa-save"></i> Guardar Atención
-                            </button>
-                        </div>
-                        <input type="hidden" id="nueva-atencion-paciente-id" value="${pacienteId}">
-                    </form>
-                </div>
-            </div>
-        `;
-        let modalElement = document.getElementById('modal-nueva-atencion');
-        if (modalElement) {
-            modalElement.remove();
-        }
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-        document.getElementById('modal-nueva-atencion').style.display = 'flex';
-        document.getElementById('nueva-atencion-descripcion').focus();
-        document.getElementById('form-nueva-atencion').onsubmit = guardarNuevaAtencionUnificada;
-    };
-
-    async function guardarNuevaAtencionUnificada(event) {
-        event.preventDefault();
-        const tipo = document.getElementById('nueva-atencion-tipo').value;
-        const descripcion = document.getElementById('nueva-atencion-descripcion').value.trim();
-        const pacienteId = document.getElementById('nueva-atencion-paciente-id').value;
-        if (!tipo || !descripcion) {
-            window.showNotification && window.showNotification('Completa todos los campos obligatorios', 'warning');
-            return;
-        }
-        try {
-            const profesional = await obtenerProfesionalActual();
-            if (!profesional) {
-                window.showNotification && window.showNotification('Error: No se pudo obtener información del profesional', 'error');
-                return;
-            }
-            // Obtener datos básicos del paciente
-            const db = window.getFirestore();
-            const pacienteDoc = await db.collection('pacientes').doc(pacienteId).get();
-            const pacienteData = pacienteDoc.exists ? pacienteDoc.data() : {};
-            const nuevaAtencion = {
-                pacienteId: pacienteId,
-                pacienteNombre: pacienteData.nombre || '',
-                pacienteRut: pacienteData.rut || '',
-                profesional: `${profesional.nombre} ${profesional.apellidos}`,
-                profesionalId: profesional.id,
-                tipoAtencion: tipo,
-                descripcion: descripcion,
-                fechaRegistro: new Date(),
-                fechaCreacion: new Date().toISOString(),
-                cesfam: pacienteData.cesfam || profesional.cesfam || ''
-            };
-            if (window.SISTEMA_ID_UNIFICADO && window.SISTEMA_ID_UNIFICADO.crearAtencionUnificada) {
-                const resultado = await window.SISTEMA_ID_UNIFICADO.crearAtencionUnificada(nuevaAtencion);
-                console.log('Atención creada con ID:', resultado.atencionId);
-            } else {
-                await db.collection('atenciones').add(nuevaAtencion);
-            }
-            window.showNotification && window.showNotification('Atención registrada correctamente', 'success');
-            cerrarModalNuevaAtencion();
-            await cargarHistorialClinicoUnificado(pacienteId, window.puedeEditarHistorial());
-        } catch (error) {
-            console.error('Error guardando atención:', error);
-            window.showNotification && window.showNotification('Error al guardar la atención: ' + error.message, 'error');
-        }
-    }
-
-    window.cerrarModalNuevaAtencion = function() {
-        const modal = document.getElementById('modal-nueva-atencion');
-        if (modal) {
-            modal.remove();
-        }
-    };
+    // Función de agregar atención eliminada de la UI
 
     async function refrescarPacientesTab() {
         const grid = getGrid();
