@@ -195,14 +195,13 @@
             window.showNotification && window.showNotification('Error al cargar ficha del paciente', 'error');
         }
     };
-
-    function construirHTMLFichaMejorada(paciente, puedeEditar) {
+function construirHTMLFichaMejorada(paciente, puedeEditar) {
         return `
             <h3 style="color: #2563eb; margin-bottom:15px; font-size:1.4rem; font-weight:700;">
                 <i class="fas fa-user-circle"></i> ${paciente.nombre || ''} ${paciente.apellidos || ''}
             </h3>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:20px;">
-                <p><i class="fas fa-id-card" style="color:#6366f1; margin-right:8px;"></i><b>RUT:</b> ${paciente.rut || ''}</p>
+                <p><i class="fas fa-id-card" style="color:#6366f1; margin-right:8px;"></i><b>RUT:</b> ${window.formatRUT ? window.formatRUT(paciente.rut) : (paciente.rut || '')}</p>
                 <p><i class="fas fa-phone" style="color:#10b981; margin-right:8px;"></i><b>Teléfono:</b> ${paciente.telefono || 'No disponible'}</p>
                 <p><i class="fas fa-envelope" style="color:#f59e0b; margin-right:8px;"></i><b>Email:</b> ${paciente.email || 'No disponible'}</p>
                 <p><i class="fas fa-map-marker-alt" style="color:#ef4444; margin-right:8px;"></i><b>Dirección:</b> ${paciente.direccion || 'No disponible'}</p>
@@ -231,6 +230,7 @@
             </div>
         `;
     }
+ 
 
 
     async function cargarHistorialClinicoMejorado(rutPaciente, puedeEditar) {
