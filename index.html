@@ -1082,6 +1082,7 @@
 </div>
 
 <!-- ========== MODAL: NUEVA CITA ENTRE PROFESIONALES ========== -->
+<!-- ========== MODAL: NUEVA CITA ENTRE PROFESIONALES ========== -->
 <div class="modal-overlay" id="modal-nueva-cita-profesional" style="display:none;">
     <div class="modal-content large-modal">
         <button class="close" onclick="closeModal('modal-nueva-cita-profesional')">
@@ -1089,6 +1090,28 @@
         </button>
         <h2 class="modal-title-main"><i class="fas fa-calendar-plus"></i> Nueva Cita entre Profesionales</h2>
         <form id="form-nueva-cita-profesional" class="cita-form">
+            <!-- Información del paciente (opcional para citas entre profesionales) -->
+            <div class="form-group">
+                <label class="form-label" for="prof-cita-paciente-nombre">Nombre del paciente (opcional)</label>
+                <input type="text" class="form-input" id="prof-cita-paciente-nombre" placeholder="Nombre del paciente relacionado" autocomplete="off">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="prof-cita-paciente-telefono">Teléfono paciente</label>
+                    <input type="tel" class="form-input" id="prof-cita-paciente-telefono" placeholder="9 1234 5678" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="prof-cita-paciente-email">Email paciente</label>
+                    <input type="email" class="form-input" id="prof-cita-paciente-email" placeholder="paciente@email.com" autocomplete="off">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="prof-cita-paciente-direccion">Dirección paciente</label>
+                <input type="text" class="form-input" id="prof-cita-paciente-direccion" placeholder="Calle, número, comuna" autocomplete="off">
+            </div>
+            
             <div class="form-group">
                 <label class="form-label" for="prof-cita-profession">Profesión *</label>
                 <select class="form-select" id="prof-cita-profession" required>
@@ -1112,6 +1135,12 @@
                     <option value="">Selecciona hora...</option>
                 </select>
             </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="prof-cita-motivo">Motivo de la cita</label>
+                <textarea class="form-textarea" id="prof-cita-motivo" rows="2" placeholder="Motivo o descripción de la cita entre profesionales"></textarea>
+            </div>
+            
             <div class="form-actions form-actions-row">
                 <button type="button" class="btn btn-outline" onclick="closeModal('modal-nueva-cita-profesional')">
                     Cancelar
@@ -1121,7 +1150,6 @@
         </form>
     </div>
 </div>
-
 <!-- PIE DE PÁGINA -->
     
 <footer class="footer">
