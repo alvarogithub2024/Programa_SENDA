@@ -3005,3 +3005,44 @@ document.addEventListener('DOMContentLoaded', setupModalTabs);
   background: linear-gradient(90deg, #1d62c0 80%, #3585e4 100%);
   box-shadow: 0 4px 16px #247cff35;
 }
+.stat-card {
+    display: inline-flex;
+    align-items: center;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 1px 8px #0001;
+    padding: 1rem 2rem;
+    margin: 0.5rem 1rem 0.5rem 0;
+    min-width: 120px;
+    gap: 1rem;
+}
+.stat-icon {
+    font-size: 2.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    width: 48px;
+    height: 48px;
+    margin-right: 0.6rem;
+}
+.stat-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+.stat-number {
+    font-weight: bold;
+    font-size: 1.6rem;
+    line-height: 1.1;
+}
+.stat-label {
+    color: #6b7280;
+    font-size: 0.95rem;
+}
+#solicitudes-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
