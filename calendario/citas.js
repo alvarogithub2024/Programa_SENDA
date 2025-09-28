@@ -121,3 +121,30 @@ document.addEventListener("DOMContentLoaded", function() {
         };
     }
 });
+
+// =========== MODAL HANDLERS ===========
+
+// Abre el modal de nueva cita para paciente (desde agenda o ficha)
+window.abrirModalCitaPaciente = function() {
+    var modal = document.getElementById('modal-cita');
+    if (modal) {
+        modal.style.display = 'flex';
+        var form = document.getElementById('form-cita');
+        if (form) form.reset();
+    } else {
+        window.showNotification && window.showNotification("No se encuentra el modal de cita", "error");
+    }
+};
+
+// Abre el modal de agendar cita desde solicitud (llenando campos si es necesario)
+window.abrirModalAgendarCita = function(solicitudId, nombre, rut, cesfam) {
+    var modal = document.getElementById('modal-cita');
+    if (modal) {
+        modal.style.display = 'flex';
+        document.getElementById('modal-cita-nombre').textContent = nombre || '';
+        document.getElementById('modal-cita-rut').textContent = rut || '';
+        document.getElementById('modal-cita-cesfam').textContent = cesfam || '';
+        document.getElementById('modal-cita-id').value = solicitudId || '';
+        // ...agrega otros campos si los necesitas
+    }
+};
