@@ -88,33 +88,63 @@ function guardarCitaPaciente(datosCita, callback) {
   const datos = Object.assign({}, datosCita);
   datos.fechaCreacion = datos.fechaCreacion || new Date().toISOString();
 
+  // 1. Limpiar rut para búsqueda
+  const rutLimpio = datos.pacienteRut.replace(/[.\-]/g, "").toUpperCase();
+
+  // 2. Buscar paciente por rut
+  db.collection("pacientes").where("rut", "==", rutLimpio).limit(1).get()
+    .then(function(snapshot) {
+      let pacienteId;
+      if (!snapshot.empty) {
+        // Paciente existe, usar su id Firestore
+        pacienteId = snapshot.docs[0].id;
+        // Actualizar datos del paciente si corresponde
+        const pacienteData = {
+          nombre: datos.pacienteNombre,
+          rut: rutLimpio,
+          cesfam: datos.cesfam,
+          telefono: datos.telefono || "",
+          email: datos.email || "",
+          direccion: datos.direccion || "",
+          fechaRegistro: datos.fechaCreacion || new Date().toISOString(),
+        };
+        db.collection("pacientes").doc(pacienteId).set(pacienteData, { merge: true });
+        datos.pacienteId = pacienteId;
+        crearCitaConPacienteId(db, datos, callback);
+      } else {
+        // Paciente nuevo, crearlo y usar el id generado
+        const pacienteData = {
+          nombre: datos.pacienteNombre,
+          rut: rutLimpio,
+          cesfam: datos.cesfam,
+          telefono: datos.telefono || "",
+          email: datos.email || "",
+          direccion: datos.direccion || "",
+          fechaRegistro: datos.fechaCreacion || new Date().toISOString(),
+        };
+        db.collection("pacientes").add(pacienteData)
+          .then(function(docRef) {
+            pacienteId = docRef.id;
+            datos.pacienteId = pacienteId;
+            crearCitaConPacienteId(db, datos, callback);
+          })
+          .catch(function(error) {
+            window.showNotification && window.showNotification("Error creando paciente: " + error.message, "error");
+            if (typeof callback === "function") callback(null, error);
+          });
+      }
+    })
+    .catch(function(error) {
+      window.showNotification && window.showNotification("Error buscando paciente: " + error.message, "error");
+      if (typeof callback === "function") callback(null, error);
+    });
+}
+
+// Función auxiliar para crear la cita
+function crearCitaConPacienteId(db, datos, callback) {
   db.collection("citas").add(datos)
     .then(function(docRef) {
       window.showNotification && window.showNotification("Cita agendada correctamente", "success");
-      
-    // Dentro de guardarCitaPaciente en calendario/citas.js
-if (datos.pacienteRut && datos.pacienteNombre) {
-    const rutLimpio = datos.pacienteRut.replace(/[.\-]/g, "").toUpperCase();
-    const pacienteData = {
-      nombre: datos.pacienteNombre,
-      rut: rutLimpio,
-      cesfam: datos.cesfam,
-      telefono: datos.telefono || "",
-      email: datos.email || "",
-      direccion: datos.direccion || "",
-      fechaRegistro: datos.fechaCreacion || new Date().toISOString(),
-    };
-    db.collection("pacientes").doc(rutLimpio).set(pacienteData, { merge: true });
-}
-              
-              const docId = snapshot.docs[0].id;
-              db.collection("pacientes").doc(docId).update(pacienteData);
-            } else {
-          
-              db.collection("pacientes").add(pacienteData);
-            }
-          });
-      }
       if (typeof callback === "function") callback(docRef.id);
     })
     .catch(function(error) {
@@ -122,7 +152,6 @@ if (datos.pacienteRut && datos.pacienteNombre) {
       if (typeof callback === "function") callback(null, error);
     });
 }
-
 
 function abrirModalCitaPaciente() {
   cargarProfesionalesAtencionPorCesfam(function() {
