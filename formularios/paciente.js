@@ -480,7 +480,8 @@ document.addEventListener("DOMContentLoaded", function() {
       db.collection('solicitudes_informacion').add({
         email: email,
         fechaCreacion: new Date().toISOString(),
-        estado: 'pendiente'
+        estado: 'pendiente',
+        origen: 'informacion' // ¡IMPORTANTE para que aparezca el botón "Responder"!
       }).then(() => {
         window.showNotification && window.showNotification("Solicitud enviada. Revisa tu correo.", "success");
         closeModal('patient-modal');
@@ -513,6 +514,7 @@ document.addEventListener("DOMContentLoaded", function() {
         paraMi: document.querySelector('input[name="paraMi"]:checked')?.value || '',
         fechaCreacion: new Date().toISOString(),
         estado: 'pendiente',
+        origen: 'ingreso' // ¡IMPORTANTE para que aparezca el botón "Agendar cita"!
       };
       if (window.SISTEMA_ID_UNIFICADO) {
         window.SISTEMA_ID_UNIFICADO.crearSolicitudIngreso(datos)
