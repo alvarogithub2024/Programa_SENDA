@@ -2896,8 +2896,7 @@ document.addEventListener('DOMContentLoaded', setupModalTabs);
     font-size: 1.1rem; 
   }
   
-  .calendar-row {
-.modal-content .modal-form,
+  .modal-content .modal-form,
 .modal-content form {
   display: flex;
   flex-direction: column;
