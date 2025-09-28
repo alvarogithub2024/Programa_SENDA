@@ -1,5 +1,3 @@
-// ========== calendario/citas.js - CORREGIDO SIN ERRORES ==========
-
 let profesionalesAtencion = [];
 let profesionesAtencion = [];
 let miCesfam = null;
@@ -338,7 +336,6 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
   });
 }
 
-// Exports
 window.abrirModalCitaPaciente = abrirModalCitaPaciente;
 window.guardarCitaPaciente = guardarCitaPaciente;
 window.llenarSelectProfesionesPaciente = llenarSelectProfesionesPaciente;
