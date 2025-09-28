@@ -1,4 +1,4 @@
-
+}
 (function() {
     let pacientesTabData = [];
 
@@ -96,7 +96,7 @@
         return Object.values(pacientesMap);
     }
 
-  function renderPacientesGrid(pacientes) {
+    function renderPacientesGrid(pacientes) {
         const grid = getGrid();
         if (!grid) return;
         grid.innerHTML = '';
@@ -110,7 +110,8 @@
             div.innerHTML = `
                 <div style="display:flex; gap:24px; align-items:center;">
                   <div style="font-weight:600; min-width:170px;">${p.nombre} ${p.apellidos || ''}</div>
-                  <div>RUT: ${window.formatRUT ? window.formatRUT(p.rut) : (p.rut || '')}</div>                  <div>Tel: ${p.telefono || 'No disponible'}</div>
+                  <div>RUT: ${p.rut}</div>
+                  <div>Tel: ${p.telefono || 'No disponible'}</div>
                   <div>Email: ${p.email || 'No disponible'}</div>
                   <button class="btn btn-outline btn-sm" style="margin-left:18px;" onclick="verFichaPacienteSenda('${p.rut}')">
                     <i class="fas fa-file-medical"></i> Ver Ficha
@@ -121,23 +122,18 @@
         });
     }
 
-   function buscarPacientesLocal(texto) {
-    texto = (texto || '').trim().toUpperCase();
-    if (!texto) {
-        renderPacientesGrid(pacientesTabData);
-        return;
-    }
-    const textoSinPuntosGuion = texto.replace(/[.\-]/g, '');
-    const filtrados = pacientesTabData.filter(p => {
-        const rutLimpio = (p.rut || '').replace(/[.\-]/g, '').toUpperCase();
-        const nombreCompleto = (p.nombre + ' ' + (p.apellidos || '')).toUpperCase();
-        return (
-            (rutLimpio && rutLimpio.includes(textoSinPuntosGuion)) ||
-            nombreCompleto.includes(texto)
+    function buscarPacientesLocal(texto) {
+        texto = (texto || '').trim().toUpperCase();
+        if (!texto) {
+            renderPacientesGrid(pacientesTabData);
+            return;
+        }
+        const filtrados = pacientesTabData.filter(p =>
+            (p.rut && p.rut.includes(texto)) ||
+            ((p.nombre + ' ' + (p.apellidos || '')).toUpperCase().includes(texto))
         );
-    });
-    renderPacientesGrid(filtrados);
-}
+        renderPacientesGrid(filtrados);
+    }
 
     window.verFichaPacienteSenda = async function(rut) {
         const db = window.getFirestore();
@@ -200,13 +196,13 @@
         }
     };
 
-function construirHTMLFichaMejorada(paciente, puedeEditar) {
+    function construirHTMLFichaMejorada(paciente, puedeEditar) {
         return `
             <h3 style="color: #2563eb; margin-bottom:15px; font-size:1.4rem; font-weight:700;">
                 <i class="fas fa-user-circle"></i> ${paciente.nombre || ''} ${paciente.apellidos || ''}
             </h3>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:20px;">
-                <p><i class="fas fa-id-card" style="color:#6366f1; margin-right:8px;"></i><b>RUT:</b> ${window.formatRUT ? window.formatRUT(paciente.rut) : (paciente.rut || '')}</p>
+                <p><i class="fas fa-id-card" style="color:#6366f1; margin-right:8px;"></i><b>RUT:</b> ${paciente.rut || ''}</p>
                 <p><i class="fas fa-phone" style="color:#10b981; margin-right:8px;"></i><b>Teléfono:</b> ${paciente.telefono || 'No disponible'}</p>
                 <p><i class="fas fa-envelope" style="color:#f59e0b; margin-right:8px;"></i><b>Email:</b> ${paciente.email || 'No disponible'}</p>
                 <p><i class="fas fa-map-marker-alt" style="color:#ef4444; margin-right:8px;"></i><b>Dirección:</b> ${paciente.direccion || 'No disponible'}</p>
@@ -734,4 +730,3 @@ function construirHTMLFichaMejorada(paciente, puedeEditar) {
     };
 
 })();
-
