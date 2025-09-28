@@ -377,7 +377,7 @@ document.addEventListener("DOMContentLoaded", function() {
   // Ejecutar al cargar
   updateTipoSolicitudUI();
 
-  // ----- MOTIVACIÓN SLIDER -----
+  // --------- SLIDER DE MOTIVACION DINAMICO -----------
   const motivacionRange = document.getElementById('motivacion-range');
   const motivacionValor = document.getElementById('motivacion-valor');
   if (motivacionRange && motivacionValor) {
@@ -386,12 +386,12 @@ document.addEventListener("DOMContentLoaded", function() {
     });
     motivacionValor.textContent = motivacionRange.value;
   }
+  // ----------------------------------------------------
 
   // Paso 1: Botón siguiente
   const next1 = document.getElementById('next-step-1');
   if (next1) {
     next1.onclick = function() {
-      // Validaciones del paso 1 (edad, cesfam, paraMi)
       const edad = document.getElementById('patient-age').value;
       const cesfam = document.getElementById('patient-cesfam').value;
       const paraMi = document.querySelector('input[name="paraMi"]:checked');
@@ -399,7 +399,6 @@ document.addEventListener("DOMContentLoaded", function() {
         window.showNotification && window.showNotification("Completa todos los campos obligatorios del Paso 1", "warning");
         return;
       }
-      // Avanza al paso 2
       document.querySelector('.form-step[data-step="1"]').classList.remove('active');
       document.querySelector('.form-step[data-step="2"]').classList.add('active');
       document.getElementById('form-progress').style.width = "25%";
