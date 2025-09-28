@@ -1,261 +1,352 @@
+// ========== calendario/citas.js - ACTUALIZADO ==========
 
+let profesionalesAtencion = [];
+let profesionesAtencion = [];
+let miCesfam = null;
 
+let profesionalesAgendar = [];
+let profesionesAgendar = [];
+let miCesfamAgendar = null;
 
-function setupFormularioPaciente() {
-    const form = document.getElementById("patient-form");
-    if (!form) return;
+function cargarProfesionalesAtencionPorCesfam(callback) {
+  const user = firebase.auth().currentUser;
+  if (!user) {
+    window.showNotification && window.showNotification("Debes iniciar sesión para agendar citas.", "warning");
+    return;
+  }
+  const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
 
-    const steps = Array.from(form.querySelectorAll(".form-step"));
-    let currentStep = 0;
-
-    function mostrarPaso(idx) {
-        steps.forEach((step, i) => {
-            step.classList.toggle("active", i === idx);
-        });
-        document.getElementById("progress-text").textContent = `Paso ${idx+1} de 4`;
-        document.getElementById("form-progress").style.width = ((idx+1)/steps.length*100)+"%";
-        currentStep = idx;
+  db.collection('profesionales').doc(user.uid).get().then(doc => {
+    if (!doc.exists) {
+      window.showNotification && window.showNotification("No se encontró tu CESFAM.", "warning");
+      return;
     }
+    miCesfam = doc.data().cesfam;
 
-    function mostrarSoloInfo() {
-        steps.forEach((step, i) => {
-            step.classList.toggle("active", i === 0);
-        });
-        document.getElementById("progress-text").textContent = `Paso 1 de 1`;
-        document.getElementById("form-progress").style.width = "100%";
-        currentStep = 0;
-        form.querySelector("#next-step-1").style.display = "none";
-        form.querySelector("#info-email-container").style.display = "";
-        form.querySelector("#basic-info-container").style.display = "none";
-        form.querySelector("#enviar-solo-info").style.display = "";
-    }
-
-    function mostrarIdentificado() {
-        mostrarPaso(0);
-        form.querySelector("#next-step-1").style.display = "";
-        form.querySelector("#info-email-container").style.display = "none";
-        form.querySelector("#basic-info-container").style.display = "";
-        form.querySelector("#enviar-solo-info").style.display = "none";
-    }
-
-    mostrarIdentificado();
-
-    form.querySelector("#next-step-1").onclick = function() {
-        const tipo = form.querySelector('input[name="tipoSolicitud"]:checked');
-        if (!tipo) return window.showNotification("Selecciona tipo de solicitud","warning");
-        if (tipo.value === "informacion") {
-            return;
+    db.collection('profesionales').where('activo', '==', true).where('cesfam', '==', miCesfam).get().then(snapshot => {
+      profesionalesAtencion = [];
+      profesionesAtencion = [];
+      snapshot.forEach(doc => {
+        const p = doc.data();
+        p.uid = doc.id;
+        profesionalesAtencion.push(p);
+        if (p.profession && !profesionesAtencion.includes(p.profession)) {
+          profesionesAtencion.push(p.profession);
         }
-        const edad = form.querySelector("#patient-age").value;
-        const cesfam = form.querySelector("#patient-cesfam").value;
-        if (!edad || isNaN(edad) || edad < 12) return window.showNotification("Edad mínima 12 años","warning");
-        if (!cesfam) return window.showNotification("Selecciona un CESFAM","warning");
-        mostrarPaso(1);
-    };
-
-    form.querySelector("#next-step-2").onclick = function() {
-        const nombre = form.querySelector("#patient-name").value.trim();
-        const apellidos = form.querySelector("#patient-lastname").value.trim();
-        let rut = form.querySelector("#patient-rut").value.trim();
-        rut = rut.replace(/[^0-9kK]/g, '').toUpperCase();
-        let tel = form.querySelector("#patient-phone").value.trim();
-        tel = limpiarTelefonoChileno(tel);
-        if (!nombre || !apellidos) return window.showNotification("Nombre y apellidos requeridos", "warning");
-        if (!window.validarRut || !window.validarRut(rut)) return window.showNotification("RUT inválido", "warning");
-        if (!validarTelefonoChileno(tel)) return window.showNotification("Teléfono inválido","warning");
-        mostrarPaso(2);
-    };
-
-    form.querySelector("#next-step-3").onclick = function() {
-        const su = form.querySelectorAll('input[name="sustancias"]:checked');
-        const urg = form.querySelector('input[name="urgencia"]:checked');
-        const trat = form.querySelector('input[name="tratamientoPrevio"]:checked');
-        if (!su.length) return window.showNotification("Selecciona al menos una sustancia","warning");
-        if (!urg) return window.showNotification("Selecciona nivel de urgencia","warning");
-        if (!trat) return window.showNotification("Indica si hubo tratamiento previo","warning");
-        mostrarPaso(3);
-    };
-
-    ["#prev-step-2","#prev-step-3","#prev-step-4"].forEach((sel,idx) => {
-        const btn = form.querySelector(sel);
-        if (btn) btn.onclick = ()=>mostrarPaso(idx);
+      });
+      if (typeof callback === 'function') callback();
     });
-
-    const tipoSolicitudRadios = form.querySelectorAll('input[name="tipoSolicitud"]');
-    tipoSolicitudRadios.forEach(radio=>{
-        radio.addEventListener("change",function(){
-            if (radio.value === "informacion" && radio.checked) {
-                mostrarSoloInfo();
-            } else if (radio.value === "identificado" && radio.checked) {
-                mostrarIdentificado();
-            }
-        });
-    });
-
- 
-    const btnSoloInfo = form.querySelector("#enviar-solo-info");
-    if (btnSoloInfo) {
-        btnSoloInfo.onclick = function(e) {
-            const email = form.querySelector("#info-email").value.trim();
-            if (!window.validarEmail || !window.validarEmail(email)) {
-                return window.showNotification("Ingresa un correo válido para recibir información", "warning");
-            }
-            guardarSolicitudInformacion({
-                tipo: "solo_informacion",
-                email: email,
-                fecha: fechaChileISO()
-            });
-        };
-    }
-
-  
-    form.onsubmit = function(e) {
-        e.preventDefault();
-        const tipo = form.querySelector('input[name="tipoSolicitud"]:checked');
-        if (!tipo || tipo.value !== "identificado") return;
-        let rut = form.querySelector("#patient-rut").value.trim().replace(/[^0-9kK]/g, '').toUpperCase();
-        let telefono = limpiarTelefonoChileno(form.querySelector("#patient-phone").value.trim());
-        const datos = {
-            tipo: "identificado",
-            edad: form.querySelector("#patient-age").value,
-            cesfam: form.querySelector("#patient-cesfam").value,
-            paraMi: form.querySelector('input[name="paraMi"]:checked')?.value || "",
-            nombre: form.querySelector("#patient-name").value.trim(),
-            apellidos: form.querySelector("#patient-lastname").value.trim(),
-            rut: rut,
-            telefono: telefono,
-            email: form.querySelector("#patient-email").value.trim(),
-            direccion: form.querySelector("#patient-address").value.trim(),
-            sustancias: Array.from(form.querySelectorAll('input[name="sustancias"]:checked')).map(x=>x.value),
-            tiempoConsumo: form.querySelector("#tiempo-consumo").value,
-            urgencia: form.querySelector('input[name="urgencia"]:checked')?.value || "",
-            tratamientoPrevio: form.querySelector('input[name="tratamientoPrevio"]:checked')?.value || "",
-            descripcion: form.querySelector("#patient-description").value.trim(),
-            motivacion: form.querySelector("#motivacion-range").value,
-            fecha: fechaChileISO()
-        };
-        if (!datos.nombre || !datos.apellidos || !datos.rut || !datos.telefono) {
-            return window.showNotification("Completa todos los campos obligatorios", "warning");
-        }
-        if (!window.validarRut || !window.validarRut(datos.rut)) return window.showNotification("RUT inválido", "warning");
-        if (!validarTelefonoChileno(datos.telefono)) return window.showNotification("Teléfono inválido", "warning");
-        guardarSolicitudAyuda(datos);
-    };
-
-  
-    const motivacionRange = form.querySelector("#motivacion-range");
-    const motivacionValue = form.querySelector("#motivacion-value");
-    if (motivacionRange && motivacionValue) {
-        motivacionRange.addEventListener("input",function(){
-            motivacionValue.textContent = this.value;
-        });
-    }
+  });
 }
 
-
-function fechaChileISO() {
-    return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" })).toISOString();
+function capitalizarProfesion(str) {
+  if (!str) return "";
+  str = str.replace(/_/g, " ");
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
 
-function guardarSolicitudAyuda(datos) {
-    const db = window.getFirestore ? window.getFirestore() : null;
-    if (!db) {
-        window.showNotification && window.showNotification("No se pudo acceder a la base de datos","error");
+function llenarSelectProfesionesPaciente() {
+  const selProf = document.getElementById('pac-cita-profession');
+  if (!selProf) return;
+  selProf.innerHTML = '<option value="">Selecciona profesión...</option>';
+  profesionesAtencion.forEach(prof => {
+    const opt = document.createElement('option');
+    opt.value = prof;
+    opt.textContent = capitalizarProfesion(prof);
+    selProf.appendChild(opt);
+  });
+}
+
+function llenarSelectProfesionalesPaciente() {
+  const selProfesion = document.getElementById('pac-cita-profession');
+  const selProfesional = document.getElementById('pac-cita-profesional');
+  if (!selProfesion || !selProfesional) return;
+  selProfesional.innerHTML = '<option value="">Selecciona profesional...</option>';
+  const filtro = selProfesion.value;
+  profesionalesAtencion
+    .filter(p => p.profession === filtro)
+    .forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.uid;
+      opt.textContent = `${p.nombre} ${p.apellidos}`;
+      opt.dataset.nombre = `${p.nombre} ${p.apellidos}`;
+      selProfesional.appendChild(opt);
+    });
+  const nombreInput = document.getElementById('pac-cita-profesional-nombre');
+  if (nombreInput) nombreInput.value = '';
+}
+
+function autocompletarNombreProfesionalPaciente() {
+  const selProfesional = document.getElementById('pac-cita-profesional');
+  const nombreInput = document.getElementById('pac-cita-profesional-nombre');
+  if (!selProfesional || !nombreInput) return;
+  const selected = selProfesional.options[selProfesional.selectedIndex];
+  nombreInput.value = selected && selected.dataset.nombre ? selected.dataset.nombre : '';
+}
+
+// ========== FUNCIÓN ACTUALIZADA CON SISTEMA UNIFICADO ==========
+function guardarCitaPaciente(datosCita, callback) {
+    if (!window.SISTEMA_ID_UNIFICADO) {
+        window.showNotification && window.showNotification("Sistema no inicializado", "error");
+        if (typeof callback === "function") callback(null, new Error("Sistema no inicializado"));
         return;
     }
-    datos.estado = datos.estado || "pendiente";
-    datos.fecha = datos.fecha || new Date().toISOString();
-    db.collection("solicitudes_ingreso").add(datos)
-        .then(function(docRef) {
-            db.collection("solicitudes_ingreso").doc(docRef.id).set({ id: docRef.id }, { merge: true })
+    
+    window.SISTEMA_ID_UNIFICADO.crearCitaUnificada(datosCita)
+        .then(function(resultado) {
+            window.showNotification && window.showNotification("Cita agendada correctamente", "success");
+            if (typeof callback === "function") callback(resultado.citaId, resultado.pacienteId);
+        })
+        .catch(function(error) {
+            window.showNotification && window.showNotification("Error al agendar cita: " + error.message, "error");
+            if (typeof callback === "function") callback(null, null, error);
+        });
+}
+
+function abrirModalCitaPaciente() {
+  cargarProfesionalesAtencionPorCesfam(function() {
+    llenarSelectProfesionesPaciente();
+    llenarSelectProfesionalesPaciente();
+    autocompletarNombreProfesionalPaciente();
+
+    const selProf = document.getElementById('pac-cita-profession');
+    if (selProf) {
+      selProf.onchange = function() {
+        llenarSelectProfesionalesPaciente();
+        autocompletarNombreProfesionalPaciente();
+        if (window.actualizarHorasPaciente) window.actualizarHorasPaciente();
+      };
+    }
+    const selPro = document.getElementById('pac-cita-profesional');
+    if (selPro) {
+      selPro.onchange = function() {
+        autocompletarNombreProfesionalPaciente();
+        if (window.actualizarHorasPaciente) window.actualizarHorasPaciente();
+      };
+    }
+    if (window.inicializarListenersNuevaCitaPaciente) window.inicializarListenersNuevaCitaPaciente();
+    if (window.actualizarHorasPaciente) window.actualizarHorasPaciente();
+
+    showModal('modal-nueva-cita-paciente');
+
+    setTimeout(function() {
+      var form = document.getElementById('form-nueva-cita-paciente');
+      if (form && !form._onsubmitSet) {
+        form.onsubmit = function(e) {
+          e.preventDefault();
+          const datos = {
+            cesfam: miCesfam,
+            estado: "agendada",
+            fechaCreacion: new Date().toISOString(),
+            observaciones: document.getElementById('pac-cita-observaciones')?.value || "",
+            origenSolicitud: "web",
+            pacienteNombre: document.getElementById('pac-cita-paciente-nombre').value.trim(),
+            pacienteRut: document.getElementById('pac-cita-paciente-rut').value.trim(),
+            profesionalId: document.getElementById('pac-cita-profesional').value,
+            profesionalNombre: document.getElementById('pac-cita-profesional-nombre').value,
+            solicitudId: null,
+            tipo: "paciente",
+            tipoProfesional: document.getElementById('pac-cita-profession').value,
+            fecha: document.getElementById('pac-cita-fecha').value,
+            hora: document.getElementById('pac-cita-hora').value
+          };
+          if (!datos.pacienteNombre || !datos.pacienteRut || !datos.profesionalId || !datos.fecha || !datos.hora) {
+            window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
+            return;
+          }
+          guardarCitaPaciente(datos, function(idCita, idPaciente, error) {
+            if (!error) closeModal('modal-nueva-cita-paciente');
+          });
+        };
+        form._onsubmitSet = true;
+      }
+    }, 100);
+  });
+}
+
+function cargarProfesionalesAgendarCita(callback) {
+  const user = firebase.auth().currentUser;
+  if (!user) {
+    window.showNotification && window.showNotification("Debes iniciar sesión para agendar citas.", "warning");
+    return;
+  }
+  const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
+
+  db.collection('profesionales').doc(user.uid).get().then(doc => {
+    if (!doc.exists) {
+      window.showNotification && window.showNotification("No se encontró tu CESFAM.", "warning");
+      return;
+    }
+    miCesfamAgendar = doc.data().cesfam;
+
+    db.collection('profesionales').where('activo', '==', true).where('cesfam', '==', miCesfamAgendar).get().then(snapshot => {
+      profesionalesAgendar = [];
+      profesionesAgendar = [];
+      snapshot.forEach(doc => {
+        const p = doc.data();
+        p.uid = doc.id;
+        profesionalesAgendar.push(p);
+        if (p.profession && !profesionesAgendar.includes(p.profession)) {
+          profesionesAgendar.push(p.profession);
+        }
+      });
+      if (typeof callback === 'function') callback();
+    });
+  });
+}
+
+function capitalizarProfesionAgendar(str) {
+  if (!str) return "";
+  str = str.replace(/_/g, " ");
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
+function llenarSelectProfesionesAgendarCita() {
+  const selProf = document.getElementById('modal-cita-profession');
+  if (!selProf) return;
+  selProf.innerHTML = '<option value="">Selecciona profesión...</option>';
+  profesionesAgendar.forEach(prof => {
+    const opt = document.createElement('option');
+    opt.value = prof;
+    opt.textContent = capitalizarProfesionAgendar(prof);
+    selProf.appendChild(opt);
+  });
+}
+
+function llenarSelectProfesionalesAgendarCita() {
+  const selProfesion = document.getElementById('modal-cita-profession');
+  const selProfesional = document.getElementById('modal-cita-profesional');
+  if (!selProfesion || !selProfesional) return;
+  selProfesional.innerHTML = '<option value="">Selecciona profesional...</option>';
+  const filtro = selProfesion.value;
+  profesionalesAgendar
+    .filter(p => p.profession === filtro)
+    .forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.uid;
+      opt.textContent = `${p.nombre} ${p.apellidos}`;
+      opt.dataset.nombre = `${p.nombre} ${p.apellidos}`;
+      selProfesional.appendChild(opt);
+    });
+  const nombreInput = document.getElementById('modal-cita-profesional-nombre');
+  if (nombreInput) nombreInput.value = '';
+}
+
+function autocompletarNombreProfesionalAgendarCita() {
+  const selProfesional = document.getElementById('modal-cita-profesional');
+  const nombreInput = document.getElementById('modal-cita-profesional-nombre');
+  if (!selProfesional || !nombreInput) return;
+  const selected = selProfesional.options[selProfesional.selectedIndex];
+  nombreInput.value = selected && selected.dataset.nombre ? selected.dataset.nombre : '';
+}
+
+function abrirModalAgendarCita(solicitudId, nombre, rut) {
+  cargarProfesionalesAgendarCita(function() {
+    llenarSelectProfesionesAgendarCita();
+    llenarSelectProfesionalesAgendarCita();
+    autocompletarNombreProfesionalAgendarCita();
+
+    var inputId = document.getElementById('modal-cita-id');
+    if (inputId) inputId.value = solicitudId;
+
+    var inputIdProf = document.getElementById('modal-cita-id-prof');
+    if (inputIdProf) inputIdProf.value = solicitudId;
+
+    var nombreSpan = document.getElementById('modal-cita-nombre');
+    if (nombreSpan) nombreSpan.textContent = nombre;
+    var nombreSpanProf = document.getElementById('modal-cita-nombre-prof');
+    if (nombreSpanProf) nombreSpanProf.textContent = nombre;
+
+    var rutSpan = document.getElementById('modal-cita-rut');
+    if (rutSpan) rutSpan.textContent = rut;
+    var rutSpanProf = document.getElementById('modal-cita-rut-prof');
+    if (rutSpanProf) rutSpanProf.textContent = rut;
+
+    const selProf = document.getElementById('modal-cita-profession');
+    if (selProf) {
+      selProf.onchange = function() {
+        llenarSelectProfesionalesAgendarCita();
+        autocompletarNombreProfesionalAgendarCita();
+      };
+    }
+    const selPro = document.getElementById('modal-cita-profesional');
+    if (selPro) {
+      selPro.onchange = autocompletarNombreProfesionalAgendarCita;
+    }
+
+    showModal('modal-cita');
+
+    setTimeout(function() {
+      var form = document.getElementById('form-agendar-cita');
+      if (form && !form._onsubmitSet) {
+        form.addEventListener('submit', function(e){
+          e.preventDefault();
+          const citaId = document.getElementById('modal-cita-id').value;
+          const nombre = document.getElementById('modal-cita-nombre').textContent;
+          const rut = document.getElementById('modal-cita-rut').textContent;
+          const profesion = document.getElementById('modal-cita-profession').value;
+          const profesional = document.getElementById('modal-cita-profesional').value;
+          const profesionalNombre = document.getElementById('modal-cita-profesional-nombre').value;
+          const fecha = document.getElementById('modal-cita-fecha').value;
+          const hora = document.getElementById('modal-cita-hora').value;
+
+          if (!nombre || !rut || !profesion || !profesional || !fecha || !hora) {
+            window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
+            return;
+          }
+
+          const datosCita = {
+            solicitudId: citaId,
+            pacienteNombre: nombre,
+            pacienteRut: rut,
+            profesion: profesion,
+            profesionalId: profesional,
+            profesionalNombre: profesionalNombre,
+            fecha: fecha,
+            hora: hora,
+            tipo: "paciente",
+            estado: "agendada",
+            fechaCreacion: new Date().toISOString()
+          };
+
+          // Usar sistema unificado
+          if (!window.SISTEMA_ID_UNIFICADO) {
+            window.showNotification && window.showNotification("Sistema no inicializado", "error");
+            return;
+          }
+
+          window.SISTEMA_ID_UNIFICADO.crearCitaUnificada(datosCita)
+            .then(function(resultado) {
+              const db = window.getFirestore();
+              return Promise.all([
+                db.collection("solicitudes_ingreso").doc(citaId).update({ estado: "agendada" }).catch(() => {}),
+                db.collection("reingresos").doc(citaId).update({ estado: "agendada" }).catch(() => {})
+              ]);
+            })
             .then(function() {
-                window.showNotification && window.showNotification("Solicitud enviada correctamente","success");
-                document.getElementById("patient-form").reset();
-                document.getElementById("patient-modal").style.display = "none";
+              window.showNotification && window.showNotification("Cita agendada correctamente", "success");
+              closeModal('modal-cita');
+              if (window.reloadSolicitudesFromFirebase) window.reloadSolicitudesFromFirebase();
             })
             .catch(function(error) {
-                window.showNotification && window.showNotification("Solicitud guardada pero no se pudo registrar el ID: "+error.message,"warning");
+              window.showNotification && window.showNotification("Error al guardar la cita: " + error.message, "error");
             });
-        })
-        .catch(function(error) {
-            window.showNotification && window.showNotification("Error guardando solicitud: "+error.message,"error");
         });
+        form._onsubmitSet = true;
+      }
+    }, 100);
+  });
 }
 
-function guardarSolicitudInformacion(datos) {
-    const db = window.getFirestore ? window.getFirestore() : null;
-    if (!db) {
-        window.showNotification && window.showNotification("No se pudo acceder a la base de datos","error");
-        return;
-    }
-    datos.estado = "pendiente";
-    db.collection("solicitudes_informacion").add(datos)
-        .then(function() {
-            window.showNotification && window.showNotification("Solicitud de información enviada correctamente","success");
-            document.getElementById("patient-form").reset();
-            document.getElementById("patient-modal").style.display = "none";
-        })
-        .catch(function(error) {
-            window.showNotification && window.showNotification("Error guardando solicitud de información: "+error.message,"error");
-        });
-}
+window.abrirModalCitaPaciente = abrirModalCitaPaciente;
+window.guardarCitaPaciente = guardarCitaPaciente;
+window.llenarSelectProfesionesPaciente = llenarSelectProfesionesPaciente;
+window.llenarSelectProfesionalesPaciente = llenarSelectProfesionalesPaciente;
+window.autocompletarNombreProfesionalPaciente = autocompletarNombreProfesionalPaciente;
+window.cargarProfesionalesAtencionPorCesfam = cargarProfesionalesAtencionPorCesfam;
 
-
-function validarRut(rut) {
-    if (!rut) return false;
-    rut = rut.replace(/[^0-9kK]/g, '').toUpperCase();
-    if (rut.length < 8 || rut.length > 9) return false;
-    let cuerpo = rut.slice(0, -1);
-    let dv = rut.slice(-1);
-    let suma = 0;
-    let multiplo = 2;
-    for (let i = cuerpo.length - 1; i >= 0; i--) {
-        suma += parseInt(cuerpo[i]) * multiplo;
-        multiplo = multiplo === 7 ? 2 : multiplo + 1;
-    }
-    let dvEsperado = 11 - (suma % 11);
-    dvEsperado = dvEsperado === 11 ? '0' : dvEsperado === 10 ? 'K' : dvEsperado.toString();
-    return dv === dvEsperado;
-}
-
-
-if (!window.validarRut) {
-    window.validarRut = validarRut;
-}
-
-
-function limpiarTelefonoChileno(tel) {
-    tel = tel.replace(/\D/g, '');
-    if (tel.startsWith("56")) tel = tel.slice(2);
-    if (tel.length === 11 && tel.startsWith("569")) tel = tel.slice(2);
-    return tel;
-}
-
-function validarTelefonoChileno(telefono) {
-    telefono = limpiarTelefonoChileno(telefono);
-    return telefono.length === 9 && telefono[0] === "9";
-}
-
-
-if (!window.validarTelefono) {
-    window.validarTelefono = validarTelefonoChileno;
-}
-
-
-function validarEmail(email) {
-    if (!email) return false;
-    return /^[\w\.\-]+@([\w\-]+\.)+[a-zA-Z]{2,7}$/.test(email);
-}
-
-
-if (!window.validarEmail) {
-    window.validarEmail = validarEmail;
-}
-
-
-window.setupFormularioPaciente = setupFormularioPaciente;
-window.guardarSolicitudAyuda = guardarSolicitudAyuda;
-window.guardarSolicitudInformacion = guardarSolicitudInformacion;
-
-
-document.addEventListener("DOMContentLoaded", setupFormularioPaciente);
+window.abrirModalAgendarCita = abrirModalAgendarCita;
+window.cargarProfesionalesAgendarCita = cargarProfesionalesAgendarCita;
+window.llenarSelectProfesionesAgendarCita = llenarSelectProfesionesAgendarCita;
+window.llenarSelectProfesionalesAgendarCita = llenarSelectProfesionalesAgendarCita;
+window.autocompletarNombreProfesionalAgendarCita = autocompletarNombreProfesionalAgendarCita;
