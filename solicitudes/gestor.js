@@ -347,14 +347,17 @@ function applyCurrentFilters() {
                     break;
             }
         }
-        if (currentFilters.busqueda) {
-            const rut = (solicitud.rut || '').replace(/\./g, '').toLowerCase();
-            const nombre = (solicitud.nombre || '').toLowerCase();
-            const apellidos = (solicitud.apellidos || '').toLowerCase();
-            const email = (solicitud.email || '').toLowerCase();
-            const q = currentFilters.busqueda.replace(/\./g, '').toLowerCase();
-            if (!rut.includes(q) && !nombre.includes(q) && !apellidos.includes(q) && !email.includes(q)) return false;
-        }
+      if (currentFilters.busqueda) {
+    // Limpiar rut y búsqueda para comparar sin puntos ni guion
+    const rut = (solicitud.rut || '').replace(/[.\-]/g, '').toLowerCase();
+    const nombre = (solicitud.nombre || '').toLowerCase();
+    const apellidos = (solicitud.apellidos || '').toLowerCase();
+    const email = (solicitud.email || '').toLowerCase();
+    const q = currentFilters.busqueda.replace(/[.\-]/g, '').toLowerCase();
+
+    // Buscar por RUT "crudo" (sin puntos ni guion), nombre, apellidos o email
+    if (!rut.includes(q) && !nombre.includes(q) && !apellidos.includes(q) && !email.includes(q)) return false;
+}
         return true;
     });
     
