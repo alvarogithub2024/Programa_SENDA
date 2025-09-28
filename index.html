@@ -1023,6 +1023,24 @@
                 <label class="form-label" for="pac-cita-paciente-rut">RUT del paciente *</label>
                 <input type="text" class="form-input" id="pac-cita-paciente-rut" required autocomplete="off">
             </div>
+            
+            <!-- Nuevos campos de contacto -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="pac-cita-paciente-telefono">Teléfono</label>
+                    <input type="tel" class="form-input" id="pac-cita-paciente-telefono" placeholder="9 1234 5678" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="pac-cita-paciente-email">Email</label>
+                    <input type="email" class="form-input" id="pac-cita-paciente-email" placeholder="paciente@email.com" autocomplete="off">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="pac-cita-paciente-direccion">Dirección</label>
+                <input type="text" class="form-input" id="pac-cita-paciente-direccion" placeholder="Calle, número, comuna" autocomplete="off">
+            </div>
+            
             <div class="form-group">
                 <label class="form-label" for="pac-cita-profession">Profesión *</label>
                 <select class="form-select" id="pac-cita-profession" required>
@@ -1046,6 +1064,13 @@
                     <option value="">Selecciona hora...</option>
                 </select>
             </div>
+            
+            <!-- Campo adicional para observaciones -->
+            <div class="form-group">
+                <label class="form-label" for="pac-cita-observaciones">Observaciones</label>
+                <textarea class="form-textarea" id="pac-cita-observaciones" rows="2" placeholder="Observaciones adicionales (opcional)"></textarea>
+            </div>
+            
             <div class="form-actions form-actions-row">
                 <button type="button" class="btn btn-outline" onclick="closeModal('modal-nueva-cita-paciente')">
                     Cancelar
