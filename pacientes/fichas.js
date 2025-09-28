@@ -96,7 +96,7 @@
         return Object.values(pacientesMap);
     }
 
-     function renderPacientesGrid(pacientes) {
+ function renderPacientesGrid(pacientes) {
         const grid = getGrid();
         if (!grid) return;
         grid.innerHTML = '';
@@ -122,13 +122,12 @@
         });
     }
 
-  function buscarPacientesLocal(texto) {
+   function buscarPacientesLocal(texto) {
     texto = (texto || '').trim().toUpperCase();
     if (!texto) {
         renderPacientesGrid(pacientesTabData);
         return;
     }
-    // Limpia puntos y guion en ambos lados
     const textoSinPuntosGuion = texto.replace(/[.\-]/g, '');
     const filtrados = pacientesTabData.filter(p => {
         const rutLimpio = (p.rut || '').replace(/[.\-]/g, '').toUpperCase();
@@ -139,7 +138,8 @@
         );
     });
     renderPacientesGrid(filtrados);
-}  
+}
+
     window.verFichaPacienteSenda = async function(rut) {
         const db = window.getFirestore();
         const rutLimpio = (rut || '').replace(/[.\-]/g, '').trim();
@@ -201,40 +201,7 @@
         }
     };
 
-   (function() {
-    let pacientesTabData = [];
-
-    // ... (restante igual)
-
-    function renderPacientesGrid(pacientes) {
-        const grid = getGrid();
-        if (!grid) return;
-        grid.innerHTML = '';
-        if (!pacientes.length) {
-            grid.innerHTML = "<div class='no-results'>No hay pacientes registrados aún.</div>";
-            return;
-        }
-        pacientes.forEach(p => {
-            const div = document.createElement('div');
-            div.className = 'patient-card';
-            div.innerHTML = `
-                <div style="display:flex; gap:24px; align-items:center;">
-                  <div style="font-weight:600; min-width:170px;">${p.nombre} ${p.apellidos || ''}</div>
-                  <div>RUT: ${window.formatRUT ? window.formatRUT(p.rut) : (p.rut || '')}</div>
-                  <div>Tel: ${p.telefono || 'No disponible'}</div>
-                  <div>Email: ${p.email || 'No disponible'}</div>
-                  <button class="btn btn-outline btn-sm" style="margin-left:18px;" onclick="verFichaPacienteSenda('${p.rut}')">
-                    <i class="fas fa-file-medical"></i> Ver Ficha
-                  </button>
-                </div>
-            `;
-            grid.appendChild(div);
-        });
-    }
-
-    // ...
-
-    function construirHTMLFichaMejorada(paciente, puedeEditar) {
+function construirHTMLFichaMejorada(paciente, puedeEditar) {
         return `
             <h3 style="color: #2563eb; margin-bottom:15px; font-size:1.4rem; font-weight:700;">
                 <i class="fas fa-user-circle"></i> ${paciente.nombre || ''} ${paciente.apellidos || ''}
@@ -270,8 +237,6 @@
         `;
     }
 
-    // ... (restante igual)
-})();
 
     async function cargarHistorialClinicoMejorado(rutPaciente, puedeEditar) {
         const cont = document.getElementById('historial-contenido');
@@ -770,3 +735,4 @@
     };
 
 })();
+
