@@ -378,13 +378,13 @@ document.addEventListener("DOMContentLoaded", function() {
   updateTipoSolicitudUI();
 
   // --------- SLIDER DE MOTIVACION DINAMICO -----------
-  const motivacionRange = document.getElementById('motivacion-range');
-  const motivacionValor = document.getElementById('motivacion-valor');
-  if (motivacionRange && motivacionValor) {
+const motivacionRange = document.getElementById('motivacion-range');
+  const motivacionValue = document.getElementById('motivacion-value');
+  if (motivacionRange && motivacionValue) {
+    motivacionValue.textContent = motivacionRange.value;
     motivacionRange.addEventListener('input', function() {
-      motivacionValor.textContent = motivacionRange.value;
+      motivacionValue.textContent = this.value;
     });
-    motivacionValor.textContent = motivacionRange.value;
   }
   // ----------------------------------------------------
 
