@@ -157,13 +157,14 @@ function fechaChileISO() {
     return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" })).toISOString();
 }
 
-
 function guardarSolicitudAyuda(datos) {
     const db = window.getFirestore ? window.getFirestore() : null;
     if (!db) {
         window.showNotification && window.showNotification("No se pudo acceder a la base de datos","error");
         return;
     }
+    datos.estado = datos.estado || "pendiente";
+    datos.fecha = datos.fecha || new Date().toISOString();
     db.collection("solicitudes_ingreso").add(datos)
         .then(function(docRef) {
             db.collection("solicitudes_ingreso").doc(docRef.id).set({ id: docRef.id }, { merge: true })
