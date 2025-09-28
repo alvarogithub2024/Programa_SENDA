@@ -167,39 +167,6 @@ function crearAtencionConId(datos, callback) {
         });
 }
 
-function crearReingresoConId(datos, callback) {
-    const db = window.getFirestore();
-    const idPaciente = generarIdPaciente(datos.rut);
-    
-    const reingresoData = {
-        ...datos,
-        idPaciente: idPaciente,
-        rutLimpio: datos.rut.replace(/[.\-]/g, '').toUpperCase(),
-        fechaCreacion: datos.fechaCreacion || new Date().toISOString()
-    };
-
-    db.collection('reingresos').add(reingresoData)
-        .then(docRef => {
-            reingresoData.id = docRef.id;
-            
-            db.collection('reingresos').doc(docRef.id).update({ 
-                id: docRef.id,
-                idPaciente: idPaciente 
-            });
-
-            crearOActualizarPaciente(datos, (pacienteId, error) => {
-                if (error) {
-                    console.error('Error actualizando paciente desde reingreso:', error);
-                }
-                if (callback) callback(docRef.id, idPaciente);
-            });
-        })
-        .catch(error => {
-            console.error('Error creando reingreso:', error);
-            if (callback) callback(null, null, error);
-        });
-}
-
 function obtenerHistorialCompletoPaciente(rut, callback) {
     const idPaciente = generarIdPaciente(rut);
     const db = window.getFirestore();
@@ -241,93 +208,6 @@ function obtenerHistorialCompletoPaciente(rut, callback) {
         });
 }
 
-function migrarDatosExistentes() {
-    const db = window.getFirestore();
-    console.log('🔄 Iniciando migración de datos existentes...');
-
-    db.collection('pacientes').get().then(snapshot => {
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            if (data.rut && !doc.id.startsWith('paciente_')) {
-                const nuevoId = generarIdPaciente(data.rut);
-                
-                db.collection('pacientes').doc(nuevoId).set({
-                    ...data,
-                    id: nuevoId,
-                    fechaMigracion: new Date().toISOString()
-                });
-                
-                console.log(`📦 Migrado paciente ${doc.id} → ${nuevoId}`);
-            }
-        });
-    });
-
-    ['solicitudes_ingreso', 'citas', 'atenciones', 'reingresos'].forEach(collection => {
-        db.collection(collection).get().then(snapshot => {
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                const rut = data.rut || data.pacienteRut;
-                if (rut && !data.idPaciente) {
-                    const idPaciente = generarIdPaciente(rut);
-                    
-                    db.collection(collection).doc(doc.id).update({
-                        idPaciente: idPaciente,
-                        rutLimpio: rut.replace(/[.\-]/g, '').toUpperCase(),
-                        fechaMigracion: new Date().toISOString()
-                    });
-                    
-                    console.log(`📦 Migrado ${collection}/${doc.id} → idPaciente: ${idPaciente}`);
-                }
-            });
-        });
-    });
-}
-function unificarSesionUsuario(userData) {
-    if (!userData) return null;
-    
-    const sesionUnificada = {
-        uid: userData.uid || userData.id,
-        email: userData.email || '',
-        nombre: userData.nombre || '',
-        apellidos: userData.apellidos || '',
-        profession: userData.profession || '',
-        cesfam: userData.cesfam || '',
-        activo: userData.activo !== false,
-        fechaLogin: new Date().toISOString()
-    };
-    
-    // Guardar en sessionStorage para persistencia
-    try {
-        sessionStorage.setItem('senda_sesion_unificada', JSON.stringify(sesionUnificada));
-    } catch (error) {
-        console.warn('No se pudo guardar sesión unificada:', error);
-    }
-    
-    return sesionUnificada;
-}
-
-function obtenerSesionUnificada() {
-    try {
-        const sesion = sessionStorage.getItem('senda_sesion_unificada');
-        return sesion ? JSON.parse(sesion) : null;
-    } catch (error) {
-        console.warn('Error obteniendo sesión unificada:', error);
-        return null;
-    }
-}
-
-function limpiarSesionUnificada() {
-    try {
-        sessionStorage.removeItem('senda_sesion_unificada');
-    } catch (error) {
-        console.warn('Error limpiando sesión unificada:', error);
-    }
-}
-
-
-window.unificarSesionUsuario = unificarSesionUsuario;
-window.obtenerSesionUnificada = obtenerSesionUnificada;
-window.limpiarSesionUnificada = limpiarSesionUnificada;
 window.generarIdPaciente = generarIdPaciente;
 window.extraerRutDeId = extraerRutDeId;
 window.crearOActualizarPaciente = crearOActualizarPaciente;
@@ -335,7 +215,4 @@ window.obtenerPacientePorRut = obtenerPacientePorRut;
 window.crearSolicitudConId = crearSolicitudConId;
 window.crearCitaConId = crearCitaConId;
 window.crearAtencionConId = crearAtencionConId;
-window.crearReingresoConId = crearReingresoConId;
 window.obtenerHistorialCompletoPaciente = obtenerHistorialCompletoPaciente;
-window.migrarDatosExistentes = migrarDatosExistentes;
-console.log('✅ Sistema de unificación de sesión cargado');
