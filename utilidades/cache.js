@@ -1,3 +1,4 @@
+
 var memoriaCache = {};
 
 function cacheGuardar(clave, valor, duracionMs) {
@@ -36,10 +37,12 @@ function cacheObtener(clave) {
     return null;
 }
 
+
 function cacheEliminar(clave) {
     delete memoriaCache[clave];
     try { localStorage.removeItem("cache_" + clave); } catch (e) {}
 }
+
 
 function cacheLimpiarTodo() {
     memoriaCache = {};
@@ -49,6 +52,7 @@ function cacheLimpiarTodo() {
             .forEach(function(clave) { localStorage.removeItem(clave); });
     } catch (e) {}
 }
+
 
 window.cacheGuardar = cacheGuardar;
 window.cacheObtener = cacheObtener;
