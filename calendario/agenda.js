@@ -6,7 +6,6 @@ document.addEventListener("DOMContentLoaded", function() {
     const nuevaCitaBtn = document.getElementById('nueva-cita-btn');
     const nuevaCitaProfesionalBtn = document.getElementById('nueva-cita-profesional-btn');
 
-    // Función para obtener la fecha actual en Chile
     function chileNow() {
         return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" }));
     }
@@ -62,10 +61,9 @@ document.addEventListener("DOMContentLoaded", function() {
         });
         calendarGrid.appendChild(row);
 
-        // CALCULO CORREGIDO: para semanas que empiezan en lunes
+    
         let primerDia = new Date(year, month, 1);
         let ultimoDia = new Date(year, month + 1, 0);
-        // Corregido: 0 (domingo) a la columna 6, 1 (lunes) a la columna 0, etc.
         let startDay = primerDia.getDay() === 0 ? 6 : primerDia.getDay() - 1;
         let daysInMonth = ultimoDia.getDate();
 
@@ -268,7 +266,7 @@ document.addEventListener("DOMContentLoaded", function() {
             });
     };
 
-    // Usa chileNow() para el día actual en mostrarCitasDelDia
+
     const hoy = chileNow().toISOString().slice(0, 10);
     mostrarCitasDelDia(hoy);
     window.mostrarCitasDelDia = mostrarCitasDelDia;
