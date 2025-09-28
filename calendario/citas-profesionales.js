@@ -7,6 +7,15 @@ let profesionalesAgendarProf = [];
 let profesionesAgendarProf = [];
 let miCesfamAgendarProf = null;
 
+function sanitizeCitaData(obj) {
+  return {
+    ...obj,
+    telefono: typeof obj.telefono === "string" ? obj.telefono : "",
+    email: typeof obj.email === "string" ? obj.email : "",
+    direccion: typeof obj.direccion === "string" ? obj.direccion : ""
+  };
+}
+
 function cargarProfesionalesNuevaCitaProfesional(callback) {
     const user = firebase.auth().currentUser;
     if (!user) return;
@@ -147,45 +156,45 @@ function abrirModalNuevaCitaProfesional() {
 
         showModal('modal-nueva-cita-profesional');
 
-        setTimeout(function() {
-            const form = document.getElementById('form-nueva-cita-profesional');
-            if (form && !form._onsubmitSet) {
-                form.onsubmit = function(e) {
-                    e.preventDefault();
-                    
-                    const cita = {
-                        profesion: document.getElementById('prof-cita-profession').value,
-                        profesionalId: document.getElementById('prof-cita-profesional').value,
-                        profesionalNombre: document.getElementById('prof-cita-profesional-nombre').value,
-                        fecha: document.getElementById('prof-cita-fecha').value,
-                        hora: document.getElementById('prof-cita-hora').value,
-                        creado: new Date().toISOString(),
-                        tipo: "profesional",
-                        email: document.getElementById('prof-cita-paciente-email')?.value.trim() || "",
-                        telefono: document.getElementById('prof-cita-paciente-telefono')?.value.trim(),
-                        direccion: document.getElementById('prof-cita-paciente-direccion')?.value.trim() || "",
-                    };
+     setTimeout(function() {
+      const form = document.getElementById('form-nueva-cita-profesional');
+      if (form && !form._onsubmitSet) {
+        form.onsubmit = function(e) {
+          e.preventDefault();
+          const cita = {
+            profesion: document.getElementById('prof-cita-profession').value,
+            profesionalId: document.getElementById('prof-cita-profesional').value,
+            profesionalNombre: document.getElementById('prof-cita-profesional-nombre').value,
+            fecha: document.getElementById('prof-cita-fecha').value,
+            hora: document.getElementById('prof-cita-hora').value,
+            creado: new Date().toISOString(),
+            tipo: "profesional",
+            email: document.getElementById('prof-cita-paciente-email')?.value?.trim() || "",
+            telefono: document.getElementById('prof-cita-paciente-telefono')?.value?.trim() || "",
+            direccion: document.getElementById('prof-cita-paciente-direccion')?.value?.trim() || "",
+          };
 
-                    if (!cita.profesion || !cita.profesionalId || !cita.fecha || !cita.hora) {
-                        window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
-                        return;
-                    }
-                    
-                    const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
-                    db.collection("citas").add(cita)
-                        .then(function(docRef) {
-                            window.showNotification && window.showNotification("Cita agendada correctamente", "success");
-                            closeModal('modal-nueva-cita-profesional');
-                        })
-                        .catch(function(error) {
-                            window.showNotification && window.showNotification("Error al guardar la cita: " + error, "error");
-                        });
-                };
-                form._onsubmitSet = true;
-            }
-        }, 100);
-    });
-}
+          if (!cita.profesion || !cita.profesionalId || !cita.fecha || !cita.hora) {
+            window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
+            return;
+          }
+
+          const datosSanitizados = sanitizeCitaData(cita);
+          const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
+          db.collection("citas").add(datosSanitizados)
+            .then(function(docRef) {
+              window.showNotification && window.showNotification("Cita agendada correctamente", "success");
+              closeModal('modal-nueva-cita-profesional');
+            })
+            .catch(function(error) {
+              window.showNotification && window.showNotification("Error al guardar la cita: " + error, "error");
+            });
+        };
+        form._onsubmitSet = true;
+      }
+    }, 100);
+  });
+} 
 
 function cargarProfesionalesAgendarCitaProfesional(callback) {
     const user = firebase.auth().currentUser;
