@@ -318,7 +318,7 @@ if (rutSpanProf) rutSpanProf.textContent = rut;
           const fecha = document.getElementById('modal-cita-fecha').value;
           const hora = document.getElementById('modal-cita-hora').value;
           const email: document.getElementById('pac-cita-paciente-email')?.value?.trim() || "",
-         const telefono: document.getElementById('pac-cita-paciente-telefono')?.value?.trim() || "",
+         const telefono = document.getElementById('pac-cita-paciente-telefono')?.value.trim() || "";
          const direccion: document.getElementById('pac-cita-paciente-direccion')?.value?.trim() || "",
 };
           if (!nombre || !rut || !profesion || !profesional || !fecha || !hora) {
@@ -336,6 +336,9 @@ if (rutSpanProf) rutSpanProf.textContent = rut;
             profesionalNombre: profesionalNombre,
             fecha: fecha,
             hora: hora,
+            email: email,
+            telefono: telefono,
+            direccion: direccion,
             creado: firebase.firestore.FieldValue.serverTimestamp()
           })
           .then(function(docRef) {
