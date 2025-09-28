@@ -377,6 +377,16 @@ document.addEventListener("DOMContentLoaded", function() {
   // Ejecutar al cargar
   updateTipoSolicitudUI();
 
+  // ----- MOTIVACIÓN SLIDER -----
+  const motivacionRange = document.getElementById('motivacion-range');
+  const motivacionValor = document.getElementById('motivacion-valor');
+  if (motivacionRange && motivacionValor) {
+    motivacionRange.addEventListener('input', function() {
+      motivacionValor.textContent = motivacionRange.value;
+    });
+    motivacionValor.textContent = motivacionRange.value;
+  }
+
   // Paso 1: Botón siguiente
   const next1 = document.getElementById('next-step-1');
   if (next1) {
@@ -481,7 +491,7 @@ document.addEventListener("DOMContentLoaded", function() {
         email: email,
         fechaCreacion: new Date().toISOString(),
         estado: 'pendiente',
-        origen: 'informacion' // ¡IMPORTANTE para que aparezca el botón "Responder"!
+        origen: 'informacion'
       }).then(() => {
         window.showNotification && window.showNotification("Solicitud enviada. Revisa tu correo.", "success");
         closeModal('patient-modal');
@@ -514,7 +524,7 @@ document.addEventListener("DOMContentLoaded", function() {
         paraMi: document.querySelector('input[name="paraMi"]:checked')?.value || '',
         fechaCreacion: new Date().toISOString(),
         estado: 'pendiente',
-        origen: 'ingreso' // ¡IMPORTANTE para que aparezca el botón "Agendar cita"!
+        origen: 'ingreso'
       };
       if (window.SISTEMA_ID_UNIFICADO) {
         window.SISTEMA_ID_UNIFICADO.crearSolicitudIngreso(datos)
