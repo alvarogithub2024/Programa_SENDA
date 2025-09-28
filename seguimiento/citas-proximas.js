@@ -200,19 +200,16 @@ function mostrarCitasRestantesHoy() {
         });
 }
 
-
 window.abrirModalRegistrarAtencion = function(citaId) {
-    console.log(`🔍 Abriendo modal para cita: ${citaId}`);
-    
     var db = window.getFirestore();
     db.collection("citas").doc(citaId).get().then(function(doc) {
         if (!doc.exists) {
             window.showNotification && window.showNotification("Cita no encontrada", "error");
             return;
         }
-        
         var cita = doc.data();
         cita.id = doc.id;
+
         
         console.log('📋 Datos de la cita:', cita);
         
@@ -230,8 +227,7 @@ window.abrirModalRegistrarAtencion = function(citaId) {
         `;
         
         document.getElementById("atencion-paciente-info").innerHTML = pacienteInfo;
-        document.getElementById("atencion-cita-id").value = cita.id;
-        document.getElementById("atencion-paciente-id").value = cita.pacienteId || "";
+       document.getElementById("atencion-paciente-id").value = cita.pacienteId || "";
 
 
         document.getElementById("atencion-descripcion").value = "";
