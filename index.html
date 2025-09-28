@@ -880,33 +880,28 @@
 
 <!-- ========== MODAL: RESPONDER SOLICITUD ========== -->
 <div class="modal-overlay" id="modal-responder" style="display:none;">
-    <div class="modal-content">
-        <span class="close" onclick="closeModal('modal-responder')">&times;</span>
-        <h2>Responder solicitud de información</h2>
-        <form class="modal-form">
-            <div class="form-group">
-                <label><b>Nombre:</b></label>
-                <span id="modal-responder-nombre"></span>
-            </div>
-            <div class="form-group">
-                <label for="modal-responder-asunto">Asunto:</label>
-                <input type="text" id="modal-responder-asunto" value="Respuesta a su solicitud de información">
-            </div>
-            <div class="form-group">
-                <label for="modal-responder-mensaje">Mensaje:</label>
-                <textarea id="modal-responder-mensaje" rows="5"></textarea>
-            </div>
-            <div class="form-actions">
-                <button type="button" onclick="enviarCorreoSenda()" class="btn btn-primary">
-                    Enviar correo
-                </button>
-            </div>
-            <input type="hidden" id="modal-responder-email">
-            <input type="hidden" id="modal-responder-id">
-        </form>
-    </div>
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-responder')">&times;</button>
+    <h2>Responder solicitud de información</h2>
+    <form class="modal-form">
+      <div class="form-group">
+        <label class="form-label" for="modal-responder-asunto">Asunto:</label>
+        <input class="form-input" type="text" id="modal-responder-asunto" value="Respuesta a su solicitud de información">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="modal-responder-mensaje">Mensaje:</label>
+        <textarea class="form-textarea" id="modal-responder-mensaje" rows="5"></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="button" onclick="enviarCorreoSenda()" class="btn btn-primary">
+          Enviar correo
+        </button>
+      </div>
+      <input type="hidden" id="modal-responder-email">
+      <input type="hidden" id="modal-responder-id">
+    </form>
+  </div>
 </div>
-
 <!-- ========== MODAL: DETALLES DEL PACIENTE ========== -->
 <div class="modal-overlay" id="modal-detalle" style="display:none;">
     <div class="modal-content">
