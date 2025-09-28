@@ -354,32 +354,7 @@ window.autocompletarNombreProfesionalAgendarCita = autocompletarNombreProfesiona
 // ======================= CONTROL DE PASOS SOLICITUD DE AYUDA (MULTIPASO) =======================
 
 document.addEventListener("DOMContentLoaded", function() {
-  // ----------- BURBUJA DINÁMICA PARA SLIDER DE MOTIVACIÓN -----------
-  const range = document.getElementById('motivacion-range');
-  const bubble = document.getElementById('motivacion-bubble');
-  if (range && bubble) {
-    function setBubble() {
-      const min = parseInt(range.min) || 0;
-      const max = parseInt(range.max) || 10;
-      const val = parseInt(range.value);
-
-      // Calcula el porcentaje (0 a 1)
-      const percent = (val - min) / (max - min);
-
-      // Ancho usable del slider
-      const sliderWidth = range.offsetWidth;
-      // Ajusta para que la burbuja quede centrada sobre el pulgar
-      const bubbleLeft = percent * sliderWidth;
-
-      bubble.style.left = `${bubbleLeft}px`;
-      bubble.textContent = val;
-    }
-
-    setBubble(); // Inicializa al cargar
-    range.addEventListener('input', setBubble);
-    window.addEventListener('resize', setBubble);
-  }
-
+  // Mostrar/ocultar según selección de tipoSolicitud
   function updateTipoSolicitudUI() {
     const tipo = document.querySelector('input[name="tipoSolicitud"]:checked');
     if (!tipo) return;
@@ -395,11 +370,12 @@ document.addEventListener("DOMContentLoaded", function() {
       document.getElementById('next-step-1').style.display = '';
     }
   }
+
   document.querySelectorAll('input[name="tipoSolicitud"]').forEach(function(radio) {
     radio.addEventListener('change', updateTipoSolicitudUI);
   });
+  // Ejecutar al cargar
   updateTipoSolicitudUI();
-
 
   // --------- SLIDER DE MOTIVACION DINAMICO -----------
 const motivacionRange = document.getElementById('motivacion-range');
@@ -549,16 +525,19 @@ const motivacionRange = document.getElementById('motivacion-range');
         estado: 'pendiente',
         origen: 'ingreso'
       };
-    if (window.SISTEMA_ID_UNIFICADO) {
+     if (window.SISTEMA_ID_UNIFICADO) {
   window.SISTEMA_ID_UNIFICADO.crearSolicitudIngreso(datos)
   .then(() => {
     window.showNotification && window.showNotification("Solicitud enviada correctamente", "success");
     closeModal('patient-modal');
-    setTimeout(() => window.location.reload(), 800);
   }).catch((error) => {
     window.showNotification && window.showNotification("Error al guardar solicitud: " + error.message, "error");
   });
-}
+      } else {
+        window.showNotification && window.showNotification("Sistema no inicializado", "error");
+      }
+    };
+  }
   document.addEventListener("DOMContentLoaded", function() {
   const range = document.getElementById('motivacion-range');
   const bubble = document.getElementById('motivacion-bubble');
