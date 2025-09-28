@@ -25,10 +25,15 @@ document.addEventListener("DOMContentLoaded", function() {
             }
             var cita = doc.data();
 
+            // Obtener el idPaciente desde la cita o generarlo desde el RUT
+            const rutPaciente = cita.pacienteRut || cita.rut || "";
+            const idPaciente = cita.idPaciente || window.generarIdPaciente(rutPaciente);
+
             var datosAtencion = {
-                pacienteId: cita.idPaciente || pacienteId,
+                idPaciente: idPaciente,
+                pacienteId: pacienteId,
                 pacienteNombre: cita.pacienteNombre || cita.nombre || "",
-                pacienteRut: cita.pacienteRut || cita.rut || "",
+                pacienteRut: rutPaciente.replace(/[.\-]/g, '').toUpperCase(),
                 cesfam: cita.cesfam || "",
                 fecha: cita.fecha || "",
                 hora: cita.hora || "",
@@ -36,22 +41,32 @@ document.addEventListener("DOMContentLoaded", function() {
                 tipoAtencion: tipoAtencion,
                 profesional: cita.profesionalNombre || (user ? user.email : ""),
                 profesionalId: cita.profesionalId || (user ? user.uid : ""),
-                fechaRegistro: new Date().toISOString(),
+                fechaRegistro: new Date(),
+                fechaCreacion: new Date().toISOString(),
                 citaId: citaId
             };
 
             if (!window.crearAtencionConId) {
-                window.showNotification("Sistema de ID no disponible", "error");
+                // Fallback al método anterior si no está disponible
+                db.collection("atenciones").add(datosAtencion)
+                .then(function(docRef) {
+                    console.log(`✅ Atención creada (método fallback): ${docRef.id}`);
+                    window.showNotification("Atención registrada correctamente", "success");
+                    closeModal("modal-registrar-atencion");
+                    if (window.mostrarPacienteActualHoy) window.mostrarPacienteActualHoy();
+                    if (window.mostrarCitasRestantesHoy) window.mostrarCitasRestantesHoy();
+                });
                 return;
             }
 
-            window.crearAtencionConId(datosAtencion, function(atencionId, idPaciente, error) {
+            // Usar el sistema unificado
+            window.crearAtencionConId(datosAtencion, function(atencionId, pacienteIdResult, error) {
                 if (error) {
                     window.showNotification("Error guardando atención: " + error.message, "error");
                     return;
                 }
-
-                console.log(`✅ Atención creada: ${atencionId}, Paciente: ${idPaciente}`);
+                
+                console.log(`✅ Atención creada: ${atencionId}, Paciente: ${pacienteIdResult}`);
                 window.showNotification("Atención registrada correctamente", "success");
                 closeModal("modal-registrar-atencion");
                 if (window.mostrarPacienteActualHoy) window.mostrarPacienteActualHoy();
@@ -62,20 +77,40 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 window.registrarAtencion = function(datosAtencion, callback) {
+    // Generar idPaciente si no existe
+    const rutPaciente = datosAtencion.pacienteRut || datosAtencion.rut || "";
+    const idPaciente = datosAtencion.idPaciente || window.generarIdPaciente(rutPaciente);
+    
+    var datos = Object.assign({}, datosAtencion, {
+        idPaciente: idPaciente,
+        fechaRegistro: new Date(),
+        fechaCreacion: new Date().toISOString()
+    });
+
     if (!window.crearAtencionConId) {
-        window.showNotification("Sistema de ID no disponible", "error");
-        if (typeof callback === "function") callback(false, null);
+        // Fallback al método anterior
+        var db = window.getFirestore();
+        db.collection("atenciones").add(datos)
+            .then(function(docRef) {
+                window.showNotification("Atención registrada correctamente", "success");
+                if (typeof callback === "function") callback(true, docRef.id);
+            })
+            .catch(function(error) {
+                window.showNotification("Error al registrar atención: " + error.message, "error");
+                if (typeof callback === "function") callback(false, null);
+            });
         return;
     }
 
-    window.crearAtencionConId(datosAtencion, function(atencionId, idPaciente, error) {
+    // Usar sistema unificado
+    window.crearAtencionConId(datos, function(atencionId, pacienteId, error) {
         if (error) {
             window.showNotification("Error al registrar atención: " + error.message, "error");
             if (typeof callback === "function") callback(false, null);
             return;
         }
-
-        console.log(`✅ Atención registrada: ${atencionId}, Paciente: ${idPaciente}`);
+        
+        console.log(`✅ Atención registrada: ${atencionId}, Paciente: ${pacienteId}`);
         window.showNotification("Atención registrada correctamente", "success");
         if (typeof callback === "function") callback(true, atencionId);
     });
