@@ -346,14 +346,16 @@ function applyCurrentFilters() {
                     break;
             }
         }
-        if (currentFilters.busqueda) {
-            const rut = (solicitud.rut || '').replace(/\./g, '').toLowerCase();
-            const nombre = (solicitud.nombre || '').toLowerCase();
-            const apellidos = (solicitud.apellidos || '').toLowerCase();
-            const email = (solicitud.email || '').toLowerCase();
-            const q = currentFilters.busqueda.replace(/\./g, '').toLowerCase();
-            if (!rut.includes(q) && !nombre.includes(q) && !apellidos.includes(q) && !email.includes(q)) return false;
-        }
+       if (currentFilters.busqueda) {
+   
+        const rut = (solicitud.rut || '').replace(/[.\-]/g, '').toLowerCase();
+        const nombre = (solicitud.nombre || '').toLowerCase();
+        const apellidos = (solicitud.apellidos || '').toLowerCase();
+        const email = (solicitud.email || '').toLowerCase();
+        const q = currentFilters.busqueda.replace(/[.\-]/g, '').toLowerCase();
+
+        if (!rut.includes(q) && !nombre.includes(q) && !apellidos.includes(q) && !email.includes(q)) return false;
+            }
         return true;
     });
     
