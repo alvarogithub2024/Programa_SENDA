@@ -350,3 +350,144 @@ window.cargarProfesionalesAgendarCita = cargarProfesionalesAgendarCita;
 window.llenarSelectProfesionesAgendarCita = llenarSelectProfesionesAgendarCita;
 window.llenarSelectProfesionalesAgendarCita = llenarSelectProfesionalesAgendarCita;
 window.autocompletarNombreProfesionalAgendarCita = autocompletarNombreProfesionalAgendarCita;
+
+// ======================= CONTROL DE PASOS SOLICITUD DE AYUDA (MULTIPASO) =======================
+
+document.addEventListener("DOMContentLoaded", function() {
+  // Mostrar/ocultar según selección de tipoSolicitud
+  function updateTipoSolicitudUI() {
+    const tipo = document.querySelector('input[name="tipoSolicitud"]:checked');
+    if (!tipo) return;
+    if (tipo.value === 'informacion') {
+      document.getElementById('info-email-container').style.display = '';
+      document.getElementById('basic-info-container').style.display = 'none';
+      document.getElementById('submit-step-1').style.display = 'none';
+      document.getElementById('next-step-1').style.display = 'none';
+    } else {
+      document.getElementById('info-email-container').style.display = 'none';
+      document.getElementById('basic-info-container').style.display = '';
+      document.getElementById('submit-step-1').style.display = 'none';
+      document.getElementById('next-step-1').style.display = '';
+    }
+  }
+
+  document.querySelectorAll('input[name="tipoSolicitud"]').forEach(function(radio) {
+    radio.addEventListener('change', updateTipoSolicitudUI);
+  });
+  // Ejecutar al cargar
+  updateTipoSolicitudUI();
+
+  // Paso 1: Botón siguiente
+  const next1 = document.getElementById('next-step-1');
+  if (next1) {
+    next1.onclick = function() {
+      // Validaciones del paso 1 (edad, cesfam, paraMi)
+      const edad = document.getElementById('patient-age').value;
+      const cesfam = document.getElementById('patient-cesfam').value;
+      const paraMi = document.querySelector('input[name="paraMi"]:checked');
+      if (!edad || !cesfam || !paraMi) {
+        window.showNotification && window.showNotification("Completa todos los campos obligatorios del Paso 1", "warning");
+        return;
+      }
+      // Avanza al paso 2
+      document.querySelector('.form-step[data-step="1"]').classList.remove('active');
+      document.querySelector('.form-step[data-step="2"]').classList.add('active');
+      document.getElementById('form-progress').style.width = "25%";
+      document.getElementById('progress-text').innerText = "Paso 2 de 4";
+    };
+  }
+
+  // Paso 2: Botón anterior
+  const prev2 = document.getElementById('prev-step-2');
+  if (prev2) {
+    prev2.onclick = function() {
+      document.querySelector('.form-step[data-step="2"]').classList.remove('active');
+      document.querySelector('.form-step[data-step="1"]').classList.add('active');
+      document.getElementById('form-progress').style.width = "0%";
+      document.getElementById('progress-text').innerText = "Paso 1 de 4";
+    };
+  }
+
+  // Paso 2: Botón siguiente
+  const next2 = document.getElementById('next-step-2');
+  if (next2) {
+    next2.onclick = function() {
+      const nombre = document.getElementById('patient-name').value;
+      const apellidos = document.getElementById('patient-lastname').value;
+      const rut = document.getElementById('patient-rut').value;
+      const telefono = document.getElementById('patient-phone').value;
+      if (!nombre || !apellidos || !rut || !telefono) {
+        window.showNotification && window.showNotification("Completa todos los campos obligatorios del Paso 2", "warning");
+        return;
+      }
+      document.querySelector('.form-step[data-step="2"]').classList.remove('active');
+      document.querySelector('.form-step[data-step="3"]').classList.add('active');
+      document.getElementById('form-progress').style.width = "50%";
+      document.getElementById('progress-text').innerText = "Paso 3 de 4";
+    };
+  }
+
+  // Paso 3: Botón anterior
+  const prev3 = document.getElementById('prev-step-3');
+  if (prev3) {
+    prev3.onclick = function() {
+      document.querySelector('.form-step[data-step="3"]').classList.remove('active');
+      document.querySelector('.form-step[data-step="2"]').classList.add('active');
+      document.getElementById('form-progress').style.width = "25%";
+      document.getElementById('progress-text').innerText = "Paso 2 de 4";
+    };
+  }
+
+  // Paso 3: Botón siguiente
+  const next3 = document.getElementById('next-step-3');
+  if (next3) {
+    next3.onclick = function() {
+      const sustancias = document.querySelectorAll('input[name="sustancias"]:checked');
+      const urgencia = document.querySelector('input[name="urgencia"]:checked');
+      const tratamientoPrevio = document.querySelector('input[name="tratamientoPrevio"]:checked');
+      if (sustancias.length === 0 || !urgencia || !tratamientoPrevio) {
+        window.showNotification && window.showNotification("Completa todos los campos obligatorios del Paso 3", "warning");
+        return;
+      }
+      document.querySelector('.form-step[data-step="3"]').classList.remove('active');
+      document.querySelector('.form-step[data-step="4"]').classList.add('active');
+      document.getElementById('form-progress').style.width = "75%";
+      document.getElementById('progress-text').innerText = "Paso 4 de 4";
+    };
+  }
+
+  // Paso 4: Botón anterior
+  const prev4 = document.getElementById('prev-step-4');
+  if (prev4) {
+    prev4.onclick = function() {
+      document.querySelector('.form-step[data-step="4"]').classList.remove('active');
+      document.querySelector('.form-step[data-step="3"]').classList.add('active');
+      document.getElementById('form-progress').style.width = "50%";
+      document.getElementById('progress-text').innerText = "Paso 3 de 4";
+    };
+  }
+
+  // Botón "Enviar solo información"
+  const btnInfo = document.getElementById('enviar-solo-info');
+  if (btnInfo) {
+    btnInfo.onclick = function() {
+      const email = document.getElementById('info-email').value.trim();
+      if (!email) {
+        window.showNotification && window.showNotification("Completa el email para recibir información", "warning");
+        return;
+      }
+      // Aquí puedes agregar tu código para enviar la solicitud de solo información
+      window.showNotification && window.showNotification("Solicitud enviada. Revisa tu correo.", "success");
+      closeModal('patient-modal');
+    };
+  }
+
+  // (Opcional) Si quieres mostrar el botón "Enviar solicitud" solo en el último paso:
+  const submitForm = document.getElementById('submit-form');
+  if (submitForm) {
+    submitForm.onclick = function() {
+      // Aquí puedes validar los campos del último paso y enviar el formulario completo
+      // Si quieres, puedes dejar la validación y el envío como ya lo tenías
+    };
+  }
+});
