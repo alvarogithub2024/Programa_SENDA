@@ -1,5 +1,3 @@
-// ========== seguimiento/citas-proximas.js - SOLO EL PROFESIONAL DE LA CITA PUEDE REGISTRAR ATENCIÓN ==========
-
 function getHoraActualChile() {
     let now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" }));
     let h = now.getHours();
@@ -9,28 +7,39 @@ function getHoraActualChile() {
 
 function getFechaActualChile() {
     let now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" }));
-    return now.toISOString().slice(0, 10);
+    return now.toISOString().slice(0, 10); 
 }
 
 function mostrarPacienteActualHoy() {
+    console.log('🔍 Buscando pacientes para hoy...');
+    
     var db = window.getFirestore();
     if (!db) {
         console.error('❌ No se pudo acceder a Firestore');
         return;
     }
+
     var hoy = getFechaActualChile();
     var horaActual = getHoraActualChile();
+    const user = firebase.auth().currentUser;
+    if (!user) return;
 
     db.collection("citas")
         .where("fecha", "==", hoy)
         .get()
         .then(function(snapshot) {
+            console.log(`📋 Total de citas encontradas para hoy: ${snapshot.size}`);
+            
             let citaActual = null;
             let nowMinutes = parseInt(horaActual.slice(0,2),10)*60 + parseInt(horaActual.slice(3,5),10);
-
+            
             snapshot.forEach(function(doc) {
                 let cita = doc.data();
                 cita.id = doc.id;
+                
+                // FILTRA SOLO LAS CITAS DEL PROFESIONAL LOGUEADO
+                if (cita.profesionalId !== user.uid) return;
+
                 if (cita.hora) {
                     let citaMin = parseInt(cita.hora.slice(0,2),10)*60 + parseInt(cita.hora.slice(3,5),10);
                     if (nowMinutes >= citaMin && nowMinutes <= citaMin + 15) {
@@ -40,9 +49,13 @@ function mostrarPacienteActualHoy() {
             });
 
             let cont = document.getElementById("patients-timeline");
-            if (!cont) return;
+            if (!cont) {
+                console.error('❌ No se encontró el elemento patients-timeline');
+                return;
+            }
+            
             cont.innerHTML = "";
-
+            
             if (!citaActual) {
                 cont.innerHTML = `
                     <div class="no-results">
@@ -52,20 +65,6 @@ function mostrarPacienteActualHoy() {
                     </div>
                 `;
                 return;
-            }
-
-            // SOLO EL PROFESIONAL DE LA CITA PUEDE REGISTRAR ATENCIÓN
-            const user = firebase.auth().currentUser;
-            let registrarBtn = '';
-            if (user && citaActual.profesionalId && citaActual.profesionalId === user.uid) {
-                registrarBtn = `<button class="btn btn-primary btn-sm" onclick="abrirModalRegistrarAtencion('${citaActual.id}')">
-                        <i class="fas fa-notes-medical"></i> Registrar atención
-                    </button>`;
-            } else {
-                registrarBtn = `<button class="btn btn-primary btn-sm" disabled
-                        title="Solo el profesional asignado puede registrar esta atención">
-                        <i class="fas fa-notes-medical"></i> Registrar atención
-                    </button>`;
             }
 
             let div = document.createElement("div");
@@ -81,12 +80,15 @@ function mostrarPacienteActualHoy() {
                     ${citaActual.rut ? `<br><span>RUT: ${citaActual.rut}</span>` : ''}
                 </div>
                 <div class="cita-actions">
-                    ${registrarBtn}
+                    <button class="btn btn-primary btn-sm" onclick="abrirModalRegistrarAtencion('${citaActual.id}')">
+                        <i class="fas fa-notes-medical"></i> Registrar atención
+                    </button>
                 </div>
             `;
             cont.appendChild(div);
         })
         .catch(function(error) {
+            console.error('❌ Error cargando paciente de hoy:', error);
             let cont = document.getElementById("patients-timeline");
             if (cont) {
                 cont.innerHTML = `
@@ -100,22 +102,32 @@ function mostrarPacienteActualHoy() {
 }
 
 function mostrarCitasRestantesHoy() {
+    console.log('🔍 Buscando próximas citas del día...');
+    
     var db = window.getFirestore();
     if (!db) {
         console.error('❌ No se pudo acceder a Firestore');
         return;
     }
+
     var hoy = getFechaActualChile();
     var horaActual = getHoraActualChile();
+    const user = firebase.auth().currentUser;
+    if (!user) return;
 
     db.collection("citas")
         .where("fecha", "==", hoy)
         .get()
         .then(function(snapshot) {
+            console.log(`📋 Total de citas encontradas para hoy: ${snapshot.size}`);
+            
             let citas = [];
             snapshot.forEach(function(doc) {
                 let cita = doc.data();
                 cita.id = doc.id;
+                // FILTRA SOLO LAS CITAS DEL PROFESIONAL LOGUEADO
+                if (cita.profesionalId !== user.uid) return;
+
                 if (cita.hora && cita.hora > horaActual) {
                     citas.push(cita);
                 }
@@ -124,9 +136,13 @@ function mostrarCitasRestantesHoy() {
             citas.sort((a, b) => a.hora.localeCompare(b.hora));
 
             let cont = document.getElementById("upcoming-appointments-grid");
-            if (!cont) return;
+            if (!cont) {
+                console.error('❌ No se encontró el elemento upcoming-appointments-grid');
+                return;
+            }
+            
             cont.innerHTML = "";
-
+            
             if (!citas.length) {
                 cont.innerHTML = `
                     <div class="no-results">
@@ -136,22 +152,8 @@ function mostrarCitasRestantesHoy() {
                 `;
                 return;
             }
-
-            const user = firebase.auth().currentUser;
-
+            
             citas.forEach(function(cita) {
-                let registrarBtn = '';
-                if (user && cita.profesionalId && cita.profesionalId === user.uid) {
-                    registrarBtn = `<button class="btn btn-primary btn-sm" onclick="abrirModalRegistrarAtencion('${cita.id}')">
-                        <i class="fas fa-notes-medical"></i> Registrar atención
-                    </button>`;
-                } else {
-                    registrarBtn = `<button class="btn btn-primary btn-sm" disabled
-                        title="Solo el profesional asignado puede registrar esta atención">
-                        <i class="fas fa-notes-medical"></i> Registrar atención
-                    </button>`;
-                }
-
                 let div = document.createElement("div");
                 div.className = "appointment-item";
                 div.innerHTML = `
@@ -165,13 +167,16 @@ function mostrarCitasRestantesHoy() {
                         ${cita.rut ? `<br><span>RUT: ${cita.rut}</span>` : ''}
                     </div>
                     <div class="cita-actions">
-                        ${registrarBtn}
+                        <button class="btn btn-primary btn-sm" onclick="abrirModalRegistrarAtencion('${cita.id}')">
+                            <i class="fas fa-notes-medical"></i> Registrar atención
+                        </button>
                     </div>
                 `;
                 cont.appendChild(div);
             });
         })
         .catch(function(error) {
+            console.error('❌ Error cargando próximas citas:', error);
             let cont = document.getElementById("upcoming-appointments-grid");
             if (cont) {
                 cont.innerHTML = `
@@ -215,19 +220,27 @@ window.abrirModalRegistrarAtencion = function(citaId) {
         showModal("modal-registrar-atencion");
     })
     .catch(function(error) {
+        console.error('❌ Error obteniendo cita:', error);
         window.showNotification && window.showNotification("Error al cargar datos de la cita", "error");
     });
 };
 
 function initUpcomingAppointments() {
+    console.log('🚀 Inicializando seguimiento de citas...');
     mostrarPacienteActualHoy();
     mostrarCitasRestantesHoy();
+
     const intervalo = setInterval(function() {
+        console.log('🔄 Actualizando citas automáticamente...');
         mostrarPacienteActualHoy();
         mostrarCitasRestantesHoy();
     }, 60 * 1000);
+
+    console.log('✅ Seguimiento de citas inicializado. Actualizando cada minuto.');
+
     return function cleanup() {
         clearInterval(intervalo);
+        console.log('🧹 Cleanup del seguimiento de citas completado');
     };
 }
 
