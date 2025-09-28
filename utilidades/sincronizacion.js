@@ -35,3 +35,4 @@ function sincronizarPaciente(datosPaciente) {
 }
 
 window.sincronizarPaciente = sincronizarPaciente;
+window.formatRUT ? window.formatRUT(rut) : rut
