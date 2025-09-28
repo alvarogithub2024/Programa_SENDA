@@ -721,11 +721,18 @@
                               placeholder="Describe brevemente tu situación o cualquier información adicional que consideres importante..."></textarea>
                 </div>
                 
-    <div class="motivacion-labels-row">
-  <span class="motivacion-label-corner">Muy baja</span>
-  <span id="motivacion-value" class="motivacion-bubble">5</span>
-  <span class="motivacion-label-corner">Muy alta</span>
+          <div class="form-group">
+  <label class="form-label">Nivel de motivación para el cambio</label>
+  <input type="range" class="form-range" id="motivacion-range" min="1" max="10" value="5">
+  <div class="motivacion-slider-labels">
+    <span id="motivacion-value" class="motivacion-bubble">5</span>
+  </div>
+  <div class="motivacion-minmax-labels">
+    <span>Muy baja</span>
+    <span>Muy alta</span>
+  </div>
 </div>
+                
                 <div class="form-navigation">
                     <button type="button" class="btn btn-outline" id="prev-step-4">
                         <i class="fas fa-arrow-left"></i>Anterior
