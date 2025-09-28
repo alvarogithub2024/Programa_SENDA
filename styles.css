@@ -3035,4 +3035,25 @@ document.addEventListener('DOMContentLoaded', setupModalTabs);
 .solicitudes-table td {
   padding: 1.1rem 1rem;     /* Más espacio en celdas */
   vertical-align: top;
+}.slider-mot-container {
+    position: relative;
+    width: 100%;
+    margin-bottom: 18px;
+}
+.bubble-mot {
+    position: absolute;
+    top: 25px; /* ajusta según tu diseño */
+    left: 0;
+    transform: translateX(-50%);
+    background: #2563eb;
+    color: #fff;
+    border-radius: 16px;
+    padding: 4px 14px;
+    font-weight: 700;
+    font-size: 16px;
+    min-width: 32px;
+    text-align: center;
+    pointer-events: none;
+    transition: left 0.08s linear;
+    z-index: 2;
 }
