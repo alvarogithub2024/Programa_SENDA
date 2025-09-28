@@ -429,7 +429,6 @@ function verDetalleSolicitud(solicitudId) {
     document.getElementById('modal-detalle-motivo').textContent = solicitud.descripcion || '';
     document.getElementById('modal-detalle-cesfam').textContent = solicitud.cesfam || '';
     document.getElementById('modal-detalle-estado').textContent = solicitud.estado || '';
-    document.getElementById('modal-detalle-fecha').textContent = solicitud.fechaMostrar ? new Date(solicitud.fechaMostrar).toLocaleDateString('es-CL') : '';
     document.getElementById('modal-detalle-sustancias').textContent = Array.isArray(solicitud.sustancias) ? solicitud.sustancias.join(', ') : '';
     
     document.getElementById('modal-detalle').style.display = 'flex';
