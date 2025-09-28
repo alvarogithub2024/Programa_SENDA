@@ -174,12 +174,15 @@ function abrirModalCitaPaciente() {
             observaciones: document.getElementById('pac-cita-observaciones')?.value || "",
             origenSolicitud: "web",
             pacienteNombre: document.getElementById('pac-cita-paciente-nombre').value.trim(),
+            nombre: document.getElementById('pac-cita-paciente-nombre').value.trim(),
             pacienteRut: document.getElementById('pac-cita-paciente-rut').value.trim(),
+            rut: document.getElementById('pac-cita-paciente-rut').value.trim(),
             profesionalId: document.getElementById('pac-cita-profesional').value,
             profesionalNombre: document.getElementById('pac-cita-profesional-nombre').value,
             solicitudId: null,
             tipo: "paciente",
             tipoProfesional: document.getElementById('pac-cita-profession').value,
+            profesion: document.getElementById('pac-cita-profession').value,
             fecha: document.getElementById('pac-cita-fecha').value,
             hora: document.getElementById('pac-cita-hora').value,
             telefono: document.getElementById('pac-cita-paciente-telefono')?.value || "",
@@ -284,16 +287,22 @@ function autocompletarNombreProfesionalAgendarCita() {
 function obtenerDatosSolicitud(solicitudId, callback) {
   const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
   
+  console.log(`🔍 Buscando solicitud: ${solicitudId}`);
+  
   db.collection("solicitudes_ingreso").doc(solicitudId).get()
     .then(function(doc) {
       if (doc.exists) {
+        console.log(`✅ Solicitud encontrada en solicitudes_ingreso:`, doc.data());
         callback(doc.data());
       } else {
+        console.log(`❌ No encontrada en solicitudes_ingreso, buscando en reingresos...`);
         db.collection("reingresos").doc(solicitudId).get()
           .then(function(reingresoDoc) {
             if (reingresoDoc.exists) {
+              console.log(`✅ Solicitud encontrada en reingresos:`, reingresoDoc.data());
               callback(reingresoDoc.data());
             } else {
+              console.log(`❌ Solicitud no encontrada en ninguna colección`);
               callback(null);
             }
           });
@@ -306,7 +315,11 @@ function obtenerDatosSolicitud(solicitudId, callback) {
 }
 
 function abrirModalAgendarCita(solicitudId, nombre, rut) {
+  console.log(`🎯 Abriendo modal para agendar cita - Solicitud: ${solicitudId}, Paciente: ${nombre}`);
+  
   obtenerDatosSolicitud(solicitudId, function(solicitudData) {
+    console.log(`📋 Datos de solicitud obtenidos:`, solicitudData);
+    
     cargarProfesionalesAgendarCita(function() {
       llenarSelectProfesionesAgendarCita();
       llenarSelectProfesionalesAgendarCita();
@@ -329,6 +342,8 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
         if (telefonoInput) telefonoInput.value = solicitudData.telefono || "";
         if (emailInput) emailInput.value = solicitudData.email || "";
         if (direccionInput) direccionInput.value = solicitudData.direccion || "";
+        
+        console.log(`📝 Campos prellenados: tel=${solicitudData.telefono}, email=${solicitudData.email}, dir=${solicitudData.direccion}`);
       }
 
       const selProf = document.getElementById('modal-cita-profession');
@@ -350,6 +365,7 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
         if (form && !form._onsubmitSet) {
           form.addEventListener('submit', function(e){
             e.preventDefault();
+            
             const citaId = document.getElementById('modal-cita-id').value;
             const nombre = document.getElementById('modal-cita-nombre').textContent;
             const rut = document.getElementById('modal-cita-rut').textContent;
@@ -370,11 +386,20 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
 
             const citaConDatosSolicitud = {
               solicitudId: citaId,
+              
+              // Datos básicos del paciente
               nombre: nombre,
               pacienteNombre: nombre,
               apellidos: solicitudData?.apellidos || "",
-              rut: rut,
-              pacienteRut: rut,
+              rut: rut.replace(/[.\-]/g, '').toUpperCase(),
+              pacienteRut: rut.replace(/[.\-]/g, '').toUpperCase(),
+              
+              // Datos de contacto
+              telefono: telefono || solicitudData?.telefono || "",
+              email: email || solicitudData?.email || "",
+              direccion: direccion || solicitudData?.direccion || "",
+              
+              // Datos de la cita
               profesion: profesion,
               tipoProfesional: profesion,
               profesional: profesional,
@@ -382,11 +407,12 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
               profesionalNombre: profesionalNombre,
               fecha: fecha,
               hora: hora,
-              email: email,
-              telefono: telefono,
-              direccion: direccion,
               observaciones: observaciones,
+              
+              // Datos del CESFAM y ubicación
               cesfam: solicitudData?.cesfam || miCesfamAgendar,
+              
+              // Datos específicos de la solicitud (SI EXISTEN)
               edad: solicitudData?.edad || "",
               sustancias: solicitudData?.sustancias || [],
               tiempoConsumo: solicitudData?.tiempoConsumo || "",
@@ -395,6 +421,8 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
               descripcion: solicitudData?.descripcion || "",
               motivacion: solicitudData?.motivacion || "",
               paraMi: solicitudData?.paraMi || "",
+              
+              // Datos técnicos
               tipo: "paciente",
               estado: "agendada",
               origenSolicitud: "solicitud_ingreso",
@@ -402,25 +430,30 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
               fechaCreacion: new Date().toISOString()
             };
 
+            console.log(`💾 Datos completos para la cita:`, citaConDatosSolicitud);
+
             if (!window.crearCitaConId) {
               window.showNotification && window.showNotification("Sistema de ID no disponible", "error");
               return;
             }
 
-            window.crearCitaConId(citaConDatosSolicitud, function(citaId, idPaciente, error) {
+            window.crearCitaConId(citaConDatosSolicitud, function(docRefId, idPaciente, error) {
               if (error) {
-                window.showNotification && window.showNotification("Error al guardar la cita: " + error, "error");
+                window.showNotification && window.showNotification("Error al guardar la cita: " + error.message, "error");
                 return;
               }
-
-              const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
+              
+              console.log(`✅ Cita creada exitosamente: ${docRefId}, Paciente: ${idPaciente}`);
+              
+              // Actualizar estado de solicitudes
+              const db = window.getFirestore();
+              
               db.collection("solicitudes_ingreso").doc(citaId).update({ estado: "agendada" })
-                .catch(() => {})
+                .catch(() => console.log("No se encontró en solicitudes_ingreso"))
                 .finally(() => {
                   db.collection("reingresos").doc(citaId).update({ estado: "agendada" })
-                    .catch(() => {})
+                    .catch(() => console.log("No se encontró en reingresos"))
                     .finally(() => {
-                      console.log(`✅ Cita agendada: ${citaId}, Paciente: ${idPaciente}`);
                       window.showNotification && window.showNotification("Cita agendada correctamente", "success");
                       closeModal('modal-cita');
                       if (window.reloadSolicitudesFromFirebase) window.reloadSolicitudesFromFirebase();
