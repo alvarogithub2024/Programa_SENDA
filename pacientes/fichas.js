@@ -1,7 +1,5 @@
-
 (function() {
     let pacientesTabData = [];
-
 
     function puedeEditarHistorial() {
         return window.puedeEditarHistorial ? window.puedeEditarHistorial() : false;
@@ -33,7 +31,8 @@
         });
     }
 
-    function getGrid() {return document.getElementById('pacientesGrid');
+    // Element helpers
+    function getGrid() { return document.getElementById('pacientesGrid'); }
     function getSearchInput() { return document.getElementById('search-pacientes-rut'); }
     function getBuscarBtn() { return document.getElementById('buscar-paciente-btn'); }
     function getActualizarBtn() { return document.getElementById('actualizar-pacientes-btn'); }
@@ -96,75 +95,59 @@
         return Object.values(pacientesMap);
     }
 
- // Función para obtener el contenedor de la grilla
-function getGrid() {
-    return document.getElementById('pacientesGrid');
-}
+    // Render grid
+    function renderPacientesGrid(pacientes) {
+        const grid = getGrid();
+        if (!grid) return;
+        grid.innerHTML = '';
+        if (!pacientes.length) {
+            grid.innerHTML = "<div class='no-results'>No hay pacientes registrados aún.</div>";
+            return;
+        }
+        pacientes.forEach(p => {
+            const div = document.createElement('div');
+            div.className = 'patient-card';
+            // Teléfono y email enlazables
+            let telefonoHtml = p.telefono
+                ? `<a href="tel:${p.telefono}" style="color:inherit;text-decoration:underline;">${p.telefono}</a>`
+                : 'No disponible';
 
-// Función para renderizar la grilla de pacientes
-function renderPacientesGrid(pacientes) {
-    const grid = getGrid();
-    if (!grid) return;
-    grid.innerHTML = '';
-    if (!pacientes.length) {
-        grid.innerHTML = "<div class='no-results'>No hay pacientes registrados aún.</div>";
-        return;
+            let emailHtml = p.email
+                ? `<a href="mailto:${p.email}" style="color:inherit;text-decoration:underline;">${p.email}</a>`
+                : 'No disponible';
+
+            div.innerHTML = `
+                <div style="display:flex; gap:24px; align-items:center;">
+                    <div style="font-weight:600; min-width:170px;">${p.nombre} ${p.apellidos || ''}</div>
+                    <div>RUT: ${window.formatRUT ? window.formatRUT(p.rut) : (p.rut || '')}</div>
+                    <div>Tel: ${telefonoHtml}</div>
+                    <div>Email: ${emailHtml}</div>
+                    <button class="btn btn-outline btn-sm" style="margin-left:18px;" onclick="verFichaPacienteSenda('${p.rut}')">
+                        <i class="fas fa-file-medical"></i> Ver Ficha
+                    </button>
+                </div>
+            `;
+            grid.appendChild(div);
+        });
     }
-    pacientes.forEach(p => {
-        const div = document.createElement('div');
-        div.className = 'patient-card';
-        // Teléfono y email enlazables
-        let telefonoHtml = p.telefono
-            ? `<a href="tel:${p.telefono}" style="color:inherit;text-decoration:underline;">${p.telefono}</a>`
-            : 'No disponible';
 
-        let emailHtml = p.email
-            ? `<a href="mailto:${p.email}" style="color:inherit;text-decoration:underline;">${p.email}</a>`
-            : 'No disponible';
-
-        div.innerHTML = `
-            <div style="display:flex; gap:24px; align-items:center;">
-                <div style="font-weight:600; min-width:170px;">${p.nombre} ${p.apellidos || ''}</div>
-                <div>RUT: ${window.formatRUT ? window.formatRUT(p.rut) : (p.rut || '')}</div>
-                <div>Tel: ${telefonoHtml}</div>
-                <div>Email: ${emailHtml}</div>
-                <button class="btn btn-outline btn-sm" style="margin-left:18px;" onclick="verFichaPacienteSenda('${p.rut}')">
-                    <i class="fas fa-file-medical"></i> Ver Ficha
-                </button>
-            </div>
-        `;
-        grid.appendChild(div);
-    });
-}
-
-// Suscripción en tiempo real a la colección de pacientes de Firestore
-function escucharPacientes() {
-    firebase.firestore().collection('pacientes').onSnapshot(snapshot => {
-        const pacientes = snapshot.docs.map(doc => doc.data());
-        renderPacientesGrid(pacientes);
-    });
-}
-
-// Llama a esta función una sola vez cuando cargues la página
-escucharPacientes();
-
-   function buscarPacientesLocal(texto) {
-    texto = (texto || '').trim().toUpperCase();
-    if (!texto) {
-        renderPacientesGrid(pacientesTabData);
-        return;
+    function buscarPacientesLocal(texto) {
+        texto = (texto || '').trim().toUpperCase();
+        if (!texto) {
+            renderPacientesGrid(pacientesTabData);
+            return;
+        }
+        const textoSinPuntosGuion = texto.replace(/[.\-]/g, '');
+        const filtrados = pacientesTabData.filter(p => {
+            const rutLimpio = (p.rut || '').replace(/[.\-]/g, '').toUpperCase();
+            const nombreCompleto = (p.nombre + ' ' + (p.apellidos || '')).toUpperCase();
+            return (
+                (rutLimpio && rutLimpio.includes(textoSinPuntosGuion)) ||
+                nombreCompleto.includes(texto)
+            );
+        });
+        renderPacientesGrid(filtrados);
     }
-    const textoSinPuntosGuion = texto.replace(/[.\-]/g, '');
-    const filtrados = pacientesTabData.filter(p => {
-        const rutLimpio = (p.rut || '').replace(/[.\-]/g, '').toUpperCase();
-        const nombreCompleto = (p.nombre + ' ' + (p.apellidos || '')).toUpperCase();
-        return (
-            (rutLimpio && rutLimpio.includes(textoSinPuntosGuion)) ||
-            nombreCompleto.includes(texto)
-        );
-    });
-    renderPacientesGrid(filtrados);
-}
 
     window.verFichaPacienteSenda = async function(rut) {
         const db = window.getFirestore();
@@ -172,7 +155,7 @@ escucharPacientes();
         try {
             let pacienteData = null;
             const snapshot = await db.collection('pacientes').where('rut', '==', rutLimpio).limit(1).get();
-            
+
             if (!snapshot.empty) {
                 pacienteData = Object.assign({ id: snapshot.docs[0].id }, snapshot.docs[0].data());
             } else {
@@ -198,7 +181,6 @@ escucharPacientes();
             }
 
             const puedeEditar = puedeEditarHistorial();
-            console.log('🔍 Verificando permisos para historial - Puede editar:', puedeEditar);
 
             let modal = document.getElementById('modal-ficha-paciente');
             if (!modal) {
@@ -226,7 +208,8 @@ escucharPacientes();
             window.showNotification && window.showNotification('Error al cargar ficha del paciente', 'error');
         }
     };
-function construirHTMLFichaMejorada(paciente, puedeEditar) {
+
+    function construirHTMLFichaMejorada(paciente, puedeEditar) {
         return `
             <h3 style="color: #2563eb; margin-bottom:15px; font-size:1.4rem; font-weight:700;">
                 <i class="fas fa-user-circle"></i> ${paciente.nombre || ''} ${paciente.apellidos || ''}
@@ -261,19 +244,17 @@ function construirHTMLFichaMejorada(paciente, puedeEditar) {
             </div>
         `;
     }
- 
-
 
     async function cargarHistorialClinicoMejorado(pacienteId, puedeEditar) {
-    const cont = document.getElementById('historial-contenido');
-    if (!cont) return;
-    const db = window.getFirestore();
-    try {
-        const snapshot = await db.collection('atenciones')
-            .where('pacienteId', '==', pacienteId) 
-            .orderBy('fechaRegistro', 'desc')
-            .get();
-                
+        const cont = document.getElementById('historial-contenido');
+        if (!cont) return;
+        const db = window.getFirestore();
+        try {
+            const snapshot = await db.collection('atenciones')
+                .where('pacienteId', '==', pacienteId)
+                .orderBy('fechaRegistro', 'desc')
+                .get();
+
             if (snapshot.empty) {
                 cont.innerHTML = `
                     <div class="no-historial" style="text-align:center; padding:2rem; color:#6b7280;">
@@ -283,15 +264,14 @@ function construirHTMLFichaMejorada(paciente, puedeEditar) {
                 `;
                 return;
             }
-            
+
             cont.innerHTML = '';
-         
             snapshot.forEach(doc => {
                 const atencion = doc.data();
-                const entradaElement = crearEntradaHistorialConEventos(doc.id, atencion, puedeEditar, rutLimpio);
+                const entradaElement = crearEntradaHistorialConEventos(doc.id, atencion, puedeEditar, pacienteId);
                 cont.appendChild(entradaElement);
             });
-            
+
         } catch (error) {
             cont.innerHTML = `
                 <div style="background:#fee2e2; border-radius:8px; padding:1rem; color:#dc2626;">
@@ -305,7 +285,7 @@ function construirHTMLFichaMejorada(paciente, puedeEditar) {
     function crearEntradaHistorialConEventos(docId, atencion, puedeEditar, rutPaciente) {
         let fechaTexto = '';
         let horaTexto = '';
-        
+
         if (atencion && atencion.fechaRegistro) {
             let fechaObj;
             if (typeof atencion.fechaRegistro === 'string') {
@@ -320,23 +300,16 @@ function construirHTMLFichaMejorada(paciente, puedeEditar) {
                 horaTexto = fechaObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
             }
         }
-        
+
         const tipoFormateado = formatearTipoAtencion(atencion?.tipoAtencion || "");
         const descripcion = atencion?.descripcion || "Sin descripción";
         const profesionalNombre = atencion?.profesional || "Profesional no especificado";
         const puedeEditarRealmente = window.puedeEditarHistorial ? window.puedeEditarHistorial() : false;
-        
-        console.log('🔧 Creando entrada con eventos para:', {
-            docId,
-            puedeEditarRealmente,
-            rutPaciente
-        });
-        
 
         const entradaDiv = document.createElement('div');
         entradaDiv.className = 'historial-entry';
         entradaDiv.dataset.entryId = docId;
-    
+
         entradaDiv.style.cssText = `
             background: #f8fafc;
             border: 1px solid #e5e7eb;
@@ -346,8 +319,7 @@ function construirHTMLFichaMejorada(paciente, puedeEditar) {
             cursor: ${puedeEditarRealmente ? 'pointer' : 'default'};
             transition: all 0.2s ease;
         `;
-        
-      
+
         entradaDiv.innerHTML = `
             <div style="font-weight:600; color:#2563eb; margin-bottom:4px; font-size:1rem;">
                 ${fechaTexto} ${horaTexto} - ${tipoFormateado}
@@ -370,14 +342,11 @@ function construirHTMLFichaMejorada(paciente, puedeEditar) {
                 </div>
             `}
         `;
-        
-      
+
         if (puedeEditarRealmente) {
             entradaDiv.addEventListener('click', function() {
-                console.log('🖱️ Click detectado en entrada:', docId);
                 abrirModalEditarAtencion(docId, descripcion, atencion?.tipoAtencion || "", rutPaciente);
             });
-            
 
             entradaDiv.addEventListener('mouseenter', function() {
                 this.style.background = '#f1f5f9';
@@ -385,17 +354,17 @@ function construirHTMLFichaMejorada(paciente, puedeEditar) {
                 this.style.transform = 'translateY(-1px)';
                 this.style.boxShadow = '0 2px 8px rgba(37, 99, 235, 0.15)';
             });
-            
+
             entradaDiv.addEventListener('mouseleave', function() {
                 this.style.background = '#f8fafc';
                 this.style.borderColor = '#e5e7eb';
                 this.style.transform = 'translateY(0)';
                 this.style.boxShadow = 'none';
             });
-            
+
             entradaDiv.title = 'Haz clic para editar esta atención';
         }
-        
+
         return entradaDiv;
     }
 
@@ -410,17 +379,8 @@ function construirHTMLFichaMejorada(paciente, puedeEditar) {
         return tipos[tipo] || 'Consulta General';
     }
 
-  
     function abrirModalEditarAtencion(atencionId, descripcion, tipoAtencion, rutPaciente) {
-        console.log('🔧 Abriendo modal de edición:', {
-            atencionId,
-            tipoAtencion,
-            rutPaciente
-        });
-        
-      
         if (!window.puedeEditarHistorial || !window.puedeEditarHistorial()) {
-            console.warn('🚫 Sin permisos para editar historial');
             if (window.mostrarMensajePermisos) {
                 window.mostrarMensajePermisos('editar atenciones del historial clínico');
             } else {
@@ -428,20 +388,17 @@ function construirHTMLFichaMejorada(paciente, puedeEditar) {
             }
             return;
         }
-        
-       
+
         const fichaModal = document.getElementById('modal-ficha-paciente');
         if (fichaModal) {
             fichaModal.style.display = 'none';
         }
 
-    
         let modal = document.getElementById('modal-editar-atencion');
         if (modal) {
             modal.remove();
         }
-        
-      
+
         modal = document.createElement('div');
         modal.id = 'modal-editar-atencion';
         modal.className = 'modal-overlay';
@@ -485,20 +442,19 @@ function construirHTMLFichaMejorada(paciente, puedeEditar) {
                 </form>
             </div>
         `;
-        
+
         document.body.appendChild(modal);
-        
-      
+
         document.getElementById('editar-atencion-descripcion').value = descripcion || "";
         document.getElementById('editar-atencion-tipo').value = tipoAtencion || "";
-        
+
         const form = document.getElementById('form-editar-atencion');
         form.onsubmit = async function(e) {
             e.preventDefault();
-            
+
             const nuevaDescripcion = document.getElementById('editar-atencion-descripcion').value.trim();
             const nuevoTipo = document.getElementById('editar-atencion-tipo').value;
-            
+
             if (!nuevaDescripcion || !nuevoTipo) {
                 if (window.showNotification) {
                     window.showNotification('Completa todos los campos', 'warning');
@@ -507,29 +463,26 @@ function construirHTMLFichaMejorada(paciente, puedeEditar) {
                 }
                 return;
             }
-            
+
             try {
-                console.log('💾 Guardando cambios en atención:', atencionId);
                 const db = window.getFirestore();
                 await db.collection("atenciones").doc(atencionId).update({
                     descripcion: nuevaDescripcion,
                     tipoAtencion: nuevoTipo,
                     fechaActualizacion: new Date().toISOString()
                 });
-                
+
                 if (window.showNotification) {
                     window.showNotification("Atención editada correctamente", "success");
                 } else {
                     alert("Atención editada correctamente");
                 }
-                
+
                 cerrarModalEditarAtencion();
-                
-               
+
                 await cargarHistorialClinicoMejorado(rutPaciente, window.puedeEditarHistorial());
-                
+
             } catch (error) {
-                console.error('❌ Error al editar atención:', error);
                 if (window.showNotification) {
                     window.showNotification("Error al editar atención: " + error.message, "error");
                 } else {
@@ -537,34 +490,30 @@ function construirHTMLFichaMejorada(paciente, puedeEditar) {
                 }
             }
         };
-        
-      
+
         document.getElementById('btn-eliminar-atencion').onclick = function() {
             eliminarAtencion(atencionId, rutPaciente);
         };
-        
-        console.log('✅ Modal de edición creado y mostrado');
     }
 
     async function eliminarAtencion(atencionId, rutPaciente) {
         if (!confirm('¿Seguro que deseas eliminar esta atención? Esta acción no se puede deshacer.')) return;
-        
+
         try {
             const db = window.getFirestore();
             await db.collection('atenciones').doc(atencionId).delete();
-            
+
             if (window.showNotification) {
                 window.showNotification("Atención eliminada correctamente", "success");
             } else {
                 alert("Atención eliminada correctamente");
             }
-            
+
             cerrarModalEditarAtencion();
-            
+
             await cargarHistorialClinicoMejorado(rutPaciente, window.puedeEditarHistorial());
-            
+
         } catch (error) {
-            console.error('❌ Error al eliminar atención:', error);
             if (window.showNotification) {
                 window.showNotification("Error al eliminar atención: " + error.message, "error");
             } else {
@@ -576,8 +525,7 @@ function construirHTMLFichaMejorada(paciente, puedeEditar) {
     window.cerrarModalEditarAtencion = function() {
         const modal = document.getElementById('modal-editar-atencion');
         if (modal) modal.remove();
-        
-       
+
         const fichaModal = document.getElementById('modal-ficha-paciente');
         if (fichaModal) fichaModal.style.display = 'flex';
     };
@@ -587,7 +535,7 @@ function construirHTMLFichaMejorada(paciente, puedeEditar) {
             window.mostrarMensajePermisos && window.mostrarMensajePermisos('crear nuevas atenciones');
             return;
         }
-        
+
         const modalHTML = `
             <div class="modal-overlay" id="modal-nueva-atencion">
                 <div class="modal-content" style="max-width:500px;">
@@ -625,7 +573,7 @@ function construirHTMLFichaMejorada(paciente, puedeEditar) {
                 </div>
             </div>
         `;
-        
+
         let modalElement = document.getElementById('modal-nueva-atencion');
         if (modalElement) {
             modalElement.remove();
@@ -641,22 +589,22 @@ function construirHTMLFichaMejorada(paciente, puedeEditar) {
         const tipo = document.getElementById('nueva-atencion-tipo').value;
         const descripcion = document.getElementById('nueva-atencion-descripcion').value.trim();
         const rutPaciente = document.getElementById('nueva-atencion-rut').value;
-        
+
         if (!tipo || !descripcion) {
             window.showNotification && window.showNotification('Completa todos los campos obligatorios', 'warning');
             return;
         }
-        
+
         try {
             const profesional = await obtenerProfesionalActual();
             if (!profesional) {
                 window.showNotification && window.showNotification('Error: No se pudo obtener información del profesional', 'error');
                 return;
             }
-            
+
             const db = window.getFirestore();
             const nuevaAtencion = {
-                pacienteRut: rutPaciente,
+                pacienteId: rutPaciente,
                 profesional: `${profesional.nombre} ${profesional.apellidos}`,
                 profesionalId: profesional.id,
                 tipoAtencion: tipo,
@@ -664,14 +612,13 @@ function construirHTMLFichaMejorada(paciente, puedeEditar) {
                 fechaRegistro: new Date(),
                 fechaCreacion: new Date().toISOString()
             };
-            
+
             await db.collection('atenciones').add(nuevaAtencion);
             window.showNotification && window.showNotification('Atención registrada correctamente', 'success');
             cerrarModalNuevaAtencion();
-            
+
             await cargarHistorialClinicoMejorado(rutPaciente, puedeEditarHistorial());
         } catch (error) {
-            console.error('Error al guardar atención:', error);
             window.showNotification && window.showNotification('Error al guardar la atención: ' + error.message, 'error');
         }
     }
@@ -726,15 +673,10 @@ function construirHTMLFichaMejorada(paciente, puedeEditar) {
     };
 
     window.debugHistorialClickeable = function() {
-        console.log('🔍 DEBUG: Verificando historial clínico clickeable');
-        
         const entradas = document.querySelectorAll('.historial-entry');
-        console.log(`📝 Entradas encontradas: ${entradas.length}`);
-        
         entradas.forEach((entrada, index) => {
             const hasEventListener = entrada.onclick !== null;
             const cursor = window.getComputedStyle(entrada).cursor;
-            
             console.log(`Entrada ${index + 1}:`, {
                 hasEventListener,
                 cursor,
@@ -742,16 +684,9 @@ function construirHTMLFichaMejorada(paciente, puedeEditar) {
                 clickeable: cursor === 'pointer'
             });
         });
-        
-        console.log('🔐 Permisos actuales:');
-        console.log('- puedeEditarHistorial:', window.puedeEditarHistorial ? window.puedeEditarHistorial() : 'No disponible');
-        console.log('- Rol actual:', window.rolActual ? window.rolActual() : 'No disponible');
-        
         if (entradas.length > 0) {
-            console.log('🖱️ Simulando click en primera entrada...');
             try {
                 entradas[0].click();
-                console.log('✅ Click simulado exitoso');
             } catch (error) {
                 console.error('❌ Error en click simulado:', error);
             }
