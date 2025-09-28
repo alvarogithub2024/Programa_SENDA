@@ -409,7 +409,8 @@ function verDetalleSolicitud(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
 
-    document.getElementById('modal-detalle-nombre').textContent = solicitud.nombre || '';
+    document.getElementById('modal-detalle-nombre').textContent = 
+    (solicitud.nombre || '') + (solicitud.apellidos ? ' ' + solicitud.apellidos : '');
     document.getElementById('modal-detalle-rut').textContent = solicitud.rut || '';
     document.getElementById('modal-detalle-telefono').textContent = solicitud.telefono || '';
     document.getElementById('modal-detalle-email').textContent = solicitud.email || '';
