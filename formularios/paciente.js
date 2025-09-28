@@ -402,8 +402,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
   // --------- SLIDER DE MOTIVACION DINAMICO -----------
-document.addEventListener("DOMContentLoaded", function() {
-  const motivacionRange = document.getElementById('motivacion-range');
+const motivacionRange = document.getElementById('motivacion-range');
   const motivacionValue = document.getElementById('motivacion-value');
   if (motivacionRange && motivacionValue) {
     motivacionValue.textContent = motivacionRange.value;
@@ -411,7 +410,6 @@ document.addEventListener("DOMContentLoaded", function() {
       motivacionValue.textContent = this.value;
     });
   }
-});
   // ----------------------------------------------------
 
   // Paso 1: Botón siguiente
