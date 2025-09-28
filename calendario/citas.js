@@ -157,21 +157,25 @@ function abrirModalCitaPaciente() {
         form.onsubmit = function(e) {
           e.preventDefault();
           const datos = {
-            cesfam: miCesfam,
-            estado: "agendada",
-            fechaCreacion: new Date().toISOString(),
-            observaciones: document.getElementById('pac-cita-observaciones')?.value || "",
-            origenSolicitud: "web",
-            pacienteNombre: document.getElementById('pac-cita-paciente-nombre').value.trim(),
-            pacienteRut: document.getElementById('pac-cita-paciente-rut').value.trim(),
-            profesionalId: document.getElementById('pac-cita-profesional').value,
-            profesionalNombre: document.getElementById('pac-cita-profesional-nombre').value,
-            solicitudId: null,
-            tipo: "paciente",
-            tipoProfesional: document.getElementById('pac-cita-profession').value,
-            fecha: document.getElementById('pac-cita-fecha').value,
-            hora: document.getElementById('pac-cita-hora').value
-          };
+  cesfam: miCesfam,
+  estado: "agendada",
+  fechaCreacion: new Date().toISOString(),
+  observaciones: document.getElementById('pac-cita-observaciones')?.value || "",
+  origenSolicitud: "web",
+  pacienteNombre: document.getElementById('pac-cita-paciente-nombre').value.trim(),
+  pacienteRut: document.getElementById('pac-cita-paciente-rut').value.trim(),
+  profesionalId: document.getElementById('pac-cita-profesional').value,
+  profesionalNombre: document.getElementById('pac-cita-profesional-nombre').value,
+  solicitudId: null,
+  tipo: "paciente",
+  tipoProfesional: document.getElementById('pac-cita-profession').value,
+  fecha: document.getElementById('pac-cita-fecha').value,
+  hora: document.getElementById('pac-cita-hora').value,
+  // NUEVOS CAMPOS:
+  email: document.getElementById('pac-cita-paciente-email')?.value.trim() || "",
+  telefono: document.getElementById('pac-cita-paciente-telefono')?.value.trim() || "",
+  direccion: document.getElementById('pac-cita-paciente-direccion')?.value.trim() || "",
+};
           if (!datos.pacienteNombre || !datos.pacienteRut || !datos.profesionalId || !datos.fecha || !datos.hora) {
             window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
             return;
