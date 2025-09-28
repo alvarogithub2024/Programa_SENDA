@@ -317,8 +317,8 @@ if (rutSpanProf) rutSpanProf.textContent = rut;
           const profesionalNombre = document.getElementById('modal-cita-profesional-nombre').value;
           const fecha = document.getElementById('modal-cita-fecha').value;
           const hora = document.getElementById('modal-cita-hora').value;
-          const email: document.getElementById('pac-cita-paciente-email')?.value?.trim() || "",
-         const telefono = document.getElementById('pac-cita-paciente-telefono')?.value.trim() || "";
+          const email: document.getElementById('pac-cita-paciente-email')?.value?.trim() || "";
+           const telefono = document.getElementById('pac-cita-paciente-telefono')?.value.trim() || "";
          const direccion: document.getElementById('pac-cita-paciente-direccion')?.value?.trim() || "",
 };
           if (!nombre || !rut || !profesion || !profesional || !fecha || !hora) {
