@@ -83,9 +83,8 @@ function crearCitaConPacienteId(db, datos, callback) {
             if (typeof callback === "function") callback(null, error);
         });
 }
-
-// 3. Submit NUEVA CITA (funcionando)
 document.addEventListener("DOMContentLoaded", function() {
+    // NUEVA CITA
     var formNuevaCita = document.getElementById('form-nueva-cita-paciente');
     if (formNuevaCita) {
         formNuevaCita.onsubmit = function(e) {
@@ -125,27 +124,27 @@ document.addEventListener("DOMContentLoaded", function() {
         };
     }
 
-    // 4. Submit AGENDAR CITA (solicitudes) - ADAPTA nombres de campos según tu HTML/modal
+    // AGENDAR CITA (desde solicitud)
     var formAgendarCita = document.getElementById('form-agendar-cita');
     if (formAgendarCita) {
         formAgendarCita.onsubmit = function(e) {
             e.preventDefault();
             const datos = {
                 pacienteNombre: document.getElementById('modal-cita-nombre')?.textContent.trim(),
-                pacienteApellidos: "", // agrega aquí si tienes el campo
+                pacienteApellidos: "", // agrega si tienes el campo, si no déjalo así
                 pacienteRut: document.getElementById('modal-cita-rut')?.textContent.trim(),
-                cesfam: "", // agrega aquí si tienes el campo en el modal
-                edad: "", // agrega aquí si tienes el campo en el modal
-                telefono: "", // agrega aquí si tienes el campo en el modal
-                email: "", // agrega aquí si tienes el campo en el modal
-                direccion: "", // agrega aquí si tienes el campo en el modal
-                sustancias: [], // agrega aquí si tienes el campo en el modal
-                tiempoConsumo: "", // agrega aquí si tienes el campo en el modal
-                urgencia: "", // agrega aquí si tienes el campo en el modal
-                tratamientoPrevio: "", // agrega aquí si tienes el campo en el modal
-                descripcion: "", // agrega aquí si tienes el campo en el modal
-                motivacion: "", // agrega aquí si tienes el campo en el modal
-                paraMi: "", // agrega aquí si tienes el campo en el modal
+                cesfam: "", // si tienes el campo en el modal, ponlo aquí
+                edad: "", // si tienes el campo ponlo aquí
+                telefono: "", // si tienes el campo ponlo aquí
+                email: "", // si tienes el campo ponlo aquí
+                direccion: "", // si tienes el campo ponlo aquí
+                sustancias: [], // si tienes el campo ponlo aquí
+                tiempoConsumo: "", // si tienes el campo ponlo aquí
+                urgencia: "", // si tienes el campo ponlo aquí
+                tratamientoPrevio: "", // si tienes el campo ponlo aquí
+                descripcion: "", // si tienes el campo ponlo aquí
+                motivacion: "", // si tienes el campo ponlo aquí
+                paraMi: "", // si tienes el campo ponlo aquí
                 estado: "agendada",
                 fecha: document.getElementById('modal-cita-fecha')?.value,
                 hora: document.getElementById('modal-cita-hora')?.value,
@@ -153,10 +152,9 @@ document.addEventListener("DOMContentLoaded", function() {
                 profesionalNombre: document.getElementById('modal-cita-profesional-nombre')?.value,
                 tipo: "profesional",
                 tipoProfesional: document.getElementById('modal-cita-profession')?.value,
-                profesionalDescripcion: "", // si tienes el campo
+                profesionalDescripcion: "", // si tienes el campo ponlo aquí
                 solicitudId: document.getElementById('modal-cita-id')?.value // si agendaste desde una solicitud
             };
-
             if (!datos.pacienteNombre || !datos.pacienteRut || !datos.profesionalId || !datos.fecha || !datos.hora) {
                 window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
                 return;
@@ -166,4 +164,46 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         };
     }
+
+    // AGENDAR CITA PROFESIONAL (desde solicitud profesional, si lo tienes)
+    var formAgendarCitaProf = document.getElementById('form-agendar-cita-profesional');
+    if (formAgendarCitaProf) {
+        formAgendarCitaProf.onsubmit = function(e) {
+            e.preventDefault();
+            const datos = {
+                pacienteNombre: document.getElementById('modal-cita-nombre-prof')?.textContent.trim(),
+                pacienteApellidos: "", // si tienes el campo en tu modal agrégalo aquí
+                pacienteRut: document.getElementById('modal-cita-rut-prof')?.textContent.trim(),
+                cesfam: "", // si tienes el campo en el modal agrégalo aquí
+                edad: "", // si tienes el campo ponlo aquí
+                telefono: "", // si tienes el campo ponlo aquí
+                email: "", // si tienes el campo ponlo aquí
+                direccion: "", // si tienes el campo ponlo aquí
+                sustancias: [], // si tienes el campo ponlo aquí
+                tiempoConsumo: "", // si tienes el campo ponlo aquí
+                urgencia: "", // si tienes el campo ponlo aquí
+                tratamientoPrevio: "", // si tienes el campo ponlo aquí
+                descripcion: "", // si tienes el campo ponlo aquí
+                motivacion: "", // si tienes el campo ponlo aquí
+                paraMi: "", // si tienes el campo ponlo aquí
+                estado: "agendada",
+                fecha: document.getElementById('modal-cita-fecha-prof')?.value,
+                hora: document.getElementById('modal-cita-hora-prof')?.value,
+                profesionalId: document.getElementById('modal-cita-profesional-prof')?.value,
+                profesionalNombre: document.getElementById('modal-cita-profesional-nombre-prof')?.value,
+                tipo: "profesional",
+                tipoProfesional: document.getElementById('modal-cita-profession-prof')?.value,
+                profesionalDescripcion: "", // si tienes el campo ponlo aquí
+                solicitudId: document.getElementById('modal-cita-id-prof')?.value // si agendaste desde una solicitud profesional
+            };
+            if (!datos.pacienteNombre || !datos.pacienteRut || !datos.profesionalId || !datos.fecha || !datos.hora) {
+                window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
+                return;
+            }
+            upsertPacienteYAgendarCita(datos, function(idCita, error) {
+                if (!error) closeModal('modal-agendar-cita-profesional');
+            });
+        };
+    }
 });
+
