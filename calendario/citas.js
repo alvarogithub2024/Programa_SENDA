@@ -1,4 +1,4 @@
-// ========== calendario/citas.js - COMPLETO CON SISTEMA UNIFICADO ==========
+
 
 let profesionalesAtencion = [];
 let profesionesAtencion = [];
