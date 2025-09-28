@@ -26,21 +26,25 @@ document.addEventListener("DOMContentLoaded", function() {
             }
             var cita = doc.data();
 
-            var datosAtencion = {
-                pacienteId: pacienteId,
-                pacienteNombre: cita.pacienteNombre || cita.nombre || "",
-                pacienteRut: cita.pacienteRut || cita.rut || "",
-                cesfam: cita.cesfam || "",
-                fecha: cita.fecha || "",
-                hora: cita.hora || "",
-                descripcion: descripcion,
-                tipoAtencion: tipoAtencion,
-                profesional: cita.profesionalNombre || (user ? user.email : ""),
-                profesionalId: cita.profesionalId || (user ? user.uid : ""),
-                fechaRegistro: new Date().toISOString(),
-                citaId: citaId
-            };
-
+            // Ejemplo al registrar atención:
+var datosAtencion = {
+    pacienteId: cita.pacienteId, // Usa el id del paciente
+    pacienteNombre: cita.pacienteNombre || cita.nombre || "",
+    pacienteRut: cita.pacienteRut || cita.rut || "",
+    cesfam: cita.cesfam || "",
+    fecha: cita.fecha || "",
+    hora: cita.hora || "",
+    descripcion: descripcion,
+    tipoAtencion: tipoAtencion,
+    profesional: cita.profesionalNombre || (user ? user.email : ""),
+    profesionalId: cita.profesionalId || (user ? user.uid : ""),
+    fechaRegistro: new Date().toISOString(),
+    citaId: citaId
+};
+db.collection("atenciones").add(datosAtencion)
+  .then(function(docRef) {
+    // etc...
+  });
             db.collection("atenciones").add(datosAtencion)
             .then(function(docRef) {
     
