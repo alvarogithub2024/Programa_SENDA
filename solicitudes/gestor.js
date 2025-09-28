@@ -123,7 +123,7 @@ function renderSolicitudesTable() {
             tableBody.innerHTML = `<tr><td colspan="8" class="text-center" style="padding:48px;">No hay solicitudes</td></tr>`;
             return;
         }
-        
+
         const rows = filteredSolicitudesData.map(solicitud => {
             let estadoHtml;
             if (solicitud.origen === 'informacion') {
@@ -176,8 +176,6 @@ function renderSolicitudesTable() {
                 </div>
             `;
 
-      const rows = filteredSolicitudesData.map(solicitud => {
-            // ... (restante igual arriba)
             return `
                 <tr class="solicitud-row" data-solicitud-id="${solicitud.id}">
                     <td>
@@ -348,14 +346,16 @@ function applyCurrentFilters() {
                     break;
             }
         }
-        if (currentFilters.busqueda) {
-            const rut = (solicitud.rut || '').replace(/\./g, '').toLowerCase();
-            const nombre = (solicitud.nombre || '').toLowerCase();
-            const apellidos = (solicitud.apellidos || '').toLowerCase();
-            const email = (solicitud.email || '').toLowerCase();
-            const q = currentFilters.busqueda.replace(/\./g, '').toLowerCase();
-            if (!rut.includes(q) && !nombre.includes(q) && !apellidos.includes(q) && !email.includes(q)) return false;
-        }
+       if (currentFilters.busqueda) {
+   
+        const rut = (solicitud.rut || '').replace(/[.\-]/g, '').toLowerCase();
+        const nombre = (solicitud.nombre || '').toLowerCase();
+        const apellidos = (solicitud.apellidos || '').toLowerCase();
+        const email = (solicitud.email || '').toLowerCase();
+        const q = currentFilters.busqueda.replace(/[.\-]/g, '').toLowerCase();
+
+        if (!rut.includes(q) && !nombre.includes(q) && !apellidos.includes(q) && !email.includes(q)) return false;
+            }
         return true;
     });
     
