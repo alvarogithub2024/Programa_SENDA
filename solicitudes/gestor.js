@@ -1,4 +1,3 @@
-
 let solicitudesData = [];
 let filteredSolicitudesData = [];
 let currentFilters = {
@@ -34,7 +33,6 @@ window.initSolicitudesManager = function() {
             console.log('⏸️ Solicitudes no se inicializa - pestaña no activa');
             return;
         }
-        
         loadAllSolicitudes().then(() => {
             resetFilters();
             applyCurrentFilters();
@@ -123,6 +121,7 @@ function renderSolicitudesTable() {
             tableBody.innerHTML = `<tr><td colspan="8" class="text-center" style="padding:48px;">No hay solicitudes</td></tr>`;
             return;
         }
+        const isAsistenteSocial = window.rolActual && window.rolActual() === "asistente_social";
         
         const rows = filteredSolicitudesData.map(solicitud => {
             let estadoHtml;
@@ -143,11 +142,13 @@ function renderSolicitudesTable() {
             
             const prioridadConfig = PRIORIDADES_SOLICITUDES[solicitud.prioridad] || PRIORIDADES_SOLICITUDES['media'];
 
-            let botones = `
-                <button class="btn-accion btn-ver" onclick="verDetalleSolicitud('${solicitud.id}')" title="Ver detalles">
+            let botones = '';
+            if (isAsistenteSocial) {
+                botones = `
+                <button class="btn-accion btn-ver" onclick="verDetalleSolicitud('${solicitud.id}', '${solicitud.origen}')" title="Ver detalles">
                     <i class="fas fa-eye"></i>
                 </button>
-                <button class="btn-accion btn-editar" onclick="editarSolicitud('${solicitud.id}')" title="Editar">
+                <button class="btn-accion btn-editar" onclick="editarSolicitud('${solicitud.id}', '${solicitud.origen}')" title="Editar">
                     <i class="fas fa-edit"></i>
                 </button>
                 <button class="btn-accion btn-exportar" onclick="exportarSolicitud('${solicitud.id}')" title="Exportar">
@@ -158,23 +159,19 @@ function renderSolicitudesTable() {
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
                     <div class="dropdown-menu" id="acciones-${solicitud.id}">
-                        ${solicitud.origen !== 'informacion' ? `
-                        <button onclick="agendarCitaSolicitud('${solicitud.id}')">
-                            <i class="fas fa-calendar-plus"></i> Agendar cita
-                        </button>
-                        ` : ''}
-                        ${solicitud.origen === 'informacion' ? `
-                        <button onclick="abrirModalResponder('${solicitud.email}', '${solicitud.nombre || ''}', '${solicitud.id}')">
-                            <i class="fas fa-envelope"></i> Responder
-                        </button>
-                        ` : ''}
-                        <hr>
-                        <button onclick="eliminarSolicitud('${solicitud.id}')" class="accion-peligro">
+                        <button onclick="eliminarSolicitud('${solicitud.id}', '${solicitud.origen}')" class="accion-peligro">
                             <i class="fas fa-trash"></i> Eliminar
                         </button>
                     </div>
                 </div>
-            `;
+                `;
+            } else {
+                botones = `
+                <button class="btn-accion btn-ver" onclick="verDetalleSolicitud('${solicitud.id}', '${solicitud.origen}')" title="Ver detalles">
+                    <i class="fas fa-eye"></i>
+                </button>
+                `;
+            }
 
             return `
                 <tr class="solicitud-row" data-solicitud-id="${solicitud.id}">
@@ -422,17 +419,17 @@ function verDetalleSolicitud(solicitudId) {
     document.getElementById('modal-detalle').style.display = 'flex';
 }
 
-function editarSolicitud(solicitudId) {
+function editarSolicitud(solicitudId, origen) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
-    
     document.getElementById('modal-editar-nombre').value = solicitud.nombre || '';
     document.getElementById('modal-editar-rut').value = solicitud.rut || '';
     document.getElementById('modal-editar-telefono').value = solicitud.telefono || '';
     document.getElementById('modal-editar-id').value = solicitud.id || '';
-    
+    document.getElementById('modal-editar').dataset.origen = origen || solicitud.origen || 'ingreso';
     document.getElementById('modal-editar').style.display = 'flex';
 }
+
 
 function agendarCitaSolicitud(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
@@ -566,9 +563,14 @@ function guardarEdicionSolicitud() {
     const nombre = document.getElementById('modal-editar-nombre').value;
     const rut = document.getElementById('modal-editar-rut').value;
     const telefono = document.getElementById('modal-editar-telefono').value;
+    const origen = document.getElementById('modal-editar').dataset.origen || 'ingreso';
 
     const db = window.getFirestore();
-    db.collection('solicitudes_ingreso').doc(id).update({
+    let coleccion = 'solicitudes_ingreso';
+    if (origen === 'reingreso') coleccion = 'reingresos';
+    if (origen === 'informacion') coleccion = 'solicitudes_informacion';
+
+    db.collection(coleccion).doc(id).update({
         nombre: nombre,
         rut: rut,
         telefono: telefono
@@ -581,7 +583,6 @@ function guardarEdicionSolicitud() {
             actualizadoPor: firebase.auth().currentUser?.email || "",
             fecha: new Date().toISOString()
         });
-        
         window.showNotification && window.showNotification('Datos actualizados correctamente', 'success');
         cerrarModalEditar();
         window.reloadSolicitudesFromFirebase && window.reloadSolicitudesFromFirebase();
@@ -590,6 +591,7 @@ function guardarEdicionSolicitud() {
         console.error('Error actualizando datos:', error);
     });
 }
+
 
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.dropdown-acciones')) {
