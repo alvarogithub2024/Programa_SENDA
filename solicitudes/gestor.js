@@ -408,18 +408,20 @@ function isSameDay(date1, date2) {
 function verDetalleSolicitud(solicitudId) {
     const solicitud = solicitudesData.find(s => s.id === solicitudId);
     if (!solicitud) return;
-    
+
     document.getElementById('modal-detalle-nombre').textContent = solicitud.nombre || '';
     document.getElementById('modal-detalle-rut').textContent = solicitud.rut || '';
     document.getElementById('modal-detalle-telefono').textContent = solicitud.telefono || '';
     document.getElementById('modal-detalle-email').textContent = solicitud.email || '';
-    document.getElementById('modal-detalle-motivo').textContent = solicitud.descripcion || ''; // Motivo de atención (corregido)
+    document.getElementById('modal-detalle-motivo').textContent = solicitud.descripcion || '';
     document.getElementById('modal-detalle-cesfam').textContent = solicitud.cesfam || '';
-    document.getElementById('modal-detalle-prioridad').textContent = solicitud.prioridad || '';
+    document.getElementById('modal-detalle-prioridad').textContent = solicitud.prioridad || solicitud.urgencia || '';
     document.getElementById('modal-detalle-estado').textContent = solicitud.estado || '';
     document.getElementById('modal-detalle-fecha').textContent = solicitud.fecha ? new Date(solicitud.fecha).toLocaleDateString('es-CL') : '';
-    document.getElementById('modal-detalle-sustancias').textContent = Array.isArray(solicitud.sustancias) ? solicitud.sustancias.join(', ') : '';
-    
+    document.getElementById('modal-detalle-sustancias').textContent =
+        Array.isArray(solicitud.sustancias) ? solicitud.sustancias.join(', ')
+        : (typeof solicitud.sustancias === 'string' ? solicitud.sustancias : '');
+
     document.getElementById('modal-detalle').style.display = 'flex';
 }
 
