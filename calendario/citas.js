@@ -6,13 +6,12 @@ let profesionalesAgendar = [];
 let profesionesAgendar = [];
 let miCesfamAgendar = null;
 
-// Sanea los campos nuevos para que nunca sean undefined antes de guardar en Firestore
 function sanitizeCitaData(obj) {
   return {
     ...obj,
-    email: (obj.email !== undefined && obj.email !== null) ? obj.email : "",
-    telefono: (obj.telefono !== undefined && obj.telefono !== null) ? obj.telefono : "",
-    direccion: (obj.direccion !== undefined && obj.direccion !== null) ? obj.direccion : ""
+    telefono: typeof obj.telefono === "string" ? obj.telefono : "",
+    email: typeof obj.email === "string" ? obj.email : "",
+    direccion: typeof obj.direccion === "string" ? obj.direccion : ""
   };
 }
 
@@ -97,8 +96,7 @@ function guardarCitaPaciente(datosCita, callback) {
   const datos = Object.assign({}, datosCita);
   datos.fechaCreacion = datos.fechaCreacion || new Date().toISOString();
 
-  // Sanea los datos antes de guardar
-  const datosSanitizados = sanitizeCitaData(datos);
+   const datosSanitizados = sanitizeCitaData(datos);
 
   db.collection("citas").add(datosSanitizados)
     .then(function(docRef) {
@@ -160,7 +158,7 @@ function abrirModalCitaPaciente() {
 
     showModal('modal-nueva-cita-paciente');
 
-    setTimeout(function() {
+       setTimeout(function() {
       var form = document.getElementById('form-nueva-cita-paciente');
       if (form && !form._onsubmitSet) {
         form.onsubmit = function(e) {
@@ -197,6 +195,7 @@ function abrirModalCitaPaciente() {
     }, 100);
   });
 }
+
 
 
 function cargarProfesionalesAgendarCita(callback) {
