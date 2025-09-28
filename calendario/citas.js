@@ -84,32 +84,32 @@ function autocompletarNombreProfesionalPaciente() {
 
 // ========== FUNCIÓN ACTUALIZADA CON SISTEMA UNIFICADO ==========
 function guardarCitaPaciente(datosCita, callback) {
-    if (!window.SISTEMA_ID_UNIFICADO) {
-        window.showNotification && window.showNotification("Sistema no inicializado", "error");
-        if (typeof callback === "function") callback(null, new Error("Sistema no inicializado"));
-        return;
-    }
-    
-    window.SISTEMA_ID_UNIFICADO.crearCitaUnificada(datosCita)
-        .then(function(resultado) {
-            window.showNotification && window.showNotification("Cita agendada correctamente", "success");
-            if (typeof callback === "function") callback(resultado.citaId, resultado.pacienteId);
-        })
-        .catch(function(error) {
-            window.showNotification && window.showNotification("Error al agendar cita: " + error.message, "error");
-            if (typeof callback === "function") callback(null, null, error);
-        });
+  if (!window.SISTEMA_ID_UNIFICADO) {
+    window.showNotification && window.showNotification("Sistema no inicializado", "error");
+    if (typeof callback === "function") callback(null, new Error("Sistema no inicializado"));
+    return;
+  }
+
+  window.SISTEMA_ID_UNIFICADO.crearCitaUnificada(datosCita)
+    .then(function (resultado) {
+      window.showNotification && window.showNotification("Cita agendada correctamente", "success");
+      if (typeof callback === "function") callback(resultado.citaId, resultado.pacienteId);
+    })
+    .catch(function (error) {
+      window.showNotification && window.showNotification("Error al agendar cita: " + error.message, "error");
+      if (typeof callback === "function") callback(null, null, error);
+    });
 }
 
 function abrirModalCitaPaciente() {
-  cargarProfesionalesAtencionPorCesfam(function() {
+  cargarProfesionalesAtencionPorCesfam(function () {
     llenarSelectProfesionesPaciente();
     llenarSelectProfesionalesPaciente();
     autocompletarNombreProfesionalPaciente();
 
     const selProf = document.getElementById('pac-cita-profession');
     if (selProf) {
-      selProf.onchange = function() {
+      selProf.onchange = function () {
         llenarSelectProfesionalesPaciente();
         autocompletarNombreProfesionalPaciente();
         if (window.actualizarHorasPaciente) window.actualizarHorasPaciente();
@@ -117,7 +117,7 @@ function abrirModalCitaPaciente() {
     }
     const selPro = document.getElementById('pac-cita-profesional');
     if (selPro) {
-      selPro.onchange = function() {
+      selPro.onchange = function () {
         autocompletarNombreProfesionalPaciente();
         if (window.actualizarHorasPaciente) window.actualizarHorasPaciente();
       };
@@ -127,10 +127,10 @@ function abrirModalCitaPaciente() {
 
     showModal('modal-nueva-cita-paciente');
 
-    setTimeout(function() {
+    setTimeout(function () {
       var form = document.getElementById('form-nueva-cita-paciente');
       if (form && !form._onsubmitSet) {
-        form.onsubmit = function(e) {
+        form.onsubmit = function (e) {
           e.preventDefault();
           const datos = {
             cesfam: miCesfam,
@@ -152,7 +152,7 @@ function abrirModalCitaPaciente() {
             window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
             return;
           }
-          guardarCitaPaciente(datos, function(idCita, idPaciente, error) {
+          guardarCitaPaciente(datos, function (idCita, idPaciente, error) {
             if (!error) closeModal('modal-nueva-cita-paciente');
           });
         };
@@ -239,7 +239,7 @@ function autocompletarNombreProfesionalAgendarCita() {
 }
 
 function abrirModalAgendarCita(solicitudId, nombre, rut) {
-  cargarProfesionalesAgendarCita(function() {
+  cargarProfesionalesAgendarCita(function () {
     llenarSelectProfesionesAgendarCita();
     llenarSelectProfesionalesAgendarCita();
     autocompletarNombreProfesionalAgendarCita();
@@ -262,7 +262,7 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
 
     const selProf = document.getElementById('modal-cita-profession');
     if (selProf) {
-      selProf.onchange = function() {
+      selProf.onchange = function () {
         llenarSelectProfesionesAgendarCita();
         autocompletarNombreProfesionalAgendarCita();
       };
@@ -274,10 +274,10 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
 
     showModal('modal-cita');
 
-    setTimeout(function() {
+    setTimeout(function () {
       var form = document.getElementById('form-agendar-cita');
       if (form && !form._onsubmitSet) {
-        form.addEventListener('submit', function(e){
+        form.addEventListener('submit', function (e) {
           e.preventDefault();
           const citaId = document.getElementById('modal-cita-id').value;
           const nombre = document.getElementById('modal-cita-nombre').textContent;
@@ -314,19 +314,19 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
           }
 
           window.SISTEMA_ID_UNIFICADO.crearCitaUnificada(datosCita)
-            .then(function(resultado) {
+            .then(function (resultado) {
               const db = window.getFirestore();
               return Promise.all([
-                db.collection("solicitudes_ingreso").doc(citaId).update({ estado: "agendada" }).catch(() => {}),
-                db.collection("reingresos").doc(citaId).update({ estado: "agendada" }).catch(() => {})
+                db.collection("solicitudes_ingreso").doc(citaId).update({ estado: "agendada" }).catch(() => { }),
+                db.collection("reingresos").doc(citaId).update({ estado: "agendada" }).catch(() => { })
               ]);
             })
-            .then(function() {
+            .then(function () {
               window.showNotification && window.showNotification("Cita agendada correctamente", "success");
               closeModal('modal-cita');
               if (window.reloadSolicitudesFromFirebase) window.reloadSolicitudesFromFirebase();
             })
-            .catch(function(error) {
+            .catch(function (error) {
               window.showNotification && window.showNotification("Error al guardar la cita: " + error.message, "error");
             });
         });
