@@ -476,18 +476,55 @@ document.addEventListener("DOMContentLoaded", function() {
         window.showNotification && window.showNotification("Completa el email para recibir información", "warning");
         return;
       }
-      // Aquí puedes agregar tu código para enviar la solicitud de solo información
-      window.showNotification && window.showNotification("Solicitud enviada. Revisa tu correo.", "success");
-      closeModal('patient-modal');
+      const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
+      db.collection('solicitudes_informacion').add({
+        email: email,
+        fechaCreacion: new Date().toISOString(),
+        estado: 'pendiente'
+      }).then(() => {
+        window.showNotification && window.showNotification("Solicitud enviada. Revisa tu correo.", "success");
+        closeModal('patient-modal');
+      }).catch((error) => {
+        window.showNotification && window.showNotification("Error al guardar solicitud: " + error.message, "error");
+      });
     };
   }
 
-  // (Opcional) Si quieres mostrar el botón "Enviar solicitud" solo en el último paso:
+  // Botón final "Enviar Solicitud" (multipaso)
   const submitForm = document.getElementById('submit-form');
   if (submitForm) {
-    submitForm.onclick = function() {
-      // Aquí puedes validar los campos del último paso y enviar el formulario completo
-      // Si quieres, puedes dejar la validación y el envío como ya lo tenías
+    submitForm.onclick = function(e) {
+      e.preventDefault();
+      const datos = {
+        nombre: document.getElementById('patient-name').value.trim(),
+        apellidos: document.getElementById('patient-lastname').value.trim(),
+        rut: document.getElementById('patient-rut').value.trim(),
+        telefono: document.getElementById('patient-phone').value.trim(),
+        email: document.getElementById('patient-email').value.trim(),
+        direccion: document.getElementById('patient-address').value.trim(),
+        edad: document.getElementById('patient-age').value.trim(),
+        cesfam: document.getElementById('patient-cesfam').value,
+        sustancias: Array.from(document.querySelectorAll('input[name="sustancias"]:checked')).map(el => el.value),
+        tiempoConsumo: document.getElementById('tiempo-consumo').value,
+        prioridad: document.querySelector('input[name="urgencia"]:checked')?.value || 'media',
+        tratamientoPrevio: document.querySelector('input[name="tratamientoPrevio"]:checked')?.value || '',
+        descripcion: document.getElementById('patient-description').value.trim(),
+        motivacion: document.getElementById('motivacion-range').value,
+        paraMi: document.querySelector('input[name="paraMi"]:checked')?.value || '',
+        fechaCreacion: new Date().toISOString(),
+        estado: 'pendiente',
+      };
+      if (window.SISTEMA_ID_UNIFICADO) {
+        window.SISTEMA_ID_UNIFICADO.crearSolicitudIngreso(datos)
+        .then(() => {
+          window.showNotification && window.showNotification("Solicitud enviada correctamente", "success");
+          closeModal('patient-modal');
+        }).catch((error) => {
+          window.showNotification && window.showNotification("Error al guardar solicitud: " + error.message, "error");
+        });
+      } else {
+        window.showNotification && window.showNotification("Sistema no inicializado", "error");
+      }
     };
   }
 });
