@@ -406,53 +406,25 @@ function isSameDay(date1, date2) {
         date1.getMonth() === date2.getMonth() &&
         date1.getFullYear() === date2.getFullYear();
 }
-function updateSolicitudesStats() {
-    try {
-        const stats = calculateSolicitudesStats();
-        const statsContainer = document.getElementById('solicitudes-stats');
-        if (statsContainer) {
-            statsContainer.innerHTML = `
-                <div class="stat-card">
-                    <div class="stat-icon" style="background-color: #f59e0b20; color: #f59e0b;">
-                        ⏳
-                    </div>
-                    <div class="stat-info">
-                        <div class="stat-number">${stats.pendientes}</div>
-                        <div class="stat-label">Pendientes</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background-color: #dc262620; color: #dc2626;">
-                        🔴
-                    </div>
-                    <div class="stat-info">
-                        <div class="stat-number">${stats.altaPrioridad}</div>
-                        <div class="stat-label">Alta Prioridad</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background-color: #10b98120; color: #10b981;">
-                        ✅
-                    </div>
-                    <div class="stat-info">
-                        <div class="stat-number">${stats.completadas}</div>
-                        <div class="stat-label">Completadas</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background-color: #3b82f620; color: #3b82f6;">
-                        📅
-                    </div>
-                    <div class="stat-info">
-                        <div class="stat-number">${stats.hoy}</div>
-                        <div class="stat-label">Hoy</div>
-                    </div>
-                </div>
-            `;
+function calculateSolicitudesStats() {
+    let pendientes = 0, altaPrioridad = 0, completadas = 0, hoy = 0;
+    const hoyStr = (window.getFechaActualChile ? window.getFechaActualChile() : (new Date().toISOString().slice(0, 10)));
+
+    solicitudesData.forEach(solicitud => {
+        if ((solicitud.estado || '').toLowerCase() === 'pendiente') pendientes++;
+        if ((solicitud.prioridad || '').toLowerCase() === 'alta') altaPrioridad++;
+        if ((solicitud.estado || '').toLowerCase() === 'completada') completadas++;
+        // Chequea si la fecha es hoy (asegúrate de comparar en formato YYYY-MM-DD)
+        let fecha = '';
+        if (solicitud.fecha instanceof Date) {
+            fecha = solicitud.fecha.getFullYear() + '-' + String(solicitud.fecha.getMonth() + 1).padStart(2, '0') + '-' + String(solicitud.fecha.getDate()).padStart(2, '0');
+        } else if (typeof solicitud.fecha === 'string') {
+            fecha = solicitud.fecha.slice(0, 10);
         }
-    } catch (error) {
-        console.error('❌ Error actualizando estadísticas:', error);
-    }
+        if (fecha === hoyStr) hoy++;
+    });
+
+    return { pendientes, altaPrioridad, completadas, hoy };
 }
 
 function verDetalleSolicitud(solicitudId) {
