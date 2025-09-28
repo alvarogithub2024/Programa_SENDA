@@ -2897,3 +2897,74 @@ document.addEventListener('DOMContentLoaded', setupModalTabs);
   }
   
   .calendar-row {
+.modal-content .modal-form,
+.modal-content form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.modal-content .form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.modal-content .form-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.modal-content label,
+.modal-content .form-label {
+  font-weight: 500;
+  margin-bottom: 5px;
+  color: #222;
+}
+
+.modal-content input[type="text"],
+.modal-content input[type="email"],
+.modal-content input[type="password"],
+.modal-content input[type="number"],
+.modal-content input[type="tel"],
+.modal-content textarea {
+  padding: 10px 12px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 7px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+  background: #f8fafc;
+  margin-bottom: 0;
+}
+
+.modal-content input:focus,
+.modal-content textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  background: #fff;
+}
+
+.modal-content textarea {
+  resize: vertical;
+  min-height: 48px;
+  max-height: 150px;
+}
+
+.modal-content .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.modal-content .btn {
+  border-radius: 7px;
+  font-size: 1rem;
+  padding: 10px 28px;
+}
+
+@media (max-width: 600px) {
+  .modal-content .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}
