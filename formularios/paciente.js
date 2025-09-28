@@ -1,3 +1,5 @@
+
+
 function setupFormularioPaciente() {
     const form = document.getElementById("patient-form");
     if (!form) return;
@@ -89,6 +91,7 @@ function setupFormularioPaciente() {
         });
     });
 
+ 
     const btnSoloInfo = form.querySelector("#enviar-solo-info");
     if (btnSoloInfo) {
         btnSoloInfo.onclick = function(e) {
@@ -104,6 +107,7 @@ function setupFormularioPaciente() {
         };
     }
 
+  
     form.onsubmit = function(e) {
         e.preventDefault();
         const tipo = form.querySelector('input[name="tipoSolicitud"]:checked');
@@ -127,8 +131,7 @@ function setupFormularioPaciente() {
             tratamientoPrevio: form.querySelector('input[name="tratamientoPrevio"]:checked')?.value || "",
             descripcion: form.querySelector("#patient-description").value.trim(),
             motivacion: form.querySelector("#motivacion-range").value,
-            fecha: fechaChileISO(),
-            estado: "pendiente"
+            fecha: fechaChileISO()
         };
         if (!datos.nombre || !datos.apellidos || !datos.rut || !datos.telefono) {
             return window.showNotification("Completa todos los campos obligatorios", "warning");
@@ -138,6 +141,7 @@ function setupFormularioPaciente() {
         guardarSolicitudAyuda(datos);
     };
 
+  
     const motivacionRange = form.querySelector("#motivacion-range");
     const motivacionValue = form.querySelector("#motivacion-value");
     if (motivacionRange && motivacionValue) {
@@ -147,27 +151,33 @@ function setupFormularioPaciente() {
     }
 }
 
+
 function fechaChileISO() {
     return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" })).toISOString();
 }
 
+
 function guardarSolicitudAyuda(datos) {
-    if (!window.crearSolicitudConId) {
-        window.showNotification && window.showNotification("Sistema de ID no disponible","error");
+    const db = window.getFirestore ? window.getFirestore() : null;
+    if (!db) {
+        window.showNotification && window.showNotification("No se pudo acceder a la base de datos","error");
         return;
     }
-
-    window.crearSolicitudConId(datos, function(solicitudId, idPaciente, error) {
-        if (error) {
-            window.showNotification && window.showNotification("Error guardando solicitud: " + error.message, "error");
-            return;
-        }
-        
-        console.log(`✅ Solicitud creada: ${solicitudId}, Paciente: ${idPaciente}`);
-        window.showNotification && window.showNotification("Solicitud enviada correctamente","success");
-        document.getElementById("patient-form").reset();
-        document.getElementById("patient-modal").style.display = "none";
-    });
+    db.collection("solicitudes_ingreso").add(datos)
+        .then(function(docRef) {
+            db.collection("solicitudes_ingreso").doc(docRef.id).set({ id: docRef.id }, { merge: true })
+            .then(function() {
+                window.showNotification && window.showNotification("Solicitud enviada correctamente","success");
+                document.getElementById("patient-form").reset();
+                document.getElementById("patient-modal").style.display = "none";
+            })
+            .catch(function(error) {
+                window.showNotification && window.showNotification("Solicitud guardada pero no se pudo registrar el ID: "+error.message,"warning");
+            });
+        })
+        .catch(function(error) {
+            window.showNotification && window.showNotification("Error guardando solicitud: "+error.message,"error");
+        });
 }
 
 function guardarSolicitudInformacion(datos) {
@@ -177,11 +187,8 @@ function guardarSolicitudInformacion(datos) {
         return;
     }
     datos.estado = "pendiente";
-    datos.fechaCreacion = datos.fecha;
-    
     db.collection("solicitudes_informacion").add(datos)
-        .then(function(docRef) {
-            db.collection("solicitudes_informacion").doc(docRef.id).update({ id: docRef.id });
+        .then(function() {
             window.showNotification && window.showNotification("Solicitud de información enviada correctamente","success");
             document.getElementById("patient-form").reset();
             document.getElementById("patient-modal").style.display = "none";
@@ -190,6 +197,7 @@ function guardarSolicitudInformacion(datos) {
             window.showNotification && window.showNotification("Error guardando solicitud de información: "+error.message,"error");
         });
 }
+
 
 function validarRut(rut) {
     if (!rut) return false;
@@ -207,9 +215,12 @@ function validarRut(rut) {
     dvEsperado = dvEsperado === 11 ? '0' : dvEsperado === 10 ? 'K' : dvEsperado.toString();
     return dv === dvEsperado;
 }
+
+
 if (!window.validarRut) {
     window.validarRut = validarRut;
 }
+
 
 function limpiarTelefonoChileno(tel) {
     tel = tel.replace(/\D/g, '');
@@ -222,20 +233,27 @@ function validarTelefonoChileno(telefono) {
     telefono = limpiarTelefonoChileno(telefono);
     return telefono.length === 9 && telefono[0] === "9";
 }
+
+
 if (!window.validarTelefono) {
     window.validarTelefono = validarTelefonoChileno;
 }
+
 
 function validarEmail(email) {
     if (!email) return false;
     return /^[\w\.\-]+@([\w\-]+\.)+[a-zA-Z]{2,7}$/.test(email);
 }
+
+
 if (!window.validarEmail) {
     window.validarEmail = validarEmail;
 }
 
+
 window.setupFormularioPaciente = setupFormularioPaciente;
 window.guardarSolicitudAyuda = guardarSolicitudAyuda;
 window.guardarSolicitudInformacion = guardarSolicitudInformacion;
+
 
 document.addEventListener("DOMContentLoaded", setupFormularioPaciente);
