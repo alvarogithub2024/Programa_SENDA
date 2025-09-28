@@ -184,7 +184,7 @@ function renderSolicitudesTable() {
                                 ${solicitud.nombre || ""} ${solicitud.apellidos || ""}
                             </div>
                             <div class="paciente-detalles">
-                                RUT: ${solicitud.rut || ""}<br>
+                                RUT: ${window.formatRUT ? window.formatRUT(solicitud.rut) : (solicitud.rut || "")}
                                 Edad: ${solicitud.edad || ""} años
                             </div>
                         </div>
