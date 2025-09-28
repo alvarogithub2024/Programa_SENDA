@@ -1,3 +1,5 @@
+// ========== pacientes/fichas.js - ACTUALIZADO CON SISTEMA UNIFICADO ==========
+
 (function() {
     let pacientesTabData = [];
 
@@ -76,6 +78,7 @@
                     edad: cita.edad || '',
                     cesfam: cita.cesfam || '',
                     fechaRegistro: cita.creado || cita.fechaCreacion || new Date().toISOString(),
+                    pacienteId: cita.pacienteId || null // NUEVO: Usar el pacienteId del sistema unificado
                 };
             }
         });
@@ -84,10 +87,14 @@
         pacientesSnap.forEach(doc => {
             const paciente = doc.data();
             paciente.id = doc.id;
+            paciente.pacienteId = doc.id; // El ID del documento es el pacienteId
             if (paciente.rut) {
                 const rutLimpio = paciente.rut.replace(/[.\-]/g, "").trim();
                 if (!pacientesMap[rutLimpio]) {
                     pacientesMap[rutLimpio] = paciente;
+                } else {
+                    // Actualizar con datos más completos del paciente
+                    pacientesMap[rutLimpio] = { ...pacientesMap[rutLimpio], ...paciente };
                 }
             }
         });
@@ -107,7 +114,7 @@
         pacientes.forEach(p => {
             const div = document.createElement('div');
             div.className = 'patient-card';
-            // Teléfono y email enlazables
+            
             let telefonoHtml = p.telefono
                 ? `<a href="tel:${p.telefono}" style="color:inherit;text-decoration:underline;">${p.telefono}</a>`
                 : 'No disponible';
@@ -122,7 +129,7 @@
                     <div>RUT: ${window.formatRUT ? window.formatRUT(p.rut) : (p.rut || '')}</div>
                     <div>Tel: ${telefonoHtml}</div>
                     <div>Email: ${emailHtml}</div>
-                    <button class="btn btn-outline btn-sm" style="margin-left:18px;" onclick="verFichaPacienteSenda('${p.rut}')">
+                    <button class="btn btn-outline btn-sm" style="margin-left:18px;" onclick="verFichaPacienteUnificada('${p.pacienteId || p.rut}')">
                         <i class="fas fa-file-medical"></i> Ver Ficha
                     </button>
                 </div>
@@ -149,85 +156,96 @@
         renderPacientesGrid(filtrados);
     }
 
-    window.verFichaPacienteSenda = async function(rut) {
-        const db = window.getFirestore();
-        const rutLimpio = (rut || '').replace(/[.\-]/g, '').trim();
+    // FUNCIÓN PRINCIPAL ACTUALIZADA CON SISTEMA UNIFICADO
+    window.verFichaPacienteUnificada = async function(pacienteIdOrRut) {
         try {
             let pacienteData = null;
-            const snapshot = await db.collection('pacientes').where('rut', '==', rutLimpio).limit(1).get();
-
-            if (!snapshot.empty) {
-                pacienteData = Object.assign({ id: snapshot.docs[0].id }, snapshot.docs[0].data());
+            let pacienteId = null;
+            
+            // Si parece un RUT, buscar por RUT
+            if (typeof pacienteIdOrRut === 'string' && (pacienteIdOrRut.includes('-') || pacienteIdOrRut.length > 15)) {
+                console.log('Buscando paciente por RUT:', pacienteIdOrRut);
+                pacienteData = await window.buscarPacientePorRUT(pacienteIdOrRut);
+                pacienteId = pacienteData?.id;
             } else {
-                const citasSnap = await db.collection('citas').where('rut', '==', rutLimpio).limit(1).get();
-                if (!citasSnap.empty) {
-                    const cita = citasSnap.docs[0].data();
-                    pacienteData = {
-                        id: 'desde_cita_' + citasSnap.docs[0].id,
-                        rut: rutLimpio,
-                        nombre: cita.nombre || cita.pacienteNombre || '',
-                        apellidos: cita.apellidos || '',
-                        telefono: cita.telefono || '',
-                        email: cita.email || '',
-                        direccion: cita.direccion || '',
-                        cesfam: cita.cesfam || ''
-                    };
+                // Es un ID directo
+                pacienteId = pacienteIdOrRut;
+                console.log('Usando pacienteId directo:', pacienteId);
+                const db = window.getFirestore();
+                const doc = await db.collection('pacientes').doc(pacienteId).get();
+                if (doc.exists) {
+                    pacienteData = { id: doc.id, ...doc.data() };
                 }
             }
-
-            if (!pacienteData) {
+            
+            if (!pacienteData || !pacienteId) {
                 window.showNotification && window.showNotification('Paciente no encontrado', 'warning');
                 return;
             }
-
-            const puedeEditar = puedeEditarHistorial();
-
-            let modal = document.getElementById('modal-ficha-paciente');
-            if (!modal) {
-                modal = document.createElement('div');
-                modal.id = 'modal-ficha-paciente';
-                modal.className = 'modal-overlay';
-                modal.innerHTML = `
-                    <div class="modal-content" style="max-width:700px; max-height:90vh; overflow-y:auto;">
-                        <span class="close" onclick="cerrarModalFichaPaciente()">&times;</span>
-                        <div id="modal-ficha-paciente-body"></div>
-                    </div>
-                `;
-                document.body.appendChild(modal);
-            }
-            modal.style.display = 'flex';
-
-            const modalBody = document.getElementById('modal-ficha-paciente-body');
-            const html = construirHTMLFichaMejorada(pacienteData, puedeEditar);
-            modalBody.innerHTML = html;
-
-            await cargarHistorialClinicoMejorado(pacienteData.rut, puedeEditar);
-
+            
+            console.log('Datos del paciente encontrado:', pacienteData);
+            console.log('PacienteId para historial:', pacienteId);
+            
+            // Mostrar modal con ficha completa
+            mostrarModalFichaCompleta(pacienteData, pacienteId);
+            
         } catch (error) {
             console.error('Error al mostrar ficha:', error);
             window.showNotification && window.showNotification('Error al cargar ficha del paciente', 'error');
         }
     };
 
-    function construirHTMLFichaMejorada(paciente, puedeEditar) {
+    function mostrarModalFichaCompleta(paciente, pacienteId) {
+        let modal = document.getElementById('modal-ficha-paciente-completa');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'modal-ficha-paciente-completa';
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width:900px; max-height:90vh; overflow-y:auto;">
+                    <span class="close" onclick="cerrarModalFichaCompleta()">&times;</span>
+                    <div id="modal-ficha-completa-body"></div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        modal.style.display = 'flex';
+
+        const modalBody = document.getElementById('modal-ficha-completa-body');
+        modalBody.innerHTML = construirHTMLFichaCompleta(paciente, pacienteId);
+        
+        // Cargar historial clínico automáticamente
+        cargarHistorialClinicoUnificado(pacienteId, puedeEditarHistorial());
+    }
+
+    function construirHTMLFichaCompleta(paciente, pacienteId) {
         return `
-            <h3 style="color: #2563eb; margin-bottom:15px; font-size:1.4rem; font-weight:700;">
+            <h3 style="color: #2563eb; margin-bottom:20px; font-size:1.5rem; font-weight:700;">
                 <i class="fas fa-user-circle"></i> ${paciente.nombre || ''} ${paciente.apellidos || ''}
+                <span style="font-size:0.8rem; color:#6b7280; font-weight:normal;">ID: ${pacienteId}</span>
             </h3>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:20px;">
-                <p><i class="fas fa-id-card" style="color:#6366f1; margin-right:8px;"></i><b>RUT:</b> ${window.formatRUT ? window.formatRUT(paciente.rut) : (paciente.rut || '')}</p>
-                <p><i class="fas fa-phone" style="color:#10b981; margin-right:8px;"></i><b>Teléfono:</b> ${paciente.telefono || 'No disponible'}</p>
-                <p><i class="fas fa-envelope" style="color:#f59e0b; margin-right:8px;"></i><b>Email:</b> ${paciente.email || 'No disponible'}</p>
-                <p><i class="fas fa-map-marker-alt" style="color:#ef4444; margin-right:8px;"></i><b>Dirección:</b> ${paciente.direccion || 'No disponible'}</p>
+            
+            <!-- Datos del Paciente -->
+            <div style="background:#f8fafc; padding:1rem; border-radius:8px; margin-bottom:1.5rem;">
+                <h4 style="color:#1f2937; margin-bottom:1rem;"><i class="fas fa-user"></i> Información Personal</h4>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                    <p><i class="fas fa-id-card" style="color:#6366f1; margin-right:8px;"></i><b>RUT:</b> ${window.formatRUT ? window.formatRUT(paciente.rut) : (paciente.rut || '')}</p>
+                    <p><i class="fas fa-phone" style="color:#10b981; margin-right:8px;"></i><b>Teléfono:</b> ${paciente.telefono || 'No disponible'}</p>
+                    <p><i class="fas fa-envelope" style="color:#f59e0b; margin-right:8px;"></i><b>Email:</b> ${paciente.email || 'No disponible'}</p>
+                    <p><i class="fas fa-map-marker-alt" style="color:#ef4444; margin-right:8px;"></i><b>Dirección:</b> ${paciente.direccion || 'No disponible'}</p>
+                    <p><i class="fas fa-hospital" style="color:#8b5cf6; margin-right:8px;"></i><b>CESFAM:</b> ${paciente.cesfam || 'No disponible'}</p>
+                    <p><i class="fas fa-calendar" style="color:#06b6d4; margin-right:8px;"></i><b>Edad:</b> ${paciente.edad || 'No disponible'}</p>
+                </div>
             </div>
-            <hr style="margin:20px 0; border:1px solid #e5e7eb;">
-            <div id="historial-clinico" class="${puedeEditar ? '' : 'historial-readonly'}" data-paciente-rut="${paciente.rut}">
+
+            <!-- Historial Clínico -->
+            <div id="historial-clinico" class="${puedeEditarHistorial() ? '' : 'historial-readonly'}" data-paciente-id="${pacienteId}">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                     <h4 style="color:#2563eb; margin:0; font-size:1.2rem; font-weight:600;">
-                        <i class="fas fa-clipboard-list"></i> Historial Clínico
+                        <i class="fas fa-clipboard-list"></i> Historial Clínico de Atenciones
                     </h4>
-                    ${puedeEditar ? `
-                        <button class="btn-add-entry" onclick="mostrarFormularioNuevaAtencion('${paciente.rut}')">
+                    ${puedeEditarHistorial() ? `
+                        <button class="btn-add-entry" onclick="mostrarFormularioNuevaAtencionUnificada('${pacienteId}')">
                             <i class="fas fa-plus"></i> Agregar Atención
                         </button>
                     ` : `
@@ -238,28 +256,36 @@
                 </div>
                 <div id="historial-contenido">
                     <div class="loading-message">
-                        <i class="fas fa-spinner fa-spin"></i> Cargando historial...
+                        <i class="fas fa-spinner fa-spin"></i> Cargando historial clínico...
                     </div>
                 </div>
             </div>
         `;
     }
 
-    async function cargarHistorialClinicoMejorado(pacienteId, puedeEditar) {
+    // FUNCIÓN ACTUALIZADA PARA CARGAR HISTORIAL USANDO SISTEMA UNIFICADO
+    async function cargarHistorialClinicoUnificado(pacienteId, puedeEditar) {
         const cont = document.getElementById('historial-contenido');
         if (!cont) return;
+        
+        console.log('Cargando historial para pacienteId:', pacienteId);
+        
         const db = window.getFirestore();
         try {
+            // Buscar atenciones usando el pacienteId unificado
             const snapshot = await db.collection('atenciones')
                 .where('pacienteId', '==', pacienteId)
                 .orderBy('fechaRegistro', 'desc')
                 .get();
+
+            console.log(`Encontradas ${snapshot.size} atenciones para el paciente`);
 
             if (snapshot.empty) {
                 cont.innerHTML = `
                     <div class="no-historial" style="text-align:center; padding:2rem; color:#6b7280;">
                         <i class="fas fa-clipboard" style="font-size:2rem; margin-bottom:1rem; color:#d1d5db;"></i>
                         <p>No hay atenciones registradas en el historial clínico</p>
+                        ${puedeEditar ? '<p style="font-size:0.9rem;">Usa el botón "Agregar Atención" para registrar la primera atención.</p>' : ''}
                     </div>
                 `;
                 return;
@@ -268,6 +294,7 @@
             cont.innerHTML = '';
             snapshot.forEach(doc => {
                 const atencion = doc.data();
+                console.log('Atencion encontrada:', atencion);
                 const entradaElement = crearEntradaHistorialConEventos(doc.id, atencion, puedeEditar, pacienteId);
                 cont.appendChild(entradaElement);
             });
@@ -275,14 +302,14 @@
         } catch (error) {
             cont.innerHTML = `
                 <div style="background:#fee2e2; border-radius:8px; padding:1rem; color:#dc2626;">
-                    <p><i class="fas fa-exclamation-circle"></i> Error al cargar historial clínico</p>
+                    <p><i class="fas fa-exclamation-circle"></i> Error al cargar historial clínico: ${error.message}</p>
                 </div>
             `;
-            console.error("Error Firestore:", error);
+            console.error("Error cargando historial:", error);
         }
     }
 
-    function crearEntradaHistorialConEventos(docId, atencion, puedeEditar, rutPaciente) {
+    function crearEntradaHistorialConEventos(docId, atencion, puedeEditar, pacienteId) {
         let fechaTexto = '';
         let horaTexto = '';
 
@@ -345,7 +372,7 @@
 
         if (puedeEditarRealmente) {
             entradaDiv.addEventListener('click', function() {
-                abrirModalEditarAtencion(docId, descripcion, atencion?.tipoAtencion || "", rutPaciente);
+                abrirModalEditarAtencion(docId, descripcion, atencion?.tipoAtencion || "", pacienteId);
             });
 
             entradaDiv.addEventListener('mouseenter', function() {
@@ -379,7 +406,7 @@
         return tipos[tipo] || 'Consulta General';
     }
 
-    function abrirModalEditarAtencion(atencionId, descripcion, tipoAtencion, rutPaciente) {
+    function abrirModalEditarAtencion(atencionId, descripcion, tipoAtencion, pacienteId) {
         if (!window.puedeEditarHistorial || !window.puedeEditarHistorial()) {
             if (window.mostrarMensajePermisos) {
                 window.mostrarMensajePermisos('editar atenciones del historial clínico');
@@ -389,7 +416,7 @@
             return;
         }
 
-        const fichaModal = document.getElementById('modal-ficha-paciente');
+        const fichaModal = document.getElementById('modal-ficha-paciente-completa');
         if (fichaModal) {
             fichaModal.style.display = 'none';
         }
@@ -479,8 +506,7 @@
                 }
 
                 cerrarModalEditarAtencion();
-
-                await cargarHistorialClinicoMejorado(rutPaciente, window.puedeEditarHistorial());
+                await cargarHistorialClinicoUnificado(pacienteId, window.puedeEditarHistorial());
 
             } catch (error) {
                 if (window.showNotification) {
@@ -492,11 +518,11 @@
         };
 
         document.getElementById('btn-eliminar-atencion').onclick = function() {
-            eliminarAtencion(atencionId, rutPaciente);
+            eliminarAtencion(atencionId, pacienteId);
         };
     }
 
-    async function eliminarAtencion(atencionId, rutPaciente) {
+    async function eliminarAtencion(atencionId, pacienteId) {
         if (!confirm('¿Seguro que deseas eliminar esta atención? Esta acción no se puede deshacer.')) return;
 
         try {
@@ -510,8 +536,7 @@
             }
 
             cerrarModalEditarAtencion();
-
-            await cargarHistorialClinicoMejorado(rutPaciente, window.puedeEditarHistorial());
+            await cargarHistorialClinicoUnificado(pacienteId, window.puedeEditarHistorial());
 
         } catch (error) {
             if (window.showNotification) {
@@ -526,11 +551,12 @@
         const modal = document.getElementById('modal-editar-atencion');
         if (modal) modal.remove();
 
-        const fichaModal = document.getElementById('modal-ficha-paciente');
+        const fichaModal = document.getElementById('modal-ficha-paciente-completa');
         if (fichaModal) fichaModal.style.display = 'flex';
     };
 
-    window.mostrarFormularioNuevaAtencion = function(rutPaciente) {
+    // FUNCIÓN PARA AGREGAR NUEVA ATENCIÓN USANDO SISTEMA UNIFICADO
+    window.mostrarFormularioNuevaAtencionUnificada = function(pacienteId) {
         if (!window.puedeCrearAtenciones || !window.puedeCrearAtenciones()) {
             window.mostrarMensajePermisos && window.mostrarMensajePermisos('crear nuevas atenciones');
             return;
@@ -568,7 +594,7 @@
                                 <i class="fas fa-save"></i> Guardar Atención
                             </button>
                         </div>
-                        <input type="hidden" id="nueva-atencion-rut" value="${rutPaciente}">
+                        <input type="hidden" id="nueva-atencion-paciente-id" value="${pacienteId}">
                     </form>
                 </div>
             </div>
@@ -581,14 +607,14 @@
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         document.getElementById('modal-nueva-atencion').style.display = 'flex';
         document.getElementById('nueva-atencion-descripcion').focus();
-        document.getElementById('form-nueva-atencion').onsubmit = guardarNuevaAtencion;
+        document.getElementById('form-nueva-atencion').onsubmit = guardarNuevaAtencionUnificada;
     };
 
-    async function guardarNuevaAtencion(event) {
+    async function guardarNuevaAtencionUnificada(event) {
         event.preventDefault();
         const tipo = document.getElementById('nueva-atencion-tipo').value;
         const descripcion = document.getElementById('nueva-atencion-descripcion').value.trim();
-        const rutPaciente = document.getElementById('nueva-atencion-rut').value;
+        const pacienteId = document.getElementById('nueva-atencion-paciente-id').value;
 
         if (!tipo || !descripcion) {
             window.showNotification && window.showNotification('Completa todos los campos obligatorios', 'warning');
@@ -602,23 +628,41 @@
                 return;
             }
 
+            // Obtener datos básicos del paciente
             const db = window.getFirestore();
+            const pacienteDoc = await db.collection('pacientes').doc(pacienteId).get();
+            const pacienteData = pacienteDoc.exists ? pacienteDoc.data() : {};
+
             const nuevaAtencion = {
-                pacienteId: rutPaciente,
+                pacienteId: pacienteId,
+                pacienteNombre: pacienteData.nombre || '',
+                pacienteRut: pacienteData.rut || '',
                 profesional: `${profesional.nombre} ${profesional.apellidos}`,
                 profesionalId: profesional.id,
                 tipoAtencion: tipo,
                 descripcion: descripcion,
                 fechaRegistro: new Date(),
-                fechaCreacion: new Date().toISOString()
+                fechaCreacion: new Date().toISOString(),
+                cesfam: pacienteData.cesfam || profesional.cesfam || ''
             };
 
-            await db.collection('atenciones').add(nuevaAtencion);
+            console.log('Guardando nueva atención:', nuevaAtencion);
+
+            // Usar el sistema unificado
+            if (window.SISTEMA_ID_UNIFICADO && window.SISTEMA_ID_UNIFICADO.crearAtencionUnificada) {
+                const resultado = await window.SISTEMA_ID_UNIFICADO.crearAtencionUnificada(nuevaAtencion);
+                console.log('Atención creada con ID:', resultado.atencionId);
+            } else {
+                // Fallback directo
+                await db.collection('atenciones').add(nuevaAtencion);
+            }
+
             window.showNotification && window.showNotification('Atención registrada correctamente', 'success');
             cerrarModalNuevaAtencion();
 
-            await cargarHistorialClinicoMejorado(rutPaciente, puedeEditarHistorial());
+            await cargarHistorialClinicoUnificado(pacienteId, puedeEditarHistorial());
         } catch (error) {
+            console.error('Error guardando atención:', error);
             window.showNotification && window.showNotification('Error al guardar la atención: ' + error.message, 'error');
         }
     }
@@ -633,7 +677,7 @@
     async function refrescarPacientesTab() {
         const grid = getGrid();
         if (!grid) {
-            console.error("No se encontró el elemento #patients-grid en el DOM");
+            console.error("No se encontró el elemento #pacientesGrid en el DOM");
             return;
         }
         grid.innerHTML = "<div class='loading-message'><i class='fas fa-spinner fa-spin'></i> Actualizando pacientes...</div>";
@@ -667,11 +711,16 @@
         refrescarPacientesTab();
     });
 
-    window.cerrarModalFichaPaciente = function() {
-        const modal = document.getElementById('modal-ficha-paciente');
+    window.cerrarModalFichaCompleta = function() {
+        const modal = document.getElementById('modal-ficha-paciente-completa');
         if (modal) modal.style.display = 'none';
     };
 
+    // Mantener funciones legacy para compatibilidad
+    window.verFichaPacienteSenda = window.verFichaPacienteUnificada;
+    window.cerrarModalFichaPaciente = window.cerrarModalFichaCompleta;
+
+    // Debug function
     window.debugHistorialClickeable = function() {
         const entradas = document.querySelectorAll('.historial-entry');
         entradas.forEach((entrada, index) => {
@@ -693,4 +742,5 @@
         }
     };
 
+    console.log('✅ Sistema de fichas unificado cargado correctamente');
 })();
