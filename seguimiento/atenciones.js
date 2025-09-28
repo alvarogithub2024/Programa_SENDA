@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", function() {
         e.preventDefault();
 
         var citaId = document.getElementById("atencion-cita-id").value;
-        var pacienteId = document.getElementById("atencion-paciente-id").value; // Este valor debe ser el id Firestore del paciente
+        var pacienteId = document.getElementById("atencion-paciente-id").value;
         var descripcion = document.getElementById("atencion-descripcion").value.trim();
         var tipoAtencion = document.getElementById("atencion-tipo").value;
 
@@ -14,8 +14,6 @@ document.addEventListener("DOMContentLoaded", function() {
             window.showNotification("Completa los campos obligatorios", "warning");
             return;
         }
-
-        // PREVENCIÓN: pacienteId nunca puede ser undefined ni vacío
         if (!pacienteId) {
             window.showNotification("Error: No se encontró el ID del paciente para esta atención", "error");
             return;
@@ -30,41 +28,46 @@ document.addEventListener("DOMContentLoaded", function() {
                 return;
             }
             var cita = doc.data();
-
-            // Si la cita no tiene pacienteId, también evita el guardado
             if (!cita.pacienteId) {
                 window.showNotification("Error: La cita no tiene vinculado un pacienteId. Corrige el flujo de citación.", "error");
                 return;
             }
+            db.collection("profesionales").doc(cita.profesionalId).get().then(function(profDoc) {
+                let profesionalDescripcion = "";
+                if (profDoc.exists) {
+                    profesionalDescripcion = profDoc.data().descripcion || "";
+                }
+                var datosAtencion = {
+                    pacienteId: pacienteId,
+                    pacienteNombre: cita.pacienteNombre || cita.nombre || "",
+                    pacienteRut: cita.pacienteRut || cita.rut || "",
+                    cesfam: cita.cesfam || "",
+                    fecha: cita.fecha || "",
+                    hora: cita.hora || "",
+                    descripcion: descripcion,
+                    tipoAtencion: tipoAtencion,
+                    profesional: cita.profesionalNombre || (user ? user.email : ""),
+                    profesionalId: cita.profesionalId || (user ? user.uid : ""),
+                    profesionalDescripcion: profesionalDescripcion,
+                    fechaRegistro: new Date().toISOString(),
+                    citaId: citaId
+                };
 
-            var datosAtencion = {
-                pacienteId: pacienteId, // SIEMPRE presente y válido
-                pacienteNombre: cita.pacienteNombre || cita.nombre || "",
-                pacienteRut: cita.pacienteRut || cita.rut || "",
-                cesfam: cita.cesfam || "",
-                fecha: cita.fecha || "",
-                hora: cita.hora || "",
-                descripcion: descripcion,
-                tipoAtencion: tipoAtencion,
-                profesional: cita.profesionalNombre || (user ? user.email : ""),
-                profesionalId: cita.profesionalId || (user ? user.uid : ""),
-                fechaRegistro: new Date().toISOString(),
-                citaId: citaId
-            };
-
-            db.collection("atenciones").add(datosAtencion)
-            .then(function(docRef) {
-                window.showNotification("Atención registrada correctamente", "success");
-                closeModal("modal-registrar-atencion");
-                if (window.mostrarPacienteActualHoy) window.mostrarPacienteActualHoy();
-                if (window.mostrarCitasRestantesHoy) window.mostrarCitasRestantesHoy();
-            })
-            .catch(function(error) {
-                window.showNotification("Error guardando atención: " + error.message, "error");
+                db.collection("atenciones").add(datosAtencion)
+                .then(function(docRef) {
+                    window.showNotification("Atención registrada correctamente", "success");
+                    closeModal("modal-registrar-atencion");
+                    if (window.mostrarPacienteActualHoy) window.mostrarPacienteActualHoy();
+                    if (window.mostrarCitasRestantesHoy) window.mostrarCitasRestantesHoy();
+                })
+                .catch(function(error) {
+                    window.showNotification("Error guardando atención: " + error.message, "error");
+                });
             });
         });
     });
 });
+
 // Si tienes una función para registrar atenciones manualmente desde JS:
 window.registrarAtencion = function(datosAtencion, callback) {
     var db = window.getFirestore();
