@@ -26,6 +26,7 @@
     <script src="utilidades/notificaciones.js"></script>
     <script src="utilidades/modales.js"></script>
     <script src="utilidades/permisos.js"></script>
+    <script src="utilidades/sincronizacion.js"></script>
 
     <!-- ========== FORMULARIOS Y VALIDACIONES ========== -->
     <script src="formularios/validaciones.js"></script>
@@ -252,24 +253,30 @@
             <!-- Estadísticas de solicitudes -->
             <div id="solicitudes-stats" class="stats-container"></div>
             
-  <!-- Tabla de solicitudes en recuadro expandido -->
-<div id="solicitudes-table-container" style="width: 100vw; max-width: none; position: relative; left: 50%; right: 50%; margin-left: -50vw; margin-right: -50vw; box-sizing: border-box; background: #fff; border-radius: 18px; box-shadow: 0 8px 32px rgba(0,0,0,0.09); margin-top: 1.8rem; padding: 2.5rem 2rem 2rem 2rem; overflow-x: auto;">
-    <table class="solicitudes-table">
-        <thead>
-            <tr>
-                <th>Paciente</th>
-                <th>Contacto</th>
-                <th>CESFAM</th>
-                <th>Estado</th>
-                <th>Prioridad</th>
-                <th>Fecha</th>
-                <th>Sustancias</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody id="solicitudes-table-body"></tbody>
-    </table>
-</div>
+            <!-- Contador de resultados -->
+            <div class="counter-info">
+                Mostrando <span id="solicitudes-counter">0</span> de <span id="solicitudes-total-counter">0</span> solicitudes
+            </div>
+            
+            <!-- Tabla de solicitudes -->
+            <div id="solicitudes-table-container">
+                <table class="solicitudes-table">
+                    <thead>
+                        <tr>
+                            <th>Paciente</th>
+                            <th>Contacto</th>
+                            <th>CESFAM</th>
+                            <th>Estado</th>
+                            <th>Prioridad</th>
+                            <th>Fecha</th>
+                            <th>Sustancias</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="solicitudes-table-body"></tbody>
+                </table>
+            </div>
+        </div>
 
         <!-- ==================== PESTAÑA: AGENDA ==================== -->
         <div class="tab-pane active" id="agenda-tab">
@@ -841,60 +848,65 @@
 
 <!-- ========== MODAL: EDITAR SOLICITUD ========== -->
 <div class="modal-overlay" id="modal-editar" style="display:none;">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('modal-editar')">&times;</button>
-    <h2>Editar solicitud</h2>
-    <form class="modal-form">
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="modal-editar-nombre">Nombre:</label>
-          <input class="form-input" type="text" id="modal-editar-nombre" name="nombre">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="modal-editar-rut">RUT:</label>
-          <input class="form-input" type="text" id="modal-editar-rut" name="rut">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="modal-editar-telefono">Teléfono:</label>
-          <input class="form-input" type="text" id="modal-editar-telefono" name="telefono">
-        </div>
-      </div>
-      <div class="form-actions">
-        <button type="button" onclick="guardarEdicionSolicitud()" class="btn btn-primary">
-          Guardar cambios
-        </button>
-      </div>
-      <input type="hidden" id="modal-editar-id" name="id">
-    </form>
-  </div>
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('modal-editar')">&times;</span>
+        <h2>Editar solicitud</h2>
+        <form class="modal-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="modal-editar-nombre">Nombre:</label>
+                    <input type="text" id="modal-editar-nombre" name="nombre">
+                </div>
+                <div class="form-group">
+                    <label for="modal-editar-rut">RUT:</label>
+                    <input type="text" id="modal-editar-rut" name="rut">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="modal-editar-telefono">Teléfono:</label>
+                    <input type="text" id="modal-editar-telefono" name="telefono">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" onclick="guardarEdicionSolicitud()" class="btn btn-primary">
+                    Guardar cambios
+                </button>
+            </div>
+            <input type="hidden" id="modal-editar-id" name="id">
+        </form>
+    </div>
 </div>
 
 <!-- ========== MODAL: RESPONDER SOLICITUD ========== -->
 <div class="modal-overlay" id="modal-responder" style="display:none;">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('modal-responder')">&times;</button>
-    <h2>Responder solicitud de información</h2>
-    <form class="modal-form">
-      <div class="form-group">
-        <label class="form-label" for="modal-responder-asunto">Asunto:</label>
-        <input class="form-input" type="text" id="modal-responder-asunto" value="Respuesta a su solicitud de información">
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="modal-responder-mensaje">Mensaje:</label>
-        <textarea class="form-textarea" id="modal-responder-mensaje" rows="5"></textarea>
-      </div>
-      <div class="form-actions">
-        <button type="button" onclick="enviarCorreoSenda()" class="btn btn-primary">
-          Enviar correo
-        </button>
-      </div>
-      <input type="hidden" id="modal-responder-email">
-      <input type="hidden" id="modal-responder-id">
-    </form>
-  </div>
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('modal-responder')">&times;</span>
+        <h2>Responder solicitud de información</h2>
+        <form class="modal-form">
+            <div class="form-group">
+                <label><b>Nombre:</b></label>
+                <span id="modal-responder-nombre"></span>
+            </div>
+            <div class="form-group">
+                <label for="modal-responder-asunto">Asunto:</label>
+                <input type="text" id="modal-responder-asunto" value="Respuesta a su solicitud de información">
+            </div>
+            <div class="form-group">
+                <label for="modal-responder-mensaje">Mensaje:</label>
+                <textarea id="modal-responder-mensaje" rows="5"></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="button" onclick="enviarCorreoSenda()" class="btn btn-primary">
+                    Enviar correo
+                </button>
+            </div>
+            <input type="hidden" id="modal-responder-email">
+            <input type="hidden" id="modal-responder-id">
+        </form>
+    </div>
 </div>
+
 <!-- ========== MODAL: DETALLES DEL PACIENTE ========== -->
 <div class="modal-overlay" id="modal-detalle" style="display:none;">
     <div class="modal-content">
@@ -905,12 +917,10 @@
             <p><b>RUT:</b> <span id="modal-detalle-rut"></span></p>
             <p><b>Teléfono:</b> <span id="modal-detalle-telefono"></span></p>
             <p><b>Email:</b> <span id="modal-detalle-email"></span></p>
-            <p><b>Motivo de atención:</b> <span id="modal-detalle-motivo"></span></p>
             <p><b>CESFAM:</b> <span id="modal-detalle-cesfam"></span></p>
-            <p><b>Estado:</b> <span id="modal-detalle-estado"></span></p>
             <p><b>Fecha:</b> <span id="modal-detalle-fecha"></span></p>
+             <p><b>Motivo de atención:</b> <span id="modal-detalle-motivo"></span></p>
             <p><b>Sustancias:</b> <span id="modal-detalle-sustancias"></span></p>
-             <p><b>Fecha:</b> <span id="modal-detalle-fecha"></span></p>
         </div>
     </div>
 </div>
@@ -1098,7 +1108,38 @@
         </form>
     </div>
 </div>
- 
+
+    <!-- ========== MODAL: EDITAR SOLICITUD ========== -->
+<div class="modal-overlay" id="modal-editar" style="display:none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('modal-editar')">&times;</span>
+        <h2>Editar solicitud</h2>
+        <form class="modal-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="modal-editar-nombre">Nombre:</label>
+                    <input type="text" id="modal-editar-nombre" name="nombre">
+                </div>
+                <div class="form-group">
+                    <label for="modal-editar-rut">RUT:</label>
+                    <input type="text" id="modal-editar-rut" name="rut">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="modal-editar-telefono">Teléfono:</label>
+                    <input type="text" id="modal-editar-telefono" name="telefono">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" onclick="guardarEdicionSolicitud()" class="btn btn-primary">
+                    Guardar cambios
+                </button>
+            </div>
+            <input type="hidden" id="modal-editar-id" name="id">
+        </form>
+    </div>
+</div>
 
 <!-- PIE DE PÁGINA -->
     
