@@ -1,5 +1,6 @@
 
 
+
 function setupFormularioPaciente() {
     const form = document.getElementById("patient-form");
     if (!form) return;
