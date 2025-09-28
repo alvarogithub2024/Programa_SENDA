@@ -1,3 +1,4 @@
+// ========== calendario/citas-profesionales.js - COMPLETO CON SISTEMA UNIFICADO ==========
 
 let profesionalesProfesional = [];
 let profesionesProfesional = [];
@@ -115,6 +116,138 @@ function actualizarHorasNuevaCitaProfesional() {
     });
 }
 
+function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
+    cargarProfesionalesAgendarCitaProfesional(function() {
+        llenarSelectProfesionesAgendarCitaProfesional();
+        llenarSelectProfesionalesAgendarCitaProfesional();
+        autocompletarNombreProfesionalAgendarCitaProfesional();
+
+        const inputIdProf = document.getElementById('modal-cita-id-prof');
+        if (inputIdProf) inputIdProf.value = solicitudId;
+
+        const nombreSpanProf = document.getElementById('modal-cita-nombre-prof');
+        if (nombreSpanProf) nombreSpanProf.textContent = nombre;
+
+        const rutSpanProf = document.getElementById('modal-cita-rut-prof');
+        if (rutSpanProf) rutSpanProf.textContent = window.formatRUT ? window.formatRUT(rut) : rut;
+
+        const selProf = document.getElementById('modal-cita-profession-prof');
+        if (selProf) {
+            selProf.onchange = function() {
+                llenarSelectProfesionalesAgendarCitaProfesional();
+                autocompletarNombreProfesionalAgendarCitaProfesional();
+                actualizarHorasAgendarProfesional();
+            };
+        }
+        
+        const selPro = document.getElementById('modal-cita-profesional-prof');
+        if (selPro) {
+            selPro.onchange = function() {
+                autocompletarNombreProfesionalAgendarCitaProfesional();
+                actualizarHorasAgendarProfesional();
+            };
+        }
+        
+        const fechaInput = document.getElementById('modal-cita-fecha-prof');
+        const profSelect = document.getElementById('modal-cita-profesional-prof');
+        if (fechaInput && profSelect) {
+            fechaInput.addEventListener('change', actualizarHorasAgendarProfesional);
+            profSelect.addEventListener('change', actualizarHorasAgendarProfesional);
+        }
+
+        showModal('modal-agendar-cita-profesional');
+
+        setTimeout(function() {
+            const form = document.getElementById('form-agendar-cita-profesional');
+            if (form && !form._onsubmitSetUnificado) {
+                form.addEventListener('submit', function(e){
+                    e.preventDefault();
+                    
+                    const solicitudId = document.getElementById('modal-cita-id-prof').value;
+                    const pacienteNombre = document.getElementById('modal-cita-nombre-prof').textContent;
+                    const pacienteRut = document.getElementById('modal-cita-rut-prof').textContent;
+                    
+                    const datosCita = {
+                        solicitudId: solicitudId,
+                        pacienteNombre: pacienteNombre,
+                        pacienteRut: pacienteRut,
+                        profesion: document.getElementById('modal-cita-profession-prof').value,
+                        profesionalId: document.getElementById('modal-cita-profesional-prof').value,
+                        profesionalNombre: document.getElementById('modal-cita-profesional-nombre-prof').value,
+                        fecha: document.getElementById('modal-cita-fecha-prof').value,
+                        hora: document.getElementById('modal-cita-hora-prof').value,
+                        tipo: "profesional",
+                        estado: "agendada",
+                        fechaCreacion: new Date().toISOString()
+                    };
+
+                    if (!datosCita.pacienteNombre || !datosCita.pacienteRut || !datosCita.profesion || !datosCita.profesionalId || !datosCita.fecha || !datosCita.hora) {
+                        window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
+                        return;
+                    }
+
+                    // ========== USAR SISTEMA UNIFICADO ==========
+                    if (!window.SISTEMA_ID_UNIFICADO) {
+                        window.showNotification && window.showNotification("Sistema no inicializado", "error");
+                        return;
+                    }
+
+                    window.SISTEMA_ID_UNIFICADO.crearCitaUnificada(datosCita)
+                        .then(function(resultado) {
+                            console.log(`✅ Cita creada: ${resultado.citaId} para paciente: ${resultado.pacienteId}`);
+                            
+                            // Actualizar estado de las solicitudes
+                            const db = window.getFirestore();
+                            return Promise.all([
+                                db.collection("solicitudes_ingreso").doc(solicitudId).update({ estado: "agendada" }).catch(() => {}),
+                                db.collection("reingresos").doc(solicitudId).update({ estado: "agendada" }).catch(() => {})
+                            ]);
+                        })
+                        .then(function() {
+                            window.showNotification && window.showNotification("Cita agendada correctamente", "success");
+                            closeModal('modal-agendar-cita-profesional');
+                            if (window.reloadSolicitudesFromFirebase) window.reloadSolicitudesFromFirebase();
+                        })
+                        .catch(function(error) {
+                            console.error('❌ Error al agendar cita:', error);
+                            window.showNotification && window.showNotification("Error al guardar la cita: " + error.message, "error");
+                        });
+                });
+                form._onsubmitSetUnificado = true;
+            }
+        }, 100);
+    });
+}
+
+// ========== EXPORTS Y CONFIGURACIÓN ==========
+
+window.abrirModalNuevaCitaProfesional = abrirModalNuevaCitaProfesional;
+window.abrirModalAgendarCitaProfesional = abrirModalAgendarCitaProfesional;
+window.cargarProfesionalesAgendarCitaProfesional = cargarProfesionalesAgendarCitaProfesional;
+
+// Configurar el botón de nueva cita profesional si existe
+document.addEventListener("DOMContentLoaded", function() {
+    const nuevaCitaProfesionalBtn = document.getElementById('nueva-cita-profesional-btn');
+    if (nuevaCitaProfesionalBtn && window.abrirModalNuevaCitaProfesional) {
+        nuevaCitaProfesionalBtn.onclick = function() {
+            window.abrirModalNuevaCitaProfesional();
+            setTimeout(function() {
+                const fechaInput = document.getElementById('prof-cita-fecha');
+                if (fechaInput) {
+                    const chileDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" }));
+                    fechaInput.value = chileDate.toISOString().slice(0, 10);
+                }
+            }, 100);
+        };
+    }
+});
+
+console.log('🏥 Citas profesionales con sistema unificado cargadas correctamente');appendChild(opt);
+            });
+        }
+    });
+}
+
 function abrirModalNuevaCitaProfesional() {
     cargarProfesionalesNuevaCitaProfesional(function() {
         llenarSelectProfesionesNuevaCitaProfesional();
@@ -149,7 +282,7 @@ function abrirModalNuevaCitaProfesional() {
 
         setTimeout(function() {
             const form = document.getElementById('form-nueva-cita-profesional');
-            if (form && !form._onsubmitSet) {
+            if (form && !form._onsubmitSetUnificado) {
                 form.onsubmit = function(e) {
                     e.preventDefault();
                     
@@ -159,8 +292,9 @@ function abrirModalNuevaCitaProfesional() {
                         profesionalNombre: document.getElementById('prof-cita-profesional-nombre').value,
                         fecha: document.getElementById('prof-cita-fecha').value,
                         hora: document.getElementById('prof-cita-hora').value,
-                        creado: new Date().toISOString(),
-                        tipo: "profesional"
+                        fechaCreacion: new Date().toISOString(),
+                        tipo: "profesional",
+                        estado: "agendada"
                     };
 
                     if (!cita.profesion || !cita.profesionalId || !cita.fecha || !cita.hora) {
@@ -168,6 +302,7 @@ function abrirModalNuevaCitaProfesional() {
                         return;
                     }
                     
+                    // Usar sistema unificado - las citas entre profesionales no tienen pacienteId específico
                     const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
                     db.collection("citas").add(cita)
                         .then(function(docRef) {
@@ -178,11 +313,13 @@ function abrirModalNuevaCitaProfesional() {
                             window.showNotification && window.showNotification("Error al guardar la cita: " + error, "error");
                         });
                 };
-                form._onsubmitSet = true;
+                form._onsubmitSetUnificado = true;
             }
         }, 100);
     });
 }
+
+// ========== FUNCIONES PARA AGENDAR DESDE SOLICITUDES ==========
 
 function cargarProfesionalesAgendarCitaProfesional(callback) {
     const user = firebase.auth().currentUser;
@@ -286,107 +423,4 @@ function actualizarHorasAgendarProfesional() {
                 const opt = document.createElement('option');
                 opt.value = h;
                 opt.textContent = h;
-                selectHora.appendChild(opt);
-            });
-        }
-    });
-}
-
-function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
-    cargarProfesionalesAgendarCitaProfesional(function() {
-        llenarSelectProfesionesAgendarCitaProfesional();
-        llenarSelectProfesionalesAgendarCitaProfesional();
-        autocompletarNombreProfesionalAgendarCitaProfesional();
-
-        const inputIdProf = document.getElementById('modal-cita-id-prof');
-        if (inputIdProf) inputIdProf.value = solicitudId;
-
-        const nombreSpanProf = document.getElementById('modal-cita-nombre-prof');
-        if (nombreSpanProf) nombreSpanProf.textContent = nombre;
-
-        const rutSpanProf = document.getElementById('modal-cita-rut-prof').textContent = window.formatRUT ? 
-            window.formatRUT(rut) : rut;
-
-        const selProf = document.getElementById('modal-cita-profession-prof');
-        if (selProf) {
-            selProf.onchange = function() {
-                llenarSelectProfesionalesAgendarCitaProfesional();
-                autocompletarNombreProfesionalAgendarCitaProfesional();
-                actualizarHorasAgendarProfesional();
-            };
-        }
-        
-        const selPro = document.getElementById('modal-cita-profesional-prof');
-        if (selPro) {
-            selPro.onchange = function() {
-                autocompletarNombreProfesionalAgendarCitaProfesional();
-                actualizarHorasAgendarProfesional();
-            };
-        }
-        
-        const fechaInput = document.getElementById('modal-cita-fecha-prof');
-        const profSelect = document.getElementById('modal-cita-profesional-prof');
-        if (fechaInput && profSelect) {
-            fechaInput.addEventListener('change', actualizarHorasAgendarProfesional);
-            profSelect.addEventListener('change', actualizarHorasAgendarProfesional);
-        }
-
-        showModal('modal-agendar-cita-profesional');
-
-
-        setTimeout(function() {
-            const form = document.getElementById('form-agendar-cita-profesional');
-            if (form && !form._onsubmitSet) {
-                form.addEventListener('submit', function(e){
-                    e.preventDefault();
-                    
-                    const cita = {
-                        solicitudId: document.getElementById('modal-cita-id-prof').value,
-                        nombre: document.getElementById('modal-cita-nombre-prof').textContent,
-                        rut: document.getElementById('modal-cita-rut-prof').textContent,
-                        profesion: document.getElementById('modal-cita-profession-prof').value,
-                        profesionalId: document.getElementById('modal-cita-profesional-prof').value,
-                        profesionalNombre: document.getElementById('modal-cita-profesional-nombre-prof').value,
-                        fecha: document.getElementById('modal-cita-fecha-prof').value,
-                        hora: document.getElementById('modal-cita-hora-prof').value,
-                        creado: new Date().toISOString(),
-                        tipo: "profesional"
-                    };
-
-                    if (!cita.nombre || !cita.rut || !cita.profesion || !cita.profesionalId || !cita.fecha || !cita.hora) {
-                        window.showNotification && window.showNotification("Completa todos los campos obligatorios", "warning");
-                        return;
-                    }
-
-                    const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
-                    db.collection("citas").add(cita)
-                        .then(function(docRef) {
-                            const solicitudId = cita.solicitudId;
-                            
-    
-                            db.collection("solicitudes_ingreso").doc(solicitudId).update({ estado: "agendada" })
-                                .catch(() => {})
-                                .finally(() => {
-                                    // Actualizar estado en reingresos
-                                    db.collection("reingresos").doc(solicitudId).update({ estado: "agendada" })
-                                        .catch(() => {})
-                                        .finally(() => {
-                                            window.showNotification && window.showNotification("Cita agendada correctamente", "success");
-                                            closeModal('modal-agendar-cita-profesional');
-                                            if (window.reloadSolicitudesFromFirebase) window.reloadSolicitudesFromFirebase();
-                                        });
-                                });
-                        })
-                        .catch(function(error) {
-                            window.showNotification && window.showNotification("Error al guardar la cita: " + error, "error");
-                        });
-                });
-                form._onsubmitSet = true;
-            }
-        }, 100);
-    });
-}
-
-window.abrirModalNuevaCitaProfesional = abrirModalNuevaCitaProfesional;
-window.abrirModalAgendarCitaProfesional = abrirModalAgendarCitaProfesional;
-window.cargarProfesionalesAgendarCitaProfesional = cargarProfesionalesAgendarCitaProfesional;
+                selectHora.
