@@ -88,48 +88,41 @@ function guardarCitaPaciente(datosCita, callback) {
   const datos = Object.assign({}, datosCita);
   datos.fechaCreacion = datos.fechaCreacion || new Date().toISOString();
 
-  const rutLimpio = datos.pacienteRut.replace(/[.\-]/g, "").toUpperCase();
-  db.collection("pacientes").where("rut", "==", rutLimpio).limit(1).get()
-    .then(function(snapshot) {
-      const pacienteData = {
-        nombre: datos.pacienteNombre,
-        rut: rutLimpio,
-        cesfam: datos.cesfam,
-        telefono: datos.telefono || "",
-        email: datos.email || "",
-        direccion: datos.direccion || "",
-        fechaRegistro: datos.fechaCreacion || new Date().toISOString(),
-      };
-
-      if (!snapshot.empty) {
-       
-        const docId = snapshot.docs[0].id;
-        const datosActuales = snapshot.docs[0].data();
-        // Solo actualiza campos si el nuevo valor NO está vacío
-        const pacienteDataFinal = { ...datosActuales };
-        Object.keys(pacienteData).forEach(k => {
-          if (pacienteData[k] && pacienteData[k] !== "") {
-            pacienteDataFinal[k] = pacienteData[k];
-          }
-        });
-        db.collection("pacientes").doc(docId).set(pacienteDataFinal, { merge: true });
-      } else {
+  db.collection("citas").add(datos)
+    .then(function(docRef) {
+      window.showNotification && window.showNotification("Cita agendada correctamente", "success");
       
-        db.collection("pacientes").add(pacienteData);
+      if (datos.pacienteRut && datos.pacienteNombre) {
+        const rutLimpio = datos.pacienteRut.replace(/[.\-]/g, "").toUpperCase();
+        db.collection("pacientes").where("rut", "==", rutLimpio).limit(1).get()
+          .then(function(snapshot) {
+            const pacienteData = {
+              nombre: datos.pacienteNombre,
+              rut: rutLimpio,
+              cesfam: datos.cesfam,
+              telefono: datos.telefono || "",
+              email: datos.email || "",
+              direccion: datos.direccion || "",
+              fechaRegistro: datos.fechaCreacion || new Date().toISOString(),
+            };
+            if (!snapshot.empty) {
+              
+              const docId = snapshot.docs[0].id;
+              db.collection("pacientes").doc(docId).update(pacienteData);
+            } else {
+          
+              db.collection("pacientes").add(pacienteData);
+            }
+          });
       }
-
-      
-      db.collection("citas").add(datos)
-        .then(function(docRef) {
-          window.showNotification && window.showNotification("Cita agendada correctamente", "success");
-          if (typeof callback === "function") callback(docRef.id);
-        })
-        .catch(function(error) {
-          window.showNotification && window.showNotification("Error al agendar cita: " + error.message, "error");
-          if (typeof callback === "function") callback(null, error);
-        });
+      if (typeof callback === "function") callback(docRef.id);
+    })
+    .catch(function(error) {
+      window.showNotification && window.showNotification("Error al agendar cita: " + error.message, "error");
+      if (typeof callback === "function") callback(null, error);
     });
 }
+
 
 function abrirModalCitaPaciente() {
   cargarProfesionalesAtencionPorCesfam(function() {
