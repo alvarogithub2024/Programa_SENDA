@@ -465,7 +465,6 @@ function eliminarSolicitud(solicitudId) {
 
 function abrirModalResponder(email, nombre, solicitudId) {
     document.getElementById('modal-responder-email').value = email || '';
-    document.getElementById('modal-responder-nombre').textContent = nombre || '';
     document.getElementById('modal-responder-id').value = solicitudId || '';
     document.getElementById('modal-responder').style.display = 'flex';
 }
