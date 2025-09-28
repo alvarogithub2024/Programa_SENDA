@@ -614,6 +614,5 @@ window.cerrarModalResponder = cerrarModalResponder;
 window.guardarEdicionSolicitud = guardarEdicionSolicitud;
 window.cerrarModalEditar = cerrarModalEditar;
 window.exportarSolicitud = exportarSolicitud;
-window.formatRUT ? window.formatRUT(rut) : rut
 
 console.log('📋 Gestor de solicitudes listo.');
