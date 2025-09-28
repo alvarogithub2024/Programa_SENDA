@@ -110,7 +110,7 @@
             div.innerHTML = `
                 <div style="display:flex; gap:24px; align-items:center;">
                   <div style="font-weight:600; min-width:170px;">${p.nombre} ${p.apellidos || ''}</div>
-                  <div>RUT: ${window.formatRUT ? window.formatRUT(p.rut) : (p.rut || '')}</div>
+                  <div>RUT: ${p.rut}</div>
                   <div>Tel: ${p.telefono || 'No disponible'}</div>
                   <div>Email: ${p.email || 'No disponible'}</div>
                   <button class="btn btn-outline btn-sm" style="margin-left:18px;" onclick="verFichaPacienteSenda('${p.rut}')">
