@@ -1,3 +1,6 @@
+(function() {
+// ========== calendario/citas.js - ENCAPSULADO PARA EVITAR CONFLICTOS GLOBALES ==========
+
 let profesionalesAtencion = [];
 let profesionesAtencion = [];
 let miCesfam = null;
@@ -336,15 +339,17 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
   });
 }
 
+// Exportar funciones al window para acceso global
 window.abrirModalCitaPaciente = abrirModalCitaPaciente;
 window.guardarCitaPaciente = guardarCitaPaciente;
 window.llenarSelectProfesionesPaciente = llenarSelectProfesionesPaciente;
 window.llenarSelectProfesionalesPaciente = llenarSelectProfesionalesPaciente;
 window.autocompletarNombreProfesionalPaciente = autocompletarNombreProfesionalPaciente;
 window.cargarProfesionalesAtencionPorCesfam = cargarProfesionalesAtencionPorCesfam;
-
 window.abrirModalAgendarCita = abrirModalAgendarCita;
 window.cargarProfesionalesAgendarCita = cargarProfesionalesAgendarCita;
 window.llenarSelectProfesionesAgendarCita = llenarSelectProfesionesAgendarCita;
 window.llenarSelectProfesionalesAgendarCita = llenarSelectProfesionalesAgendarCita;
 window.autocompletarNombreProfesionalAgendarCita = autocompletarNombreProfesionalAgendarCita;
+
+})();
