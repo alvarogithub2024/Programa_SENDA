@@ -1,4 +1,3 @@
-
 function formatRUT(rut) {
     if (!rut) return '';
     rut = rut.replace(/[^0-9kK]/g, '').toUpperCase();
@@ -14,6 +13,7 @@ function formatRUT(rut) {
     }
     return formatted + '-' + dv;
 }
+
 
 function formatPhoneNumber(phone) {
     if (!phone) return '';
