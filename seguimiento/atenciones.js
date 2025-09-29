@@ -1,6 +1,3 @@
-// ========== seguimiento/atenciones.js - ACTUALIZADO ==========
-
-// ========== NUEVA FUNCIÓN CON SISTEMA UNIFICADO ==========
 window.registrarAtencionUnificada = function(datosAtencion, callback) {
     if (!window.SISTEMA_ID_UNIFICADO) {
         window.showNotification && window.showNotification("Sistema no inicializado", "error");
@@ -32,8 +29,6 @@ window.registrarAtencionUnificada = function(datosAtencion, callback) {
             if (typeof callback === "function") callback(false, null);
         });
 };
-
-// ========== EVENTO DEL FORMULARIO ACTUALIZADO ==========
 document.addEventListener("DOMContentLoaded", function() {
     var form = document.getElementById("form-registrar-atencion");
     if (form) {
@@ -58,7 +53,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 
                 const cita = doc.data();
                 const datosAtencion = {
-                    pacienteId: cita.pacienteId, // ⭐ AHORA USA EL PACIENTE ID UNIFICADO
+                    pacienteId: cita.pacienteId,
                     pacienteNombre: cita.pacienteNombre || cita.nombre || "",
                     pacienteRut: cita.pacienteRut || cita.rut || "",
                     cesfam: cita.cesfam || "",
@@ -78,8 +73,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 });
-
-// ========== FUNCIÓN LEGACY (mantener para compatibilidad) ==========
 window.registrarAtencion = function(datosAtencion, callback) {
     var db = window.getFirestore();
     if (!datosAtencion.pacienteId) {
