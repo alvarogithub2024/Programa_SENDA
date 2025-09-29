@@ -1,6 +1,4 @@
 (function() {
-// ========== calendario/citas.js - ENCAPSULADO PARA EVITAR CONFLICTOS GLOBALES ==========
-
 let profesionalesAtencion = [];
 let profesionesAtencion = [];
 let miCesfam = null;
@@ -85,7 +83,6 @@ function autocompletarNombreProfesionalPaciente() {
   nombreInput.value = selected && selected.dataset.nombre ? selected.dataset.nombre : '';
 }
 
-// ========== FUNCIÓN ACTUALIZADA CON SISTEMA UNIFICADO ==========
 function guardarCitaPaciente(datosCita, callback) {
   if (!window.SISTEMA_ID_UNIFICADO) {
     window.showNotification && window.showNotification("Sistema no inicializado", "error");
@@ -310,7 +307,6 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
             fechaCreacion: new Date().toISOString()
           };
 
-          // Usar sistema unificado
           if (!window.SISTEMA_ID_UNIFICADO) {
             window.showNotification && window.showNotification("Sistema no inicializado", "error");
             return;
@@ -339,7 +335,6 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
   });
 }
 
-// Exportar funciones al window para acceso global
 window.abrirModalCitaPaciente = abrirModalCitaPaciente;
 window.guardarCitaPaciente = guardarCitaPaciente;
 window.llenarSelectProfesionesPaciente = llenarSelectProfesionesPaciente;
