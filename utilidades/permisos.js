@@ -24,7 +24,7 @@ const PERMISOS_POR_ROL = {
         gestionarSolicitudes: false
     },
     'asistente_social': {
-        editarHistorial: false,      // <--- NO puede editar historial clínico
+        editarHistorial: false, 
         eliminarHistorial: false,
         crearAtenciones: false,
         verPacientes: true,
