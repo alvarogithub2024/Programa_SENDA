@@ -1,12 +1,3 @@
-// ========== SISTEMA DE ID UNIFICADO PARA PACIENTES - SENDA ==========
-// Este archivo debe ir en: utilidades/sistema-id-unificado.js
-
-/**
- * Sistema para mantener consistencia de IDs entre todas las colecciones
- * Todas las colecciones usarán la misma ID del paciente para garantizar trazabilidad
- */
-
-// ========== CONFIGURACIÓN DE COLECCIONES ==========
 const COLECCIONES_SISTEMA = {
     PACIENTES: "pacientes",
     CITAS: "citas", 
@@ -16,13 +7,6 @@ const COLECCIONES_SISTEMA = {
     SOLICITUDES_INFO: "solicitudes_informacion",
     ACTUALIZACION_DATOS: "actualizacion_datos"
 };
-
-// ========== FUNCIONES PRINCIPALES ==========
-
-/**
- * Crea o obtiene un ID de paciente basado en RUT
- * Este será el ID maestro usado en todas las colecciones
- */
 async function obtenerIdPaciente(rut, nombre = '', apellidos = '') {
     if (!rut) {
         throw new Error('RUT es requerido para obtener ID del paciente');
@@ -32,20 +16,17 @@ async function obtenerIdPaciente(rut, nombre = '', apellidos = '') {
     const db = window.getFirestore();
     
     try {
-        // Buscar si ya existe un paciente con este RUT
         const querySnapshot = await db.collection(COLECCIONES_SISTEMA.PACIENTES)
             .where("rut", "==", rutLimpio)
             .limit(1)
             .get();
         
         if (!querySnapshot.empty) {
-            // Paciente ya existe, retornar su ID
             const pacienteDoc = querySnapshot.docs[0];
             const pacienteId = pacienteDoc.id;
             console.log(`✅ Paciente existente encontrado: ${pacienteId} (RUT: ${rutLimpio})`);
             return pacienteId;
         } else {
-            // Crear nuevo paciente y retornar su ID
             const nuevoPaciente = {
                 rut: rutLimpio,
                 nombre: nombre || '',
@@ -65,9 +46,6 @@ async function obtenerIdPaciente(rut, nombre = '', apellidos = '') {
     }
 }
 
-/**
- * Actualiza o crea registro en la colección pacientes con datos completos
- */
 async function sincronizarDatosPaciente(pacienteId, datosPaciente) {
     const db = window.getFirestore();
     
@@ -77,8 +55,6 @@ async function sincronizarDatosPaciente(pacienteId, datosPaciente) {
             rut: limpiarRUT(datosPaciente.rut || ''),
             fechaUltimaActualizacion: new Date().toISOString()
         };
-        
-        // Usar merge para no sobrescribir datos existentes
         await db.collection(COLECCIONES_SISTEMA.PACIENTES).doc(pacienteId).set(datosLimpios, { merge: true });
         
         console.log(`✅ Datos del paciente sincronizados: ${pacienteId}`);
@@ -88,23 +64,14 @@ async function sincronizarDatosPaciente(pacienteId, datosPaciente) {
         throw error;
     }
 }
-
-// ========== FUNCIONES PARA CADA COLECCIÓN ==========
-
-/**
- * Crear solicitud de ingreso con ID unificado
- */
 async function crearSolicitudIngreso(datosSolicitud) {
     const pacienteId = await obtenerIdPaciente(
         datosSolicitud.rut, 
         datosSolicitud.nombre, 
         datosSolicitud.apellidos
     );
-    
-    // Sincronizar datos completos del paciente
+
     await sincronizarDatosPaciente(pacienteId, datosSolicitud);
-    
-    // Crear solicitud con referencia al paciente
     const db = window.getFirestore();
     const solicitudConId = {
         ...datosSolicitud,
@@ -119,10 +86,6 @@ async function crearSolicitudIngreso(datosSolicitud) {
     
     return { solicitudId: docRef.id, pacienteId: pacienteId };
 }
-
-/**
- * Crear cita con ID unificado
- */
 async function crearCitaUnificada(datosCita) {
     const pacienteId = await obtenerIdPaciente(
         datosCita.pacienteRut || datosCita.rut, 
@@ -130,7 +93,6 @@ async function crearCitaUnificada(datosCita) {
         datosCita.apellidos
     );
     
-    // Sincronizar datos del paciente
     await sincronizarDatosPaciente(pacienteId, {
         nombre: datosCita.pacienteNombre || datosCita.nombre,
         apellidos: datosCita.apellidos || '',
@@ -157,13 +119,8 @@ async function crearCitaUnificada(datosCita) {
     return { citaId: docRef.id, pacienteId: pacienteId };
 }
 
-/**
- * Crear atención con ID unificado
- */
 async function crearAtencionUnificada(datosAtencion) {
     let pacienteId;
-    
-    // Si ya viene el pacienteId, usarlo; si no, obtenerlo por RUT
     if (datosAtencion.pacienteId) {
         pacienteId = datosAtencion.pacienteId;
     } else {
@@ -174,7 +131,6 @@ async function crearAtencionUnificada(datosAtencion) {
         );
     }
     
-    // Sincronizar datos del paciente
     await sincronizarDatosPaciente(pacienteId, {
         nombre: datosAtencion.pacienteNombre || datosAtencion.nombre,
         rut: datosAtencion.pacienteRut || datosAtencion.rut,
@@ -195,17 +151,13 @@ async function crearAtencionUnificada(datosAtencion) {
     return { atencionId: docRef.id, pacienteId: pacienteId };
 }
 
-/**
- * Crear reingreso con ID unificado
- */
 async function crearReingresoUnificado(datosReingreso) {
     const pacienteId = await obtenerIdPaciente(
         datosReingreso.rut,
         datosReingreso.nombre,
         ''
     );
-    
-    // Sincronizar datos del paciente
+
     await sincronizarDatosPaciente(pacienteId, {
         nombre: datosReingreso.nombre,
         rut: datosReingreso.rut,
@@ -228,11 +180,6 @@ async function crearReingresoUnificado(datosReingreso) {
     return { reingresoId: docRef.id, pacienteId: pacienteId };
 }
 
-// ========== FUNCIONES DE CONSULTA ==========
-
-/**
- * Obtener todos los registros de un paciente en todas las colecciones
- */
 async function obtenerHistorialCompletoPaciente(pacienteId) {
     const db = window.getFirestore();
     
@@ -282,9 +229,6 @@ async function obtenerHistorialCompletoPaciente(pacienteId) {
     }
 }
 
-/**
- * Buscar paciente por RUT y obtener su ID
- */
 async function buscarPacientePorRUT(rut) {
     const rutLimpio = limpiarRUT(rut);
     const db = window.getFirestore();
@@ -310,8 +254,6 @@ async function buscarPacientePorRUT(rut) {
     }
 }
 
-// ========== FUNCIONES DE UTILIDAD ==========
-
 function limpiarRUT(rut) {
     if (!rut) return '';
     return rut.replace(/[^0-9kK]/g, '').toUpperCase();
@@ -329,12 +271,6 @@ function validarDatosMinimos(datos) {
     return true;
 }
 
-// ========== FUNCIONES DE MIGRACIÓN ==========
-
-/**
- * Migrar registros existentes al sistema unificado
- * USAR SOLO UNA VEZ PARA MIGRAR DATOS EXISTENTES
- */
 async function migrarDatosExistentes() {
     console.log('🔄 Iniciando migración de datos existentes...');
     
@@ -343,7 +279,6 @@ async function migrarDatosExistentes() {
     let errores = 0;
     
     try {
-        // Migrar solicitudes de ingreso
         const solicitudesSnap = await db.collection(COLECCIONES_SISTEMA.SOLICITUDES_INGRESO).get();
         
         for (const solicitudDoc of solicitudesSnap.docs) {
@@ -379,9 +314,6 @@ async function migrarDatosExistentes() {
     }
 }
 
-// ========== EXPORTS ==========
-
-// Hacer funciones disponibles globalmente
 window.SISTEMA_ID_UNIFICADO = {
     obtenerIdPaciente,
     sincronizarDatosPaciente,
@@ -394,7 +326,6 @@ window.SISTEMA_ID_UNIFICADO = {
     migrarDatosExistentes
 };
 
-// Exports individuales
 window.obtenerIdPaciente = obtenerIdPaciente;
 window.sincronizarDatosPaciente = sincronizarDatosPaciente;
 window.crearSolicitudIngreso = crearSolicitudIngreso;
