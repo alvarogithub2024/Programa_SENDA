@@ -1,5 +1,3 @@
-// ========== calendario/citas-profesionales.js - CORREGIDO ==========
-
 let profesionalesProfesional = [];
 let profesionesProfesional = [];
 let miCesfamProfesional = null;
@@ -170,7 +168,6 @@ function abrirModalNuevaCitaProfesional() {
                         return;
                     }
                     
-                    // Las citas entre profesionales no necesitan pacienteId específico
                     const db = window.getFirestore ? window.getFirestore() : firebase.firestore();
                     db.collection("citas").add(cita)
                         .then(function(docRef) {
@@ -186,8 +183,6 @@ function abrirModalNuevaCitaProfesional() {
         }, 100);
     });
 }
-
-// ========== FUNCIONES PARA AGENDAR DESDE SOLICITUDES ==========
 
 function cargarProfesionalesAgendarCitaProfesional(callback) {
     const user = firebase.auth().currentUser;
@@ -367,7 +362,6 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
                         return;
                     }
 
-                    // Usar sistema unificado
                     if (!window.SISTEMA_ID_UNIFICADO) {
                         window.showNotification && window.showNotification("Sistema no inicializado", "error");
                         return;
@@ -376,8 +370,6 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
                     window.SISTEMA_ID_UNIFICADO.crearCitaUnificada(datosCita)
                         .then(function(resultado) {
                             console.log(`Cita creada: ${resultado.citaId} para paciente: ${resultado.pacienteId}`);
-                            
-                            // Actualizar estado de las solicitudes
                             const db = window.getFirestore();
                             return Promise.all([
                                 db.collection("solicitudes_ingreso").doc(solicitudId).update({ estado: "agendada" }).catch(() => {}),
@@ -400,12 +392,11 @@ function abrirModalAgendarCitaProfesional(solicitudId, nombre, rut) {
     });
 }
 
-// Exports
 window.abrirModalNuevaCitaProfesional = abrirModalNuevaCitaProfesional;
 window.abrirModalAgendarCitaProfesional = abrirModalAgendarCitaProfesional;
 window.cargarProfesionalesAgendarCitaProfesional = cargarProfesionalesAgendarCitaProfesional;
 
-// Configurar botón si existe
+
 document.addEventListener("DOMContentLoaded", function() {
     const nuevaCitaProfesionalBtn = document.getElementById('nueva-cita-profesional-btn');
     if (nuevaCitaProfesionalBtn && window.abrirModalNuevaCitaProfesional) {
