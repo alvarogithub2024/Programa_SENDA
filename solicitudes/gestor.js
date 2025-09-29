@@ -1,6 +1,3 @@
-// ========== GESTOR DE SOLICITUDES (RUT FORMATEADO) ==========
-
-// ------ FUNCIÓN GLOBAL PARA FORMATEAR RUT ------
 window.formatRUT = function(rut) {
   rut = rut ? rut.toString().replace(/[^0-9kK]/g, '').toUpperCase() : '';
   if (rut.length < 2) return rut;
@@ -10,8 +7,6 @@ window.formatRUT = function(rut) {
   cuerpo = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   return `${cuerpo}-${dv}`;
 };
-// -----------------------------------------------
-
 let solicitudesData = [];
 let filteredSolicitudesData = [];
 let currentFilters = {
