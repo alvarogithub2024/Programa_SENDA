@@ -1,9 +1,6 @@
-// ========== calendario/citas.js - ACTUALIZADO ==========
-
 let profesionalesAtencion = [];
 let profesionesAtencion = [];
 let miCesfam = null;
-
 let profesionalesAgendar = [];
 let profesionesAgendar = [];
 let miCesfamAgendar = null;
@@ -309,7 +306,6 @@ function abrirModalAgendarCita(solicitudId, nombre, rut) {
             fechaCreacion: new Date().toISOString()
           };
 
-          // Usar sistema unificado
           if (!window.SISTEMA_ID_UNIFICADO) {
             window.showNotification && window.showNotification("Sistema no inicializado", "error");
             return;
@@ -351,10 +347,7 @@ window.llenarSelectProfesionesAgendarCita = llenarSelectProfesionesAgendarCita;
 window.llenarSelectProfesionalesAgendarCita = llenarSelectProfesionalesAgendarCita;
 window.autocompletarNombreProfesionalAgendarCita = autocompletarNombreProfesionalAgendarCita;
 
-// ======================= CONTROL DE PASOS SOLICITUD DE AYUDA (MULTIPASO) =======================
-
 document.addEventListener("DOMContentLoaded", function() {
-  // ----------- BURBUJA DINÁMICA PARA SLIDER DE MOTIVACIÓN -----------
   const range = document.getElementById('motivacion-range');
   const bubble = document.getElementById('motivacion-bubble');
   if (range && bubble) {
@@ -362,20 +355,15 @@ document.addEventListener("DOMContentLoaded", function() {
       const min = parseInt(range.min) || 0;
       const max = parseInt(range.max) || 10;
       const val = parseInt(range.value);
-
-      // Calcula el porcentaje (0 a 1)
       const percent = (val - min) / (max - min);
-
-      // Ancho usable del slider
       const sliderWidth = range.offsetWidth;
-      // Ajusta para que la burbuja quede centrada sobre el pulgar
       const bubbleLeft = percent * sliderWidth;
 
       bubble.style.left = `${bubbleLeft}px`;
       bubble.textContent = val;
     }
 
-    setBubble(); // Inicializa al cargar
+    setBubble(); 
     range.addEventListener('input', setBubble);
     window.addEventListener('resize', setBubble);
   }
@@ -400,8 +388,6 @@ document.addEventListener("DOMContentLoaded", function() {
   });
   updateTipoSolicitudUI();
 
-
-  // --------- SLIDER DE MOTIVACION DINAMICO -----------
 const motivacionRange = document.getElementById('motivacion-range');
   const motivacionValue = document.getElementById('motivacion-value');
   if (motivacionRange && motivacionValue) {
@@ -410,9 +396,7 @@ const motivacionRange = document.getElementById('motivacion-range');
       motivacionValue.textContent = this.value;
     });
   }
-  // ----------------------------------------------------
-
-  // Paso 1: Botón siguiente
+  
   const next1 = document.getElementById('next-step-1');
   if (next1) {
     next1.onclick = function() {
@@ -430,7 +414,6 @@ const motivacionRange = document.getElementById('motivacion-range');
     };
   }
 
-  // Paso 2: Botón anterior
   const prev2 = document.getElementById('prev-step-2');
   if (prev2) {
     prev2.onclick = function() {
@@ -441,7 +424,6 @@ const motivacionRange = document.getElementById('motivacion-range');
     };
   }
 
-  // Paso 2: Botón siguiente
   const next2 = document.getElementById('next-step-2');
   if (next2) {
     next2.onclick = function() {
@@ -459,8 +441,6 @@ const motivacionRange = document.getElementById('motivacion-range');
       document.getElementById('progress-text').innerText = "Paso 3 de 4";
     };
   }
-
-  // Paso 3: Botón anterior
   const prev3 = document.getElementById('prev-step-3');
   if (prev3) {
     prev3.onclick = function() {
@@ -471,7 +451,6 @@ const motivacionRange = document.getElementById('motivacion-range');
     };
   }
 
-  // Paso 3: Botón siguiente
   const next3 = document.getElementById('next-step-3');
   if (next3) {
     next3.onclick = function() {
@@ -489,7 +468,6 @@ const motivacionRange = document.getElementById('motivacion-range');
     };
   }
 
-  // Paso 4: Botón anterior
   const prev4 = document.getElementById('prev-step-4');
   if (prev4) {
     prev4.onclick = function() {
@@ -500,7 +478,6 @@ const motivacionRange = document.getElementById('motivacion-range');
     };
   }
 
-  // Botón "Enviar solo información"
   const btnInfo = document.getElementById('enviar-solo-info');
   if (btnInfo) {
     btnInfo.onclick = function() {
@@ -524,7 +501,6 @@ const motivacionRange = document.getElementById('motivacion-range');
     };
   }
 
-  // Botón final "Enviar Solicitud" (multipaso)
   const submitForm = document.getElementById('submit-form');
   if (submitForm) {
     submitForm.onclick = function(e) {
@@ -570,13 +546,8 @@ const motivacionRange = document.getElementById('motivacion-range');
       const min = parseInt(range.min) || 0;
       const max = parseInt(range.max) || 10;
       const val = parseInt(range.value);
-
-      // Calcula el porcentaje
       const percent = (val - min) / (max - min);
-
-      // Calcula el ancho usable del slider
       const sliderWidth = range.offsetWidth;
-      // Ajuste para burbuja en el centro del pulgar
       const bubbleLeft = percent * sliderWidth;
 
       bubble.style.left = `${bubbleLeft}px`;
@@ -586,7 +557,7 @@ const motivacionRange = document.getElementById('motivacion-range');
     setBubble();
 
     range.addEventListener('input', setBubble);
-    window.addEventListener('resize', setBubble); // Por si cambia el tamaño
+    window.addEventListener('resize', setBubble);
   }
 });
 });
