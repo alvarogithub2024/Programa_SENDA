@@ -1,6 +1,3 @@
-// ========== SEGUIMIENTO/CITAS-PROXIMAS.JS ==========
-// SOLO EL PROFESIONAL ASIGNADO PUEDE VER LA CITA EN SEGUIMIENTO
-
 function getHoraActualChile() {
     let now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" }));
     let h = now.getHours();
@@ -12,8 +9,6 @@ function getFechaActualChile() {
     let now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" }));
     return now.toISOString().slice(0, 10);
 }
-
-// SOLO el profesional asignado puede ver y atender la cita
 function mostrarPacienteActualHoy() {
     var db = window.getFirestore();
     if (!db) return;
@@ -33,7 +28,6 @@ function mostrarPacienteActualHoy() {
             snapshot.forEach(function(doc) {
                 let cita = doc.data();
                 cita.id = doc.id;
-                // SOLO EL PROFESIONAL ASIGNADO LA VE
                 if (cita.profesionalId !== user.uid) return;
                 if (cita.hora) {
                     let citaMin = parseInt(cita.hora.slice(0,2),10)*60 + parseInt(cita.hora.slice(3,5),10);
@@ -91,7 +85,6 @@ function mostrarPacienteActualHoy() {
         });
 }
 
-// SOLO el profesional asignado ve sus próximas citas
 function mostrarCitasRestantesHoy() {
     var db = window.getFirestore();
     if (!db) return;
@@ -109,7 +102,6 @@ function mostrarCitasRestantesHoy() {
             snapshot.forEach(function(doc) {
                 let cita = doc.data();
                 cita.id = doc.id;
-                // SOLO EL PROFESIONAL ASIGNADO LA VE
                 if (cita.profesionalId !== user.uid) return;
                 if (cita.hora && cita.hora > horaActual) {
                     citas.push(cita);
