@@ -1,10 +1,6 @@
-// MAIN.JS - SISTEMA SENDA PUENTE ALTO v2.0 - CON SISTEMA DE PERMISOS
-
-// Variables de control
 var initializationCompleted = false;
 var initializationTimer = null;
 
-// Inicialización principal
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('\n🚀 SISTEMA SENDA PUENTE ALTO v2.0');
     console.log('=====================================');
@@ -19,7 +15,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     }, 15000);
 
     try {
-        // Paso 1: Inicializar Firebase
         console.log('🔧 Paso 1: Inicializando Firebase...');
         var firebaseInitialized = window.initializeFirebase && window.initializeFirebase();
         if (!firebaseInitialized) {
@@ -27,29 +22,20 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         await waitForFirebaseInitialization();
         console.log('✅ Firebase verificado y listo\n');
-
-        // Paso 2: Inicializar sistema de permisos
         console.log('🔧 Paso 2: Inicializando sistema de permisos...');
         if (window.inicializarSistemaPermisos) {
             window.inicializarSistemaPermisos();
         }
         console.log('✅ Sistema de permisos configurado\n');
-
-        // Paso 3: Configurar navegación
         console.log('🔧 Paso 3: Configurando navegación...');
         window.setupTabs && window.setupTabs();
         console.log('✅ Navegación configurada\n');
-
-        // Paso 4: Configurar eventos globales
         console.log('🔧 Paso 4: Configurando eventos globales...');
         window.setupEventListeners && window.setupEventListeners();
         console.log('✅ Eventos configurados\n');
-
-        // Paso 5: Inicializar módulos del sistema
         console.log('🔧 Paso 5: Inicializando módulos del sistema...');
         await initializeSystemModules();
 
-        // Paso 6: Configurar funciones globales
         setupGlobalFunctions();
 
         console.log('\n🎉 ¡SISTEMA SENDA INICIALIZADO CORRECTAMENTE!');
@@ -70,7 +56,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 });
 
-// Esperar inicialización de Firebase
 async function waitForFirebaseInitialization(maxRetries) {
     maxRetries = maxRetries || 10;
     for (var i = 0; i < maxRetries; i++) {
@@ -83,7 +68,6 @@ async function waitForFirebaseInitialization(maxRetries) {
     throw new Error('Firebase no se inicializó en el tiempo esperado');
 }
 
-// Inicializar módulos del sistema
 async function initializeSystemModules() {
     var modules = [
         {
@@ -142,7 +126,6 @@ async function initializeSystemModules() {
     }
 }
 
-// Configurar funciones globales
 function setupGlobalFunctions() {
     try {
         window.closeModal = window.closeModal || function(modalId) {
@@ -177,8 +160,7 @@ function setupGlobalFunctions() {
                 console.error('Error switching login tab:', error);
             }
         };
-
-        // Funciones globales con control de permisos para historial clínico
+        
         window.abrirModalEditarAtencionSeguro = function(atencionId, descripcion, tipo, rutPaciente) {
             if (window.puedeEditarHistorial && window.puedeEditarHistorial()) {
                 if (window.abrirModalEditarAtencion) {
@@ -240,7 +222,6 @@ function setupGlobalFunctions() {
     }
 }
 
-// Modal de error de inicialización
 function showInitializationError(error) {
     var errorMessage = error ? error.message : 'Timeout de inicialización';
     var errorModal = document.getElementById('initialization-error-modal');
@@ -278,7 +259,6 @@ function showInitializationError(error) {
     }
 }
 
-// Intento de recuperación básica
 function attemptBasicRecovery() {
     try {
         window.closeModal = function(modalId) {
@@ -300,8 +280,6 @@ function attemptBasicRecovery() {
         console.error('❌ Error en recuperación básica:', recoveryError);
     }
 }
-
-// Event listeners globales
 window.addEventListener('online', function() {
     console.log('🌐 Conexión restaurada');
     window.showNotification && window.showNotification('Conexión a Internet restaurada', 'success');
