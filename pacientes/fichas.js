@@ -1,5 +1,3 @@
-// ========== pacientes/fichas.js - SIN BOTÓN AGREGAR ATENCIÓN ==========
-
 (function() {
     let pacientesTabData = [];
 
@@ -31,8 +29,6 @@
                 .catch(() => resolve(null));
         });
     }
-
-    // Element helpers
     function getGrid() { return document.getElementById('pacientesGrid'); }
     function getSearchInput() { return document.getElementById('search-pacientes-rut'); }
     function getBuscarBtn() { return document.getElementById('buscar-paciente-btn'); }
@@ -54,8 +50,6 @@
 
     async function extraerYCrearPacientesDesdeCitas() {
         const db = window.getFirestore();
-
-        // Primero obtener todos los pacientes de la colección pacientes
         const pacientesSnap = await db.collection('pacientes').get();
         const pacientesMap = {};
 
@@ -71,8 +65,6 @@
                 pacientesMap[rutLimpio] = pacienteConId;
             }
         });
-
-        // Luego obtener datos adicionales de citas si es necesario
         const citasSnap = await db.collection('citas').get();
         citasSnap.forEach(doc => {
             const cita = doc.data();
@@ -91,10 +83,9 @@
                     cesfam: cita.cesfam || '',
                     fechaRegistro: cita.creado || cita.fechaCreacion || new Date().toISOString(),
                     esTemporalDesdeCita: true,
-                    profesionalOrigenId: cita.profesionalId, // UID del profesional que generó la cita
+                    profesionalOrigenId: cita.profesionalId,
                     profesionalOrigenNombre: cita.profesionalNombre,
                     profesionOrigen: cita.profesion || cita.tipoProfesional,
-                    // CORRECCIÓN: Tomar la prioridad de la cita si existe, si no dejar "media"
                     prioridad: cita.prioridad || 'media'
                 };
             } else if (rut && pacientesMap[rut]) {
@@ -104,7 +95,6 @@
                     telefono: pacienteExistente.telefono || cita.telefono || '',
                     email: pacienteExistente.email || cita.email || '',
                     cesfam: pacienteExistente.cesfam || cita.cesfam || '',
-                    // Si el paciente no tiene prioridad, agregarla desde la cita
                     prioridad: pacienteExistente.prioridad || cita.prioridad || 'media'
                 };
             }
@@ -131,8 +121,6 @@
             let emailHtml = p.email
                 ? `<a href="mailto:${p.email}" style="color:inherit;text-decoration:underline;">${p.email}</a>`
                 : 'No disponible';
-
-            // CORRECCIÓN: Mostrar la prioridad del paciente (alta, media, baja)
             let prioridadHtml = '';
             if (p.prioridad) {
                 let color = "#f59e0b", texto = "Media";
@@ -187,7 +175,6 @@
                 const pacienteData = { id: doc.id, ...doc.data() };
                 mostrarModalFichaCompleta(pacienteData, pacienteId, false);
             } else {
-                // Buscar en los datos locales temporales
                 const pacienteTemp = pacientesTabData.find(p => (p.id === pacienteId || p.pacienteId === pacienteId));
                 if (pacienteTemp) {
                     mostrarModalFichaCompleta(pacienteTemp, pacienteId, true);
@@ -218,8 +205,6 @@
 
         const modalBody = document.getElementById('modal-ficha-completa-body');
         let fichaHtml = construirHTMLFichaCompleta(paciente, pacienteId);
-
-        // Si es temporal, mostrar restricción de profesional y profesión
         let restriccion = '';
         if (esTemporal && paciente.profesionalOrigenId) {
             const user = firebase.auth().currentUser;
@@ -248,8 +233,6 @@
         }
 
         modalBody.innerHTML = fichaHtml;
-
-        // Cargar historial clínico automáticamente
         cargarHistorialClinicoUnificado(pacienteId, puedeEditarHistorial());
     }
 
@@ -537,8 +520,6 @@
         if (fichaModal) fichaModal.style.display = 'flex';
     };
 
-    // Función de agregar atención eliminada de la UI
-
     async function refrescarPacientesTab() {
         const grid = getGrid();
         if (!grid) {
@@ -565,7 +546,6 @@
         }
         if (actualizarBtn) {
             actualizarBtn.onclick = function() {
-                // Limpiar el campo de búsqueda al actualizar
                 const searchInput = getSearchInput();
                 if (searchInput) searchInput.value = "";
                 refrescarPacientesTab();
