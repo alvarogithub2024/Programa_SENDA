@@ -1113,7 +1113,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 window.inicializarSistemaUnificado();
             }
         } else {
-            // Reintentar en 2 segundos
             setTimeout(function() {
                 if (window.inicializarSistemaUnificado) {
                     window.inicializarSistemaUnificado();
@@ -1123,7 +1122,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }, 1000);
 });
 
-// Función de depuración para verificar el sistema
 window.debugSistemaUnificado = function() {
     console.log('=== DEBUG SISTEMA UNIFICADO ===');
     console.log('Firebase inicializado:', window.isFirebaseInitialized ? window.isFirebaseInitialized() : 'No disponible');
@@ -1138,7 +1136,6 @@ window.debugSistemaUnificado = function() {
     console.log('===============================');
 };
 
-// Función para migrar datos (usar solo una vez)
 window.migrarDatos = function() {
     if (window.ejecutarMigracion) {
         window.ejecutarMigracion();
